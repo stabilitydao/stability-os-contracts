@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-/// @notice IDAO used by exist Stability DAO contract. todo Replace by IDAO
+/// @notice IDAO2.sol used by exist Stability DAO contract. todo Replace by IDAO2.sol
 interface IStabilityDAO is IERC20, IERC20Metadata {
     /// @notice Parameters of Stability DAO
     /// @dev For details see https://stabilitydao.gitbook.io/stability/stability-dao/governance#current-parameters
