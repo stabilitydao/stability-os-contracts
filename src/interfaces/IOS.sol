@@ -1,0 +1,116 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
+
+/// @notice Allow to create DAO and update its state according to life cycle
+interface IOS {
+
+    /// @notice todo add comments
+    struct OSSettings {
+        uint priceDao;
+        uint priceUnit;
+        uint priceOracle;
+        uint priceBridge;
+        uint minNameLength;
+        uint maxNameLength;
+        uint minSymbolLength;
+        uint maxSymbolLength;
+        uint minVePeriod;
+        uint maxVePeriod;
+        uint minPvPFee;
+        uint maxPvPFee;
+        uint minFundingDuration;
+        uint maxFundingDuration;
+        uint minAbsorbOfferUsd;
+        /// @notice The address of the asset used to fund the DAO.
+        address exchangeAsset;
+    }
+
+    struct Task {
+        string name;
+    }
+
+    //region ---------------------------------------- Read
+
+    function settings() external view returns (OSSettings memory);
+
+    /// @notice Local DAOs storage (in form of a mapping)
+    function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory);
+
+    /// @notice DAO deployments on the given {chain}
+    function getDAODeployments(string calldata daoSymbol, uint chain) external view returns (ITokenomics.DaoDeploymentInfo memory);
+
+    /// @notice Owner of the DAO
+    function getDAOOwner(string calldata daoSymbol) external view returns (address);
+
+    /// @notice True if a DAO with such symbol already exists
+    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool);
+
+    /// @notice Get full list of DAOs symbols registered in any chains
+    function getListDAO() external view returns (string[] memory daoSymbols);
+
+    /// @notice Governance proposals. Can be created only at initialChain of DAO.
+    function proposals(string calldata proposalId) external view returns (ITokenomics.Proposal memory);
+
+    /// @notice Generate list of tasks that should be performed on the current phase
+    function tasks(string calldata daoSymbol) external view returns (Task[] memory);
+
+    //endregion ---------------------------------------- Read
+
+    //region ---------------------------------------- Write actions
+
+    /// @notice Create new DAO
+    function createDAO(
+        string calldata name,
+        string calldata daoSymbol,
+        ITokenomics.Activity[] calldata activity,
+        ITokenomics.DaoParameters calldata params,
+        ITokenomics.Funding[] calldata funding
+    ) external;
+
+    /// @notice Add live compatible DAO
+    function addLiveDAO(
+        ITokenomics.DaoData calldata dao,
+        uint[] calldata chains,
+        ITokenomics.DaoDeploymentInfo[] calldata deployments
+    ) external;
+
+    /// @notice Change lifecycle phase of a DAO
+    /// @custom:restricted Restricted through access manager
+    function changePhase(string calldata daoSymbol) external;
+
+    /// @notice Provide funding to the DAO, receive seed or tge tokens in return
+    function fund(string calldata daoSymbol, uint256 amount) external;
+
+    /// @notice Process voting results from governance
+    /// @custom:restricted Restricted through access manager
+    function receiveVotingResults(string calldata proposalId, bool succeed) external;
+
+    //endregion ---------------------------------------- Write actions
+
+    //region ---------------------------------------- Update actions
+
+    /// @notice Update/create proposal to update implementations of the DAO contracts
+    function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external;
+
+    /// @notice Update/create proposal to update list of socials of the DAO
+    function updateSocials(string calldata daoSymbol, string[] calldata socials) external;
+
+    /// @notice Update/create proposal to update tokenomics units of the DAO
+    function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external;
+
+    /// @notice Update/create proposal to update funding rounds of the DAO
+    function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external;
+
+    /// @notice Update/create proposal to update vesting schedules of the DAO
+    function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external;
+
+    /// @notice Update/create proposal to update DAO naming (name and symbol)
+    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external;
+
+    /// @notice Update/create proposal to update on-chain DAO parameters
+    function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external;
+
+    //endregion ---------------------------------------- Update actions
+}

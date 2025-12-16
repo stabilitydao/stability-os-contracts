@@ -44,14 +44,6 @@ interface IDAOUnit {
         string url;
     }
 
-    /// @notice Off-chain component representation for a Unit.
-    struct UnitComponent {
-        /// @notice Unique component id or key.
-        string id;
-        /// @notice Free-form metadata or off-chain pointer (IPFS/URL).
-        string metadata;
-    }
-
     /// @notice Revenue generating unit owned by a DAO.
     struct UnitInfo {
         /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
@@ -70,7 +62,5 @@ interface IDAOUnit {
         UnitUiLink[] ui;
         /// @notice Links to API of the Unit.
         string[] api;
-        /// @notice OFF-CHAIN stored Components of the Unit. Not needed to store on-chain.
-        mapping(bytes32 => UnitComponent[]) components; // category hash => components
     }
 }

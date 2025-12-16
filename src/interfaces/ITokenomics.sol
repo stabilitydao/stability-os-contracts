@@ -36,6 +36,43 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         ABSORBED_8
     }
 
+    enum DAOAction {
+        UPDATE_IMAGES_0,
+        UPDATE_SOCIALS_1,
+        UPDATE_NAMING_2,
+        UPDATE_UNITS_3,
+        UPDATE_FUNDING_4,
+        UPDATE_VESTING_5,
+        UPDATE_DAO_PARAMETERS_6
+    }
+
+    /// @notice Funding types.
+    enum FundingType {
+        SEED_0,
+        TGE_1
+    }
+
+    /// @notice Organization activities supported by OS.
+    enum Activity {
+        /// @notice Owner of Decentralized Finance protocols
+        DEFI_PROTOCOL_OPERATOR_0,
+
+        /// @notice Owner of Software as a Service business
+        SAAS_OPERATOR_1,
+
+        /// @notice Searching of Maximum Extractable Value opportunities and submitting it to block builders.
+        MEV_SEARCHER_2,
+
+        /// @notice BUILDER is a team of engineers managed by DAOs.
+        BUILDER_3
+    }
+
+    enum VotingStatus {
+        VOTING_0,
+        APPROVED_1,
+        REJECTED_2
+    }
+
     /// @notice TODO Images of tokens. Absolute or relative from stabilitydao/.github repo /os/ folder.
     struct DaoImages {
         address seedToken;
@@ -46,7 +83,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
     }
 
     /// @notice Deployments of running DAO on blockchains.
-    struct DaoDeployments {
+    struct DaoDeploymentInfo {
         /// @notice Seed round receipt token.
         address seedToken;
         /// @notice TGE pre-sale receipt token.
@@ -92,12 +129,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal
         uint256 proposalThreshold;
-    }
-
-    /// @notice Funding types.
-    enum FundingType {
-        SEED_0,
-        TGE_1
     }
 
     /// @notice Funding record for a round.
@@ -154,34 +185,19 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         Vesting[] vesting;
     }
 
-    /// @notice Organization activities supported by OS.
-    enum Activity {
-        /// @notice Owner of Decentralized Finance protocols
-        DEFI_PROTOCOL_OPERATOR_0,
-
-        /// @notice Owner of Software as a Service business
-        SAAS_OPERATOR_1,
-
-        /// @notice Searching of Maximum Extractable Value opportunities and submitting it to block builders.
-        MEV_SEARCHER_2,
-
-        /// @notice BUILDER is a team of engineers managed by DAOs.
-        BUILDER_3
-    }
-
     /// @notice DAO record.
-    struct DaoInfo {
+    struct DaoData {
+        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
+        string symbol;
+
+        /// @notice Name of the DAO, used in token names. Without DAO word.
+        string name;
+
         /// @notice DAO lifecycle phase (LifecyclePhase). Changes permissionless when next phase start timestamp reached.
         uint16 phase;
 
         /// @notice Activities of the organization, see Activity enum
         uint16[] activity;
-
-        /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name;
-
-        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
-        string symbol;
 
         /// @notice Community socials. Update by `OS.updateSocials`
         string[] socials;
@@ -189,8 +205,9 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         /// @notice Images of tokens. Absolute or relative from stabilitydao/.github repo /os/ folder.
         DaoImages images;
 
-        /// @notice Deployed smart-contracts
-        mapping(uint chain => DaoDeployments) deployments;
+// todo deployments are stored in separate mapping
+//        /// @notice Deployed smart-contracts
+//        mapping(uint chain => DaoDeployments) deployments;
 
         /// @notice Revenue generating units owned by the organization.
         UnitInfo[] units;
@@ -209,9 +226,26 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
 
         /// @notice DAOs engaging BUILDER activity settings are stored off-chain
         BuilderActivity builderActivity;
-
-        /// @notice Symbol of DAO who absorbed this DAO
-        string absorberSymbol;
     }
+
+    struct DaoNames {
+        string symbol;
+        string name;
+    }
+
+    struct Proposal {
+        DAOAction action;
+
+        string id;
+        string daoSymbol;
+        /// @notice Proposal creation timestamp
+        uint64 created;
+        VotingStatus status;
+
+        /// @notice Proposal data as bytes
+        /// @dev Actual data depends on {action}
+        bytes payload;
+    }
+
 }
 
