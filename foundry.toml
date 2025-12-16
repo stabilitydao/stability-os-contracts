@@ -1,0 +1,49 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+fs_permissions = [{ access = "read-write", path = "./"}]
+no_match_coverage = "src/integrations/"
+solc_version = "0.8.28"
+gas_limit = "18446744073709551615"
+optimizer = true
+optimizer-runs = 200
+evm_version = "Cancun"
+
+[profile.lite]
+optimizer = false
+
+[doc]
+title = "Stability Platform Contracts"
+ignore = ["./src/test/**/*.sol"]
+
+[fmt]
+int_types = "short"
+ignore = ["./src/integrations/**/*.sol"]
+multiline_func_header = "params_first_multi"
+line_length = 120
+
+[rpc_endpoints]
+polygon = "${POLYGON_RPC_URL}"
+base = "${BASE_RPC_URL}"
+arbitrum = "${ARBITRUM_RPC_URL}"
+ethereum = "${ETHEREUM_RPC_URL}"
+real = "${REAL_RPC_URL}"
+sonic = "${SONIC_RPC_URL}"
+146 = "${SONIC_RPC_URL}" # required for StdConfig
+avalanche = "${AVALANCHE_RPC_URL}"
+plasma = "${PLASMA_RPC_URL}"
+9745 = "${PLASMA_RPC_URL}" # required for StdConfig
+
+[etherscan]
+polygon = { key = "${POLYGONSCAN_API_KEY}", chain = 137  }
+base = { key = "${BASESCAN_API_KEY}", chain = 8453  }
+arbitrum = { key = "${ARBITRUMSCAN_API_KEY}", chain = 42161  }
+ethereum = { key = "${ETHERSCAN_API_KEY}", chain = 1  }
+sonic = { key = "${ETHERSCAN_API_KEY}", chain = 146, url = "https://api.etherscan.io/v2/api?chainid=146" }
+avalanche = { key = "${ETHERSCAN_API_KEY}", chain = 43114, url = "https://api.etherscan.io/v2/api?chainid=43114" }
+plasma = { key = "${ETHERSCAN_API_KEY}", chain = 9745, url = "https://api.etherscan.io/v2/api?chainid=9745" }
+
+[lint]
+exclude_lints = ["mixed-case-function", "mixed-case-variable", "asm-keccak256", "unsafe-typecast"]
+ignore = ["src/integrations/pendle/PendleERC4626WithAdapterSYFlatten.sol"]
