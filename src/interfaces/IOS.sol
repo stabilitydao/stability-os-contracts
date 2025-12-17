@@ -5,7 +5,14 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 interface IOS {
-    error DaoSymbolAlreadyUsed();
+    error NameLength(uint length);
+    error SymbolLength(uint length);
+    error SymbolNotUnique(string symbol);
+    error PvPFee(uint value);
+    error TooLateToUpdateSuchFunding();
+    error TooLateToUpdateVesting();
+    error NeedFunding();
+    error VePeriod(uint period);
 
     event DaoCreated(
         string name,
@@ -14,6 +21,8 @@ interface IOS {
         ITokenomics.DaoParameters params,
         ITokenomics.Funding[] funding
     );
+
+    event OsSettingsUpdated(IOS.OsSettings st);
 
     /// @notice todo add comments
     struct OsSettings {
@@ -33,7 +42,7 @@ interface IOS {
         uint maxFundingDuration;
         uint minAbsorbOfferUsd;
         /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
-        address exchangeAsset;
+        // todo address exchangeAsset;
     }
 
     struct Task {
@@ -69,9 +78,15 @@ interface IOS {
     /// @notice Generate list of tasks that should be performed on the current phase
     function tasks(string calldata daoSymbol) external view returns (Task[] memory);
 
+    /// @notice Get OS settings
+    function getSettings() external view returns (OsSettings memory);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
+
+    /// @notice Set OS settings
+    function setSettings(OsSettings memory newSettings) external;
+
 
     /// @notice Create new DAO
     /// @param name Name of new DAO (any name is allowed)
@@ -88,11 +103,7 @@ interface IOS {
     ) external;
 
     /// @notice Add live compatible DAO
-    function addLiveDAO(
-        ITokenomics.DaoData calldata dao,
-        uint[] calldata chains,
-        ITokenomics.DaoDeploymentInfo[] calldata deployments
-    ) external;
+    function addLiveDAO(ITokenomics.DaoData memory dao) external;
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager

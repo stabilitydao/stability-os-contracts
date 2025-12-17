@@ -243,7 +243,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         Tokenomics tokenomics;
 
         /// @notice DAOs engaging BUILDER activity settings are stored off-chain (optional, can be empty)
-        BuilderActivity builderActivity;
+        BuilderActivity builderActivity; // todo remove completely
     }
 }
 

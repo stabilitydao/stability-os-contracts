@@ -3,9 +3,9 @@ pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../../interfaces/ITokenomics.sol";
 import {IOS} from "../../interfaces/IOS.sol";
-import {OsUpdateLib} from "./OsUpdateLib.sol";
+import {console} from "forge-std/console.sol";
 
-
+/// @notice Basic data types, validation and update logic
 library OsLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff));
     bytes32 internal constant OS_STORAGE_LOCATION = 0; // todo
@@ -37,7 +37,7 @@ library OsLib {
         address deployer;
 
         /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
-        LifecyclePhase phase;
+        ITokenomics.LifecyclePhase phase;
 
         /// @notice Community socials. Update by `OS.updateSocials`
         string[] socials;
@@ -88,13 +88,13 @@ library OsLib {
 
         /// @notice Plain data of each registered DAO
         /// @dev Full DAO data is stored on initial chain only. Other chains have only records in {usedSymbols}
-        mapping(uint daoUid => DaoDataLocal) daos;
+        mapping(uint daoUid => OsLib.DaoDataLocal) daos;
 
         /// @notice Parameters of each DAO
         mapping(uint daoUid => ITokenomics.DaoParameters) daoParameters;
 
         /// @notice Tokenomics of each DAO
-        mapping(uint daoUid => TokenomicsLocal) tokenomics;
+        mapping(uint daoUid => OsLib.TokenomicsLocal) tokenomics;
 
         /// @notice Images (logo/banner) of each DAO
         mapping(uint daoUid => ITokenomics.DaoImages) daoImages;
@@ -103,29 +103,25 @@ library OsLib {
         mapping(uint daoUid => ITokenomics.DaoDeploymentInfo) deployments;
 
         /// @notice Builder activity info of each DAO todo do we need to use separate maps for Worker, Conveyor, etc to be able to extend them later?
-        mapping(uint daoUid => BuilderActivityLocal) daoImages;
+        mapping(uint daoUid => OsLib.BuilderActivityLocal) builderActivity;
 
         /// @notice Engineers. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => Worker) builderActivityWorkers;
+        mapping(bytes32 key => ITokenomics.Worker) builderActivityWorkers;
 
         /// @notice Conveyors of unit components. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => Conveyor) builderActivityConveyors;
+        mapping(bytes32 key => ITokenomics.Conveyor) builderActivityConveyors;
 
         /// @notice Pools of development tasks. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => Pool) builderActivityPools;
+        mapping(bytes32 key => ITokenomics.Pool) builderActivityPools;
 
         /// @notice Total salaries / burn rates paid. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => BurnRate) builderActivityBurnRate;
+        mapping(bytes32 key => ITokenomics.BurnRate) builderActivityBurnRate;
 
         /// @notice Fundraising. Key is generated as hash of (daoUid, 0-index)
         mapping(bytes32 key => ITokenomics.Funding) funding;
 
         /// @notice Vesting allocations. Key is generated as hash of (daoUid, 0-index)
         mapping(bytes32 key => ITokenomics.Vesting) vesting;
-
-        /// @notice Activities of the organization. Key is generated as hash of (daoUid, 0-index)
-        /// @dev 0-index is in [0...DaoData.countActivities-1]
-        mapping(bytes32 key => ITokenomics.Activity) activities;
 
         /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, 0-index)
         /// @dev 0-index is in [0...DaoData.countUnits-1]
@@ -149,175 +145,61 @@ library OsLib {
 
     //endregion -------------------------------------- Data types
 
-    //region -------------------------------------- View
-    function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
-        OsStorage storage $ = getOsStorage();
-
-        uint daoUid = $.daoUids[daoSymbol];
-
-        ITokenomics.DaoData memory dest;
-
-        { // ------------------- basic fields
-            DaoDataLocal memory data = $.daos[daoUid];
-
-            dest.symbol = data.symbol;
-            dest.name = data.name;
-            dest.deployer = data.deployer;
-            dest.phase = data.phase;
-
-            dest.socials = $.daos[daoUid].socials;
-            dest.activity = $.daos[daoUid].activity;
-        }
-
-        { // ------------------- images, deployments, params
-            dest.images = $.daoImages[daoUid];
-            dest.deployments = $.deployments[daoUid];
-            dest.params = $.daoParameters[daoUid];
-            dest.builderActivity = $.builderActivity[daoUid];
-        }
-
-        { // ------------------- units
-            uint len = uint(data.countUnits);
-            dest.units = new ITokenomics.UnitInfo[](len);
-            for (uint i; i < len; i++) {
-                dest.units[i] = $.units[getKey(daoUid, i)];
-            }
-        }
-
-        { // ------------------- agents
-            uint len = uint(data.countAgents);
-            dest.agents = new ITokenomics.AgentInfo[](len);
-            for (uint i; i < len; i++) {
-                dest.agents[i] = $.agents[getKey(daoUid, i)];
-            }
-        }
-
-        { // ------------------- tokenomics
-            TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
-
-            {
-                uint len = tokenomics.countFunding;
-                dest.tokenomics.funding = new ITokenomics.Funding[](len);
-                for (uint i; i < len; i++) {
-                    dest.tokenomics.funding[i] = $.funding[getKey(daoUid, i)];
-                }
-            }
-            dest.tokenomics.initialChain = tokenomics.initialChain;
-
-            {
-                uint len = tokenomics.countVesting;
-                dest.tokenomics.vesting = new ITokenomics.Vesting[](len);
-                for (uint i = 0; i < len; i++) {
-                    dest.tokenomics.vesting[i] = $.vesting[getKey(daoUid, i)];
-                }
-            }
-        }
-
-        { // ------------------- builderActivity
-            BuilderActivityLocal memory local = $.daoImages[daoUid];
-
-            ITokenomics.BuilderActivity memory ba;
-
-            ba.multisig = local.multisig;
-            ba.repo = local.repo;
-
-            // todo refactoring
-
-            // workers
-            uint wLen = local.countWorkers;
-            ba.workers = new ITokenomics.Worker[](wLen);
-            for (uint i; i < wLen; i++) {
-                ba.workers[i] = $.builderActivityWorkers[getKey(daoUid, i)];
-            }
-
-            // conveyors
-            uint cLen = local.countConveyors;
-            ba.conveyors = new ITokenomics.Conveyor[](cLen);
-            for (uint i; i < cLen; i++) {
-                ba.conveyors[i] = $.builderActivityConveyors[getKey(daoUid, i)];
-            }
-
-            // pools
-            uint pLen = local.countPools;
-            ba.pools = new ITokenomics.Pool[](pLen);
-            for (uint i = 0; i < pLen; i++) {
-                ba.pools[i] = $.builderActivityPools[getKey(daoUid, i)];
-            }
-
-            // burn rates
-            uint bLen = local.countBurnRate;
-            ba.burnRate = new ITokenomics.BurnRate[](bLen);
-            for (uint i = 0; i < bLen; i++) {
-                ba.burnRate[i] = $.builderActivityBurnRate[getKey(daoUid, i)];
-            }
-
-            dest.builderActivity = ba;
-        }
-
-        return dest;
-    }
-
-
-    //endregion -------------------------------------- View
-
     //region -------------------------------------- Actions
-    function createDAO(
-        string calldata name,
-        string calldata daoSymbol,
-        ITokenomics.Activity[] memory activity,
+    function validate(
+        DaoDataLocal memory dao,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
-    ) internal {
+    ) internal view {
         OsStorage storage $ = getOsStorage();
+        IOS.OsSettings storage st = $.osSettings[0];
 
-        require(!$.usedSymbols[daoSymbol], IOS.DaoSymbolAlreadyUsed());
-
-        uint daoUid = ++$.daoCount;
-
-        ITokenomics.DaoData memory daoData;
-        daoData.name = name;
-        daoData.symbol = daoSymbol;
-        daoData.phase = ITokenomics.LifecyclePhase.DRAFT_0;
-        daoData.countActivities = uint32(activity.length);
-        daoData.deployer = msg.sender;
-
-        OsUpdateLib.validate(daoData, activity, params, funding);
-
-        // ------------------------- Save DAO data to the storage
-        // we don't use viaIR=true in config so we cannot make direct assignment
-        // $.daos[daoSymbol] = daoData;
-
-        $.daoUids[daoSymbol] = daoUid;
-        $.daos[daoUid] = daoData;
-        $.daoParameters[daoUid] = params;
-        $.tokenomics[daoUid].initialChain = block.chainid;
-        $.tokenomics[daoUid].countFunding = funding.length;
-
-        for (uint i = 0; i < activity.length; i++) {
-            $.activities[getKey(daoUid, i)] = activity[i];
-        }
-        for (uint i = 0; i < funding.length; i++) {
-            $.funding[getKey(daoUid, i)] = funding[i];
-        }
-
-        $.usedSymbols[daoSymbol] = true;
-
-        // ------------------------- Notify about a newly created DAO
-        emit IOS.DaoCreated(name, daoSymbol, activity, params, funding);
-
-        _sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, daoSymbol);
+        _validateDaoData(dao, st);
+        _validateParams(params, st);
+        _validateFunding(funding, st);
     }
 
     //endregion -------------------------------------- Actions
 
+    //region -------------------------------------- Logic
 
-    //region -------------------------------------- Internal logic
-    function _sendCrossChainMessage(IOS.CrossChainMessages kind, string memory daoSymbol) internal pure {
-        kind;
-        daoSymbol;
-        // todo
+    /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
+    function _validateDaoData(DaoDataLocal memory dao, IOS.OsSettings storage st) internal view {
+        OsStorage storage $ = getOsStorage();
+
+        {
+            uint len = bytes(dao.name).length;
+            require(len >= st.minNameLength && len <= st.maxNameLength, IOS.NameLength(len));
+        }
+
+        {
+            uint len = bytes(dao.symbol).length;
+            require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IOS.SymbolLength(len));
+
+            require(!$.usedSymbols[dao.symbol], IOS.SymbolNotUnique(dao.symbol));
+        }
+
+        // todo validate activity
     }
-    //endregion -------------------------------------- Internal logic
+
+    /// @notice Validate DAO params according to OS settings
+    function _validateParams(ITokenomics.DaoParameters memory params, IOS.OsSettings storage st) internal view {
+        require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IOS.PvPFee(params.pvpFee));
+        require(params.vePeriod  >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IOS.VePeriod(params.vePeriod));
+    }
+
+    /// @notice Ensure that funding is not empty
+    function _validateFunding(ITokenomics.Funding[] memory funding, IOS.OsSettings storage st) internal pure {
+        require(funding.length != 0, IOS.NeedFunding());
+
+        st; // todo
+
+        // todo: check funding array has unique funding types
+        // todo: check funding dates
+        // todo: check funding raise goals
+    }
+
+    //endregion -------------------------------------- Logic
 
     //region -------------------------------------- Internal utils
     function getOsStorage() internal pure returns (OsStorage storage $) {
@@ -326,11 +208,8 @@ library OsLib {
             $.slot := OS_STORAGE_LOCATION
         }
     }
-
-    function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
-        return keccak256(abi.encode(daoUid, index));
-    }
     //endregion -------------------------------------- Internal utils
+
 
 
 }
