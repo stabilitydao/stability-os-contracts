@@ -5,9 +5,18 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 interface IOS {
+    error DaoSymbolAlreadyUsed();
+
+    event DaoCreated(
+        string name,
+        string daoSymbol,
+        ITokenomics.Activity[] activity,
+        ITokenomics.DaoParameters params,
+        ITokenomics.Funding[] funding
+    );
 
     /// @notice todo add comments
-    struct OSSettings {
+    struct OsSettings {
         uint priceDao;
         uint priceUnit;
         uint priceOracle;
@@ -23,7 +32,7 @@ interface IOS {
         uint minFundingDuration;
         uint maxFundingDuration;
         uint minAbsorbOfferUsd;
-        /// @notice The address of the asset used to fund the DAO.
+        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
         address exchangeAsset;
     }
 
@@ -31,15 +40,19 @@ interface IOS {
         string name;
     }
 
+    /// @notice Kinds of cross-chain messages
+    enum CrossChainMessages {
+        NEW_DAO_SYMBOL_0,
+        DAO_RENAME_SYMBOL_1,
+        DAO_BRIDGED_2
+    }
+
     //region ---------------------------------------- Read
 
-    function settings() external view returns (OSSettings memory);
+    function settings() external view returns (OsSettings memory);
 
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory);
-
-    /// @notice DAO deployments on the given {chain}
-    function getDAODeployments(string calldata daoSymbol, uint chain) external view returns (ITokenomics.DaoDeploymentInfo memory);
 
     /// @notice Owner of the DAO
     function getDAOOwner(string calldata daoSymbol) external view returns (address);
@@ -61,12 +74,17 @@ interface IOS {
     //region ---------------------------------------- Write actions
 
     /// @notice Create new DAO
+    /// @param name Name of new DAO (any name is allowed)
+    /// @param daoSymbol Symbol of new DAO (should be unique across all DAOs, it can be changed later)
+    /// @param activity List of activities of the DAO
+    /// @param params On-chain DAO parameters
+    /// @param funding Initial funding rounds of the DAO
     function createDAO(
         string calldata name,
         string calldata daoSymbol,
-        ITokenomics.Activity[] calldata activity,
-        ITokenomics.DaoParameters calldata params,
-        ITokenomics.Funding[] calldata funding
+        ITokenomics.Activity[] memory activity,
+        ITokenomics.DaoParameters memory params,
+        ITokenomics.Funding[] memory funding
     ) external;
 
     /// @notice Add live compatible DAO

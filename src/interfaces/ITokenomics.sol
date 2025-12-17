@@ -73,13 +73,13 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         REJECTED_2
     }
 
-    /// @notice TODO Images of tokens. Absolute or relative from stabilitydao/.github repo /os/ folder.
+    /// @notice Images of tokens. Absolute or relative from stabilitydao/.github repo /os/ folder.
     struct DaoImages {
-        address seedToken;
-        address tgeToken;
-        address token;
-        address xToken;
-        address daoToken;
+        string seedToken;
+        string tgeToken;
+        string token;
+        string xToken;
+        string daoToken;
     }
 
     /// @notice Deployments of running DAO on blockchains.
@@ -115,26 +115,26 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         /// @notice Vested Escrow period, days.
         uint32 vePeriod;
 
-        /// @notice Instant exit fee, percent
+        /// @notice Instant exit fee, decimals 1e4 (!), i.e. 50_00 = 50%             todo we have different decimals here, probably we should change implementation in xSTBL !!!!
         uint16 pvpFee;
 
         /// @notice Minimal power in chain to have voting rights, amount of staked tokens
-        uint256 minPower;
+        uint minPower;
 
-        /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent
+        /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent. Decimals 1e5, i.e. 20_000 = 20%
         uint16 ttBribe;
 
-        /// @notice Share of total DAO revenue going to accidents compensations, percent
+        /// @notice Share of total DAO revenue going to accidents compensations, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint16 recoveryShare;
 
-        /// @notice Minimal total voting power (self and delegated) need to create a proposal
-        uint256 proposalThreshold;
+        /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
+        uint proposalThreshold;
     }
 
     /// @notice Funding record for a round.
     struct Funding {
-        /// @notice Funding type todo FundingType
-        uint16 fundingType;
+        /// @notice Funding type
+        FundingType fundingType;
 
         /// @notice Start timestamp (seconds since unix epoch).
         uint64 start;
@@ -173,61 +173,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         uint64 end;
     }
 
-    /// @notice Supply distribution and fundraising events.
-    struct Tokenomics {
-        /// @notice Fundraising
-        Funding[] funding;
-
-        /// @notice id of the chain where initial deployment became
-        uint initialChain;
-
-        /// @notice Vesting allocations (optional — may be empty)
-        Vesting[] vesting;
-    }
-
-    /// @notice DAO record.
-    struct DaoData {
-        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
-        string symbol;
-
-        /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name;
-
-        /// @notice DAO lifecycle phase (LifecyclePhase). Changes permissionless when next phase start timestamp reached.
-        uint16 phase;
-
-        /// @notice Activities of the organization, see Activity enum
-        uint16[] activity;
-
-        /// @notice Community socials. Update by `OS.updateSocials`
-        string[] socials;
-
-        /// @notice Images of tokens. Absolute or relative from stabilitydao/.github repo /os/ folder.
-        DaoImages images;
-
-// todo deployments are stored in separate mapping
-//        /// @notice Deployed smart-contracts
-//        mapping(uint chain => DaoDeployments) deployments;
-
-        /// @notice Revenue generating units owned by the organization.
-        UnitInfo[] units;
-
-        /// @notice Operating agents managed by the organization.
-        AgentInfo[] agents;
-
-        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
-        DaoParameters params;
-
-        /// @notice Supply distribution and fundraising events
-        Tokenomics tokenomics;
-
-        /// @notice Deployer of a DAO have power only at DRAFT phase.
-        address deployer;
-
-        /// @notice DAOs engaging BUILDER activity settings are stored off-chain
-        BuilderActivity builderActivity;
-    }
-
     struct DaoNames {
         string symbol;
         string name;
@@ -247,5 +192,58 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
         bytes payload;
     }
 
+    /// @notice Tokenomics related grouped fields
+    struct Tokenomics {
+        /// @notice Fundraising rounds
+        Funding[] funding;
+
+        /// @notice Where initial deployment happened (chain id)
+        uint256 initialChain;
+
+        /// @notice Vesting allocations (optional)
+        Vesting[] vesting;
+    }
+
+    /// @notice Full DAO info
+    struct DaoData {
+        /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
+        LifecyclePhase phase;
+
+        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
+        string symbol;
+
+        /// @notice Name of the DAO, used in token names. Without DAO word.
+        string name;
+
+        /// @notice Deployer of a DAO have power only at DRAFT phase.
+        address deployer;
+
+        /// @notice Community socials. Update by `OS.updateSocials`
+        string[] socials;
+
+        /// @notice Activities of the organization.
+        Activity[] activity;
+
+        /// @notice Images of tokens. Absolute or relative from repo /os/ folder.
+        DaoImages images;
+
+        /// @notice Deployments of running DAO on blockchains.
+        DaoDeploymentInfo deployments;
+
+        /// @notice Registered revenue generating units owned by the organization.
+        UnitInfo[] units;
+
+        /// @notice Operating agents managed by the organization.
+        AgentInfo[] agents;
+
+        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
+        DaoParameters params;
+
+        /// @notice Supply distribution and fundraising events + vesting + initial chain
+        Tokenomics tokenomics;
+
+        /// @notice DAOs engaging BUILDER activity settings are stored off-chain (optional, can be empty)
+        BuilderActivity builderActivity;
+    }
 }
 

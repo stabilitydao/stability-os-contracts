@@ -46,6 +46,8 @@ interface IDAOBuilder {
         string name;
         string description;
         string color;
+
+        // todo add gap to be able to add new fields
     }
 
     struct GithubUser {
@@ -77,6 +79,7 @@ interface IDAOBuilder {
         string issueTemplate;
         string body;
         string generator;
+        // todo add gap to be able to add new fields
     }
 
     struct ConveyorStep {
@@ -85,6 +88,7 @@ interface IDAOBuilder {
         ArtifactType[] artifacts;
         string result;
         string guide;
+        // todo add gap to be able to add new fields
     }
 
     struct BuildersMemoryEntry {
