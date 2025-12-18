@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "../../interfaces/ITokenomics.sol";
+import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {OsLib} from "./OsLib.sol";
 import {console} from "forge-std/console.sol";
@@ -50,8 +50,8 @@ library OsActionsLib {
             OsLib.TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
             dest.tokenomics.initialChain = tokenomics.initialChain;
 
-            dest.tokenomics.funding = new ITokenomics.Funding[](tokenomics.countFunding);
-            for (uint i; i < tokenomics.countFunding; i++) {
+            dest.tokenomics.funding = new ITokenomics.Funding[](tokenomics.funding.length);
+            for (uint i; i < dest.tokenomics.funding.length; i++) {
                 dest.tokenomics.funding[i] = $.funding[getKey(daoUid, i)];
             }
 
@@ -74,8 +74,71 @@ library OsActionsLib {
     /// @param limit Maximum number of tasks to return. It must be > 0. Use 1 to check if there are any tasks.
     /// @return _tasks List of tasks. The list is limited by {limit} value
     function tasks(string calldata daoSymbol, uint limit) external view returns (IOS.Task[] memory _tasks) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        _tasks = new IOS.Task[](limit);
 
-        // todo
+        // slither-disable-next-line uninitialized-local
+        uint index;
+
+        uint daoUid = $.daoUids[daoSymbol];
+        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+
+        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+            ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+            if (index < limit && bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0) {
+                _tasks[index++] = IOS.Task("Need images of token and seedToken");
+            }
+            if (index < limit && $.daos[daoUid].socials.length < 2) {
+                _tasks[index++] = IOS.Task("Need at least 2 socials");
+            }
+            if (index < limit && $.daos[daoUid].countUnits == 0) {
+                _tasks[index++] = IOS.Task("Need at least 1 projected unit");
+            }
+        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
+            ITokenomics.Funding memory f = $.funding[getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            if (f.fundingType == ITokenomics.FundingType.SEED_0) { // todo check if funding round exists. Can SEED_0 be skipped? if yes we need differen way to check if it exists
+                if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
+                    _tasks[index++] = IOS.Task("Need attract minimal seed funding");
+                }
+            }
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+            ITokenomics.Funding memory f = $.funding[getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            if (index < limit && f.fundingType != ITokenomics.FundingType.TGE_1) {
+                _tasks[index++] = IOS.Task("Need add pre-TGE funding");
+            }
+            ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+            if (index < limit && bytes(daoImages.tgeToken).length == 0 || bytes(daoImages.xToken).length == 0 || bytes(daoImages.daoToken).length == 0) {
+                _tasks[index++] = IOS.Task("Need images of all DAO tokens");
+            }
+            if (index < limit && $.tokenomics[daoUid].countVesting == 0) {
+                _tasks[index++] = IOS.Task("Need vesting allocations");
+            }
+            uint countUnits = $.daos[daoUid].countUnits;
+
+            // slither-disable-next-line uninitialized-local
+            bool foundLive;
+
+            for (uint i; i < countUnits; i++) {
+                ITokenomics.UnitInfo memory unit = $.units[getKey(daoUid, i)];
+                if (unit.status == IDAOUnit.UnitStatus.LIVE_2) {
+                    foundLive = true;
+                    break;
+                }
+            }
+            if (index < limit && !foundLive) {
+                _tasks[index++] = IOS.Task("Run revenue generating units");
+            }
+
+        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
+
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
+
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
+
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_7) {
+
+        }
+
         return _tasks;
     }
     //endregion -------------------------------------- View
@@ -116,9 +179,9 @@ library OsActionsLib {
         $.daos[daoUid] = daoData;
         $.daoParameters[daoUid] = params;
         $.tokenomics[daoUid].initialChain = block.chainid;
-        $.tokenomics[daoUid].countFunding = funding.length;
 
         for (uint i = 0; i < funding.length; i++) {
+            $.tokenomics[daoUid].funding.push(funding[i].fundingType);
             $.funding[getKey(daoUid, i)] = funding[i];
         }
 
@@ -154,12 +217,12 @@ library OsActionsLib {
         { // ------------------------- tokenomics
             OsLib.TokenomicsLocal memory tokenomics;
             tokenomics.initialChain = dao.tokenomics.initialChain;
-            tokenomics.countFunding = uint32(dao.tokenomics.funding.length);
             tokenomics.countVesting = uint32(dao.tokenomics.vesting.length);
 
             $.tokenomics[daoUid] = tokenomics;
 
             for (uint i; i < dao.tokenomics.funding.length; i++) {
+                $.tokenomics[daoUid].funding.push(dao.tokenomics.funding[i].fundingType);
                 $.funding[getKey(daoUid, i)] = dao.tokenomics.funding[i];
             }
             for (uint i; i < dao.tokenomics.vesting.length; i++) {

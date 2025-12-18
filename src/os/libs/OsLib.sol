@@ -13,9 +13,9 @@ library OsLib {
     //region -------------------------------------- Data types
     /// @notice Supply distribution and fundraising events.
     struct TokenomicsLocal {
-        /// @notice Fundraising. Count of registered Funding items.
+        /// @notice Fundraising. Only funding types.
         /// @dev Actual funding data are stored in the mapping (to be able to extend list of Funding fields)
-        uint countFunding;
+        ITokenomics.FundingType[] funding;
 
         /// @notice id of the chain where initial deployment became
         uint initialChain;
@@ -82,8 +82,8 @@ library OsLib {
         /// @notice All deployments of DAOs on different chains. Deployment ID is generated as hash of (daoUid, chainId)
         mapping(uint daoUid => ITokenomics.DaoDeploymentInfo) deployments;
 
-        /// @notice Fundraising. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.Funding) funding;
+        /// @notice Fundraising. FundingId is generated as hash of (daoUid, funding type)
+        mapping(bytes32 fundingId => ITokenomics.Funding) funding;
 
         /// @notice Vesting allocations. Key is generated as hash of (daoUid, 0-index)
         mapping(bytes32 key => ITokenomics.Vesting) vesting;

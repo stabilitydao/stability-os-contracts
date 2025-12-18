@@ -29,10 +29,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         LIVE_VESTING_6,
 
         /// @notice Vesting completed — tokens fully distributed.
-        LIVE_7,
-
-        /// @notice Absorbed by another DAO on Stability OS.
-        ABSORBED_8
+        LIVE_7
     }
 
     enum DAOAction {
