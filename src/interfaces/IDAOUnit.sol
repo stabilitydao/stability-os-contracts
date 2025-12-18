@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 interface IDAOUnit {
-/// @notice Unit status can be changed automatically on DAO lifecycle phase changes or manually by DAO holders.
+    /// @notice Unit status can be changed automatically on DAO lifecycle phase changes or manually by DAO holders.
     enum UnitStatus {
         /// @notice Researching state.
         RESEARCH_0,
@@ -12,7 +12,7 @@ interface IDAOUnit {
         LIVE_2
     }
 
-/// @notice Supported categories of running units.
+    /// @notice Supported categories of running units.
     enum UnitComponentCategory {
         /// @notice Chain support (blockchain integrations, relayers).
         CHAIN_SUPPORT_0,
@@ -42,6 +42,8 @@ interface IDAOUnit {
         string label;
         /// @notice URL of the frontend endpoint.
         string url;
+
+        // todo add gap ?
     }
 
     /// @notice Revenue generating unit owned by a DAO.

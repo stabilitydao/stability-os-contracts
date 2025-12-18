@@ -14,17 +14,11 @@ interface IOS {
     error NeedFunding();
     error VePeriod(uint period);
 
-    event DaoCreated(
-        string name,
-        string daoSymbol,
-        ITokenomics.Activity[] activity,
-        ITokenomics.DaoParameters params,
-        ITokenomics.Funding[] funding
-    );
+    event DaoCreated(string name, string daoSymbol, uint daoUid);
 
     event OsSettingsUpdated(IOS.OsSettings st);
 
-    /// @notice todo add comments
+    /// @notice todo add comment to each param
     struct OsSettings {
         uint priceDao;
         uint priceUnit;

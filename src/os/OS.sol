@@ -8,6 +8,9 @@ import {OsActionsLib} from "./libs/OsActionsLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 contract OS is /* IOS, */ AccessManager {
+    /// @notice Max number of tasks returned by `tasks` function
+    uint constant internal MAX_COUNT_TASKS = 25;
+
     constructor(address initialAdmin) AccessManager(initialAdmin) {
         // todo
     }
@@ -17,9 +20,12 @@ contract OS is /* IOS, */ AccessManager {
         return OsActionsLib.getDAO(daoSymbol);
     }
 
-    /// @notice Get OS settings
     function getSettings() external view returns (IOS.OsSettings memory) {
         return OsActionsLib.getSettings();
+    }
+
+    function tasks(string calldata daoSymbol) external view returns (IOS.Task[] memory) {
+        return OsActionsLib.tasks(daoSymbol, MAX_COUNT_TASKS);
     }
 
     //endregion -------------------------------------- View
@@ -38,13 +44,32 @@ contract OS is /* IOS, */ AccessManager {
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) external {
-        // no restrictions, anyone can create a DAO
+        // no restrictions, anybody can create a DAO
         OsActionsLib.createDAO(name, daoSymbol, activity, params, funding);
     }
 
     function addLiveDAO(ITokenomics.DaoData calldata dao) external {
         // todo _onlyVerifier
+
         OsActionsLib.addLiveDAO(dao);
+    }
+
+    function changePhase(string calldata daoSymbol) external {
+        // no restrictions, anybody can call this
+
+        OsActionsLib.changePhase(daoSymbol);
+    }
+
+    function fund(string calldata daoSymbol, uint256 amount) external {
+        // no restrictions, anybody can call this
+
+        OsActionsLib.fund(daoSymbol, amount);
+    }
+
+    function receiveVotingResults(string calldata proposalId, bool succeed) external {
+        // todo: restrictions
+
+        OsActionsLib.receiveVotingResults(proposalId, succeed);
     }
 
     //endregion -------------------------------------- Actions

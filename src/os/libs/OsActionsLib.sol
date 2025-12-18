@@ -7,6 +7,7 @@ import {OsLib} from "./OsLib.sol";
 import {console} from "forge-std/console.sol";
 
 library OsActionsLib {
+
     //region -------------------------------------- View
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
@@ -67,6 +68,16 @@ library OsActionsLib {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         return $.osSettings[0];
     }
+
+    /// @notice Get list of pending tasks for the given DAO
+    /// @param daoSymbol DAO symbol
+    /// @param limit Maximum number of tasks to return. It must be > 0. Use 1 to check if there are any tasks.
+    /// @return _tasks List of tasks. The list is limited by {limit} value
+    function tasks(string calldata daoSymbol, uint limit) external view returns (IOS.Task[] memory _tasks) {
+
+        // todo
+        return _tasks;
+    }
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -111,12 +122,7 @@ library OsActionsLib {
             $.funding[getKey(daoUid, i)] = funding[i];
         }
 
-        $.usedSymbols[daoSymbol] = true;
-
-        // ------------------------- Notify about a newly created DAO
-        emit IOS.DaoCreated(name, daoSymbol, activity, params, funding);
-
-        _sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, daoSymbol);
+        _finalizeDaoCreation($, daoSymbol, name, daoUid);
     }
 
     function addLiveDAO(ITokenomics.DaoData memory dao) external {
@@ -129,6 +135,7 @@ library OsActionsLib {
         local.symbol = dao.symbol;
         local.phase = dao.phase;
         local.deployer = dao.deployer;
+        local.socials = dao.socials;
         local.activity = dao.activity;
         local.countUnits = uint32(dao.units.length);
         local.countAgents = uint32(dao.agents.length);
@@ -144,19 +151,71 @@ library OsActionsLib {
         $.deployments[daoUid] = dao.deployments;
         $.daoParameters[daoUid] = dao.params;
 
-        {
+        { // ------------------------- tokenomics
             OsLib.TokenomicsLocal memory tokenomics;
             tokenomics.initialChain = dao.tokenomics.initialChain;
             tokenomics.countFunding = uint32(dao.tokenomics.funding.length);
             tokenomics.countVesting = uint32(dao.tokenomics.vesting.length);
 
             $.tokenomics[daoUid] = tokenomics;
+
+            for (uint i; i < dao.tokenomics.funding.length; i++) {
+                $.funding[getKey(daoUid, i)] = dao.tokenomics.funding[i];
+            }
+            for (uint i; i < dao.tokenomics.vesting.length; i++) {
+                $.vesting[getKey(daoUid, i)] = dao.tokenomics.vesting[i];
+            }
         }
+
+        for (uint i; i < dao.units.length; i++) {
+            ITokenomics.UnitInfo storage unitInfo = $.units[getKey(daoUid, i)];
+            unitInfo.unitId = dao.units[i].unitId;
+            unitInfo.name = dao.units[i].name;
+            unitInfo.status = dao.units[i].status;
+            unitInfo.unitType = dao.units[i].unitType;
+            unitInfo.revenueShare = dao.units[i].revenueShare;
+            unitInfo.emoji = dao.units[i].emoji;
+            unitInfo.api = dao.units[i].api;
+            for (uint j; j < dao.units[i].ui.length; ++j) {
+                unitInfo.ui.push(dao.units[i].ui[j]);
+            }
+        }
+        for (uint i; i < dao.agents.length; i++) {
+            $.agents[getKey(daoUid, i)] = dao.agents[i];
+        }
+
+        // todo do we need to register exit proposals?
+
+        _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
+    }
+
+    /// @notice Change lifecycle phase of a DAO
+    function changePhase(string calldata daoSymbol) external {
+        // todo
+    }
+
+    function fund(string calldata daoSymbol, uint256 amount) external {
+        // todo
+    }
+
+    function receiveVotingResults(string calldata proposalId, bool succeed) external {
+        // todo
     }
     //endregion -------------------------------------- Actions
 
 
     //region -------------------------------------- Internal logic
+
+    /// @notice Mark DAO symbol as used and emit events
+    function _finalizeDaoCreation(OsLib.OsStorage storage $, string memory daoSymbol, string memory daoName, uint daoUid) internal {
+        $.usedSymbols[daoSymbol] = true;
+
+        emit IOS.DaoCreated(daoName, daoSymbol, daoUid);
+
+        _sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, daoSymbol);
+    }
+
+    /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IOS.CrossChainMessages kind, string memory daoSymbol) internal pure {
         kind;
         daoSymbol;
