@@ -13,6 +13,12 @@ interface IOS {
     error TooLateToUpdateVesting();
     error NeedFunding();
     error VePeriod(uint period);
+    error SolveTasksFirst();
+    error WaitFundingStart();
+    error WaitFundingEnd();
+    error TooLateSoSetupFundingAgain();
+    error WaitVestingStart();
+    error WaitVestingEnd();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -37,6 +43,9 @@ interface IOS {
         uint minAbsorbOfferUsd;
         /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
         // todo address exchangeAsset;
+
+        /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
+        uint maxSeedStartDelay;
     }
 
     struct Task {

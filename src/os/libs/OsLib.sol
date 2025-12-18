@@ -126,7 +126,7 @@ library OsLib {
 
     //endregion -------------------------------------- Actions
 
-    //region -------------------------------------- Logic
+    //region -------------------------------------- Validation logic
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
     function _validateDaoData(DaoDataLocal memory dao, IOS.OsSettings storage st) internal view {
@@ -164,7 +164,7 @@ library OsLib {
         // todo: check funding raise goals
     }
 
-    //endregion -------------------------------------- Logic
+    //endregion -------------------------------------- Validation logic
 
     //region -------------------------------------- Internal utils
     function getOsStorage() internal pure returns (OsStorage storage $) {

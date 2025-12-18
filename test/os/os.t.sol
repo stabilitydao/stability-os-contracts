@@ -95,6 +95,9 @@ contract OsSonicTest is Test {
         // -------------------- todo validation
     }
 
+    function testTasks() public {
+        // todo
+    }
 
     //endregion ----------------------------------- Unit tests
 
@@ -124,7 +127,8 @@ contract OsSonicTest is Test {
                 maxPvPFee: 100,
                 minFundingDuration: 1,
                 maxFundingDuration: 180,
-                minAbsorbOfferUsd: 50000
+                minAbsorbOfferUsd: 50000,
+                maxSeedStartDelay: 7 days
             })
         );
     }
