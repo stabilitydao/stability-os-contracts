@@ -54,26 +54,6 @@ library OsLib {
         uint32 countAgents;
     }
 
-    struct BuilderActivityLocal {
-        /// @notice Safe multisig account(s) of dev team.
-        address[] multisig;
-
-        /// @notice Tracked Github repositories where development going on.
-        string[] repo;
-
-        /// @notice Count of registered engineers.
-        uint countWorkers;
-
-        /// @notice Count of registered conveyors of unit components.
-        uint countConveyors;
-
-        /// @notice Count of registered pools of development tasks.
-        uint countPools;
-
-        /// @notice Count of registered total salaries / burn rates paid.
-        uint countBurnRate;
-    }
-
     /// @custom:storage-location erc7201:stability.Recovery
     struct OsStorage {
         /// @notice Auto-increment internal id for DAOs.
@@ -101,21 +81,6 @@ library OsLib {
 
         /// @notice All deployments of DAOs on different chains. Deployment ID is generated as hash of (daoUid, chainId)
         mapping(uint daoUid => ITokenomics.DaoDeploymentInfo) deployments;
-
-        /// @notice Builder activity info of each DAO todo do we need to use separate maps for Worker, Conveyor, etc to be able to extend them later?
-        mapping(uint daoUid => OsLib.BuilderActivityLocal) builderActivity;
-
-        /// @notice Engineers. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.Worker) builderActivityWorkers;
-
-        /// @notice Conveyors of unit components. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.Conveyor) builderActivityConveyors;
-
-        /// @notice Pools of development tasks. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.Pool) builderActivityPools;
-
-        /// @notice Total salaries / burn rates paid. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.BurnRate) builderActivityBurnRate;
 
         /// @notice Fundraising. Key is generated as hash of (daoUid, 0-index)
         mapping(bytes32 key => ITokenomics.Funding) funding;

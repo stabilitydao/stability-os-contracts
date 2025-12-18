@@ -60,36 +60,6 @@ library OsActionsLib {
             }
         }
 
-        { // ------------------- builderActivity
-            OsLib.BuilderActivityLocal memory local = $.builderActivity[daoUid];
-
-            ITokenomics.BuilderActivity memory ba;
-            ba.multisig = local.multisig;
-            ba.repo = local.repo;
-
-            ba.workers = new ITokenomics.Worker[](local.countWorkers);
-            for (uint i; i < local.countWorkers; i++) {
-                ba.workers[i] = $.builderActivityWorkers[getKey(daoUid, i)];
-            }
-
-            ba.conveyors = new ITokenomics.Conveyor[](local.countConveyors);
-            for (uint i; i < local.countConveyors; i++) {
-                ba.conveyors[i] = $.builderActivityConveyors[getKey(daoUid, i)];
-            }
-
-            ba.pools = new ITokenomics.Pool[](local.countPools);
-            for (uint i; i < local.countPools; i++) {
-                ba.pools[i] = $.builderActivityPools[getKey(daoUid, i)];
-            }
-
-            ba.burnRate = new ITokenomics.BurnRate[](local.countBurnRate);
-            for (uint i; i < local.countBurnRate; i++) {
-                ba.burnRate[i] = $.builderActivityBurnRate[getKey(daoUid, i)];
-            }
-
-            dest.builderActivity = ba;
-        }
-
         return dest;
     }
 
@@ -181,34 +151,6 @@ library OsActionsLib {
             tokenomics.countVesting = uint32(dao.tokenomics.vesting.length);
 
             $.tokenomics[daoUid] = tokenomics;
-        }
-
-        {
-            OsLib.BuilderActivityLocal memory baLocal;
-            baLocal.multisig = dao.builderActivity.multisig;
-            baLocal.repo = dao.builderActivity.repo;
-            baLocal.countWorkers = uint32(dao.builderActivity.workers.length);
-            baLocal.countConveyors = uint32(dao.builderActivity.conveyors.length);
-            baLocal.countPools = uint32(dao.builderActivity.pools.length);
-            baLocal.countBurnRate = uint32(dao.builderActivity.burnRate.length);
-
-            $.builderActivity[daoUid] = baLocal;
-
-            for (uint i = 0; i < baLocal.countWorkers; i++) {
-                $.builderActivityWorkers[getKey(daoUid, i)] = dao.builderActivity.workers[i];
-            }
-
-            for (uint i = 0; i < baLocal.countConveyors; i++) {
-                $.builderActivityConveyors[getKey(daoUid, i)] = dao.builderActivity.conveyors[i];
-            }
-
-            for (uint i = 0; i < baLocal.countPools; i++) {
-                $.builderActivityPools[getKey(daoUid, i)] = dao.builderActivity.pools[i];
-            }
-
-            for (uint i = 0; i < baLocal.countBurnRate; i++) {
-                $.builderActivityBurnRate[getKey(daoUid, i)] = dao.builderActivity.burnRate[i];
-            }
         }
     }
     //endregion -------------------------------------- Actions

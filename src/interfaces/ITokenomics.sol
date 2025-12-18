@@ -3,9 +3,8 @@ pragma solidity ^0.8.28;
 
 import {IDAOAgent} from "./IDAOAgent.sol";
 import {IDAOUnit} from "./IDAOUnit.sol";
-import {IDAOBuilder} from "./IDAOBuilder.sol";
 
-interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
+interface ITokenomics is IDAOAgent, IDAOUnit {
 
     enum LifecyclePhase {
         /// @notice Created (draft).
@@ -241,9 +240,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit, IDAOBuilder {
 
         /// @notice Supply distribution and fundraising events + vesting + initial chain
         Tokenomics tokenomics;
-
-        /// @notice DAOs engaging BUILDER activity settings are stored off-chain (optional, can be empty)
-        BuilderActivity builderActivity; // todo remove completely
     }
 }
 
