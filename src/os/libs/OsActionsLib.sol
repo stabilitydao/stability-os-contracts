@@ -7,6 +7,8 @@ import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
 import {console} from "forge-std/console.sol";
 import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
+import {OsEncodingLib} from "./OsEncodingLib.sol";
+import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
 
 library OsActionsLib {
     using SafeERC20 for IERC20;
@@ -83,6 +85,63 @@ library OsActionsLib {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         return _tasks(limit, $.daoUids[daoSymbol]);
     }
+
+    function getDAOOwner(string calldata daoSymbol) external view returns (address) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        require(daoUid != 0, IOS.IncorrectDao());
+
+        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+            return $.daos[daoUid].deployer;
+        }
+
+        if (phase == ITokenomics.LifecyclePhase.SEED_1
+            || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3
+            || phase == ITokenomics.LifecyclePhase.TGE_4
+        ) {
+            return $.deployments[daoUid].seedToken;
+        }
+
+        return $.deployments[daoUid].daoToken;
+    }
+
+    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        return $.usedSymbols[daoSymbol];
+    }
+
+    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        OsLib.ProposalLocal memory local = $.proposals[proposalId];
+        return ITokenomics.Proposal({
+            action: local.action,
+            id: proposalId,
+            daoSymbol: $.daos[local.daoUid].symbol,
+            created: local.created,
+            status: local.status,
+            payload: local.payload
+        });
+    }
+
+    function proposalsLength(string calldata daoSymbol) external view returns (uint) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        return $.daoProposals[$.daoUids[daoSymbol]].length;
+    }
+
+    function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory dest) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        uint len = $.daoProposals[$.daoUids[daoSymbol]].length;
+        uint size = index + count > len
+            ? index > len ? 0 : len - index
+            : count;
+        dest = new bytes32[](size);
+        for (uint i = 0; i < size; i++) {
+            dest[i] = $.daoProposals[daoUid][index + i];
+        }
+    }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Restricted actions
@@ -241,12 +300,8 @@ library OsActionsLib {
             if (success) {
                 $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
             } else {
-                // todo send all raised back to seeders, we need a separate action for it
-                // todo we need to set up flag that funds are allowed to be returned
-                // todo and return the funds using {returnFunds} function
-                // todo probably we can make return here if count of founders is not too big
-
                 $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+                // now refund can be called
             }
             // todo emit event
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
@@ -282,10 +337,10 @@ library OsActionsLib {
                 $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
                 // todo emit event
             } else {
-                // todo send all raised TGE funds back to funders
-
                 $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
                 // todo emit event
+                // now refund can be called
+                // refunding is available up to the start of next TGE
             }
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
             // if any vesting started then phase changed
@@ -307,17 +362,17 @@ library OsActionsLib {
             // todo emit event
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
             // slither-disable-next-line uninitialized-local
-            bool isVestingEnded;
+            bool isVestingNotEnded;
 
             uint countVesting = $.tokenomics[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
-                if ($.vesting[OsLib.getKey(daoUid, i)].end > block.timestamp) {
-                    isVestingEnded = true;
+                if ($.vesting[OsLib.getKey(daoUid, i)].end <= block.timestamp) {
+                    isVestingNotEnded = true;
                     break;
                 }
             }
 
-            require(isVestingEnded, IOS.WaitVestingEnd());
+            require(isVestingNotEnded, IOS.WaitVestingEnd());
 
             $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_7;
             // todo emit event
@@ -354,10 +409,9 @@ library OsActionsLib {
 
             require(tge.raised + amount < tge.maxRaise, IOS.RaiseMaxExceed());
 
-            // transfer funds from msg.sender to the DAO's funding pool
+            // transfer amount of exchangeAsset to tgeToken contract
             address tgeToken = $.deployments[daoUid].tgeToken;
-            address fundingPool = address(0); // todo $.deployments[daoUid].;
-            IERC20($.osChainSettings[0].exchangeAsset).safeTransferFrom(msg.sender, fundingPool, amount);
+            IERC20($.osChainSettings[0].exchangeAsset).safeTransferFrom(msg.sender, tgeToken, amount);
 
             tge.raised += amount;
 
@@ -403,11 +457,188 @@ library OsActionsLib {
             }
         }
     }
+
+    /// @notice Refund funding to the SEED/TGE token holders if funding round failed
+    /// Anybody can call this function to refund his own tokens
+    /// SEED token can be returned only on SEED_FAILED phase
+    /// TGE token can be returned only on DEVELOPMENT phase
+    function refund(string calldata daoSymbol) external {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+
+        address asset = $.osChainSettings[0].exchangeAsset;
+        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
+            address seedToken = $.deployments[daoUid].seedToken;
+            _refundFunding(daoSymbol, ITokenomics.FundingType.SEED_0, msg.sender, seedToken, asset, false);
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+            address tgeToken = $.deployments[daoUid].tgeToken;
+            _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, msg.sender, tgeToken, asset, false);
+        } else {
+            revert IOS.NotRefundPhase();
+        }
+    }
+
+    /// @notice Refund funding to the SEED/TGE token holders if funding round failed
+    /// Anybody can call this function to make refund of first {limit} token holders
+    /// SEED token can be returned only on SEED_FAILED phase
+    /// TGE token can be returned only on DEVELOPMENT phase
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+
+        address asset = $.osChainSettings[0].exchangeAsset;
+        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
+            address seedToken = $.deployments[daoUid].seedToken;
+            for (uint i; i < receivers.length; i++) {
+                _refundFunding(daoSymbol, ITokenomics.FundingType.SEED_0, receivers[i], seedToken, asset, true);
+            }
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+            address tgeToken = $.deployments[daoUid].tgeToken;
+            for (uint i; i < receivers.length; i++) {
+                _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, receivers[i], tgeToken, asset, true);
+            }
+        } else {
+            revert IOS.NotRefundPhase();
+        }
+    }
     //endregion -------------------------------------- Actions
 
+    //region -------------------------------------- Update logic
+    function _beforeUpdate(string memory daoSymbol) internal view returns (
+        OsLib.OsStorage storage $,
+        uint daoUid,
+        bool instantExecute,
+        ITokenomics.LifecyclePhase phase
+    ) {
+        $ = OsLib.getOsStorage();
+        daoUid = $.daoUids[daoSymbol];
+        phase = $.daos[daoUid].phase;
+        require(daoUid != 0, IOS.IncorrectDao());
+        instantExecute = phase != ITokenomics.LifecyclePhase.DRAFT_0;
+        if (instantExecute) {
+            require($.daos[daoUid].deployer == msg.sender, IOS.YouAreNotOwnerOf(daoSymbol));
+        }
+    }
 
+    /// @notice Update/create proposal to update implementations of the DAO contracts
+    function updateImages(string memory daoSymbol, ITokenomics.DaoImages memory images) internal {
+        (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
+
+        bytes memory payload = OsEncodingLib.encodeDaoImages(images);
+        if (instantExecute) {
+            OsLib.updateImages(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_IMAGES_0, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update list of socials of the DAO
+    function updateSocials(string memory daoSymbol, string[] memory socials) internal {
+        (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
+
+        bytes memory payload = OsEncodingLib.encodeSocials(socials);
+        if (instantExecute) {
+            OsLib.updateSocials(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SOCIALS_1, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update tokenomics units of the DAO
+    function updateUnits(string memory daoSymbol, ITokenomics.UnitInfo[] memory units) internal {
+        (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
+
+        bytes memory payload = OsEncodingLib.encodeUnits(units);
+        if (instantExecute) {
+            OsLib.updateUnits(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_UNITS_3, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update funding rounds of the DAO
+    function updateFunding(string memory daoSymbol, ITokenomics.Funding memory funding) internal {
+        (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) = _beforeUpdate(daoSymbol);
+
+        OsLib._validateFunding(phase, funding, $.osSettings[0]);
+
+        bytes memory payload = OsEncodingLib.encodeFunding(funding);
+        if (instantExecute) {
+            OsLib.updateFunding(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_FUNDING_4, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update vesting schedules of the DAO
+    function updateVesting(string memory daoSymbol, ITokenomics.Vesting[] memory vesting) internal {
+        (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) = _beforeUpdate(daoSymbol);
+
+        OsLib._validateVestingList(phase, vesting, $.osSettings[0]);
+
+        bytes memory payload = OsEncodingLib.encodeVesting(vesting);
+        if (instantExecute) {
+            OsLib.updateVesting(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_VESTING_5, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update DAO naming (name and symbol)
+    function updateNaming(string memory daoSymbol, ITokenomics.DaoNames memory daoNames_) internal {
+        (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
+
+        OsLib._validateNaming(daoNames_.name, daoNames_.symbol, $.osSettings[0]);
+
+        bytes memory payload = OsEncodingLib.encodeDaoNames(daoNames_);
+        if (instantExecute) {
+            OsLib.updateNaming(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update on-chain DAO parameters
+    function updateDaoParameters(string memory daoSymbol, ITokenomics.DaoParameters memory daoParameters_) internal {
+        (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
+
+        OsLib._validateDaoParameters(daoParameters_, $.osSettings[0]);
+
+        bytes memory payload = OsEncodingLib.encodeDaoParameters(daoParameters_);
+        if (instantExecute) {
+            OsLib.updateDaoParameters(daoUid, payload);
+        } else {
+            OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, payload);
+        }
+    }
+
+    //endregion -------------------------------------- Update logic
 
     //region -------------------------------------- Internal logic
+    function _refundFunding(
+        string calldata daoSymbol,
+        ITokenomics.FundingType fundingType_,
+        address receiver,
+        address fundingToken,
+        address exchangeAsset,
+        bool skipOnZeroBalance
+    ) internal {
+        uint balance = IERC20(fundingToken).balanceOf(receiver);
+        if (balance == 0) {
+            require(skipOnZeroBalance, IOS.ZeroBalance());
+        } else {
+            // burn SEED tokens
+            // todo IBurnableERC20(seedToken).burn(receiver, balance);
+
+            // transfer exchangeAsset back to receiver
+            IERC20(exchangeAsset).safeTransferFrom(fundingToken, receiver, balance);
+
+            emit IOS.DaoRefunded(daoSymbol, receiver, balance, uint8(fundingType_));
+        }
+    }
+
     function _tasks(uint limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         dest = new IOS.Task[](limit);
@@ -419,7 +650,7 @@ library OsActionsLib {
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
-            if (index < limit && bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0) {
+            if (index < limit && (bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0)) {
                 dest[index++] = IOS.Task("Need images of token and seedToken");
             }
             if (index < limit && $.daos[daoUid].socials.length < 2) {
@@ -430,7 +661,7 @@ library OsActionsLib {
             }
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
             ITokenomics.Funding memory f = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            if (f.fundingType == ITokenomics.FundingType.SEED_0) { // todo check if funding round exists. Can SEED_0 be skipped? if yes we need differen way to check if it exists
+            if (f.fundingType == ITokenomics.FundingType.SEED_0) { // todo check if funding round exists. Can SEED_0 be skipped? if yes we need different way to check if it exists
                 if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
                     dest[index++] = IOS.Task("Need attract minimal seed funding");
                 }
@@ -488,14 +719,7 @@ library OsActionsLib {
 
         emit IOS.DaoCreated(daoName, daoSymbol, daoUid);
 
-        _sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, daoSymbol);
-    }
-
-    /// @notice Send cross-chain message about DAO event
-    function _sendCrossChainMessage(IOS.CrossChainMessages kind, string memory daoSymbol) internal pure {
-        kind;
-        daoSymbol;
-        // todo
+        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, OsEncodingLib.encodeSymbol(daoSymbol));
     }
     //endregion -------------------------------------- Internal logic
 

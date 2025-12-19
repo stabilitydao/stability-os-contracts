@@ -7,7 +7,8 @@ import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManage
 import {OsActionsLib} from "./libs/OsActionsLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
-contract OS is /* IOS, */ AccessManager {
+/// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
+contract OS is IOS, AccessManager {
     /// @notice Max number of tasks returned by `tasks` function
     uint constant internal MAX_COUNT_TASKS = 25;
 
@@ -16,37 +17,67 @@ contract OS is /* IOS, */ AccessManager {
     }
 
     //region -------------------------------------- View
+
+    /// @inheritdoc IOS
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
         return OsActionsLib.getDAO(daoSymbol);
     }
 
+    /// @inheritdoc IOS
     function getSettings() external view returns (IOS.OsSettings memory) {
         return OsActionsLib.getSettings();
     }
 
+    /// @inheritdoc IOS
     function getChainSettings() external view returns (IOS.OsChainSettings memory) {
         return OsActionsLib.getChainSettings();
     }
 
+    /// @inheritdoc IOS
     function tasks(string calldata daoSymbol) external view returns (IOS.Task[] memory) {
         return OsActionsLib.tasks(daoSymbol, MAX_COUNT_TASKS);
     }
 
+    /// @inheritdoc IOS
+    function getDAOOwner(string calldata daoSymbol) external view returns (address) {
+        return OsActionsLib.getDAOOwner(daoSymbol);
+    }
+
+    /// @inheritdoc IOS
+    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
+        return OsActionsLib.isDaoSymbolInUse(daoSymbol);
+    }
+
+    /// @inheritdoc IOS
+    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
+        return OsActionsLib.proposal(proposalId);
+    }
+
+    /// @inheritdoc IOS
+    function proposalsLength(string calldata daoSymbol) external view returns (uint) {
+        return OsActionsLib.proposalsLength(daoSymbol);
+    }
+
+    /// @inheritdoc IOS
+    function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory) {
+        return OsActionsLib.proposalIds(daoSymbol, index, count);
+    }
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
-    /// @notice Set OS settings
+    /// @inheritdoc IOS
     function setSettings(IOS.OsSettings memory newSettings) external {
         // todo only admin
         OsActionsLib.setSettings(newSettings);
     }
 
-    /// @notice Set OS chain-depended settings
+    /// @inheritdoc IOS
     function setChainSettings(IOS.OsChainSettings memory newSettings) external {
         // todo only admin
         OsActionsLib.setChainSettings(newSettings);
     }
 
+    /// @inheritdoc IOS
     function createDAO(
         string calldata name,
         string calldata daoSymbol,
@@ -58,82 +89,91 @@ contract OS is /* IOS, */ AccessManager {
         OsActionsLib.createDAO(name, daoSymbol, activity, params, funding);
     }
 
+    /// @inheritdoc IOS
     function addLiveDAO(ITokenomics.DaoData calldata dao) external {
         // todo _onlyVerifier
 
         OsActionsLib.addLiveDAO(dao);
     }
 
+    /// @inheritdoc IOS
     function changePhase(string calldata daoSymbol) external {
         // no restrictions, anybody can call this
 
         OsActionsLib.changePhase(daoSymbol);
     }
 
-    function fund(string calldata daoSymbol, uint256 amount) external {
+    /// @inheritdoc IOS
+    function fund(string calldata daoSymbol, uint256 amount) external { // not not reentrant
         // no restrictions, anybody can call this
 
         OsActionsLib.fund(daoSymbol, amount);
     }
 
+    /// @inheritdoc IOS
     function receiveVotingResults(bytes32 proposalId, bool succeed) external {
         // todo: restrictions by role
 
         OsActionsLib.receiveVotingResults(proposalId, succeed);
     }
 
+    /// @inheritdoc IOS
+    function refund(string calldata daoSymbol) external { // not not reentrant
+        OsActionsLib.refund(daoSymbol);
+    }
+
+    /// @inheritdoc IOS
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external { // not not reentrant
+        // todo restrictions by role ???
+        OsActionsLib.refundFor(daoSymbol, receivers);
+    }
+
+
     //endregion -------------------------------------- Actions
 
-    //region ---------------------------------------- Update actions
+    //region -------------------------------------- Update actions
 
-    /// @notice Update/create proposal to update implementations of the DAO contracts
+    /// @inheritdoc IOS
     function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateImages(daoSymbol, images);
     }
 
-    /// @notice Update/create proposal to update list of socials of the DAO
+    /// @inheritdoc IOS
     function updateSocials(string calldata daoSymbol, string[] calldata socials) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateSocials(daoSymbol, socials);
     }
 
-    /// @notice Update/create proposal to update tokenomics units of the DAO
+    /// @inheritdoc IOS
     function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateUnits(daoSymbol, units);
     }
 
-    /// @notice Update/create proposal to update funding rounds of the DAO
+    /// @inheritdoc IOS
     function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateFunding(daoSymbol, funding);
     }
 
-    /// @notice Update/create proposal to update vesting schedules of the DAO
+    /// @inheritdoc IOS
     function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateVesting(daoSymbol, vestings);
     }
 
-    /// @notice Update/create proposal to update DAO naming (name and symbol)
+    /// @inheritdoc IOS
     function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateNaming(daoSymbol, daoNames_);
     }
 
-    /// @notice Update/create proposal to update on-chain DAO parameters
+    /// @inheritdoc IOS
     function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external {
-        // todo restrictions
-
+        // restrictions are checked below
         OsActionsLib.updateDaoParameters(daoSymbol, daoParameters_);
     }
 
-    //endregion ---------------------------------------- Update actions
+    //endregion -------------------------------------- Update actions
 }

@@ -31,10 +31,10 @@ library OsEncodingLib {
         return abi.encode(data);
     }
 
-    function decodeFunding(bytes memory payload) internal pure returns (ITokenomics.Funding[] memory) {
-        return abi.decode(payload, (ITokenomics.Funding[]));
+    function decodeFunding(bytes memory payload) internal pure returns (ITokenomics.Funding memory) {
+        return abi.decode(payload, (ITokenomics.Funding));
     }
-    function encodeFunding(ITokenomics.Funding[] memory data) internal pure returns (bytes memory) {
+    function encodeFunding(ITokenomics.Funding memory data) internal pure returns (bytes memory) {
         return abi.encode(data);
     }
 
@@ -57,5 +57,14 @@ library OsEncodingLib {
     }
     function encodeDaoParameters(ITokenomics.DaoParameters memory data) internal pure returns (bytes memory) {
         return abi.encode(data);
+    }
+
+
+    function encodeSymbol(string memory daoSymbol) internal pure returns (bytes memory) {
+        return abi.encode(daoSymbol);
+    }
+
+    function encodePairSymbols(string memory oldSymbol, string memory newSymbol) internal pure returns (bytes memory) {
+        return abi.encode(oldSymbol, newSymbol);
     }
 }

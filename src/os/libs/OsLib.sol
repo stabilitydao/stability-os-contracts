@@ -77,6 +77,8 @@ library OsLib {
         /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
         uint daoCount;
 
+        // todo there is no way to enumerate all created DAO (or all used symbols). Probably it's not really necessary
+
         /// @notice Mapping from DAO symbol (changeable) to its unique id (immutable)
         mapping(string daoSymbol => uint daoUid) daoUids;
 
@@ -138,8 +140,8 @@ library OsLib {
         IOS.OsSettings storage st = $.osSettings[0];
 
         _validateDaoData(dao, st);
-        _validateParams(params, st);
-        _validateFunding(funding, st);
+        _validateDaoParameters(params, st);
+        _validateFundingList(funding, st);
     }
 
     //endregion -------------------------------------- Actions
@@ -148,7 +150,6 @@ library OsLib {
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
     function _validateDaoData(DaoDataLocal memory dao, IOS.OsSettings storage st) internal view {
-        OsStorage storage $ = getOsStorage();
         _validateNaming(dao.name, dao.symbol, st);
 
         // todo validate activity
@@ -171,13 +172,13 @@ library OsLib {
     }
 
     /// @notice Validate DAO params according to OS settings
-    function _validateParams(ITokenomics.DaoParameters memory params, IOS.OsSettings storage st) internal view {
+    function _validateDaoParameters(ITokenomics.DaoParameters memory params, IOS.OsSettings storage st) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IOS.PvPFee(params.pvpFee));
         require(params.vePeriod  >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IOS.VePeriod(params.vePeriod));
     }
 
     /// @notice Ensure that funding is not empty
-    function _validateFunding(ITokenomics.Funding[] memory funding, IOS.OsSettings storage st) internal pure {
+    function _validateFundingList(ITokenomics.Funding[] memory funding, IOS.OsSettings storage st) internal pure {
         require(funding.length != 0, IOS.NeedFunding());
 
         st; // todo
@@ -187,7 +188,79 @@ library OsLib {
         // todo: check funding raise goals
     }
 
+    function _validateFunding(ITokenomics.LifecyclePhase phase, ITokenomics.Funding memory funding, IOS.OsSettings storage st) internal pure {
+        if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
+            require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IOS.TooLateToUpdateSuchFunding());
+        }
+
+        if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
+            require(
+                phase == ITokenomics.LifecyclePhase.DRAFT_0
+                || phase == ITokenomics.LifecyclePhase.SEED_1
+                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+                IOS.TooLateToUpdateSuchFunding()
+            );
+        }
+
+        st; // todo
+        // todo check min round duration
+        // todo check max round duration
+        // todo check start date delay
+        // todo check min amount
+        // todo check max amount
+    }
+
+    function _validateVestingList(ITokenomics.LifecyclePhase phase, ITokenomics.Vesting[] memory vesting, IOS.OsSettings storage st) internal pure {
+        require (
+            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5
+            && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
+            && phase != ITokenomics.LifecyclePhase.LIVE_7,
+            IOS.TooLateToUpdateVesting()
+        );
+
+        uint len = vesting.length;
+        for (uint i; i < len; ++i) {
+            // todo check vesting consistency
+            st;
+        }
+    }
     //endregion -------------------------------------- Validation logic
+
+    //region -------------------------------------- Proposal logic
+
+    /// @notice Create new proposal
+    /// @param daoUid Unique id of the DAO
+    /// @param action Action type of the proposal
+    /// @param payload Encoded proposal data
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
+    function proposeAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal returns (bytes32) {
+        OsStorage storage $ = getOsStorage();
+
+        // todo check for initial chain
+        // todo get user power
+        // todo check proposalThreshold
+        // todo validate payload
+
+        bytes32 proposalId = _createProposalId(daoUid, action, payload);
+
+        ProposalLocal storage proposal = $.proposals[proposalId];
+        proposal.daoUid = daoUid;
+        proposal.action = action;
+        proposal.created = uint64(block.timestamp);
+        proposal.status = ITokenomics.VotingStatus.VOTING_0;
+        proposal.id = proposalId;
+        proposal.payload = payload;
+
+        $.daoProposals[daoUid].push(proposalId);
+
+        return proposalId;
+    }
+
+    function _createProposalId(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal view returns (bytes32) {
+        return keccak256(abi.encode(daoUid, getOsStorage().daoProposals[daoUid].length, action, payload));
+    }
+
+    //endregion -------------------------------------- Proposal logic
 
     //region -------------------------------------- Update logic
 
@@ -223,6 +296,7 @@ library OsLib {
 
         ITokenomics.UnitInfo[] memory units = OsEncodingLib.decodeUnits(payload);
         uint32 countUnits = uint32(units.length);
+        uint32 oldCountUnits = $.daos[daoUid].countUnits;
         $.daos[daoUid].countUnits = countUnits;
 
         for (uint32 i = 0; i < countUnits; i++) {
@@ -241,6 +315,12 @@ library OsLib {
             }
         }
 
+        // delete old units if new list is smaller
+        for (uint32 i = countUnits; i < oldCountUnits; i++) {
+            bytes32 key = getKey(daoUid, i);
+            delete $.units[key];
+        }
+
         emit IOS.DaoUnitsUpdated($.daos[daoUid].symbol, units);
     }
 
@@ -250,18 +330,26 @@ library OsLib {
     function updateFunding(uint daoUid, bytes memory payload) internal {
         OsStorage storage $ = getOsStorage();
 
-        ITokenomics.Funding[] memory listFunding = OsEncodingLib.decodeFunding(payload);
-        require(listFunding.length != 0, IOS.NeedFunding());
-        delete $.tokenomics[daoUid].funding;
-        uint countFunding = listFunding.length;
-        for (uint i = 0; i < countFunding; i++) {
-            ITokenomics.Funding memory fundingItem = listFunding[i];
-            bytes32 fundingId = getKey(daoUid, uint(fundingItem.fundingType));
-            $.funding[fundingId] = fundingItem;
-            $.tokenomics[daoUid].funding.push(fundingItem.fundingType);
+        ITokenomics.Funding memory newFunding = OsEncodingLib.decodeFunding(payload);
+        ITokenomics.FundingType[] memory listFunding = $.tokenomics[daoUid].funding;
+
+        // slither-disable-next-line uninitialized-local
+        bool updated;
+
+        for (uint i; i < listFunding.length; i++) {
+            if (listFunding[i] == newFunding.fundingType) {
+                updated = true;
+                break;
+            }
+        }
+        if (! updated) {
+            $.tokenomics[daoUid].funding.push(newFunding.fundingType);
         }
 
-        emit IOS.DaoFundingUpdated($.daos[daoUid].symbol, listFunding);
+        bytes32 fundingId = getKey(daoUid, uint(newFunding.fundingType));
+        $.funding[fundingId] = newFunding;
+
+        emit IOS.DaoFundingUpdated($.daos[daoUid].symbol, newFunding);
     }
 
     /// @notice Update vesting allocations of the DAO
@@ -300,6 +388,8 @@ library OsLib {
         $.usedSymbols[_daoNames.symbol] = true;
 
         emit IOS.DaoNamingUpdated(oldSymbol, _daoNames);
+
+        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1, OsEncodingLib.encodePairSymbols(oldSymbol, _daoNames.symbol));
     }
 
     function updateDaoParameters(uint daoUid, bytes memory payload) internal {
@@ -323,6 +413,13 @@ library OsLib {
 
     function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, index));
+    }
+
+    /// @notice Send cross-chain message about DAO event
+    function _sendCrossChainMessage(IOS.CrossChainMessages kind, bytes memory payload) internal pure {
+        kind;
+        payload;
+        // todo
     }
 
     //endregion -------------------------------------- Internal utils

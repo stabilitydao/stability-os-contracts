@@ -25,6 +25,10 @@ interface IOS {
     error AlreadyReceived();
     error IncorrectProposal();
     error NonImplemented();
+    error YouAreNotOwnerOf(string daoSymbol);
+    error IncorrectDao();
+    error ZeroBalance();
+    error NotRefundPhase();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -33,12 +37,13 @@ interface IOS {
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
     event DaoUnitsUpdated(string daoSymbol, ITokenomics.UnitInfo[] units);
-    event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding[] funding);
+    event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
     event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
     event DaoNamingUpdated(string daoSymbol, ITokenomics.DaoNames daoNames);
     event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
     event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
+    event DaoRefunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {
@@ -81,8 +86,6 @@ interface IOS {
 
     //region ---------------------------------------- Read
 
-    function settings() external view returns (OsSettings memory);
-
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory);
 
@@ -91,9 +94,6 @@ interface IOS {
 
     /// @notice True if a DAO with such symbol already exists
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool);
-
-    /// @notice Get full list of DAOs symbols registered in any chains
-    function getListDAO() external view returns (string[] memory daoSymbols);
 
     /// @notice Generate list of tasks that should be performed on the current phase
     function tasks(string calldata daoSymbol) external view returns (Task[] memory);
@@ -111,6 +111,9 @@ interface IOS {
     function proposalsLength(string calldata daoSymbol) external view returns (uint);
 
     /// @notice Governance proposals. Can be created only at initialChain of DAO.
+    /// @param daoSymbol DAO symbol
+    /// @param index Starting index
+    /// @param count Number of proposal ids to return
     function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory);
     //endregion ---------------------------------------- Read
 
@@ -144,11 +147,17 @@ interface IOS {
     function changePhase(string calldata daoSymbol) external;
 
     /// @notice Provide funding to the DAO, receive seed or tge tokens in return
-    function fund(string calldata daoSymbol, uint256 amount) external;
+    function fund(string calldata daoSymbol, uint amount) external;
 
     /// @notice Process voting results from governance
     /// @custom:restricted Restricted through access manager
-    function receiveVotingResults(string calldata proposalId, bool succeed) external;
+    function receiveVotingResults(bytes32 proposalId, bool succeed) external;
+
+    /// @notice Refund funding to the SEED/TGE token holders if funding round failed
+    function refund(string calldata daoSymbol) external;
+
+    /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external;
 
     //endregion ---------------------------------------- Write actions
 

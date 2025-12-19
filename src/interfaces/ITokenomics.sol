@@ -179,7 +179,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
     struct Proposal {
         DAOAction action;
 
-        string id;
+        bytes32 id; // todo do we really need string id?
         string daoSymbol; // todo rename back to symbol
         /// @notice Proposal creation timestamp
         uint64 created;
@@ -208,6 +208,8 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         LifecyclePhase phase;
 
         /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
+        /// While token symbol is SYM then additional DAO tokens symbols are:
+        /// seedSYM, saleSYM, xSYM, SYM_DAO
         string symbol;
 
         /// @notice Name of the DAO, used in token names. Without DAO word.
