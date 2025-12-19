@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "../../interfaces/ITokenomics.sol";
+import {OsEncodingLib} from "./OsEncodingLib.sol";
 import {IOS} from "../../interfaces/IOS.sol";
+import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 import {console} from "forge-std/console.sol";
 
 /// @notice Basic data types, validation and update logic
@@ -54,6 +55,22 @@ library OsLib {
         uint32 countAgents;
     }
 
+    /// @notice It refers to daoUid instead of daoSymbol
+    struct ProposalLocal {
+        ITokenomics.DAOAction action;
+
+        /// @notice Proposal creation timestamp
+        uint64 created;
+        ITokenomics.VotingStatus status;
+
+        /// @notice Unique proposal id
+        bytes32 id;
+        uint daoUid;
+
+        /// @notice Proposal data as bytes. Actual data depends on {action}
+        bytes payload;
+    }
+
     /// @custom:storage-location erc7201:stability.Recovery
     struct OsStorage {
         /// @notice Auto-increment internal id for DAOs.
@@ -90,22 +107,23 @@ library OsLib {
 
         /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, 0-index)
         /// @dev 0-index is in [0...DaoData.countUnits-1]
-        mapping(bytes32 key => ITokenomics.UnitInfo) units;
+        mapping(bytes32 key => IDAOUnit.UnitInfo) units;
 
         /// @notice Operating agents managed by the organization. Key is generated as hash of (daoUid, 0-index)
         /// @dev 0-index is in [0...DaoData.countAgents-1]
         mapping(bytes32 key => ITokenomics.AgentInfo) agents;
 
-        /// @notice All registered proposals. Proposal Id is generated as hash of (daoUid, proposalId)
-        mapping(bytes32 proposalUid => ITokenomics.Proposal) proposals;
+        /// @notice All registered proposals. Proposal id is unique across all DAOs
+        mapping(bytes32 proposalId => ProposalLocal) proposals;
 
-        /// @notice List of all proposals for each DAO, proposalId is a string unique for the given DAO
-        mapping(uint daoUid => string[] proposalIds) daoProposals;
+        /// @notice List of ids of all proposals for each DAO in order
+        mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OSSettings later
         mapping(uint zero => IOS.OsSettings) osSettings;
 
-        // todo mapping to store chain-depended data, i.e exchange asset address
+        /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
+        mapping(uint zero => IOS.OsChainSettings) osChainSettings;
     }
 
     //endregion -------------------------------------- Data types
@@ -131,20 +149,25 @@ library OsLib {
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
     function _validateDaoData(DaoDataLocal memory dao, IOS.OsSettings storage st) internal view {
         OsStorage storage $ = getOsStorage();
+        _validateNaming(dao.name, dao.symbol, st);
+
+        // todo validate activity
+    }
+
+    function _validateNaming(string memory name, string memory symbol, IOS.OsSettings storage st) internal view {
+        OsStorage storage $ = getOsStorage();
 
         {
-            uint len = bytes(dao.name).length;
+            uint len = bytes(name).length;
             require(len >= st.minNameLength && len <= st.maxNameLength, IOS.NameLength(len));
         }
 
         {
-            uint len = bytes(dao.symbol).length;
+            uint len = bytes(symbol).length;
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IOS.SymbolLength(len));
 
-            require(!$.usedSymbols[dao.symbol], IOS.SymbolNotUnique(dao.symbol));
+            require(!$.usedSymbols[symbol], IOS.SymbolNotUnique(symbol));
         }
-
-        // todo validate activity
     }
 
     /// @notice Validate DAO params according to OS settings
@@ -166,6 +189,130 @@ library OsLib {
 
     //endregion -------------------------------------- Validation logic
 
+    //region -------------------------------------- Update logic
+
+    /// @notice Update images (logo/banner) of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.DaoImages struct
+    function updateImages(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.DaoImages memory images = OsEncodingLib.decodeDaoImages(payload);
+        $.daoImages[daoUid] = images;
+
+        emit IOS.DaoImagesUpdated($.daos[daoUid].symbol, images);
+    }
+
+    /// @notice Update socials of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded string[] array
+    function updateSocials(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        string[] memory socials = OsEncodingLib.decodeSocials(payload);
+        $.daos[daoUid].socials = socials;
+
+        emit IOS.DaoSocialsUpdated($.daos[daoUid].symbol, socials);
+    }
+
+    /// @notice Update revenue generating units of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.UnitInfo[] array
+    function updateUnits(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.UnitInfo[] memory units = OsEncodingLib.decodeUnits(payload);
+        uint32 countUnits = uint32(units.length);
+        $.daos[daoUid].countUnits = countUnits;
+
+        for (uint32 i = 0; i < countUnits; i++) {
+            bytes32 key = getKey(daoUid, i);
+
+            ITokenomics.UnitInfo storage unitInfo = $.units[key];
+            unitInfo.unitId = units[i].unitId;
+            unitInfo.name = units[i].name;
+            unitInfo.status = units[i].status;
+            unitInfo.unitType = units[i].unitType;
+            unitInfo.revenueShare = units[i].revenueShare;
+            unitInfo.emoji = units[i].emoji;
+            unitInfo.api = units[i].api;
+            for (uint j; j < units[i].ui.length; ++j) {
+                unitInfo.ui.push(units[i].ui[j]);
+            }
+        }
+
+        emit IOS.DaoUnitsUpdated($.daos[daoUid].symbol, units);
+    }
+
+    /// @notice Replace array of funding of the DAO by new one
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.Funding[] array
+    function updateFunding(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.Funding[] memory listFunding = OsEncodingLib.decodeFunding(payload);
+        require(listFunding.length != 0, IOS.NeedFunding());
+        delete $.tokenomics[daoUid].funding;
+        uint countFunding = listFunding.length;
+        for (uint i = 0; i < countFunding; i++) {
+            ITokenomics.Funding memory fundingItem = listFunding[i];
+            bytes32 fundingId = getKey(daoUid, uint(fundingItem.fundingType));
+            $.funding[fundingId] = fundingItem;
+            $.tokenomics[daoUid].funding.push(fundingItem.fundingType);
+        }
+
+        emit IOS.DaoFundingUpdated($.daos[daoUid].symbol, listFunding);
+    }
+
+    /// @notice Update vesting allocations of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.Vesting[] array
+    function updateVesting(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.Vesting[] memory vesting = OsEncodingLib.decodeVesting(payload);
+        uint countVesting = vesting.length;
+        $.tokenomics[daoUid].countVesting = countVesting;
+
+        for (uint i = 0; i < countVesting; i++) {
+            bytes32 key = getKey(daoUid, i);
+            $.vesting[key] = vesting[i];
+        }
+
+        emit IOS.DaoVestingUpdated($.daos[daoUid].symbol, vesting);
+    }
+
+    /// @notice Update DAO naming (name and symbol)
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.DaoNames struct
+    function updateNaming(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.DaoNames memory _daoNames = OsEncodingLib.decodeDaoNames(payload);
+
+        string memory oldSymbol = $.daos[daoUid].symbol;
+        delete $.usedSymbols[oldSymbol];
+
+        $.daos[daoUid].symbol = _daoNames.symbol;
+        $.daos[daoUid].name = _daoNames.name;
+
+        // register new symbol
+        $.usedSymbols[_daoNames.symbol] = true;
+
+        emit IOS.DaoNamingUpdated(oldSymbol, _daoNames);
+    }
+
+    function updateDaoParameters(uint daoUid, bytes memory payload) internal {
+        OsStorage storage $ = getOsStorage();
+
+        ITokenomics.DaoParameters memory daoParameters_ = OsEncodingLib.decodeDaoParameters(payload);
+        $.daoParameters[daoUid] = daoParameters_;
+
+        emit IOS.DaoParametersUpdated($.daos[daoUid].symbol, daoParameters_);
+    }
+
+    //endregion -------------------------------------- Update logic
+
     //region -------------------------------------- Internal utils
     function getOsStorage() internal pure returns (OsStorage storage $) {
         //slither-disable-next-line assembly
@@ -173,6 +320,11 @@ library OsLib {
             $.slot := OS_STORAGE_LOCATION
         }
     }
+
+    function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
+        return keccak256(abi.encode(daoUid, index));
+    }
+
     //endregion -------------------------------------- Internal utils
 
 

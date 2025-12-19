@@ -19,12 +19,28 @@ interface IOS {
     error TooLateSoSetupFundingAgain();
     error WaitVestingStart();
     error WaitVestingEnd();
+    error NotFundingPhase();
+    error RaiseMaxExceed();
+    error ZeroAmount();
+    error AlreadyReceived();
+    error IncorrectProposal();
+    error NonImplemented();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
     event OsSettingsUpdated(IOS.OsSettings st);
+    event OsChainSettingsUpdated(IOS.OsChainSettings st);
+    event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
+    event DaoSocialsUpdated(string daoSymbol, string[] socials);
+    event DaoUnitsUpdated(string daoSymbol, ITokenomics.UnitInfo[] units);
+    event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding[] funding);
+    event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
+    event DaoNamingUpdated(string daoSymbol, ITokenomics.DaoNames daoNames);
+    event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
+    event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
+    event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
 
-    /// @notice todo add comment to each param
+    /// @notice DAO-setting common for all chains
     struct OsSettings {
         uint priceDao;
         uint priceUnit;
@@ -41,11 +57,15 @@ interface IOS {
         uint minFundingDuration;
         uint maxFundingDuration;
         uint minAbsorbOfferUsd;
-        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
-        // todo address exchangeAsset;
 
         /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
         uint maxSeedStartDelay;
+    }
+
+    /// @notice Chain-dependent data of the DAO
+    struct OsChainSettings {
+        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
+        address exchangeAsset;
     }
 
     struct Task {
@@ -75,14 +95,23 @@ interface IOS {
     /// @notice Get full list of DAOs symbols registered in any chains
     function getListDAO() external view returns (string[] memory daoSymbols);
 
-    /// @notice Governance proposals. Can be created only at initialChain of DAO.
-    function proposals(string calldata proposalId) external view returns (ITokenomics.Proposal memory);
-
     /// @notice Generate list of tasks that should be performed on the current phase
     function tasks(string calldata daoSymbol) external view returns (Task[] memory);
 
     /// @notice Get OS settings
     function getSettings() external view returns (OsSettings memory);
+
+    /// @notice Get OS chain-depended settings
+    function getChainSettings() external view returns (OsChainSettings memory);
+
+    /// @notice Governance proposals. Can be created only at initialChain of DAO.
+    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory);
+
+    /// @notice Get number of proposals for the given DAO
+    function proposalsLength(string calldata daoSymbol) external view returns (uint);
+
+    /// @notice Governance proposals. Can be created only at initialChain of DAO.
+    function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -90,6 +119,8 @@ interface IOS {
     /// @notice Set OS settings
     function setSettings(OsSettings memory newSettings) external;
 
+    /// @notice Set OS chain-depended settings
+    function setChainSettings(OsChainSettings memory newSettings) external;
 
     /// @notice Create new DAO
     /// @param name Name of new DAO (any name is allowed)

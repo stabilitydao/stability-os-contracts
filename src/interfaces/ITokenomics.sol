@@ -172,13 +172,15 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
     struct DaoNames {
         string symbol;
         string name;
+
+        // todo do we need gaps?
     }
 
     struct Proposal {
         DAOAction action;
 
         string id;
-        string daoSymbol;
+        string daoSymbol; // todo rename back to symbol
         /// @notice Proposal creation timestamp
         uint64 created;
         VotingStatus status;
