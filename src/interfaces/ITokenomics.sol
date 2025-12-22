@@ -98,7 +98,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         /// @notice Accident recovery system contract.
         address recovery;
         /// @notice Set of vesting contracts (address of registry or single vesting contract).
-        address vesting;
+        address[] vesting;
         /// @notice Bridge for Token.
         address tokenBridge;
         /// @notice Bridge for XToken.

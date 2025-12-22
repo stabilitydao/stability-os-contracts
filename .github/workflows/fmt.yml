@@ -1,0 +1,31 @@
+name: Formatter
+
+on:
+    push:
+      branches:
+        - main
+    pull_request: { }
+    workflow_dispatch: { }
+  
+env:
+    FOUNDRY_PROFILE: ci
+
+jobs:
+    check:
+        strategy:
+            fail-fast: true
+
+        name: Formatter
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                submodules: recursive
+      
+            - name: Install Foundry
+              uses: foundry-rs/foundry-toolchain@v1
+              with:
+                version: stable
+
+            - name: Run forge fmt --check
+              run: forge fmt --check

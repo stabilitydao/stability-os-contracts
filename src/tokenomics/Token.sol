@@ -7,6 +7,8 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 
+
+// todo make upgradable
 contract Token is ERC20, ERC20Burnable, Ownable, ERC20Permit, IMintedERC20 {
     constructor(
         address distributor,

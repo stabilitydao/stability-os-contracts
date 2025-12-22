@@ -503,6 +503,10 @@ contract OsSonicTest is Test {
         });
 
         // ---------------- Deployments
+        address[] memory vestings = new address[](2);
+        vestings[0] = address(0x5001);
+        vestings[1] = address(0x5002);
+
         data.deployments = ITokenomics.DaoDeploymentInfo({
             seedToken: address(0x1001),
             tgeToken: address(0x1002),
@@ -512,7 +516,7 @@ contract OsSonicTest is Test {
             daoToken: address(0x2002),
             revenueRouter: address(0x2003),
             recovery: address(0x2004),
-            vesting: address(0x3001),
+            vesting: vestings,
             tokenBridge: address(0x4001),
             xTokenBridge: address(0x4002),
             daoTokenBridge: address(0x4003)
@@ -735,7 +739,11 @@ contract OsSonicTest is Test {
         assertEq(expected.deployments.daoToken, actual.deployments.daoToken, "deploy.daoToken");
         assertEq(expected.deployments.revenueRouter, actual.deployments.revenueRouter, "deploy.revenueRouter");
         assertEq(expected.deployments.recovery, actual.deployments.recovery, "deploy.recovery");
-        assertEq(expected.deployments.vesting, actual.deployments.vesting, "deploy.vesting");
+        assertTrue(
+            keccak256(abi.encode(expected.deployments.vesting)) ==
+            keccak256(abi.encode(actual.deployments.vesting)),
+            "deploy.vesting hash"
+        );
         assertEq(expected.deployments.tokenBridge, actual.deployments.tokenBridge, "deploy.tokenBridge");
         assertEq(expected.deployments.xTokenBridge, actual.deployments.xTokenBridge, "deploy.xTokenBridge");
         assertEq(expected.deployments.daoTokenBridge, actual.deployments.daoTokenBridge, "deploy.daoTokenBridge");
