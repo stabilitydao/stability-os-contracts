@@ -174,7 +174,7 @@ library OsLib {
     /// @notice Validate DAO params according to OS settings
     function _validateDaoParameters(ITokenomics.DaoParameters memory params, IOS.OsSettings storage st) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IOS.PvPFee(params.pvpFee));
-        require(params.vePeriod  >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IOS.VePeriod(params.vePeriod));
+        require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IOS.VePeriod(params.vePeriod));
     }
 
     /// @notice Ensure that funding is not empty
@@ -188,16 +188,19 @@ library OsLib {
         // todo: check funding raise goals
     }
 
-    function _validateFunding(ITokenomics.LifecyclePhase phase, ITokenomics.Funding memory funding, IOS.OsSettings storage st) internal pure {
+    function _validateFunding(
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.Funding memory funding,
+        IOS.OsSettings storage st
+    ) internal pure {
         if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
             require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IOS.TooLateToUpdateSuchFunding());
         }
 
         if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
             require(
-                phase == ITokenomics.LifecyclePhase.DRAFT_0
-                || phase == ITokenomics.LifecyclePhase.SEED_1
-                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.SEED_1
+                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
                 IOS.TooLateToUpdateSuchFunding()
             );
         }
@@ -210,11 +213,14 @@ library OsLib {
         // todo check max amount
     }
 
-    function _validateVestingList(ITokenomics.LifecyclePhase phase, ITokenomics.Vesting[] memory vesting, IOS.OsSettings storage st) internal pure {
-        require (
-            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5
-            && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
-            && phase != ITokenomics.LifecyclePhase.LIVE_7,
+    function _validateVestingList(
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.Vesting[] memory vesting,
+        IOS.OsSettings storage st
+    ) internal pure {
+        require(
+            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
+                && phase != ITokenomics.LifecyclePhase.LIVE_7,
             IOS.TooLateToUpdateVesting()
         );
 
@@ -224,6 +230,7 @@ library OsLib {
             st;
         }
     }
+
     //endregion -------------------------------------- Validation logic
 
     //region -------------------------------------- Proposal logic
@@ -256,7 +263,11 @@ library OsLib {
         return proposalId;
     }
 
-    function _createProposalId(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal view returns (bytes32) {
+    function _createProposalId(
+        uint daoUid,
+        ITokenomics.DAOAction action,
+        bytes memory payload
+    ) internal view returns (bytes32) {
         return keccak256(abi.encode(daoUid, getOsStorage().daoProposals[daoUid].length, action, payload));
     }
 
@@ -358,7 +369,7 @@ library OsLib {
                 break;
             }
         }
-        if (! updated) {
+        if (!updated) {
             $.tokenomics[daoUid].funding.push(newFunding.fundingType);
         }
 
@@ -414,7 +425,9 @@ library OsLib {
 
         emit IOS.DaoNamingUpdated(oldSymbol, daoNames_);
 
-        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1, OsEncodingLib.encodePairSymbols(oldSymbol, daoNames_.symbol));
+        OsLib._sendCrossChainMessage(
+            IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1, OsEncodingLib.encodePairSymbols(oldSymbol, daoNames_.symbol)
+        );
     }
 
     function updateDaoParameters(uint daoUid, bytes memory payload) internal {
@@ -450,7 +463,4 @@ library OsLib {
     }
 
     //endregion -------------------------------------- Internal utils
-
-
-
 }

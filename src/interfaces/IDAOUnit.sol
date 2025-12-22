@@ -42,7 +42,6 @@ interface IDAOUnit {
         string label;
         /// @notice URL of the frontend endpoint.
         string url;
-
         // Attention: there is NO gap here so the struct is NOT extendable
     }
 

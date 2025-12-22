@@ -10,9 +10,13 @@ contract OsEncodingLibTest is Test {
     uint8 private constant INCORRECT_VERSION = 255;
 
     //region -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
-    function _encodeDaoImagesWrapper(ITokenomics.DaoImages memory data, uint8 version) public pure returns (bytes memory) {
+    function _encodeDaoImagesWrapper(
+        ITokenomics.DaoImages memory data,
+        uint8 version
+    ) public pure returns (bytes memory) {
         return OsEncodingLib.encodeDaoImages(data, version);
     }
+
     function _decodeDaoImagesWrapper(bytes memory payload) public pure returns (ITokenomics.DaoImages memory data) {
         return OsEncodingLib.decodeDaoImages(payload);
     }
@@ -20,35 +24,52 @@ contract OsEncodingLibTest is Test {
     function _encodeUnitsWrapper(IDAOUnit.UnitInfo[] memory data, uint8 version) public pure returns (bytes memory) {
         return OsEncodingLib.encodeUnits(data, version);
     }
+
     function _decodeUnitsWrapper(bytes memory payload) public pure returns (IDAOUnit.UnitInfo[] memory data) {
         return OsEncodingLib.decodeUnits(payload);
     }
 
-
     function _encodeFundingWrapper(ITokenomics.Funding memory data, uint8 version) public pure returns (bytes memory) {
         return OsEncodingLib.encodeFunding(data, version);
     }
+
     function _decodeFundingWrapper(bytes memory payload) public pure returns (ITokenomics.Funding memory data) {
         return OsEncodingLib.decodeFunding(payload);
     }
 
-    function _encodeVestingWrapper(ITokenomics.Vesting[] memory data, uint8 version) public pure returns (bytes memory) {
+    function _encodeVestingWrapper(
+        ITokenomics.Vesting[] memory data,
+        uint8 version
+    ) public pure returns (bytes memory) {
         return OsEncodingLib.encodeVesting(data, version);
     }
+
     function _decodeVestingWrapper(bytes memory payload) public pure returns (ITokenomics.Vesting[] memory data) {
         return OsEncodingLib.decodeVesting(payload);
     }
 
-    function _encodeDaoParametersWrapper(ITokenomics.DaoParameters memory data, uint8 version) public pure returns (bytes memory) {
+    function _encodeDaoParametersWrapper(
+        ITokenomics.DaoParameters memory data,
+        uint8 version
+    ) public pure returns (bytes memory) {
         return OsEncodingLib.encodeDaoParameters(data, version);
     }
-    function _decodeDaoParametersWrapper(bytes memory payload) public pure returns (ITokenomics.DaoParameters memory data) {
+
+    function _decodeDaoParametersWrapper(bytes memory payload)
+        public
+        pure
+        returns (ITokenomics.DaoParameters memory data)
+    {
         return OsEncodingLib.decodeDaoParameters(payload);
     }
 
-    function _encodeDaoNamesWrapper(ITokenomics.DaoNames memory data, uint8 version) public pure returns (bytes memory) {
+    function _encodeDaoNamesWrapper(
+        ITokenomics.DaoNames memory data,
+        uint8 version
+    ) public pure returns (bytes memory) {
         return OsEncodingLib.encodeDaoNames(data, version);
     }
+
     function _decodeDaoNamesWrapper(bytes memory payload) public pure returns (ITokenomics.DaoNames memory data) {
         return OsEncodingLib.decodeDaoNames(payload);
     }
@@ -56,11 +77,7 @@ contract OsEncodingLibTest is Test {
 
     function testEncodeDaoImages() public pure {
         ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA",
-            tgeToken: "tgeA",
-            token: "tokenA",
-            xToken: "xA",
-            daoToken: "daoA"
+            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
         });
 
         bytes memory encA = OsEncodingLib.encodeDaoImages(a, 1);
@@ -76,17 +93,14 @@ contract OsEncodingLibTest is Test {
 
     function testEncodeDaoImagesBadPaths() public {
         ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA",
-            tgeToken: "tgeA",
-            token: "tokenA",
-            xToken: "xA",
-            daoToken: "daoA"
+            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
         });
 
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);
         this._encodeDaoImagesWrapper(a, INCORRECT_VERSION);
 
-        bytes memory payloadUnknownVersion = abi.encode(INCORRECT_VERSION, a.seedToken, a.tgeToken, a.token, a.xToken, a.daoToken);
+        bytes memory payloadUnknownVersion =
+            abi.encode(INCORRECT_VERSION, a.seedToken, a.tgeToken, a.token, a.xToken, a.daoToken);
 
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);
         this._decodeDaoImagesWrapper(payloadUnknownVersion);
@@ -218,7 +232,8 @@ contract OsEncodingLibTest is Test {
         this._encodeFundingWrapper(a, INCORRECT_VERSION);
 
         // craft payload with unsupported version prefix and expect decode to revert
-        bytes memory payloadUnknownVersion = abi.encode(INCORRECT_VERSION, a.fundingType, a.start, a.end, a.minRaise, a.maxRaise, a.raised, a.claim);
+        bytes memory payloadUnknownVersion =
+            abi.encode(INCORRECT_VERSION, a.fundingType, a.start, a.end, a.minRaise, a.maxRaise, a.raised, a.claim);
 
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);
         this._decodeFundingWrapper(payloadUnknownVersion);
@@ -229,9 +244,11 @@ contract OsEncodingLibTest is Test {
         ITokenomics.Vesting[] memory b = new ITokenomics.Vesting[](2);
         ITokenomics.Vesting[] memory c = new ITokenomics.Vesting[](0);
 
-        a[0] = ITokenomics.Vesting({ name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100 });
-        b[0] = ITokenomics.Vesting({ name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200 });
-        b[1] = ITokenomics.Vesting({ name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300 });
+        a[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+        b[0] = ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
+        b[1] = ITokenomics.Vesting({
+            name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300
+        });
 
         bytes memory encA = this._encodeVestingWrapper(a, 1);
         bytes memory encB = this._encodeVestingWrapper(b, 1);
@@ -249,7 +266,7 @@ contract OsEncodingLibTest is Test {
 
     function testEncodeVestingBadPaths() public {
         ITokenomics.Vesting[] memory a = new ITokenomics.Vesting[](1);
-        a[0] = ITokenomics.Vesting({ name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100 });
+        a[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
 
         // encode with unsupported version should revert
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);
@@ -296,13 +313,15 @@ contract OsEncodingLibTest is Test {
         this._encodeDaoParametersWrapper(a, INCORRECT_VERSION);
 
         // craft payload with unsupported version prefix and expect decode to revert
-        bytes memory payloadUnknownVersion = abi.encode(INCORRECT_VERSION, a.vePeriod, a.pvpFee, a.minPower, a.ttBribe, a.recoveryShare, a.proposalThreshold);
+        bytes memory payloadUnknownVersion = abi.encode(
+            INCORRECT_VERSION, a.vePeriod, a.pvpFee, a.minPower, a.ttBribe, a.recoveryShare, a.proposalThreshold
+        );
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);
         this._decodeDaoParametersWrapper(payloadUnknownVersion);
     }
 
     function testEncodeDaoNames() public view {
-        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({ symbol: "NA", name: "NameA" });
+        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({symbol: "NA", name: "NameA"});
 
         bytes memory encA = this._encodeDaoNamesWrapper(a, 1);
 
@@ -313,7 +332,7 @@ contract OsEncodingLibTest is Test {
     }
 
     function testEncodeDaoNamesBadPaths() public {
-        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({ symbol: "NA", name: "NameA" });
+        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({symbol: "NA", name: "NameA"});
 
         // encode with unsupported version should revert
         vm.expectRevert(IOS.UnsupportedStructVersion.selector);

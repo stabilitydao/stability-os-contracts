@@ -36,7 +36,6 @@ contract OsSonicTest is Test {
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
-
         // -------------------- bad name length
         vm.expectRevert(abi.encodeWithSelector(IOS.NameLength.selector, uint(28)));
         os.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
@@ -50,7 +49,11 @@ contract OsSonicTest is Test {
         os.createDAO("SpaceSwap", "SPACE", activity, params, funding);
 
         { // -------------------- bad vePeriod
-            ITokenomics.DaoParameters memory paramsBadVe = _generateDaoParams(365 * 5 /* 1825 */, 100);
+            ITokenomics.DaoParameters memory paramsBadVe = _generateDaoParams(
+                365 * 5,
+                /* 1825 */
+                100
+            );
             vm.expectRevert(abi.encodeWithSelector(IOS.VePeriod.selector, uint(1825)));
             os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadVe, funding);
         }
@@ -72,7 +75,6 @@ contract OsSonicTest is Test {
         IOS os = _createOsInstance();
 
         // todo only verifier
-
 
         ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
         os.addLiveDAO(daoOrigin);
@@ -107,13 +109,10 @@ contract OsSonicTest is Test {
         IOS os = _createOsInstance();
         ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
 
-        os.updateImages(dao.symbol, ITokenomics.DaoImages({
-            seedToken: "new/images/seed.png",
-            tgeToken: "",
-            token: "",
-            xToken: "",
-            daoToken: ""
-        }));
+        os.updateImages(
+            dao.symbol,
+            ITokenomics.DaoImages({seedToken: "new/images/seed.png", tgeToken: "", token: "", xToken: "", daoToken: ""})
+        );
 
         {
             ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
@@ -124,13 +123,9 @@ contract OsSonicTest is Test {
             assertEq(daoAfter.images.daoToken, dao.images.daoToken, "daoToken unchanged");
         }
 
-        os.updateImages(dao.symbol, ITokenomics.DaoImages({
-            seedToken: "1",
-            tgeToken: "2",
-            token: "3",
-            xToken: "4",
-            daoToken: "5"
-        }));
+        os.updateImages(
+            dao.symbol, ITokenomics.DaoImages({seedToken: "1", tgeToken: "2", token: "3", xToken: "4", daoToken: "5"})
+        );
 
         {
             ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
@@ -178,6 +173,7 @@ contract OsSonicTest is Test {
             assertEq(daoAfter.socials[1], "", "socials[1] updated");
         }
     }
+
     //endregion ----------------------------------- Update socials
 
     //region ----------------------------------- Update units
@@ -251,6 +247,7 @@ contract OsSonicTest is Test {
             assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq3");
         }
     }
+
     //endregion ----------------------------------- Update units
 
     //region ----------------------------------- Update funding
@@ -317,9 +314,9 @@ contract OsSonicTest is Test {
             assertEq(seed0.maxRaise, seed.maxRaise, "seed maxRaise is unchanged");
             assertEq(seed0.raised, seed.raised, "seed raised is unchanged");
             assertEq(seed0.claim, seed.claim, "seed claim is unchanged");
-
         }
     }
+
     //endregion ----------------------------------- Update funding
 
     //region ----------------------------------- Update vesting
@@ -329,30 +326,47 @@ contract OsSonicTest is Test {
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
-            vesting[0] = ITokenomics.Vesting({ name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100 });
-            vesting[1] = ITokenomics.Vesting({ name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200 });
+            vesting[0] =
+                ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+            vesting[1] =
+                ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
 
             os.updateVesting(dao.symbol, vesting);
 
             ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.tokenomics.vesting.length, 2, "vesting length");
 
-            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
-            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[1])), keccak256(abi.encode(vesting[1])), "vesting[1] eq");
+            assertEq(
+                keccak256(abi.encode(daoAfter.tokenomics.vesting[0])),
+                keccak256(abi.encode(vesting[0])),
+                "vesting[0] eq"
+            );
+            assertEq(
+                keccak256(abi.encode(daoAfter.tokenomics.vesting[1])),
+                keccak256(abi.encode(vesting[1])),
+                "vesting[1] eq"
+            );
         }
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = ITokenomics.Vesting({ name: "Team3", description: "team vesting3", allocation: 10003, start: 3, end: 300 });
+            vesting[0] = ITokenomics.Vesting({
+                name: "Team3", description: "team vesting3", allocation: 10003, start: 3, end: 300
+            });
 
             os.updateVesting(dao.symbol, vesting);
 
             ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.tokenomics.vesting.length, 1, "vesting length 2");
 
-            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
+            assertEq(
+                keccak256(abi.encode(daoAfter.tokenomics.vesting[0])),
+                keccak256(abi.encode(vesting[0])),
+                "vesting[0] eq"
+            );
         }
     }
+
     //endregion ----------------------------------- Update vesting
 
     //region ----------------------------------- Update naming
@@ -361,10 +375,7 @@ contract OsSonicTest is Test {
         ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
 
         {
-            ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({
-                name: "New DAO Name",
-                symbol: "NEWDS"
-            });
+            ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
 
             os.updateNaming(dao.symbol, naming);
 
@@ -374,6 +385,7 @@ contract OsSonicTest is Test {
             assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
         }
     }
+
     //endregion ----------------------------------- Update naming
 
     //region ----------------------------------- Update dao parameters
@@ -397,6 +409,7 @@ contract OsSonicTest is Test {
             assertEq(keccak256(abi.encode(daoAfter.params)), keccak256(abi.encode(a)), "params");
         }
     }
+
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
@@ -464,14 +477,12 @@ contract OsSonicTest is Test {
         });
     }
 
-    function _generateDaoParams(uint32 vePeriod_, uint16 pvpFee_) internal pure returns (ITokenomics.DaoParameters memory) {
+    function _generateDaoParams(
+        uint32 vePeriod_,
+        uint16 pvpFee_
+    ) internal pure returns (ITokenomics.DaoParameters memory) {
         return ITokenomics.DaoParameters({
-            vePeriod: vePeriod_,
-            pvpFee: pvpFee_,
-            minPower: 0,
-            ttBribe: 0,
-            recoveryShare: 0,
-            proposalThreshold: 0
+            vePeriod: vePeriod_, pvpFee: pvpFee_, minPower: 0, ttBribe: 0, recoveryShare: 0, proposalThreshold: 0
         });
     }
 
@@ -637,22 +648,12 @@ contract OsSonicTest is Test {
             directives2[0] = "Perform weekly audits";
 
             data.agents[2] = IDAOAgent.AgentInfo({
-                api: api2,
-                roles: roles2,
-                name: "Auditor Bot",
-                directives: directives2,
-                image: "",
-                telegram: ""
+                api: api2, roles: roles2, name: "Auditor Bot", directives: directives2, image: "", telegram: ""
             });
 
             // Agent 3: almost same to Agent 2
             data.agents[3] = IDAOAgent.AgentInfo({
-                api: api2,
-                roles: roles2,
-                name: "Auditor Bot 2",
-                directives: directives2,
-                image: "",
-                telegram: ""
+                api: api2, roles: roles2, name: "Auditor Bot 2", directives: directives2, image: "", telegram: ""
             });
         }
 
@@ -694,11 +695,7 @@ contract OsSonicTest is Test {
                 end: uint64(1650000000 + 730 days)
             });
 
-            data.tokenomics = ITokenomics.Tokenomics({
-                funding: funding,
-                initialChain: uint256(1),
-                vesting: vest
-            });
+            data.tokenomics = ITokenomics.Tokenomics({funding: funding, initialChain: uint(1), vesting: vest});
         }
 
         return data;
@@ -706,7 +703,7 @@ contract OsSonicTest is Test {
 
     function _assertDaoEqual(ITokenomics.DaoData memory expected, ITokenomics.DaoData memory actual) internal pure {
         // basic fields
-        assertEq(uint256(uint8(expected.phase)), uint256(uint8(actual.phase)), "phase");
+        assertEq(uint(uint8(expected.phase)), uint(uint8(actual.phase)), "phase");
         assertEq(expected.symbol, actual.symbol, "symbol");
         assertEq(expected.name, actual.name, "name");
         assertEq(expected.deployer, actual.deployer, "deployer");
@@ -720,7 +717,7 @@ contract OsSonicTest is Test {
         // activity
         assertEq(expected.activity.length, actual.activity.length, "activity.length");
         for (uint i = 0; i < expected.activity.length; i++) {
-            assertEq(uint256(uint8(expected.activity[i])), uint256(uint8(actual.activity[i])), "activity[i]");
+            assertEq(uint(uint8(expected.activity[i])), uint(uint8(actual.activity[i])), "activity[i]");
         }
 
         // images
@@ -740,8 +737,7 @@ contract OsSonicTest is Test {
         assertEq(expected.deployments.revenueRouter, actual.deployments.revenueRouter, "deploy.revenueRouter");
         assertEq(expected.deployments.recovery, actual.deployments.recovery, "deploy.recovery");
         assertTrue(
-            keccak256(abi.encode(expected.deployments.vesting)) ==
-            keccak256(abi.encode(actual.deployments.vesting)),
+            keccak256(abi.encode(expected.deployments.vesting)) == keccak256(abi.encode(actual.deployments.vesting)),
             "deploy.vesting hash"
         );
         assertEq(expected.deployments.tokenBridge, actual.deployments.tokenBridge, "deploy.tokenBridge");
@@ -764,7 +760,7 @@ contract OsSonicTest is Test {
 
             assertEq(eu.unitId, au.unitId, "unit.unitId");
             assertEq(eu.name, au.name, "unit.name");
-            assertEq(uint256(uint8(eu.status)), uint256(uint8(au.status)), "unit.status");
+            assertEq(uint(uint8(eu.status)), uint(uint8(au.status)), "unit.status");
             assertEq(eu.unitType, au.unitType, "unit.unitType");
             assertEq(eu.revenueShare, au.revenueShare, "unit.revenueShare");
             assertEq(eu.emoji, au.emoji, "unit.emoji");
@@ -819,7 +815,7 @@ contract OsSonicTest is Test {
             ITokenomics.Funding memory ef = expected.tokenomics.funding[i];
             ITokenomics.Funding memory af = actual.tokenomics.funding[i];
 
-            assertEq(uint256(uint8(ef.fundingType)), uint256(uint8(af.fundingType)), "funding.fundingType");
+            assertEq(uint(uint8(ef.fundingType)), uint(uint8(af.fundingType)), "funding.fundingType");
             assertEq(ef.start, af.start, "funding.start");
             assertEq(ef.end, af.end, "funding.end");
             assertEq(ef.minRaise, af.minRaise, "funding.minRaise");
@@ -844,7 +840,6 @@ contract OsSonicTest is Test {
         // initialChain
         assertEq(expected.tokenomics.initialChain, actual.tokenomics.initialChain, "tokenomics.initialChain");
     }
-
 
     //endregion ----------------------------------- Internal logic
 }

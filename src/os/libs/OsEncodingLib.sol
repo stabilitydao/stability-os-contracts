@@ -10,7 +10,6 @@ import {IOS} from "../../interfaces/IOS.sol";
 /// New fields can be added to the structs in future versions at any moment.
 /// The library allows to decode structs of any version (old or current) correctly at any time.
 library OsEncodingLib {
-
     //region ----------------------- Versions of the structs
     uint8 public constant DAO_IMAGES_STRUCT_VERSION = 1;
     uint8 public constant UNIT_STRUCT_VERSION = 1;
@@ -18,6 +17,7 @@ library OsEncodingLib {
     uint8 public constant VESTING_STRUCT_VERSION = 1;
     uint8 public constant DAO_PARAMETERS_STRUCT_VERSION = 1;
     uint8 public constant DAO_NAMES_STRUCT_VERSION = 1;
+
     //endregion ----------------------- Versions of the structs
 
     //region ----------------------- Decode / Encode structs with versions
@@ -34,7 +34,8 @@ library OsEncodingLib {
     function decodeDaoImages(bytes memory payload) internal pure returns (ITokenomics.DaoImages memory dest) {
         (uint8 version) = abi.decode(payload, (uint8));
         if (version == 1) {
-            (, dest.seedToken, dest.tgeToken, dest.token, dest.xToken, dest.daoToken) = abi.decode(payload, (uint8, string, string, string, string, string));
+            (, dest.seedToken, dest.tgeToken, dest.token, dest.xToken, dest.daoToken) =
+                abi.decode(payload, (uint8, string, string, string, string, string));
             return dest;
         } else {
             revert IOS.UnsupportedStructVersion();
@@ -67,7 +68,9 @@ library OsEncodingLib {
     /// @notice Encode Funding struct of the given version. Version is supported explicitly to simplify testing
     function encodeFunding(ITokenomics.Funding memory data, uint8 version) internal pure returns (bytes memory) {
         if (version == 1) {
-            return abi.encode(version, data.fundingType, data.start, data.end, data.minRaise, data.maxRaise, data.raised, data.claim);
+            return abi.encode(
+                version, data.fundingType, data.start, data.end, data.minRaise, data.maxRaise, data.raised, data.claim
+            );
         } else {
             revert IOS.UnsupportedStructVersion();
         }
@@ -76,7 +79,8 @@ library OsEncodingLib {
     function decodeFunding(bytes memory payload) internal pure returns (ITokenomics.Funding memory dest) {
         (uint8 version) = abi.decode(payload, (uint8));
         if (version == 1) {
-            (, dest.fundingType, dest.start, dest.end,  dest.minRaise, dest.maxRaise, dest.raised, dest.claim) = abi.decode(payload, (uint8, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint));
+            (, dest.fundingType, dest.start, dest.end, dest.minRaise, dest.maxRaise, dest.raised, dest.claim) =
+                abi.decode(payload, (uint8, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint));
             return dest;
         } else {
             revert IOS.UnsupportedStructVersion();
@@ -108,9 +112,20 @@ library OsEncodingLib {
     }
 
     /// @notice Encode DaoParameters struct of the given version. Version is supported explicitly to simplify testing
-    function encodeDaoParameters(ITokenomics.DaoParameters memory data, uint8 version) internal pure returns (bytes memory) {
+    function encodeDaoParameters(
+        ITokenomics.DaoParameters memory data,
+        uint8 version
+    ) internal pure returns (bytes memory) {
         if (version == 1) {
-            return abi.encode(version, data.vePeriod, data.pvpFee, data.minPower, data.ttBribe, data.recoveryShare, data.proposalThreshold);
+            return abi.encode(
+                version,
+                data.vePeriod,
+                data.pvpFee,
+                data.minPower,
+                data.ttBribe,
+                data.recoveryShare,
+                data.proposalThreshold
+            );
         } else {
             revert IOS.UnsupportedStructVersion();
         }
@@ -120,7 +135,8 @@ library OsEncodingLib {
         (uint8 version) = abi.decode(payload, (uint8));
 
         if (version == 1) {
-            (,  dest.vePeriod, dest.pvpFee, dest.minPower, dest.ttBribe, dest.recoveryShare, dest.proposalThreshold) = abi.decode(payload, (uint8, uint32, uint16, uint, uint16, uint16, uint));
+            (, dest.vePeriod, dest.pvpFee, dest.minPower, dest.ttBribe, dest.recoveryShare, dest.proposalThreshold) =
+                abi.decode(payload, (uint8, uint32, uint16, uint, uint16, uint16, uint));
             return dest;
         } else {
             revert IOS.UnsupportedStructVersion();
@@ -156,7 +172,6 @@ library OsEncodingLib {
     function encodeSocials(string[] memory data) internal pure returns (bytes memory) {
         return abi.encode(data);
     }
-
 
     function encodeSymbol(string memory daoSymbol) internal pure returns (bytes memory) {
         return abi.encode(daoSymbol);

@@ -3,14 +3,14 @@ pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IOS} from "../interfaces/IOS.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";  // todo upgradable
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
 import {OsActionsLib} from "./libs/OsActionsLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
 contract OS is IOS, AccessManager {
     /// @notice Max number of tasks returned by `tasks` function
-    uint constant internal MAX_COUNT_TASKS = 25;
+    uint internal constant MAX_COUNT_TASKS = 25;
 
     constructor(address initialAdmin) AccessManager(initialAdmin) {
         // todo
@@ -62,6 +62,7 @@ contract OS is IOS, AccessManager {
     function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory) {
         return OsActionsLib.proposalIds(daoSymbol, index, count);
     }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -104,7 +105,8 @@ contract OS is IOS, AccessManager {
     }
 
     /// @inheritdoc IOS
-    function fund(string calldata daoSymbol, uint256 amount) external { // not not reentrant
+    function fund(string calldata daoSymbol, uint amount) external {
+        // not not reentrant
         // no restrictions, anybody can call this
 
         OsActionsLib.fund(daoSymbol, amount);
@@ -118,16 +120,17 @@ contract OS is IOS, AccessManager {
     }
 
     /// @inheritdoc IOS
-    function refund(string calldata daoSymbol) external { // not not reentrant
+    function refund(string calldata daoSymbol) external {
+        // not not reentrant
         OsActionsLib.refund(daoSymbol);
     }
 
     /// @inheritdoc IOS
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external { // not not reentrant
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external {
+        // not not reentrant
         // todo restrictions by role ???
         OsActionsLib.refundFor(daoSymbol, receivers);
     }
-
 
     //endregion -------------------------------------- Actions
 
@@ -170,7 +173,10 @@ contract OS is IOS, AccessManager {
     }
 
     /// @inheritdoc IOS
-    function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external {
+    function updateDaoParameters(
+        string calldata daoSymbol,
+        ITokenomics.DaoParameters calldata daoParameters_
+    ) external {
         // restrictions are checked below
         OsActionsLib.updateDaoParameters(daoSymbol, daoParameters_);
     }

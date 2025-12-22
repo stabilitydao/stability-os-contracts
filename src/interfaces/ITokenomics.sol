@@ -5,7 +5,6 @@ import {IDAOAgent} from "./IDAOAgent.sol";
 import {IDAOUnit} from "./IDAOUnit.sol";
 
 interface ITokenomics is IDAOAgent, IDAOUnit {
-
     enum LifecyclePhase {
         /// @notice Created (draft).
         DRAFT_0,
@@ -126,7 +125,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint proposalThreshold;
-
         // Attention: Don't forget to increment OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION if you add new fields here
     }
 
@@ -152,7 +150,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice todo
         uint claim;
-
         // Attention: Don't forget to increment OsEncodingLib.FUNDING_STRUCT_VERSION if you add new fields here
     }
 
@@ -172,7 +169,6 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice End timestamp
         uint64 end;
-
         // Attention: Don't forget to increment OsEncodingLib.VESTING_STRUCT_VERSION if you add new fields here
     }
 
@@ -201,7 +197,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         Funding[] funding;
 
         /// @notice Where initial deployment happened (chain id)
-        uint256 initialChain;
+        uint initialChain;
 
         /// @notice Vesting allocations (optional)
         Vesting[] vesting;
