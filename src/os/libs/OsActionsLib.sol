@@ -526,7 +526,7 @@ library OsActionsLib {
     function updateImages(string memory daoSymbol, ITokenomics.DaoImages memory images) internal {
         (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
 
-        bytes memory payload = OsEncodingLib.encodeDaoImages(images);
+        bytes memory payload = OsEncodingLib.encodeDaoImages(images, OsEncodingLib.DAO_IMAGES_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateImages(daoUid, payload);
         } else {
@@ -550,7 +550,7 @@ library OsActionsLib {
     function updateUnits(string memory daoSymbol, ITokenomics.UnitInfo[] memory units) internal {
         (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
 
-        bytes memory payload = OsEncodingLib.encodeUnits(units);
+        bytes memory payload = OsEncodingLib.encodeUnits(units, OsEncodingLib.UNIT_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateUnits(daoUid, payload);
         } else {
@@ -564,7 +564,7 @@ library OsActionsLib {
 
         OsLib._validateFunding(phase, funding, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeFunding(funding);
+        bytes memory payload = OsEncodingLib.encodeFunding(funding, OsEncodingLib.FUNDING_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateFunding(daoUid, payload);
         } else {
@@ -578,7 +578,7 @@ library OsActionsLib {
 
         OsLib._validateVestingList(phase, vesting, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeVesting(vesting);
+        bytes memory payload = OsEncodingLib.encodeVesting(vesting, OsEncodingLib.VESTING_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateVesting(daoUid, payload);
         } else {
@@ -592,7 +592,7 @@ library OsActionsLib {
 
         OsLib._validateNaming(daoNames_.name, daoNames_.symbol, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeDaoNames(daoNames_);
+        bytes memory payload = OsEncodingLib.encodeDaoNames(daoNames_, OsEncodingLib.DAO_NAMES_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateNaming(daoUid, payload);
         } else {
@@ -606,7 +606,7 @@ library OsActionsLib {
 
         OsLib._validateDaoParameters(daoParameters_, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeDaoParameters(daoParameters_);
+        bytes memory payload = OsEncodingLib.encodeDaoParameters(daoParameters_, OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
         if (instantExecute) {
             OsLib.updateDaoParameters(daoUid, payload);
         } else {

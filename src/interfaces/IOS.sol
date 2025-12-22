@@ -29,6 +29,7 @@ interface IOS {
     error IncorrectDao();
     error ZeroBalance();
     error NotRefundPhase();
+    error UnsupportedStructVersion();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 

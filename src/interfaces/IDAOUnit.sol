@@ -43,7 +43,7 @@ interface IDAOUnit {
         /// @notice URL of the frontend endpoint.
         string url;
 
-        // todo add gap ?
+        // Attention: there is NO gap here so the struct is NOT extendable
     }
 
     /// @notice Revenue generating unit owned by a DAO.
@@ -64,5 +64,6 @@ interface IDAOUnit {
         UnitUiLink[] ui;
         /// @notice Links to API of the Unit.
         string[] api;
+        // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
     }
 }

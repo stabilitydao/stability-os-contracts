@@ -76,6 +76,7 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         string token;
         string xToken;
         string daoToken;
+        // Attention: Don't forget to increment OsEncodingLib.DAO_IMAGES_STRUCT_VERSION if you add new fields here
     }
 
     /// @notice Deployments of running DAO on blockchains.
@@ -125,6 +126,8 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint proposalThreshold;
+
+        // Attention: Don't forget to increment OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION if you add new fields here
     }
 
     /// @notice Funding record for a round.
@@ -149,6 +152,8 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice todo
         uint claim;
+
+        // Attention: Don't forget to increment OsEncodingLib.FUNDING_STRUCT_VERSION if you add new fields here
     }
 
     /// @notice Vesting allocation record.
@@ -167,13 +172,13 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
 
         /// @notice End timestamp
         uint64 end;
+
+        // Attention: Don't forget to increment OsEncodingLib.VESTING_STRUCT_VERSION if you add new fields here
     }
 
     struct DaoNames {
         string symbol;
         string name;
-
-        // todo do we need gaps?
     }
 
     struct Proposal {
