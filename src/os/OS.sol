@@ -8,16 +8,16 @@ import {OsActionsLib} from "./libs/OsActionsLib.sol";
 import {OsUpdatesLib} from "./libs/OsUpdatesLib.sol";
 import {OsFundingLib} from "./libs/OsFundingLib.sol";
 import {OsViewLib} from "./libs/OsViewLib.sol";
+import {AccessManaged} from "../../lib/openzeppelin-contracts/contracts/access/manager/AccessManaged.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract OS is
-    IOS // }, AccessManager {
-{
+contract OS is IOS, AccessManaged {
+
     /// @notice Max number of tasks returned by `tasks` function
     uint internal constant MAX_COUNT_TASKS = 25;
 
-    constructor(address initialAdmin) { // }AccessManager(initialAdmin) {
+    constructor(address accessManager_) AccessManaged(accessManager_) {
     // todo
     }
 
@@ -96,7 +96,7 @@ contract OS is
     }
 
     /// @inheritdoc IOS
-    function addLiveDAO(ITokenomics.DaoData calldata dao) external {
+    function addLiveDAO(ITokenomics.DaoData calldata dao) external restricted {
         // todo _onlyVerifier
 
         OsActionsLib.addLiveDAO(dao);
@@ -111,14 +111,14 @@ contract OS is
 
     /// @inheritdoc IOS
     function fund(string calldata daoSymbol, uint amount) external {
-        // not not reentrant
+        // todo not reentrant
         // no restrictions, anybody can call this
 
         OsFundingLib.fund(daoSymbol, amount);
     }
 
     /// @inheritdoc IOS
-    function receiveVotingResults(bytes32 proposalId, bool succeed) external {
+    function receiveVotingResults(bytes32 proposalId, bool succeed) external restricted {
         // todo: restrictions by role
 
         OsUpdatesLib.receiveVotingResults(proposalId, succeed);
@@ -126,14 +126,13 @@ contract OS is
 
     /// @inheritdoc IOS
     function refund(string calldata daoSymbol) external {
-        // not not reentrant
+        // todo not reentrant
         OsFundingLib.refund(daoSymbol);
     }
 
     /// @inheritdoc IOS
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external {
-        // not not reentrant
-        // todo restrictions by role ???
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external restricted {
+        // todo not reentrant
         OsFundingLib.refundFor(daoSymbol, receivers);
     }
 

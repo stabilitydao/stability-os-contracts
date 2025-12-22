@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
 import {IOS, OS} from "../../src/os/OS.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Test, Vm} from "forge-std/Test.sol";
@@ -13,11 +14,15 @@ contract OsTest is Test {
     string internal constant DAO_SYMBOL = "SPACE";
     string internal constant DAO_NAME = "SpaceSwap";
 
+    uint64 internal constant ADMIN_ROLE = 1;
+
     address internal immutable MULTISIG;
 
     constructor() {
         // vm.selectFork(vm.createFork(vm.envString("SONIC_RPC_URL"), FORK_BLOCK));
         MULTISIG = makeAddr("multisig");
+
+
     }
 
     //region ----------------------------------- Unit tests
@@ -79,20 +84,26 @@ contract OsTest is Test {
         // todo only verifier
 
         ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
+
+        vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
+
         ITokenomics.DaoData memory readDao = os.getDAO(daoOrigin.symbol);
 
         _assertDaoEqual(daoOrigin, readDao);
     }
 
     function testAddLiveDaoBadPaths() public {
-        IOS os = _createOsInstance();
+       IOS os = _createOsInstance();
         ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
+
+        vm.startPrank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "testdao"));
         os.addLiveDAO(daoOrigin);
+        vm.stopPrank();
 
         // -------------------- todo only verifier
         // os.addLiveDAO(daoOrigin);
@@ -422,8 +433,27 @@ contract OsTest is Test {
 
     //region ----------------------------------- Internal logic
     function _createOsInstance() internal returns (IOS) {
-        OS os = new OS(MULTISIG);
+        AccessManager accessManager = new AccessManager(MULTISIG);
+
+        OS os = new OS(address(accessManager));
         _setOsSettings(os);
+
+        // set up multisig as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](3);
+        selectors[0] = bytes4(OS.addLiveDAO.selector);
+        selectors[1] = bytes4(OS.receiveVotingResults.selector);
+        selectors[2] = bytes4(OS.refundFor.selector);
+
+        vm.prank(MULTISIG);
+        accessManager.setTargetFunctionRole(address(os), selectors, ADMIN_ROLE);
+
+        vm.prank(MULTISIG);
+        accessManager.setTargetClosed(address(os), false); // false - multiple calls allowed
+
+        vm.prank(MULTISIG);
+        accessManager.grantRole(ADMIN_ROLE, MULTISIG, 0);
+
+
         return IOS(address(os));
     }
 
