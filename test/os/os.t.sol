@@ -16,7 +16,7 @@ contract OsTest is Test {
     address internal immutable MULTISIG;
 
     constructor() {
-        vm.selectFork(vm.createFork(vm.envString("SONIC_RPC_URL"), FORK_BLOCK));
+        // vm.selectFork(vm.createFork(vm.envString("SONIC_RPC_URL"), FORK_BLOCK));
         MULTISIG = makeAddr("multisig");
     }
 
