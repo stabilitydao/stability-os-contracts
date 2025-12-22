@@ -10,7 +10,6 @@ import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
 import {OsEncodingLib} from "./OsEncodingLib.sol";
 import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
 
-
 library OsUpdatesLib {
     /// @notice Receive voting results from voting module and execute proposal if approved
     function receiveVotingResults(bytes32 proposalId, bool succeed) external {
@@ -46,12 +45,11 @@ library OsUpdatesLib {
         }
     }
 
-
     //region -------------------------------------- Update logic
     function _beforeUpdate(string memory daoSymbol)
-    internal
-    view
-    returns (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase)
+        internal
+        view
+        returns (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase)
     {
         $ = OsLib.getOsStorage();
         daoUid = $.daoUids[daoSymbol];
@@ -102,7 +100,7 @@ library OsUpdatesLib {
     /// @notice Update/create proposal to update funding rounds of the DAO
     function updateFunding(string memory daoSymbol, ITokenomics.Funding memory funding) external {
         (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) =
-                        _beforeUpdate(daoSymbol);
+            _beforeUpdate(daoSymbol);
 
         OsLib._validateFunding(phase, funding, $.osSettings[0]);
 
@@ -117,7 +115,7 @@ library OsUpdatesLib {
     /// @notice Update/create proposal to update vesting schedules of the DAO
     function updateVesting(string memory daoSymbol, ITokenomics.Vesting[] memory vesting) external {
         (OsLib.OsStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) =
-                        _beforeUpdate(daoSymbol);
+            _beforeUpdate(daoSymbol);
 
         OsLib._validateVestingList(phase, vesting, $.osSettings[0]);
 
@@ -153,7 +151,7 @@ library OsUpdatesLib {
             OsLib.updateDaoParameters(daoUid, daoParameters_);
         } else {
             bytes memory payload =
-                                OsEncodingLib.encodeDaoParameters(daoParameters_, OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
+                OsEncodingLib.encodeDaoParameters(daoParameters_, OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, payload);
         }
     }

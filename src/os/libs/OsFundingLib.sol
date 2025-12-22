@@ -127,5 +127,4 @@ library OsFundingLib {
             emit IOS.DaoRefunded(daoSymbol, receiver, balance, uint8(fundingType_));
         }
     }
-
 }

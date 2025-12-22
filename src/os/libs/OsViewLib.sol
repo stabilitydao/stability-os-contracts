@@ -122,7 +122,6 @@ library OsViewLib {
         }
     }
 
-
     //region -------------------------------------- View
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
@@ -199,7 +198,7 @@ library OsViewLib {
 
         if (
             phase == ITokenomics.LifecyclePhase.SEED_1 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3
-            || phase == ITokenomics.LifecyclePhase.TGE_4
+                || phase == ITokenomics.LifecyclePhase.TGE_4
         ) {
             return $.deployments[daoUid].seedToken;
         }
@@ -255,7 +254,6 @@ library OsViewLib {
     }
     //endregion -------------------------------------- View
 
-
     function _tasks(uint limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         dest = new IOS.Task[](limit);
@@ -292,7 +290,7 @@ library OsViewLib {
             ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
             if (
                 index < limit && bytes(daoImages.tgeToken).length == 0 || bytes(daoImages.xToken).length == 0
-                || bytes(daoImages.daoToken).length == 0
+                    || bytes(daoImages.daoToken).length == 0
             ) {
                 dest[index++] = IOS.Task("Need images of all DAO tokens");
             }
@@ -331,5 +329,4 @@ library OsViewLib {
 
         return dest;
     }
-
 }

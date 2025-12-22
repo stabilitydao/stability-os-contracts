@@ -4,18 +4,20 @@ pragma solidity ^0.8.28;
 import {IOS, OS} from "../../src/os/OS.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Test, Vm} from "forge-std/Test.sol";
-import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {console} from "forge-std/console.sol";
 import {ITokenOFTAdapter} from "../../src/interfaces/ITokenOFTAdapter.sol";
 
-contract OsSonicTest is Test {
+contract OsTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";
     string internal constant DAO_NAME = "SpaceSwap";
 
+    address internal immutable MULTISIG;
+
     constructor() {
         vm.selectFork(vm.createFork(vm.envString("SONIC_RPC_URL"), FORK_BLOCK));
+        MULTISIG = makeAddr("multisig");
     }
 
     //region ----------------------------------- Unit tests
@@ -414,7 +416,7 @@ contract OsSonicTest is Test {
 
     //region ----------------------------------- Internal logic
     function _createOsInstance() internal returns (IOS) {
-        OS os = new OS(SonicConstantsLib.MULTISIG);
+        OS os = new OS(MULTISIG);
         _setOsSettings(os);
         return IOS(address(os));
     }

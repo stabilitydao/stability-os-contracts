@@ -11,12 +11,14 @@ import {OsViewLib} from "./libs/OsViewLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract OS is IOS { // }, AccessManager {
+contract OS is
+    IOS // }, AccessManager {
+{
     /// @notice Max number of tasks returned by `tasks` function
     uint internal constant MAX_COUNT_TASKS = 25;
 
     constructor(address initialAdmin) { // }AccessManager(initialAdmin) {
-        // todo
+    // todo
     }
 
     //region -------------------------------------- View
