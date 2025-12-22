@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
@@ -516,7 +517,7 @@ library OsActionsLib {
         daoUid = $.daoUids[daoSymbol];
         phase = $.daos[daoUid].phase;
         require(daoUid != 0, IOS.IncorrectDao());
-        instantExecute = phase != ITokenomics.LifecyclePhase.DRAFT_0;
+        instantExecute = phase == ITokenomics.LifecyclePhase.DRAFT_0;
         if (instantExecute) {
             require($.daos[daoUid].deployer == msg.sender, IOS.YouAreNotOwnerOf(daoSymbol));
         }
@@ -526,10 +527,10 @@ library OsActionsLib {
     function updateImages(string memory daoSymbol, ITokenomics.DaoImages memory images) internal {
         (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
 
-        bytes memory payload = OsEncodingLib.encodeDaoImages(images, OsEncodingLib.DAO_IMAGES_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateImages(daoUid, payload);
+            OsLib.updateImages(daoUid, images);
         } else {
+            bytes memory payload = OsEncodingLib.encodeDaoImages(images, OsEncodingLib.DAO_IMAGES_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_IMAGES_0, payload);
         }
     }
@@ -538,10 +539,10 @@ library OsActionsLib {
     function updateSocials(string memory daoSymbol, string[] memory socials) internal {
         (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
 
-        bytes memory payload = OsEncodingLib.encodeSocials(socials);
         if (instantExecute) {
-            OsLib.updateSocials(daoUid, payload);
+            OsLib.updateSocials(daoUid, socials);
         } else {
+            bytes memory payload = OsEncodingLib.encodeSocials(socials);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SOCIALS_1, payload);
         }
     }
@@ -550,10 +551,10 @@ library OsActionsLib {
     function updateUnits(string memory daoSymbol, ITokenomics.UnitInfo[] memory units) internal {
         (, uint daoUid, bool instantExecute, ) = _beforeUpdate(daoSymbol);
 
-        bytes memory payload = OsEncodingLib.encodeUnits(units, OsEncodingLib.UNIT_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateUnits(daoUid, payload);
+            OsLib.updateUnits(daoUid, units);
         } else {
+            bytes memory payload = OsEncodingLib.encodeUnits(units, OsEncodingLib.UNIT_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_UNITS_3, payload);
         }
     }
@@ -564,10 +565,10 @@ library OsActionsLib {
 
         OsLib._validateFunding(phase, funding, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeFunding(funding, OsEncodingLib.FUNDING_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateFunding(daoUid, payload);
+            OsLib.updateFunding(daoUid, funding);
         } else {
+            bytes memory payload = OsEncodingLib.encodeFunding(funding, OsEncodingLib.FUNDING_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_FUNDING_4, payload);
         }
     }
@@ -578,10 +579,10 @@ library OsActionsLib {
 
         OsLib._validateVestingList(phase, vesting, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeVesting(vesting, OsEncodingLib.VESTING_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateVesting(daoUid, payload);
+            OsLib.updateVesting(daoUid, vesting);
         } else {
+            bytes memory payload = OsEncodingLib.encodeVesting(vesting, OsEncodingLib.VESTING_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_VESTING_5, payload);
         }
     }
@@ -592,10 +593,10 @@ library OsActionsLib {
 
         OsLib._validateNaming(daoNames_.name, daoNames_.symbol, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeDaoNames(daoNames_, OsEncodingLib.DAO_NAMES_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateNaming(daoUid, payload);
+            OsLib.updateNaming(daoUid, daoNames_);
         } else {
+            bytes memory payload = OsEncodingLib.encodeDaoNames(daoNames_, OsEncodingLib.DAO_NAMES_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
         }
     }
@@ -606,10 +607,10 @@ library OsActionsLib {
 
         OsLib._validateDaoParameters(daoParameters_, $.osSettings[0]);
 
-        bytes memory payload = OsEncodingLib.encodeDaoParameters(daoParameters_, OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
         if (instantExecute) {
-            OsLib.updateDaoParameters(daoUid, payload);
+            OsLib.updateDaoParameters(daoUid, daoParameters_);
         } else {
+            bytes memory payload = OsEncodingLib.encodeDaoParameters(daoParameters_, OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
             OsLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, payload);
         }
     }
@@ -631,6 +632,8 @@ library OsActionsLib {
         } else {
             // burn SEED tokens
             // todo IBurnableERC20(seedToken).burn(receiver, balance);
+
+            // todo decrease raised amount in funding round: do we need merkl?
 
             // transfer exchangeAsset back to receiver
             IERC20(exchangeAsset).safeTransferFrom(fundingToken, receiver, balance);

@@ -6,6 +6,7 @@ import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics
 import {Test, Vm} from "forge-std/Test.sol";
 import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {console} from "forge-std/console.sol";
+import {ITokenOFTAdapter} from "../../src/interfaces/ITokenOFTAdapter.sol";
 
 contract OsSonicTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -101,12 +102,321 @@ contract OsSonicTest is Test {
 
     //endregion ----------------------------------- Unit tests
 
+    //region ----------------------------------- Update dao images
+    function testUpdateDaoImagesInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        os.updateImages(dao.symbol, ITokenomics.DaoImages({
+            seedToken: "new/images/seed.png",
+            tgeToken: "",
+            token: "",
+            xToken: "",
+            daoToken: ""
+        }));
+
+        {
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.images.seedToken, "new/images/seed.png", "seedToken updated");
+            assertEq(daoAfter.images.tgeToken, dao.images.tgeToken, "tgeToken unchanged");
+            assertEq(daoAfter.images.token, dao.images.token, "token unchanged");
+            assertEq(daoAfter.images.xToken, dao.images.xToken, "xToken unchanged");
+            assertEq(daoAfter.images.daoToken, dao.images.daoToken, "daoToken unchanged");
+        }
+
+        os.updateImages(dao.symbol, ITokenomics.DaoImages({
+            seedToken: "1",
+            tgeToken: "2",
+            token: "3",
+            xToken: "4",
+            daoToken: "5"
+        }));
+
+        {
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.images.seedToken, "1", "seedToken updated");
+            assertEq(daoAfter.images.tgeToken, "2", "tgeToken updated");
+            assertEq(daoAfter.images.token, "3", "token updated");
+            assertEq(daoAfter.images.xToken, "4", "xToken updated");
+            assertEq(daoAfter.images.daoToken, "5", "daoToken updated");
+        }
+    }
+
+    // todo phase seed
+
+    // todo bad paths
+    //endregion ----------------------------------- Update dao images
+
+    //region ----------------------------------- Update socials
+    function testUpdateDaoSocialsInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        {
+            string[] memory socials = new string[](3);
+            socials[0] = "1";
+            socials[1] = "2";
+            socials[2] = "3";
+            os.updateSocials(dao.symbol, socials);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.socials.length, 3, "socials length");
+            assertEq(daoAfter.socials[0], "1", "socials[0] updated");
+            assertEq(daoAfter.socials[1], "2", "socials[1] updated");
+            assertEq(daoAfter.socials[2], "3", "socials[2] updated");
+        }
+
+        {
+            string[] memory socials = new string[](2);
+            socials[0] = "1111";
+            socials[1] = ""; // (!) empty
+            os.updateSocials(dao.symbol, socials);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.socials.length, 2, "socials length");
+            assertEq(daoAfter.socials[0], "1111", "socials[0] updated");
+            assertEq(daoAfter.socials[1], "", "socials[1] updated");
+        }
+    }
+    //endregion ----------------------------------- Update socials
+
+    //region ----------------------------------- Update units
+    function testUpdateUnitsInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        {
+            IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link1", url: "https://link1.com"});
+            notEmptyUi[1] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+
+            string[] memory notEmptyApi = new string[](3);
+            notEmptyApi[0] = "https://api1.com";
+            notEmptyApi[1] = "https://api2.com";
+            notEmptyApi[2] = "https://api3.com";
+
+            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](2);
+            units[0] = IDAOUnit.UnitInfo({
+                unitId: "unitA",
+                name: "Unit A",
+                status: IDAOUnit.UnitStatus.LIVE_2,
+                unitType: uint16(1),
+                revenueShare: 1000,
+                emoji: "emoji1",
+                ui: notEmptyUi,
+                api: notEmptyApi
+            });
+            units[1] = IDAOUnit.UnitInfo({
+                unitId: "unitB1",
+                name: "Unit B1",
+                status: IDAOUnit.UnitStatus.BUILDING_1,
+                unitType: uint16(2),
+                revenueShare: 2000,
+                emoji: "emoji2",
+                ui: new IDAOUnit.UnitUiLink[](0),
+                api: new string[](0)
+            });
+            os.updateUnits(dao.symbol, units);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.units.length, 2, "units length");
+            assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq1");
+            assertTrue(keccak256(abi.encode(units[1])) == keccak256(abi.encode(daoAfter.units[1])), "eq2");
+        }
+
+        {
+            IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](1);
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+
+            string[] memory notEmptyApi = new string[](1);
+            notEmptyApi[0] = "https://api1.com";
+
+            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](1);
+            units[0] = IDAOUnit.UnitInfo({
+                unitId: "unitAAAA",
+                name: "Unit AAAA",
+                status: IDAOUnit.UnitStatus.BUILDING_1,
+                unitType: uint16(2),
+                revenueShare: 2000,
+                emoji: "emoji222",
+                ui: notEmptyUi,
+                api: notEmptyApi
+            });
+            os.updateUnits(dao.symbol, units);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.units.length, 1, "units length");
+            assertEq(daoAfter.units[0].ui.length, 1, "ui length");
+            assertEq(daoAfter.units[0].api.length, 1, "api length");
+            assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq3");
+        }
+    }
+    //endregion ----------------------------------- Update units
+
+    //region ----------------------------------- Update funding
+    function testUpdateFundingInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        ITokenomics.Funding memory seed;
+        seed.fundingType = ITokenomics.FundingType.SEED_0;
+        seed.start = 100;
+        seed.end = 200;
+        seed.minRaise = 1000;
+        seed.maxRaise = 5000;
+        seed.raised = 250;
+        seed.claim = 1;
+
+        {
+            os.updateFunding(dao.symbol, seed);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.tokenomics.funding.length, 1, "funding length");
+
+            ITokenomics.Funding memory fundingAfter = daoAfter.tokenomics.funding[0];
+
+            assertEq(uint8(fundingAfter.fundingType), uint8(seed.fundingType));
+            assertEq(uint64(fundingAfter.start), uint64(seed.start));
+            assertEq(uint64(fundingAfter.end), uint64(seed.end));
+            assertEq(fundingAfter.minRaise, seed.minRaise);
+            assertEq(fundingAfter.maxRaise, seed.maxRaise);
+            assertEq(fundingAfter.raised, seed.raised);
+            assertEq(fundingAfter.claim, seed.claim);
+        }
+
+        {
+            ITokenomics.Funding memory tge;
+            tge.fundingType = ITokenomics.FundingType.TGE_1;
+            tge.start = 1001;
+            tge.end = 2002;
+            tge.minRaise = 10003;
+            tge.maxRaise = 50004;
+            tge.raised = 2505;
+            tge.claim = 16;
+
+            os.updateFunding(dao.symbol, tge);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.tokenomics.funding.length, 2, "funding length");
+
+            ITokenomics.Funding memory seed0 = daoAfter.tokenomics.funding[0];
+            ITokenomics.Funding memory tge1 = daoAfter.tokenomics.funding[1];
+
+            assertEq(uint8(tge1.fundingType), uint8(tge.fundingType), "tge type");
+            assertEq(uint64(tge1.start), uint64(tge.start), "tge start");
+            assertEq(uint64(tge1.end), uint64(tge.end), "tge end");
+            assertEq(tge1.minRaise, tge.minRaise, "tge minRaise");
+            assertEq(tge1.maxRaise, tge.maxRaise, "tge maxRaise");
+            assertEq(tge1.raised, tge.raised, "tge raised");
+            assertEq(tge1.claim, tge.claim, "tge claimed");
+
+            assertEq(uint8(seed0.fundingType), uint8(seed.fundingType), "seed fundingType is unchanged");
+            assertEq(uint64(seed0.start), uint64(seed.start), "seed start is unchanged");
+            assertEq(uint64(seed0.end), uint64(seed.end), "seed end is unchanged");
+            assertEq(seed0.minRaise, seed.minRaise, "seed minRaise is unchanged");
+            assertEq(seed0.maxRaise, seed.maxRaise, "seed maxRaise is unchanged");
+            assertEq(seed0.raised, seed.raised, "seed raised is unchanged");
+            assertEq(seed0.claim, seed.claim, "seed claim is unchanged");
+
+        }
+    }
+    //endregion ----------------------------------- Update funding
+
+    //region ----------------------------------- Update vesting
+    function testUpdateVestingInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        {
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
+            vesting[0] = ITokenomics.Vesting({ name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100 });
+            vesting[1] = ITokenomics.Vesting({ name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200 });
+
+            os.updateVesting(dao.symbol, vesting);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.tokenomics.vesting.length, 2, "vesting length");
+
+            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
+            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[1])), keccak256(abi.encode(vesting[1])), "vesting[1] eq");
+        }
+
+        {
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0] = ITokenomics.Vesting({ name: "Team3", description: "team vesting3", allocation: 10003, start: 3, end: 300 });
+
+            os.updateVesting(dao.symbol, vesting);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.tokenomics.vesting.length, 1, "vesting length 2");
+
+            assertEq(keccak256(abi.encode(daoAfter.tokenomics.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
+        }
+    }
+    //endregion ----------------------------------- Update vesting
+
+    //region ----------------------------------- Update naming
+    function testUpdateNamingInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        {
+            ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({
+                name: "New DAO Name",
+                symbol: "NEWDS"
+            });
+
+            os.updateNaming(dao.symbol, naming);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(naming.symbol);
+
+            assertEq(daoAfter.name, naming.name, "name updated");
+            assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
+        }
+    }
+    //endregion ----------------------------------- Update naming
+
+    //region ----------------------------------- Update dao parameters
+    function testUpdateDaoParametersInstant() public {
+        IOS os = _createOsInstance();
+        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+
+        {
+            ITokenomics.DaoParameters memory a;
+            a.vePeriod = 100;
+            a.pvpFee = 10;
+            a.minPower = 1000;
+            a.ttBribe = 1;
+            a.recoveryShare = 2;
+            a.proposalThreshold = 50;
+
+            os.updateDaoParameters(dao.symbol, a);
+
+            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+
+            assertEq(keccak256(abi.encode(daoAfter.params)), keccak256(abi.encode(a)), "params");
+        }
+    }
+    //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
     function _createOsInstance() internal returns (IOS) {
         OS os = new OS(SonicConstantsLib.MULTISIG);
         _setOsSettings(os);
         return IOS(address(os));
+    }
+
+    function _createDaoInstance(IOS os, string memory daoSymbol) internal returns (ITokenomics.DaoData memory) {
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = _generateSeedFunding();
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = _generateDaoParams(365, 100);
+        os.createDAO(DAO_NAME, daoSymbol, activity, params, funding);
+
+        return os.getDAO(daoSymbol);
     }
 
     function _setOsSettings(OS os) internal {

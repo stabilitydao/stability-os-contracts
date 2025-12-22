@@ -268,11 +268,13 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.DaoImages struct
     function updateImages(uint daoUid, bytes memory payload) internal {
-        OsStorage storage $ = getOsStorage();
-
         ITokenomics.DaoImages memory images = OsEncodingLib.decodeDaoImages(payload);
-        $.daoImages[daoUid] = images;
+        updateImages(daoUid, images);
+    }
 
+    function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
+        OsStorage storage $ = getOsStorage();
+        $.daoImages[daoUid] = images;
         emit IOS.DaoImagesUpdated($.daos[daoUid].symbol, images);
     }
 
@@ -280,11 +282,13 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded string[] array
     function updateSocials(uint daoUid, bytes memory payload) internal {
-        OsStorage storage $ = getOsStorage();
-
         string[] memory socials = OsEncodingLib.decodeSocials(payload);
-        $.daos[daoUid].socials = socials;
+        updateSocials(daoUid, socials);
+    }
 
+    function updateSocials(uint daoUid, string[] memory socials) internal {
+        OsStorage storage $ = getOsStorage();
+        $.daos[daoUid].socials = socials;
         emit IOS.DaoSocialsUpdated($.daos[daoUid].symbol, socials);
     }
 
@@ -292,9 +296,13 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.UnitInfo[] array
     function updateUnits(uint daoUid, bytes memory payload) internal {
+        ITokenomics.UnitInfo[] memory units = OsEncodingLib.decodeUnits(payload);
+        updateUnits(daoUid, units);
+    }
+
+    function updateUnits(uint daoUid, ITokenomics.UnitInfo[] memory units) internal {
         OsStorage storage $ = getOsStorage();
 
-        ITokenomics.UnitInfo[] memory units = OsEncodingLib.decodeUnits(payload);
         uint32 countUnits = uint32(units.length);
         uint32 oldCountUnits = $.daos[daoUid].countUnits;
         $.daos[daoUid].countUnits = countUnits;
@@ -309,6 +317,10 @@ library OsLib {
             unitInfo.unitType = units[i].unitType;
             unitInfo.revenueShare = units[i].revenueShare;
             unitInfo.emoji = units[i].emoji;
+
+            delete unitInfo.api;
+            delete unitInfo.ui;
+
             unitInfo.api = units[i].api;
             for (uint j; j < units[i].ui.length; ++j) {
                 unitInfo.ui.push(units[i].ui[j]);
@@ -328,9 +340,13 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.Funding[] array
     function updateFunding(uint daoUid, bytes memory payload) internal {
+        ITokenomics.Funding memory newFunding = OsEncodingLib.decodeFunding(payload);
+        updateFunding(daoUid, newFunding);
+    }
+
+    function updateFunding(uint daoUid, ITokenomics.Funding memory newFunding) internal {
         OsStorage storage $ = getOsStorage();
 
-        ITokenomics.Funding memory newFunding = OsEncodingLib.decodeFunding(payload);
         ITokenomics.FundingType[] memory listFunding = $.tokenomics[daoUid].funding;
 
         // slither-disable-next-line uninitialized-local
@@ -356,9 +372,13 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.Vesting[] array
     function updateVesting(uint daoUid, bytes memory payload) internal {
+        ITokenomics.Vesting[] memory vesting = OsEncodingLib.decodeVesting(payload);
+        updateVesting(daoUid, vesting);
+    }
+
+    function updateVesting(uint daoUid, ITokenomics.Vesting[] memory vesting) internal {
         OsStorage storage $ = getOsStorage();
 
-        ITokenomics.Vesting[] memory vesting = OsEncodingLib.decodeVesting(payload);
         uint countVesting = vesting.length;
         $.tokenomics[daoUid].countVesting = countVesting;
 
@@ -374,30 +394,37 @@ library OsLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.DaoNames struct
     function updateNaming(uint daoUid, bytes memory payload) internal {
-        OsStorage storage $ = getOsStorage();
-
         ITokenomics.DaoNames memory _daoNames = OsEncodingLib.decodeDaoNames(payload);
+        updateNaming(daoUid, _daoNames);
+    }
+
+    function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
+        OsStorage storage $ = getOsStorage();
 
         string memory oldSymbol = $.daos[daoUid].symbol;
         delete $.usedSymbols[oldSymbol];
+        delete $.daoUids[oldSymbol];
 
-        $.daos[daoUid].symbol = _daoNames.symbol;
-        $.daos[daoUid].name = _daoNames.name;
+        $.daos[daoUid].symbol = daoNames_.symbol;
+        $.daos[daoUid].name = daoNames_.name;
 
         // register new symbol
-        $.usedSymbols[_daoNames.symbol] = true;
+        $.usedSymbols[daoNames_.symbol] = true;
+        $.daoUids[daoNames_.symbol] = daoUid;
 
-        emit IOS.DaoNamingUpdated(oldSymbol, _daoNames);
+        emit IOS.DaoNamingUpdated(oldSymbol, daoNames_);
 
-        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1, OsEncodingLib.encodePairSymbols(oldSymbol, _daoNames.symbol));
+        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1, OsEncodingLib.encodePairSymbols(oldSymbol, daoNames_.symbol));
     }
 
     function updateDaoParameters(uint daoUid, bytes memory payload) internal {
+        ITokenomics.DaoParameters memory _daoParameters = OsEncodingLib.decodeDaoParameters(payload);
+        updateDaoParameters(daoUid, _daoParameters);
+    }
+
+    function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
         OsStorage storage $ = getOsStorage();
-
-        ITokenomics.DaoParameters memory daoParameters_ = OsEncodingLib.decodeDaoParameters(payload);
         $.daoParameters[daoUid] = daoParameters_;
-
         emit IOS.DaoParametersUpdated($.daos[daoUid].symbol, daoParameters_);
     }
 
