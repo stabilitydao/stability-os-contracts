@@ -104,6 +104,12 @@ contract OsSonicTest is Test {
 
     //endregion ----------------------------------- Unit tests
 
+    //region ----------------------------------- Change life phase
+
+    // todo
+
+    //endregion ----------------------------------- Change life phase
+
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
         IOS os = _createOsInstance();
