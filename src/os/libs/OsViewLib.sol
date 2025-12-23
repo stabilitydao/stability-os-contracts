@@ -10,12 +10,15 @@ import {console} from "forge-std/console.sol";
 import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
 import {OsEncodingLib} from "./OsEncodingLib.sol";
 import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
+import {OsDeployLib} from "./OsDeployLib.sol";
 
 library OsViewLib {
     using SafeERC20 for IERC20;
 
     /// @notice Change lifecycle phase of a DAO
-    function changePhase(string calldata daoSymbol) external {
+    /// @param daoSymbol Symbol of the DAO
+    /// @param authority_ Address of Access Manager
+    function changePhase(string calldata daoSymbol, address authority_) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
@@ -24,13 +27,15 @@ library OsViewLib {
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            console.log("changePhase", seed.start, block.timestamp);
             require(seed.start < block.timestamp, IOS.WaitFundingStart());
 
             // SEED can be started not later than 1 week after configured start time
             require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IOS.TooLateSoSetupFundingAgain());
 
-            // todo deploy seedToken
-            $.deployments[daoUid].seedToken = address(0); // todo deployed seed token
+            $.deployments[daoUid].seedToken = OsDeployLib.deploySeedToken(
+                authority_, string(abi.encodePacked("Seed ", daoSymbol)), string(abi.encodePacked("seed", daoSymbol))
+            );
 
             $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_1;
             // todo emit event
@@ -325,6 +330,17 @@ library OsViewLib {
             // distribute vesting funds to leverage token
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_7) {
             // lifetime revenue generating for DAO holders till possible absorbing
+        }
+
+        // trim the dest array
+        if (index < dest.length) {
+            IOS.Task[] memory temp = new IOS.Task[](index);
+
+            for (uint i; i < index; ++i) {
+                temp[i] = dest[i];
+            }
+
+            dest = temp;
         }
 
         return dest;

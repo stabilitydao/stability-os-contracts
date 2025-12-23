@@ -70,7 +70,7 @@ interface IOS {
 
     /// @notice Chain-dependent data of the DAO
     struct OsChainSettings {
-        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
+        /// @notice The address of the asset used to fund the DAO.
         address exchangeAsset;
     }
 
@@ -121,9 +121,11 @@ interface IOS {
     //region ---------------------------------------- Write actions
 
     /// @notice Set OS settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setSettings(OsSettings memory newSettings) external;
 
     /// @notice Set OS chain-depended settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setChainSettings(OsChainSettings memory newSettings) external;
 
     /// @notice Create new DAO
@@ -141,6 +143,7 @@ interface IOS {
     ) external;
 
     /// @notice Add live compatible DAO
+    /// @custom:restricted Restricted through access manager (only verifier)
     function addLiveDAO(ITokenomics.DaoData memory dao) external;
 
     /// @notice Change lifecycle phase of a DAO
@@ -158,6 +161,7 @@ interface IOS {
     function refund(string calldata daoSymbol) external;
 
     /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
+    /// @custom:restricted Restricted through access manager (only admin)
     function refundFor(string calldata daoSymbol, address[] memory receivers) external;
 
     //endregion ---------------------------------------- Write actions

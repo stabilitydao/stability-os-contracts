@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IOS} from "../interfaces/IOS.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
 import {OsActionsLib} from "./libs/OsActionsLib.sol";
 import {OsUpdatesLib} from "./libs/OsUpdatesLib.sol";
 import {OsFundingLib} from "./libs/OsFundingLib.sol";
 import {OsViewLib} from "./libs/OsViewLib.sol";
-import {AccessManaged} from "../../lib/openzeppelin-contracts/contracts/access/manager/AccessManaged.sol";
+import {Controllable2} from "../core/base/Controllable2.sol";
+import {IControllable2} from "../interfaces/IControllable2.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract OS is IOS, AccessManaged {
+contract OS is IOS, Controllable2 {
+    /// @inheritdoc IControllable2
+    string public constant VERSION = "1.0.0";
 
     /// @notice Max number of tasks returned by `tasks` function
     uint internal constant MAX_COUNT_TASKS = 25;
 
-    constructor(address accessManager_) AccessManaged(accessManager_) {
-    // todo
+    function initialize(address authority_) public initializer {
+        __Controllable_init(authority_);
     }
 
     //region -------------------------------------- View
@@ -72,14 +75,12 @@ contract OS is IOS, AccessManaged {
 
     //region -------------------------------------- Actions
     /// @inheritdoc IOS
-    function setSettings(IOS.OsSettings memory newSettings) external {
-        // todo only admin
+    function setSettings(IOS.OsSettings memory newSettings) external restricted {
         OsActionsLib.setSettings(newSettings);
     }
 
     /// @inheritdoc IOS
-    function setChainSettings(IOS.OsChainSettings memory newSettings) external {
-        // todo only admin
+    function setChainSettings(IOS.OsChainSettings memory newSettings) external restricted {
         OsActionsLib.setChainSettings(newSettings);
     }
 
@@ -97,8 +98,6 @@ contract OS is IOS, AccessManaged {
 
     /// @inheritdoc IOS
     function addLiveDAO(ITokenomics.DaoData calldata dao) external restricted {
-        // todo _onlyVerifier
-
         OsActionsLib.addLiveDAO(dao);
     }
 
@@ -106,7 +105,7 @@ contract OS is IOS, AccessManaged {
     function changePhase(string calldata daoSymbol) external {
         // no restrictions, anybody can call this
 
-        OsViewLib.changePhase(daoSymbol);
+        OsViewLib.changePhase(daoSymbol, authority());
     }
 
     /// @inheritdoc IOS
@@ -119,8 +118,6 @@ contract OS is IOS, AccessManaged {
 
     /// @inheritdoc IOS
     function receiveVotingResults(bytes32 proposalId, bool succeed) external restricted {
-        // todo: restrictions by role
-
         OsUpdatesLib.receiveVotingResults(proposalId, succeed);
     }
 
