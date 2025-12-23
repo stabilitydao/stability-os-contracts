@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
 import {IOS, OS} from "../../src/os/OS.sol";
+import {OsLib} from "../../src/os/libs/OsLib.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Test, Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
@@ -21,11 +22,17 @@ contract OsTest is Test {
     constructor() {
         // vm.selectFork(vm.createFork(vm.envString("SONIC_RPC_URL"), FORK_BLOCK));
         MULTISIG = makeAddr("multisig");
-
-
     }
 
     //region ----------------------------------- Unit tests
+    function testStorageLocation() public pure {
+        assertEq(
+            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff)),
+            OsLib.OS_STORAGE_LOCATION,
+            "OS_STORAGE_LOCATION"
+        );
+    }
+
     function testCreateDAO() public {
         IOS os = _createOsInstance();
 
@@ -97,13 +104,13 @@ contract OsTest is Test {
        IOS os = _createOsInstance();
         ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
 
-        vm.startPrank(MULTISIG);
+        vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "testdao"));
+        vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
-        vm.stopPrank();
 
         // -------------------- todo only verifier
         // os.addLiveDAO(daoOrigin);
@@ -446,9 +453,6 @@ contract OsTest is Test {
 
         vm.prank(MULTISIG);
         accessManager.setTargetFunctionRole(address(os), selectors, ADMIN_ROLE);
-
-        vm.prank(MULTISIG);
-        accessManager.setTargetClosed(address(os), false); // false - multiple calls allowed
 
         vm.prank(MULTISIG);
         accessManager.grantRole(ADMIN_ROLE, MULTISIG, 0);

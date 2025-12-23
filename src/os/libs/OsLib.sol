@@ -9,7 +9,7 @@ import {console} from "forge-std/console.sol";
 /// @notice Basic data types, validation and update logic
 library OsLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 internal constant OS_STORAGE_LOCATION = 0; // todo
+    bytes32 public constant OS_STORAGE_LOCATION = 0x5824966c3b02e13a929a59c47f974f2669cd3c16f7c9a1165b6eab024c64c500;
 
     //region -------------------------------------- Data types
     /// @notice Supply distribution and fundraising events.
