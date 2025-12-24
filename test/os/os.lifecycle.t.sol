@@ -23,20 +23,35 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
     /// @notice Test single DAO life cycle
     function testLifeCycle56() public {
-        // ------------------------------ Create new DAO
+        // ------------------------------ First DAO is Aliens community
         IOS os56 = OsUtilsLib.createOsInstance(vm, MULTISIG);
 
-        // ------------------------------ Pass life cycle at 56 chain
-        lifeCycleNormal56(os56);
+        lifeCycleDaoAlien56(os56);
+
+        // ------------------------------ Second DAO
+        // second DAO are APES syndicate
+        // they cant build but need their own DeFi lending protocol
+        // they do many errors
+
+        // todo Second DAO should be created on chain 1 but currently it's created on chain 56
+        lifeCycleDaoApes1(os56);
+
+        // ------------------------------ Third DAO
+        // third DAO are Machines Cartel
+        // todo Third DAO should be created on chain 10 but currently it's created on chain 56
+        lifeCycleDaoMachines10(os56);
     }
 
     //region ------------------------------ Life cycles logic
-    function lifeCycleNormal56(IOS os56) internal {
+    function lifeCycleDaoAlien56(IOS os56) internal {
         address asset = os56.getChainSettings().exchangeAsset;
 
+        // ------------------------------ Create DAO
         {
             ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0] = OsUtilsLib.generateSeedFunding();
+            funding[0] = OsUtilsLib.generateSeedFunding(
+                DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            );
 
             ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
             activity[0] = ITokenomics.Activity.BUILDER_3;
@@ -447,6 +462,284 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             vm.expectRevert(IOS.TooLateToUpdateVesting.selector);
             os56.updateVesting(daoData.symbol, vesting);
+        }
+    }
+
+    function lifeCycleDaoApes1(IOS os1) internal {
+        address asset = os1.getChainSettings().exchangeAsset;
+
+        // ------------------------------ Create DAO
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+            funding[0] = OsUtilsLib.generateSeedFunding(
+                7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            );
+
+            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+            activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+            ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(30, 90);
+
+            os1.createDAO("Apes Syndicate", "APES", activity, params, funding);
+        }
+
+        // todo other OS instances must see a symbol of new DAO
+
+        ITokenomics.DaoData memory daoData = os1.getDAO("APES");
+
+        // ------------------------------ Update images, units, socials, vesting
+        {
+            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+                seedToken: "/seedApes.png", tgeToken: "", token: "/apes.png", xToken: "", daoToken: ""
+            });
+            os1.updateImages(daoData.symbol, images);
+
+            IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
+            units[0] = IDAOUnit.UnitInfo({
+                unitId: "aliens:os",
+                name: "DAO Factory",
+                status: IDAOUnit.UnitStatus.BUILDING_1,
+                unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
+                revenueShare: 100,
+                ui: new IDAOUnit.UnitUiLink[](0),
+                emoji: "",
+                api: new string[](0)
+            });
+            os1.updateUnits(daoData.symbol, units);
+
+            string[] memory socials = new string[](2);
+            socials[0] = "https://a.aa/a";
+            socials[1] = "https://b.bb/b";
+
+            os1.updateSocials(daoData.symbol, socials);
+            uint fundingIndex = OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0] = OsUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
+
+            os1.updateVesting(daoData.symbol, vesting);
+        }
+
+        // ------------------------------ apes forgot they created DRAFT
+        {
+            skip(15 days);
+
+            vm.expectRevert(IOS.TooLateSoSetupFundingAgain.selector);
+            os1.changePhase(daoData.symbol);
+
+            ITokenomics.Funding memory funding = OsUtilsLib.generateSeedFunding(
+                7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            );
+            os1.updateFunding(daoData.symbol, funding);
+        }
+
+        // ------------------------------ change phase to SEED, refresh daoData
+        {
+            skip(7 days + 1); // todo why do we need +1 second here?
+
+            os1.changePhase(daoData.symbol);
+            ITokenomics.DaoData memory daoDataAfter = os1.getDAO(daoData.symbol);
+
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+            daoData = os1.getDAO(daoData.symbol);
+
+            // setup seed token
+            OsUtilsLib.setupSeedToken(vm, os1, MULTISIG, daoData.deployments.seedToken);
+        }
+
+        // ------------------------------ Fund small amount - funding is failed, refresh daoData
+        {
+            deal(asset, FIRST_SEEDER, 1000e18);
+
+            vm.prank(FIRST_SEEDER);
+            IERC20(asset).approve(address(os1), 1000e18);
+
+            vm.prank(FIRST_SEEDER);
+            os1.fund(daoData.symbol, 1000e18);
+
+            skip(127 days);
+
+            os1.changePhase(daoData.symbol);
+            daoData = os1.getDAO(daoData.symbol);
+
+            assertEq(
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_2), "phase should be SEED_FAILED"
+            );
+        }
+
+        // ------------------------------  First sender returns his funds
+        {
+            IERC20(daoData.deployments.seedToken).approve(address(os1), type(uint).max);
+
+            //            vm.prank(FIRST_SEEDER);
+            //            os56.refund(daoData.symbol); // todo
+        }
+    }
+
+    function lifeCycleDaoMachines10(IOS os1) internal {
+        address asset = os1.getChainSettings().exchangeAsset;
+
+        // ------------------------------ Create DAO
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+            funding[0] = OsUtilsLib.generateSeedFunding(
+                7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            );
+            funding[1] = OsUtilsLib.generateTGEFunding();
+
+            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+            activity[0] = ITokenomics.Activity.MEV_SEARCHER_2;
+
+            ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(14, 99);
+
+            os1.createDAO("Machines Cartel", "MACHINE", activity, params, funding);
+        }
+
+        // todo other OS instances must see a symbol of new DAO
+
+        ITokenomics.DaoData memory daoData = os1.getDAO("MACHINE");
+
+        // ------------------------------ Update images, units, socials, vesting
+        {
+            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+                seedToken: "/seedMACHINE.png",
+                tgeToken: "/MACHINE.png",
+                token: "/saleMACHINE.png",
+                xToken: "/xMACHINE.png",
+                daoToken: "/MACHINE_DAO.png"
+            });
+            os1.updateImages(daoData.symbol, images);
+
+            IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
+            units[0] = IDAOUnit.UnitInfo({
+                unitId: "MACHINES:MEVBOT",
+                name: "MEV searcher",
+                status: IDAOUnit.UnitStatus.LIVE_2,
+                unitType: uint16(IDAOUnit.UnitType.MEV_3),
+                revenueShare: 100,
+                ui: new IDAOUnit.UnitUiLink[](0),
+                emoji: "",
+                api: new string[](0)
+            });
+            os1.updateUnits(daoData.symbol, units);
+
+            string[] memory socials = new string[](2);
+            socials[0] = "https://a.aa/a";
+            socials[1] = "https://b.bb/b";
+            os1.updateSocials(daoData.symbol, socials);
+
+            uint fundingIndex = OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0] = OsUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
+
+            os1.updateVesting(daoData.symbol, vesting);
+        }
+
+        // ------------------------------ change phase to SEED, refresh daoData
+        {
+            skip(7 days + 1); // todo why do we need +1 second here?
+
+            os1.changePhase(daoData.symbol);
+            ITokenomics.DaoData memory daoDataAfter = os1.getDAO(daoData.symbol);
+
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+            daoData = os1.getDAO(daoData.symbol);
+
+            // setup seed token
+            OsUtilsLib.setupSeedToken(vm, os1, MULTISIG, daoData.deployments.seedToken);
+        }
+
+        // ------------------------------ Fund enough amount, refresh daoData
+        {
+            deal(asset, FIRST_SEEDER, 50000e18);
+
+            vm.prank(FIRST_SEEDER);
+            IERC20(asset).approve(address(os1), 50000e18);
+
+            vm.prank(FIRST_SEEDER);
+            os1.fund(daoData.symbol, 50000e18);
+
+            skip(127 days);
+
+            os1.changePhase(daoData.symbol);
+            daoData = os1.getDAO(daoData.symbol);
+
+            assertEq(
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
+            );
+        }
+
+        // ------------------------------ Switch to TGE, refresh daoData
+        {
+            skip(180 days);
+
+            os1.changePhase(daoData.symbol);
+            daoData = os1.getDAO(daoData.symbol);
+
+            assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+
+            // setup TGE token
+            OsUtilsLib.setupTgeToken(vm, os1, MULTISIG, daoData.deployments.tgeToken);
+        }
+
+        // ------------------------------ Fund NOT enough amount, TGE failed, refresh daoData
+        {
+            // first seeder funds small amount
+            deal(asset, FIRST_SEEDER, 1e18);
+
+            vm.prank(FIRST_SEEDER);
+            IERC20(asset).approve(address(os1), 1e18);
+
+            vm.prank(FIRST_SEEDER);
+            os1.fund(daoData.symbol, 1e18);
+
+            // second seeder funds small amount
+            deal(asset, SECOND_SEEDER, 2e18);
+
+            vm.prank(SECOND_SEEDER);
+            IERC20(asset).approve(address(os1), 2e18);
+
+            vm.prank(SECOND_SEEDER);
+            os1.fund(daoData.symbol, 2e18);
+
+            skip(180 days);
+
+            os1.changePhase(daoData.symbol);
+            daoData = os1.getDAO(daoData.symbol);
+
+            assertEq(
+                uint8(daoData.phase),
+                uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3),
+                "phase should be DEVELOPMENT again"
+            );
+        }
+
+        // ------------------------------ Reject proposal
+        {
+            string[] memory socials = new string[](2);
+            socials[0] = "https://a.aa/a11";
+            socials[1] = "https://b.bb/b22";
+
+            os1.updateSocials(daoData.symbol, socials);
+
+            bytes32 proposalId = OsUtilsLib.getLastProposalId(os1, daoData.symbol);
+
+            vm.prank(MULTISIG);
+            os1.receiveVotingResults(proposalId, false);
+        }
+
+        // ------------------------------ First seeker refunds funds
+        {
+        // todo
+        }
+
+        // ------------------------------ New TGE started
+        {
+        // todo
+        }
+
+        // ------------------------------ Second seeker is NOT able to refund because new TGE started
+        {
+        // todo
         }
     }
 

@@ -22,9 +22,10 @@ library OsViewLib {
         require(_tasks(daoUid, 1).length == 0, IOS.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase newPhase = phase;
+
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            console.log("changePhase", seed.start, block.timestamp);
             require(seed.start < block.timestamp, IOS.WaitFundingStart());
 
             // SEED can be started not later than 1 week after configured start time
@@ -34,8 +35,7 @@ library OsViewLib {
                 authority_, string(abi.encodePacked("Seed ", daoSymbol)), string(abi.encodePacked("seed", daoSymbol))
             );
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_1;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.SEED_1;
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
             ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             require(seed.end <= block.timestamp, IOS.WaitFundingEnd());
@@ -43,12 +43,11 @@ library OsViewLib {
             bool success = seed.raised >= seed.minRaise;
 
             if (success) {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
             } else {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+                newPhase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
                 // now refund can be called
             }
-            // todo emit event
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
             ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
@@ -58,8 +57,7 @@ library OsViewLib {
                 authority_, string(abi.encodePacked("Tge ", daoSymbol)), string(abi.encodePacked("tge", daoSymbol))
             );
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.TGE_4;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.TGE_4;
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
             ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
@@ -80,11 +78,9 @@ library OsViewLib {
                 // todo seedToken holders became xToken holders by predefined rate
 
                 // todo deploy v2 liquidity from TGE funds at predefined price
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
-                // todo emit event
+                newPhase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
             } else {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-                // todo emit event
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
                 // now refund can be called
                 // refunding is available up to the start of next TGE
             }
@@ -104,8 +100,7 @@ library OsViewLib {
 
             require(isVestingStarted, IOS.WaitVestingStart());
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
             // slither-disable-next-line uninitialized-local
             bool isVestingNotEnded;
@@ -120,9 +115,12 @@ library OsViewLib {
 
             require(isVestingNotEnded, IOS.WaitVestingEnd());
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_7;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.LIVE_7;
         }
+
+        $.daos[daoUid].phase = newPhase;
+
+        emit IOS.DaoPhaseChanged(daoSymbol, newPhase);
     }
 
     //region -------------------------------------- View

@@ -35,7 +35,9 @@ contract OsTest is Test, OsUtilsLib {
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = OsUtilsLib.generateSeedFunding();
+        funding[0] = OsUtilsLib.generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;

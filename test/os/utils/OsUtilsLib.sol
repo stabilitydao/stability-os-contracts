@@ -15,6 +15,11 @@ abstract contract OsUtilsLib {
     uint64 internal constant ADMIN_ROLE = 1;
     uint64 internal constant MINTER_ROLE = 2;
 
+    uint64 internal constant DEFAULT_SEED_DELAY = 30 days;
+    uint64 internal constant DEFAULT_SEED_DURATION = 90 days;
+    uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
+    uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
+
     function createOsInstance(Vm vm, address multisig) public returns (IOS) {
         AccessManager accessManager = new AccessManager(multisig);
 
@@ -52,7 +57,9 @@ abstract contract OsUtilsLib {
         string memory daoName
     ) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = generateSeedFunding();
+        funding[0] = generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
@@ -99,20 +106,18 @@ abstract contract OsUtilsLib {
 
     /// @notice Generate a seed funding with sensible defaults relative to current block timestamp.
     /// @return A populated ITokenomics.Funding struct ready to be passed to createDAO/updateFunding.
-    function generateSeedFunding() public view returns (ITokenomics.Funding memory) {
-        // Defaults: delaySec = 30 days, duration = 90 days, minRaise = 10_000, maxRaise = 100_000
-        uint64 delaySec = uint64(30 days);
-        uint64 duration = uint64(3 * 30 days);
-
-        uint64 start = uint64(block.timestamp + delaySec);
-        uint64 end = uint64(block.timestamp + delaySec + duration);
-
+    function generateSeedFunding(
+        uint delaySec,
+        uint duration,
+        uint minRaise,
+        uint maxRaise
+    ) public view returns (ITokenomics.Funding memory) {
         return ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.SEED_0,
-            start: start,
-            end: end,
-            minRaise: 10000,
-            maxRaise: 100000,
+            start: uint64(block.timestamp + delaySec),
+            end: uint64(block.timestamp + delaySec + duration),
+            minRaise: minRaise,
+            maxRaise: maxRaise,
             raised: 0,
             claim: 0
         });
