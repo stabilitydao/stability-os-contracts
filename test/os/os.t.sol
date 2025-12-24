@@ -209,8 +209,8 @@ contract OsTest is Test {
 
         {
             IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link1", url: "https://link1.com"});
-            notEmptyUi[1] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link1", href: "https://link1.com"});
+            notEmptyUi[1] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](3);
             notEmptyApi[0] = "https://api1.com";
@@ -248,7 +248,7 @@ contract OsTest is Test {
 
         {
             IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](1);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](1);
             notEmptyApi[0] = "https://api1.com";
@@ -506,8 +506,8 @@ contract OsTest is Test {
             // ui links
             assertEq(eu.ui.length, au.ui.length, "unit.ui.length");
             for (uint j = 0; j < eu.ui.length; j++) {
-                assertEq(eu.ui[j].label, au.ui[j].label, "unit.ui.label");
-                assertEq(eu.ui[j].url, au.ui[j].url, "unit.ui.url");
+                assertEq(eu.ui[j].title, au.ui[j].title, "unit.ui.label");
+                assertEq(eu.ui[j].href, au.ui[j].href, "unit.ui.url");
             }
 
             // api endpoints

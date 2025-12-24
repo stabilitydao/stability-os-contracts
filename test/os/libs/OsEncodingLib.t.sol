@@ -115,8 +115,8 @@ contract OsEncodingLibTest is Test {
         string[] memory emptyApi = new string[](0);
 
         IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
-        notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link1", url: "https://link1.com"});
-        notEmptyUi[1] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+        notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link1", href: "https://link1.com"});
+        notEmptyUi[1] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
 
         string[] memory notEmptyApi = new string[](3);
         notEmptyApi[0] = "https://api1.com";

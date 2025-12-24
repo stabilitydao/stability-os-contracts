@@ -57,8 +57,9 @@ library OsViewLib {
 
             require(tge.start <= block.timestamp, IOS.WaitFundingStart());
 
-            // todo deploy tgeToken
-            $.deployments[daoUid].tgeToken = address(0); // todo deployed tge token
+            $.deployments[daoUid].tgeToken = OsDeployLib.deployTgeToken(
+                authority_, string(abi.encodePacked("Tge ", daoSymbol)), string(abi.encodePacked("tge", daoSymbol))
+            );
 
             $.daos[daoUid].phase = ITokenomics.LifecyclePhase.TGE_4;
             // todo emit event

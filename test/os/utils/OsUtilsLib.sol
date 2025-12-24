@@ -119,12 +119,42 @@ library OsUtilsLib {
         });
     }
 
+    function generateTGEFunding() public view returns (ITokenomics.Funding memory) {
+        uint64 _after = 30 * 6 days;
+        uint64 duration = 7 days;
+        uint minRaise = 100_000e18; // exchange asset
+        uint maxRaise = 500_000e18; // ex change asset
+
+        return ITokenomics.Funding({
+            fundingType: ITokenomics.FundingType.TGE_1,
+            start: uint64(block.timestamp + _after),
+            end: uint64(block.timestamp + _after + duration),
+            minRaise: minRaise,
+            maxRaise: maxRaise,
+            raised: 0,
+            claim: 0
+        });
+    }
+
     function generateDaoParams(
         uint32 vePeriod_,
         uint16 pvpFee_
     ) public pure returns (ITokenomics.DaoParameters memory) {
         return ITokenomics.DaoParameters({
             vePeriod: vePeriod_, pvpFee: pvpFee_, minPower: 0, ttBribe: 0, recoveryShare: 0, proposalThreshold: 0
+        });
+    }
+
+    function generateVesting(string memory name, uint tgeEnd) public pure returns (ITokenomics.Vesting memory) {
+        uint64 cliff = 180 days;
+        uint64 duration = 365 days;
+        uint64 allocation = 100;
+        return ITokenomics.Vesting({
+            name: name,
+            description: "Vesting for testing",
+            start: uint64(tgeEnd + cliff),
+            end: uint64(tgeEnd + cliff + duration),
+            allocation: allocation
         });
     }
 
@@ -183,7 +213,7 @@ library OsUtilsLib {
 
         { // Unit 0: one UI link, two API endpoints
             ITokenomics.UnitUiLink[] memory ui0 = new ITokenomics.UnitUiLink[](1);
-            ui0[0] = IDAOUnit.UnitUiLink({label: "Dashboard", url: "https://unit0.example/dashboard"});
+            ui0[0] = IDAOUnit.UnitUiLink({title: "Dashboard", href: "https://unit0.example/dashboard"});
 
             string[] memory api0 = new string[](2);
             api0[0] = "https://api.unit0.example/v1/status";
@@ -203,8 +233,8 @@ library OsUtilsLib {
 
         { // Unit 1: two UI links, one API endpoint
             ITokenomics.UnitUiLink[] memory ui1 = new ITokenomics.UnitUiLink[](2);
-            ui1[0] = IDAOUnit.UnitUiLink({label: "App", url: "https://unit1.example/app"});
-            ui1[1] = IDAOUnit.UnitUiLink({label: "Docs", url: "https://unit1.example/docs"});
+            ui1[0] = IDAOUnit.UnitUiLink({title: "App", href: "https://unit1.example/app"});
+            ui1[1] = IDAOUnit.UnitUiLink({title: "Docs", href: "https://unit1.example/docs"});
 
             string[] memory api1 = new string[](1);
             api1[0] = "https://api.unit1.example/";
@@ -356,5 +386,90 @@ library OsUtilsLib {
 
         vm.prank(multisig);
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
+    }
+
+    function setupTgeToken(Vm vm, IOS os, address multisig, address tgeToken) public {
+        AccessManager accessManager = AccessManager(IControllable2(address(os)).authority());
+        // set up multisig as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = bytes4(Token.mint.selector);
+        // todo selectors[1] = bytes4(Token.burn.selector);
+        // todo selectors[2] = bytes4(Token.burnFrom.selector);
+
+        vm.prank(multisig);
+        accessManager.setTargetFunctionRole(tgeToken, selectors, MINTER_ROLE);
+
+        vm.prank(multisig);
+        accessManager.grantRole(MINTER_ROLE, address(os), 0);
+    }
+
+    function printDaoData(ITokenomics.DaoData memory data) public pure {
+        console.log("DAO Symbol:", data.symbol);
+        console.log("DAO Name:", data.name);
+        console.log("Deployer:", data.deployer);
+        console.log("Phase:", uint8(data.phase));
+
+        console.log("Deployments:");
+        console.log("  Seed Token:", data.deployments.seedToken);
+        console.log("  TGE Token:", data.deployments.tgeToken);
+        console.log("  Token:", data.deployments.token);
+        console.log("  xToken:", data.deployments.xToken);
+        console.log("  Staking:", data.deployments.staking);
+        console.log("  DAO Token:", data.deployments.daoToken);
+        console.log("  Revenue Router:", data.deployments.revenueRouter);
+        console.log("  Recovery:", data.deployments.recovery);
+        console.log("  Token Bridge:", data.deployments.tokenBridge);
+        console.log("  xToken Bridge:", data.deployments.xTokenBridge);
+        console.log("  DAO Token Bridge:", data.deployments.daoTokenBridge);
+        for (uint i = 0; i < data.deployments.vesting.length; i++) {
+            console.log(i, data.deployments.vesting[i]);
+        }
+
+        console.log("Images:");
+        console.log("  Seed Token:", data.images.seedToken);
+        console.log("  TGE Token:", data.images.tgeToken);
+        console.log("  Token:", data.images.token);
+        console.log("  xToken:", data.images.xToken);
+        console.log("  DAO Token:", data.images.daoToken);
+
+        console.log("Socials:");
+        for (uint i = 0; i < data.socials.length; i++) {
+            console.log(i, data.socials[i]);
+        }
+
+        console.log("Units:");
+        for (uint i = 0; i < data.units.length; i++) {
+            console.log(i, data.units[i].unitId, data.units[i].name);
+        }
+
+        console.log("Agents:");
+        for (uint i = 0; i < data.agents.length; i++) {
+            console.log(i, data.agents[i].name);
+        }
+    }
+
+    function printTasks(IOS.Task[] memory tasks) internal pure {
+        for (uint i; i < tasks.length; i++) {
+            console.log(tasks[i].name);
+        }
+    }
+
+    function getFundingIndex(
+        ITokenomics.DaoData memory data,
+        ITokenomics.FundingType fType
+    ) public pure returns (uint index) {
+        for (uint i; i < data.tokenomics.funding.length; i++) {
+            if (data.tokenomics.funding[i].fundingType == fType) {
+                return i;
+            }
+        }
+        return uint(type(uint).max);
+    }
+
+    function getLastProposalId(IOS os, string memory daoSymbol) public view returns (bytes32) {
+        uint len = os.proposalsLength(daoSymbol);
+        require(len != 0, "No proposals found");
+        bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);
+        return proposalIds[0];
     }
 }

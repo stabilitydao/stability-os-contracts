@@ -22,4 +22,20 @@ library OsDeployLib {
         IToken(address(proxy)).initialize(accessManager, token_, symbol_);
         return address(proxy);
     }
+
+    function deployTgeToken(
+        address accessManager,
+        string memory token_,
+        string memory symbol_
+    ) external returns (address) {
+        address logic = address(new Token());
+
+        // todo refactoring
+
+        Proxy proxy = new Proxy();
+        proxy.initProxy(logic);
+
+        IToken(address(proxy)).initialize(accessManager, token_, symbol_);
+        return address(proxy);
+    }
 }

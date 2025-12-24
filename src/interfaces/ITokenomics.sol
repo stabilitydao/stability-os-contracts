@@ -139,13 +139,13 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         /// @notice End timestamp (seconds since unix epoch).
         uint64 end;
 
-        /// @notice Minimum raise amount todo units
+        /// @notice Minimum raise amount, USD decimals 18
         uint minRaise;
 
-        /// @notice Maximum raise amount todo units
+        /// @notice Maximum raise amount, USD decimals 18
         uint maxRaise;
 
-        /// @notice Amount already raised todo units
+        /// @notice Amount already raised, USD decimals 18
         uint raised;
 
         /// @notice todo
