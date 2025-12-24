@@ -2,9 +2,7 @@
 pragma solidity ^0.8.28;
 import {Proxy} from "../../core/proxy/Proxy.sol";
 import {Token} from "../../tokenomics/Token.sol";
-import {IControllable2} from "../../interfaces/IControllable2.sol";
 import {IToken} from "../../interfaces/IToken.sol";
-import {console} from "forge-std/console.sol";
 
 library OsDeployLib {
     function deploySeedToken(

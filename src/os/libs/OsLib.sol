@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {OsEncodingLib} from "./OsEncodingLib.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
-import {console} from "forge-std/console.sol";
 
 /// @notice Basic data types, validation and update logic
 library OsLib {

@@ -7,9 +7,6 @@ import {IOS} from "../../interfaces/IOS.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
 import {console} from "forge-std/console.sol";
-import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
-import {OsEncodingLib} from "./OsEncodingLib.sol";
-import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
 import {OsDeployLib} from "./OsDeployLib.sol";
 
 library OsViewLib {

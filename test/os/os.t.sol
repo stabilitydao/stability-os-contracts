@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
-import {IOS, OS} from "../../src/os/OS.sol";
+import {IOS} from "../../src/os/OS.sol";
 import {OsLib} from "../../src/os/libs/OsLib.sol";
-import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {Test, Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
-import {IControllable2} from "../../src/interfaces/IControllable2.sol";
-import {Proxy} from "../../src/core/proxy/Proxy.sol";
+import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {Test} from "forge-std/Test.sol";
+// import {console} from "forge-std/console.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 
-contract OsTest is Test {
+contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";

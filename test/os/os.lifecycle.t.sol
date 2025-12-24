@@ -2,17 +2,13 @@
 pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IControllable2} from "../../src/interfaces/IControllable2.sol";
-import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {IOS, OS} from "../../src/os/OS.sol";
-import {OsLib} from "../../src/os/libs/OsLib.sol";
+import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IOS} from "../../src/os/OS.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
-import {Proxy} from "../../src/core/proxy/Proxy.sol";
-import {Test, Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
+import {Test} from "forge-std/Test.sol";
+// import {console} from "forge-std/console.sol";
 
-contract OsLifeCycleTest is Test {
+contract OsLifeCycleTest is Test, OsUtilsLib {
     address internal immutable MULTISIG;
     address internal constant FIRST_SEEDER = address(0x11);
     address internal constant SECOND_SEEDER = address(0x22);

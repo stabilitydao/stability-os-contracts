@@ -3,16 +3,15 @@ pragma solidity ^0.8.28;
 
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
 import {IOS, OS} from "../../../src/os/OS.sol";
-import {OsLib} from "../../../src/os/libs/OsLib.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../../src/interfaces/ITokenomics.sol";
-import {Test, Vm} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
 import {Proxy} from "../../../src/core/proxy/Proxy.sol";
 import {Token} from "../../../src/tokenomics/Token.sol";
 import {MockERC20} from "../../../src/test/MockERC20.sol";
 
-library OsUtilsLib {
+abstract contract OsUtilsLib {
     uint64 internal constant ADMIN_ROLE = 1;
     uint64 internal constant MINTER_ROLE = 2;
 
@@ -471,5 +470,9 @@ library OsUtilsLib {
         require(len != 0, "No proposals found");
         bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);
         return proposalIds[0];
+    }
+
+    function test() public {
+        // empty function to exclude the library from the coverage
     }
 }
