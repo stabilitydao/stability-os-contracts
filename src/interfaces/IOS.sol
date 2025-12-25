@@ -164,6 +164,13 @@ interface IOS {
     /// @custom:restricted Restricted through access manager (only admin)
     function refundFor(string calldata daoSymbol, address[] memory receivers) external;
 
+    /// @notice Handle incoming cross-chain message
+    /// @custom:restricted Restricted through access manager (only OS bridge can call this function)
+    /// @param srcEid LayerZero source endpoint ID
+    /// @param guid_ Unique message identifier
+    /// @param message_ Message payload
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external;
+
     //endregion ---------------------------------------- Write actions
 
     //region ---------------------------------------- Update actions

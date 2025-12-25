@@ -10,10 +10,11 @@ import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
 import {Proxy} from "../../../src/core/proxy/Proxy.sol";
 import {Token} from "../../../src/tokenomics/Token.sol";
 import {MockERC20} from "../../../src/test/MockERC20.sol";
+import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 
 abstract contract OsUtilsLib {
-    uint64 internal constant ADMIN_ROLE = 1;
-    uint64 internal constant MINTER_ROLE = 2;
+    uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
+    uint64 internal constant MINTER_ROLE = AccessRolesLib.OS_TOKEN_MINTER;
 
     uint64 internal constant DEFAULT_SEED_DELAY = 30 days;
     uint64 internal constant DEFAULT_SEED_DURATION = 90 days;

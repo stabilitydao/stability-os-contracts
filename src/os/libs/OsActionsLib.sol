@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {OsCrossChainLib} from "./OsCrossChainLib.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {ITokenomics} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
-import {OsEncodingLib} from "./OsEncodingLib.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {OsUpdateLib} from "./OsUpdateLib.sol";
 
 library OsActionsLib {
     using SafeERC20 for IERC20;
@@ -53,7 +54,7 @@ library OsActionsLib {
         daoData.deployer = msg.sender;
         daoData.activity = activity;
 
-        OsLib.validate(daoData, params, funding);
+        OsUpdateLib.validate(daoData, params, funding);
 
         // ------------------------- Save DAO data to the storage
         // we don't use viaIR=true in config so we cannot make direct assignment
@@ -88,7 +89,7 @@ library OsActionsLib {
         local.countUnits = uint32(dao.units.length);
         local.countAgents = uint32(dao.agents.length);
 
-        OsLib.validate(local, dao.params, dao.tokenomics.funding);
+        OsUpdateLib.validate(local, dao.params, dao.tokenomics.funding);
         // todo validate other fields
         // todo require block.chain == dao.tokenomics.initialChain
 
@@ -151,7 +152,7 @@ library OsActionsLib {
 
         emit IOS.DaoCreated(daoName, daoSymbol, daoUid);
 
-        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, OsEncodingLib.encodeSymbol(daoSymbol));
+        OsCrossChainLib.sendMessageNewSymbol(daoSymbol);
     }
     //endregion -------------------------------------- Internal logic
 

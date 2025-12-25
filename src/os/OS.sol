@@ -4,8 +4,9 @@ pragma solidity ^0.8.28;
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IOS} from "../interfaces/IOS.sol";
 import {OsActionsLib} from "./libs/OsActionsLib.sol";
-import {OsUpdatesLib} from "./libs/OsUpdatesLib.sol";
+import {OsProposalsLib} from "./libs/OsProposalsLib.sol";
 import {OsFundingLib} from "./libs/OsFundingLib.sol";
+import {OsCrossChainLib} from "./libs/OsCrossChainLib.sol";
 import {OsViewLib} from "./libs/OsViewLib.sol";
 import {Controllable2} from "../core/base/Controllable2.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
@@ -117,7 +118,7 @@ contract OS is IOS, Controllable2 {
 
     /// @inheritdoc IOS
     function receiveVotingResults(bytes32 proposalId, bool succeed) external restricted {
-        OsUpdatesLib.receiveVotingResults(proposalId, succeed);
+        OsProposalsLib.receiveVotingResults(proposalId, succeed);
     }
 
     /// @inheritdoc IOS
@@ -132,6 +133,11 @@ contract OS is IOS, Controllable2 {
         OsFundingLib.refundFor(daoSymbol, receivers);
     }
 
+    /// @inheritdoc IOS
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
+        OsCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
+    }
+
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Update actions
@@ -139,37 +145,37 @@ contract OS is IOS, Controllable2 {
     /// @inheritdoc IOS
     function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external {
         // restrictions are checked below
-        OsUpdatesLib.updateImages(daoSymbol, images);
+        OsProposalsLib.updateImages(daoSymbol, images);
     }
 
     /// @inheritdoc IOS
     function updateSocials(string calldata daoSymbol, string[] calldata socials) external {
         // restrictions are checked below
-        OsUpdatesLib.updateSocials(daoSymbol, socials);
+        OsProposalsLib.updateSocials(daoSymbol, socials);
     }
 
     /// @inheritdoc IOS
     function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external {
         // restrictions are checked below
-        OsUpdatesLib.updateUnits(daoSymbol, units);
+        OsProposalsLib.updateUnits(daoSymbol, units);
     }
 
     /// @inheritdoc IOS
     function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external {
         // restrictions are checked below
-        OsUpdatesLib.updateFunding(daoSymbol, funding);
+        OsProposalsLib.updateFunding(daoSymbol, funding);
     }
 
     /// @inheritdoc IOS
     function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external {
         // restrictions are checked below
-        OsUpdatesLib.updateVesting(daoSymbol, vestings);
+        OsProposalsLib.updateVesting(daoSymbol, vestings);
     }
 
     /// @inheritdoc IOS
     function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external {
         // restrictions are checked below
-        OsUpdatesLib.updateNaming(daoSymbol, daoNames_);
+        OsProposalsLib.updateNaming(daoSymbol, daoNames_);
     }
 
     /// @inheritdoc IOS
@@ -178,7 +184,7 @@ contract OS is IOS, Controllable2 {
         ITokenomics.DaoParameters calldata daoParameters_
     ) external {
         // restrictions are checked below
-        OsUpdatesLib.updateDaoParameters(daoSymbol, daoParameters_);
+        OsProposalsLib.updateDaoParameters(daoSymbol, daoParameters_);
     }
 
     //endregion -------------------------------------- Update actions
