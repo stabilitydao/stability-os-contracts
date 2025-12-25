@@ -173,12 +173,5 @@ library OsEncodingLib {
         return abi.encode(data);
     }
 
-    function encodeSymbol(string memory daoSymbol) internal pure returns (bytes memory) {
-        return abi.encode(daoSymbol);
-    }
-
-    function encodePairSymbols(string memory oldSymbol, string memory newSymbol) internal pure returns (bytes memory) {
-        return abi.encode(oldSymbol, newSymbol);
-    }
     //endregion ----------------------- Decode / Encode data without versions
 }
