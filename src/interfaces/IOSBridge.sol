@@ -5,6 +5,7 @@ import {MessagingFee} from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/O
 
 interface IOSBridge {
     error UnsupportedMessageKind(uint messageKind);
+    error ZeroGasLimit(uint messageKind);
 
     event SendMessage(uint32 indexed dstEid, bytes payload);
     event SetOs(address os);

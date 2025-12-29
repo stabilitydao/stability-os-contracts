@@ -26,7 +26,7 @@ library OsViewLib {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
-        require(_tasks(daoUid, 1).length == 0, IOS.SolveTasksFirst());
+        require(_tasks(1, daoUid).length == 0, IOS.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
         ITokenomics.LifecyclePhase newPhase = phase;
@@ -258,7 +258,7 @@ library OsViewLib {
     /// @return __tasks List of tasks. The list is limited by {limit} value
     function tasks(string calldata daoSymbol, uint limit) external view returns (IOS.Task[] memory __tasks) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
-        return _tasks(limit, $.daoUids[daoSymbol]);
+        return _tasks(uint16(limit), $.daoUids[daoSymbol]);
     }
 
     /// @notice Generate token name in same way as getTokensNaming()
@@ -299,7 +299,7 @@ library OsViewLib {
 
     //endregion -------------------------------------- View
 
-    function _tasks(uint limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
+    function _tasks(uint16 limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         dest = new IOS.Task[](limit);
 

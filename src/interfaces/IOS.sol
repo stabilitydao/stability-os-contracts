@@ -82,6 +82,12 @@ interface IOS {
         string name;
     }
 
+    /// @notice Payload for OS initialization
+    struct OsInitPayload {
+        /// @notice DAO symbols registered on other chains
+        string[] usedSymbols;
+    }
+
     /// @notice Kinds of cross-chain messages
     enum CrossChainMessages {
         NEW_DAO_SYMBOL_0,

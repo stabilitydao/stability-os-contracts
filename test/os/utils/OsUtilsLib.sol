@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol"; // todo upgradable
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IOS, OS} from "../../../src/os/OS.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../../src/interfaces/ITokenomics.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
+import {IOSBridge} from "../../../src/interfaces/IOSBridge.sol";
 import {Proxy} from "../../../src/core/proxy/Proxy.sol";
 import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
 import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
+import {BridgeTestLib} from "./BridgeTestLib.sol";
 
 abstract contract OsUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -23,13 +25,18 @@ abstract contract OsUtilsLib {
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
 
-    function createOsInstance(Vm vm, address multisig) public returns (IOS) {
-        AccessManager accessManager = new AccessManager(multisig);
+    //region ----------------------------- Create OS and DAO instances
+    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IOS) {
+        IOS.OsInitPayload memory init;
+        return createOsInstance(vm, multisig, accessManager, init);
+    }
+
+    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager, IOS.OsInitPayload memory init_) public returns (IOS) {
 
         address logic = address(new OS());
         Proxy proxy = new Proxy();
         proxy.initProxy(address(logic));
-        IControllable2(address(proxy)).initialize(address(accessManager), "");
+        IControllable2(address(proxy)).initialize(address(accessManager), abi.encode(init_));
 
         IOS os = IOS(address(proxy));
 
@@ -73,6 +80,59 @@ abstract contract OsUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
+    function createAliensDao(IOS os_) public returns (ITokenomics.DaoData memory) {
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = OsUtilsLib.generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
+        activity[0] = ITokenomics.Activity.BUILDER_3;
+        activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
+
+        os_.createDAO("Aliens Community", "ALIENS", activity, params, funding);
+
+        return os_.getDAO("ALIENS");
+    }
+
+    function createApesDao(IOS os_) public returns (ITokenomics.DaoData memory) {
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = OsUtilsLib.generateSeedFunding(
+            7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(30, 90);
+
+        os_.createDAO("Apes Syndicate", "APES", activity, params, funding);
+
+        return os_.getDAO("APES");
+    }
+
+    function createDaoMachines(IOS os_) public returns (ITokenomics.DaoData memory) {
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+        funding[0] = OsUtilsLib.generateSeedFunding(
+            7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
+        funding[1] = OsUtilsLib.generateTGEFunding();
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.MEV_SEARCHER_2;
+
+        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(14, 99);
+
+        os_.createDAO("Machines Cartel", "MACHINE", activity, params, funding);
+
+        return os_.getDAO("MACHINE");
+    }
+
+    //endregion ----------------------------- Create OS and DAO instances
+
+    //region ----------------------------- Settings
     function setOsSettings(Vm vm, IOS os, address multisig) public {
         // Prepare and set OS settings using the IOS.OsSettings struct
         vm.prank(multisig);
@@ -109,6 +169,86 @@ abstract contract OsUtilsLib {
         os.setChainSettings(IOS.OsChainSettings({exchangeAsset: address(usdc), osBridge: address(bridge)}));
     }
 
+    function setupSeedToken(Vm vm, IOS os, address multisig, address seedToken) public {
+        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+
+        // set up OS as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = bytes4(SeedToken.mint.selector);
+        selectors[1] = bytes4(SeedToken.refund.selector);
+
+        vm.prank(multisig);
+        accessManager.setTargetFunctionRole(seedToken, selectors, MINTER_ROLE);
+
+        vm.prank(multisig);
+        accessManager.grantRole(MINTER_ROLE, address(os), 0);
+    }
+
+    function setupTgeToken(Vm vm, IOS os, address multisig, address tgeToken) public {
+        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+
+        // set up OS as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = bytes4(TgeToken.mint.selector);
+        selectors[1] = bytes4(TgeToken.refund.selector);
+
+        vm.prank(multisig);
+        accessManager.setTargetFunctionRole(tgeToken, selectors, MINTER_ROLE);
+
+        vm.prank(multisig);
+        accessManager.grantRole(MINTER_ROLE, address(os), 0);
+    }
+
+    function setupOsBridge(Vm vm, IOS os, BridgeTestLib.ChainConfig memory chain) public {
+        IOS.OsChainSettings memory config = os.getChainSettings();
+
+        vm.prank(chain.multisig);
+        os.setChainSettings(
+            IOS.OsChainSettings({
+                exchangeAsset: config.exchangeAsset,
+                osBridge: chain.osBridge
+            })
+        );
+
+        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+
+        // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IOSBridge.sendMessageToAllChains.selector);
+
+            vm.prank(chain.multisig);
+            accessManager.setTargetFunctionRole(chain.osBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
+
+            vm.prank(chain.multisig);
+            accessManager.grantRole(AccessRolesLib.OS_BRIDGE_USER, address(os), 0);
+        }
+
+        // ----------------------------- Allow OSBridge to call OS.receiveCrossChainMessage
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IOS.onReceiveCrossChainMessage.selector);
+
+            vm.prank(chain.multisig);
+            accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
+
+            vm.prank(chain.multisig);
+            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.osBridge), 0);
+        }
+    }
+
+    function setupOsBridgeGasLimits(Vm vm, BridgeTestLib.ChainConfig memory src) public {
+        vm.selectFork(src.fork);
+
+        vm.prank(src.multisig);
+        IOSBridge(src.osBridge).setGasLimit(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
+
+        vm.prank(src.multisig);
+        IOSBridge(src.osBridge).setGasLimit(uint(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+    }
+    //endregion ----------------------------- Settings
+
+    //region ----------------------------- Funding, DaoParams, Vesting
     /// @notice Generate a seed funding with sensible defaults relative to current block timestamp.
     /// @return A populated ITokenomics.Funding struct ready to be passed to createDAO/updateFunding.
     function generateSeedFunding(
@@ -381,37 +521,9 @@ abstract contract OsUtilsLib {
 
         return data;
     }
+    //endregion ----------------------------- Funding, DaoParams, Vesting
 
-    function setupSeedToken(Vm vm, IOS os, address multisig, address seedToken) public {
-        AccessManager accessManager = AccessManager(IControllable2(address(os)).authority());
-
-        // set up OS as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = bytes4(SeedToken.mint.selector);
-        selectors[1] = bytes4(SeedToken.refund.selector);
-
-        vm.prank(multisig);
-        accessManager.setTargetFunctionRole(seedToken, selectors, MINTER_ROLE);
-
-        vm.prank(multisig);
-        accessManager.grantRole(MINTER_ROLE, address(os), 0);
-    }
-
-    function setupTgeToken(Vm vm, IOS os, address multisig, address tgeToken) public {
-        AccessManager accessManager = AccessManager(IControllable2(address(os)).authority());
-
-        // set up OS as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = bytes4(TgeToken.mint.selector);
-        selectors[1] = bytes4(TgeToken.refund.selector);
-
-        vm.prank(multisig);
-        accessManager.setTargetFunctionRole(tgeToken, selectors, MINTER_ROLE);
-
-        vm.prank(multisig);
-        accessManager.grantRole(MINTER_ROLE, address(os), 0);
-    }
-
+    //region ----------------------------- Print
     function printDaoData(ITokenomics.DaoData memory data) public pure {
         console.log("DAO Symbol:", data.symbol);
         console.log("DAO Name:", data.name);
@@ -462,7 +574,9 @@ abstract contract OsUtilsLib {
             console.log(tasks[i].name);
         }
     }
+    //endregion ----------------------------- Print
 
+    //region ----------------------------- Utils
     function getFundingIndex(
         ITokenomics.DaoData memory data,
         ITokenomics.FundingType fType
@@ -485,4 +599,5 @@ abstract contract OsUtilsLib {
     function test() public {
         // empty function to exclude the library from the coverage
     }
+    //endregion ----------------------------- Utils
 }

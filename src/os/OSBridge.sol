@@ -156,8 +156,10 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
 
+        // todo assume here that gas limit is same for all chains
+        // if it's not true max value should be set
         uint128 _gasLimit = $.gasLimits[messageKind];
-        require(_gasLimit != 0, UnsupportedMessageKind(messageKind));
+        require(_gasLimit != 0, ZeroGasLimit(messageKind));
 
         bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
 

@@ -21,11 +21,12 @@ contract OS is IOS, Controllable2 {
     uint internal constant MAX_COUNT_TASKS = 25;
 
     /// @inheritdoc IControllable2
-    function initialize(
-        address authority_,
-        bytes memory /*payload*/
-    ) public initializer {
+    function initialize(address authority_, bytes memory payload) public initializer {
         __Controllable_init(authority_);
+
+        // register all symbols registered on other chains
+        IOS.OsInitPayload memory initPayload = abi.decode(payload, (IOS.OsInitPayload));
+        OsActionsLib.initOS(initPayload);
     }
 
     //region -------------------------------------- View

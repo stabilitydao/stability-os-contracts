@@ -26,6 +26,16 @@ library OsActionsLib {
         emit IOS.OsChainSettingsUpdated(st);
     }
 
+    /// @notice Initialize OS with existing DAO symbols from other chains
+    function initOS(IOS.OsInitPayload memory initPayload) external {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+
+        for (uint i = 0; i < initPayload.usedSymbols.length; i++) {
+            string memory daoSymbol = initPayload.usedSymbols[i];
+            $.usedSymbols[daoSymbol] = true;
+        }
+    }
+
     //endregion -------------------------------------- Restricted actions
 
     //region -------------------------------------- Actions

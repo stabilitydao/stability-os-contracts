@@ -8,6 +8,7 @@ import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 
 contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -32,7 +33,7 @@ contract OsTest is Test, OsUtilsLib {
     }
 
     function testCreateDAO() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -86,7 +87,7 @@ contract OsTest is Test, OsUtilsLib {
     }
 
     function testAddLiveDAO() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // todo only verifier
 
@@ -101,7 +102,7 @@ contract OsTest is Test, OsUtilsLib {
     }
 
     function testAddLiveDaoBadPaths() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
 
         vm.prank(MULTISIG);
@@ -133,7 +134,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         os.updateImages(
@@ -171,7 +172,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -205,7 +206,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -279,7 +280,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
@@ -348,7 +349,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -398,7 +399,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -419,7 +420,7 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
