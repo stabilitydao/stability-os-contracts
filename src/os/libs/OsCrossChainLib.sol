@@ -30,8 +30,8 @@ library OsCrossChainLib {
 
     /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IOS.CrossChainMessages messageKind, bytes memory payload) internal {
-        address bridge = address(0); // todo
-        IOSBridge(bridge).sendMessageToAllChains(uint(messageKind), payload);
+//        address bridge = address(0); // todo
+//        IOSBridge(bridge).sendMessageToAllChains(uint(messageKind), payload);
     }
 
 }

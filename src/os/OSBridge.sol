@@ -47,7 +47,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         _disableInitializers();
     }
 
-    function initialize(address authority_) public initializer {
+    function initialize(address authority_, bytes memory payload) public initializer {
         // todo
     }
 

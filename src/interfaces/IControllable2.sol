@@ -12,7 +12,10 @@ interface IControllable2 is IAccessManaged {
 
     event ContractInitialized(address authority, uint ts, uint block);
 
-    function initialize(address authority_) external;
+    /// @notice Initialize contract with authority and payload
+    /// @param authority_ Address of authority contract (Access manager)
+    /// @param payload Additional initialization payload (encoded set of initialization params)
+    function initialize(address authority_, bytes memory payload) external;
 
     /// @notice Version of contract implementation
     /// @dev SemVer scheme MAJOR.MINOR.PATCH

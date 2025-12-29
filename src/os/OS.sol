@@ -20,7 +20,8 @@ contract OS is IOS, Controllable2 {
     /// @notice Max number of tasks returned by `tasks` function
     uint internal constant MAX_COUNT_TASKS = 25;
 
-    function initialize(address authority_) public initializer {
+    /// @inheritdoc IControllable2
+    function initialize(address authority_, bytes memory /*payload*/) public initializer {
         __Controllable_init(authority_);
     }
 

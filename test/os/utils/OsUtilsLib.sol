@@ -27,7 +27,7 @@ abstract contract OsUtilsLib {
         address logic = address(new OS());
         Proxy proxy = new Proxy();
         proxy.initProxy(address(logic));
-        IControllable2(address(proxy)).initialize(address(accessManager));
+        IControllable2(address(proxy)).initialize(address(accessManager), "");
 
         IOS os = IOS(address(proxy));
 

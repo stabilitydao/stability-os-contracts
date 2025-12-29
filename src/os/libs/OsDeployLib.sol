@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 import {Proxy} from "../../core/proxy/Proxy.sol";
-import {Token} from "../../tokenomics/Token.sol";
-import {IToken} from "../../interfaces/IToken.sol";
+import {SeedToken} from "../../tokenomics/SeedToken.sol";
+import {TgeToken} from "../../tokenomics/TgeToken.sol";
+import {IControllable2} from "../../interfaces/IControllable2.sol";
 
 library OsDeployLib {
     function deploySeedToken(
@@ -10,14 +11,14 @@ library OsDeployLib {
         string memory token_,
         string memory symbol_
     ) external returns (address) {
-        address logic = address(new Token());
+        address logic = address(new SeedToken());
 
-        // todo refactoring
+        // todo refactoring use factory
 
         Proxy proxy = new Proxy();
         proxy.initProxy(logic);
 
-        IToken(address(proxy)).initialize(accessManager, token_, symbol_);
+        IControllable2(address(proxy)).initialize(accessManager, abi.encode(token_, symbol_));
         return address(proxy);
     }
 
@@ -26,14 +27,14 @@ library OsDeployLib {
         string memory token_,
         string memory symbol_
     ) external returns (address) {
-        address logic = address(new Token());
+        address logic = address(new TgeToken());
 
-        // todo refactoring
+        // todo refactoring use factory
 
         Proxy proxy = new Proxy();
         proxy.initProxy(logic);
 
-        IToken(address(proxy)).initialize(accessManager, token_, symbol_);
+        IControllable2(address(proxy)).initialize(accessManager, abi.encode(token_, symbol_));
         return address(proxy);
     }
 }
