@@ -12,6 +12,7 @@ import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
 import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
+import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
 
 abstract contract OsUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -101,9 +102,11 @@ abstract contract OsUtilsLib {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
+        MockOsBridge bridge = new MockOsBridge();
+
         // Prepare and set OS chain settings using the IOS.OsChainSettings struct
         vm.prank(multisig);
-        os.setChainSettings(IOS.OsChainSettings({exchangeAsset: address(usdc)}));
+        os.setChainSettings(IOS.OsChainSettings({exchangeAsset: address(usdc), osBridge: address(bridge)}));
     }
 
     /// @notice Generate a seed funding with sensible defaults relative to current block timestamp.

@@ -5,11 +5,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IOS} from "../../src/os/OS.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
+import {MockOsBridge} from "../../src/test/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 
 contract OsLifeCycleTest is Test, OsUtilsLib {
     address internal immutable MULTISIG;
+
     address internal constant FIRST_SEEDER = address(0x11);
     address internal constant SECOND_SEEDER = address(0x22);
     address internal constant THIRD_SEEDER = address(0x33);
@@ -483,9 +485,15 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             os1.createDAO("Apes Syndicate", "APES", activity, params, funding);
         }
 
-        // todo other OS instances must see a symbol of new DAO
-
         ITokenomics.DaoData memory daoData = os1.getDAO("APES");
+
+        // ------------------------------ other OS instances must see a symbol of new DAO
+        {
+            MockOsBridge bridge = MockOsBridge(os1.getChainSettings().osBridge);
+            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            (, string memory daoSymbol) = abi.decode(message, (uint16, string));
+            assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
+        }
 
         // ------------------------------ Update images, units, socials, vesting
         {
@@ -566,7 +574,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             );
 
             assertEq(
-                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 1000e18, "first seeder seed token balance after funding"
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                1000e18,
+                "first seeder seed token balance after funding"
             );
         }
 
@@ -581,7 +591,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 1000e18, "first seeder balance after refund");
             assertEq(
-                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 0, "first seeder doesn't have seed tokens any more"
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                0,
+                "first seeder doesn't have seed tokens any more"
             );
         }
     }
@@ -605,9 +617,23 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             os1.createDAO("Machines Cartel", "MACHINE", activity, params, funding);
         }
 
-        // todo other OS instances must see a symbol of new DAO
-
         ITokenomics.DaoData memory daoData = os1.getDAO("MACHINE");
+
+        // ------------------------------ other OS instances must see a symbol of new DAO
+        {
+            MockOsBridge bridge = MockOsBridge(os1.getChainSettings().osBridge);
+            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            (, string memory daoSymbol) = abi.decode(message, (uint16, string));
+            assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
+        }
+
+        // ------------------------------ other OS instances must see a symbol of new DAO
+        {
+            MockOsBridge bridge = MockOsBridge(os1.getChainSettings().osBridge);
+            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            (, string memory daoSymbol) = abi.decode(message, (uint16, string));
+            assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
+        }
 
         // ------------------------------ Update images, units, socials, vesting
         {
@@ -678,7 +704,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
             );
             assertEq(
-                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "first seeder has expected amount of seed tokens after funding"
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                50000e18,
+                "first seeder has expected amount of seed tokens after funding"
             );
         }
 
@@ -747,20 +775,28 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 0, "first seeder has no asset before refund");
             assertEq(
-                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "first seeder has expected amount of seed tokens before refund"
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                50000e18,
+                "first seeder has expected amount of seed tokens before refund"
             );
             assertEq(
-                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER), 1e18, "first seeder has expected amount of tge tokens before refund"
+                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER),
+                1e18,
+                "first seeder has expected amount of tge tokens before refund"
             );
 
             vm.prank(FIRST_SEEDER);
             os1.refund(daoData.symbol);
 
             assertEq(
-                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "balance of seed tokens of first seeder remains the same after refund"
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                50000e18,
+                "balance of seed tokens of first seeder remains the same after refund"
             );
             assertEq(
-                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER), 0, "first seeder doesn't have tge tokens any more"
+                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER),
+                0,
+                "first seeder doesn't have tge tokens any more"
             );
             assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 1e18, "first seeder balance after refund");
         }

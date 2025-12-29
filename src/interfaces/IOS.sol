@@ -44,6 +44,8 @@ interface IOS {
     event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
     event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
+    event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
+    event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {
@@ -71,6 +73,9 @@ interface IOS {
     struct OsChainSettings {
         /// @notice The address of the asset used to fund the DAO.
         address exchangeAsset;
+
+        /// @notice Address of the OS bridge contract on the current chain
+        address osBridge;
     }
 
     struct Task {

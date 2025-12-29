@@ -9,7 +9,6 @@ import {Test} from "forge-std/Test.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 
-
 contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
@@ -413,6 +412,8 @@ contract OsTest is Test, OsUtilsLib {
             assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
         }
     }
+
+    // todo test case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
 
     //endregion ----------------------------------- Update naming
 

@@ -4,14 +4,15 @@ pragma solidity ^0.8.28;
 import {IOSBridge} from "../interfaces/IOSBridge.sol";
 import {IOS} from "../interfaces/IOS.sol";
 import {
-OAppUpgradeable,
-Origin,
-MessagingFee
+    OAppUpgradeable,
+    Origin,
+    MessagingFee
 } from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
 import {IControllable2, Controllable2} from "../core/base/Controllable2.sol";
 import {IOS} from "../interfaces/IOS.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import {Controllable2} from "../core/base/Controllable2.sol";
 
 contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -47,15 +48,12 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         _disableInitializers();
     }
 
+    /// @inheritdoc IControllable2
     function initialize(address authority_, bytes memory payload) public initializer {
-        // todo
-    }
-
-    /// todo
-    function initialize(address authority_, address owner_, address delegate_) public initializer {
+        (address _owner, address _delegate) = abi.decode(payload, (address, address));
         __Controllable_init(authority_);
-        __OApp_init(delegate_ == address(0) ? owner_ : delegate_);
-        __Ownable_init(owner_);
+        __OApp_init(_delegate == address(0) ? _owner : _delegate);
+        __Ownable_init(_owner);
     }
 
     //endregion --------------------------------- Initializers
@@ -83,6 +81,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         return $.gasLimits[messageKind];
     }
+
     //endregion --------------------------------- Views
 
     //region --------------------------------- Actions
@@ -130,12 +129,21 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
 
     //region --------------------------------- IOSBridge
     /// @inheritdoc IOSBridge
-    function quoteSendMessage(uint32 dstEid_, bytes memory options_, bytes memory message_) external view returns (MessagingFee memory fee) {
+    function quoteSendMessage(
+        uint32 dstEid_,
+        bytes memory options_,
+        bytes memory message_
+    ) external view returns (MessagingFee memory fee) {
         return _quote(dstEid_, message_, options_, false);
     }
 
     /// @inheritdoc IOSBridge
-    function sendMessage(uint32 dstEid_, bytes memory options_, bytes memory message_, MessagingFee memory fee_) external restricted {
+    function sendMessage(
+        uint32 dstEid_,
+        bytes memory options_,
+        bytes memory message_,
+        MessagingFee memory fee_
+    ) external restricted {
         // this function is restricted to be called by OS only
         // the restriction is checked by AccessManager
 
@@ -154,6 +162,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
 
         uint len = $.endpoints.length();
+
         for (uint i; i < len; ++i) {
             uint32 dstEid = uint32($.endpoints.at(i));
             MessagingFee memory fee = _quote(dstEid, message_, options, false);
@@ -176,7 +185,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         bytes32 guid_,
         bytes calldata message_,
         address,
-    /*_executor*/
+        /*_executor*/
         bytes calldata /*_extraData*/
     ) internal override {
         // ---------------------- check sender
@@ -191,6 +200,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
 
         IOS(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
     }
+
     //endregion --------------------------------- Overrides
 
     //region --------------------------------- Internal logic
@@ -201,5 +211,4 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         }
     }
     //endregion --------------------------------- Internal logic
-
 }

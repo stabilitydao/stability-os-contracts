@@ -6,7 +6,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 
 interface ISeedToken is IERC20, IMintedERC20, IRefundableToken {
-
     error NonTransferable();
 
     /// @notice Get voting power of specific user
@@ -21,5 +20,4 @@ interface ISeedToken is IERC20, IMintedERC20, IRefundableToken {
     /// @param to Address to transfer tokens to
     /// @param amount Amount of tokens to transfer
     function transferTo(address token, address to, uint amount) external;
-
 }

@@ -79,7 +79,7 @@ library OsUpdateLib {
         if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
             require(
                 phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.SEED_1
-                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
                 IOS.TooLateToUpdateSuchFunding()
             );
         }
@@ -99,7 +99,7 @@ library OsUpdateLib {
     ) internal pure {
         require(
             phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
-            && phase != ITokenomics.LifecyclePhase.LIVE_7,
+                && phase != ITokenomics.LifecyclePhase.LIVE_7,
             IOS.TooLateToUpdateVesting()
         );
 
@@ -285,6 +285,10 @@ library OsUpdateLib {
     /// @param payload Encoded ITokenomics.DaoNames struct
     function updateNaming(uint daoUid, bytes memory payload) internal {
         ITokenomics.DaoNames memory _daoNames = OsEncodingLib.decodeDaoNames(payload);
+
+        // todo we must validate if the new symbol is not used already
+        // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
+
         updateNaming(daoUid, _daoNames);
     }
 
