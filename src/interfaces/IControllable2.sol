@@ -9,6 +9,9 @@ import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessMana
 ///  todo rename to IControllable later
 interface IControllable2 is IAccessManaged {
     error IncorrectZeroArgument();
+    error ZeroAddress();
+    error ZeroAmount();
+    error InsufficientBalance();
 
     event ContractInitialized(address authority, uint ts, uint block);
 

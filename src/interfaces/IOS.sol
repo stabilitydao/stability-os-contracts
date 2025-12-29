@@ -21,7 +21,6 @@ interface IOS {
     error WaitVestingEnd();
     error NotFundingPhase();
     error RaiseMaxExceed();
-    error ZeroAmount();
     error AlreadyReceived();
     error IncorrectProposal();
     error NonImplemented();
@@ -44,7 +43,7 @@ interface IOS {
     event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
     event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
-    event DaoRefunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
+    event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {

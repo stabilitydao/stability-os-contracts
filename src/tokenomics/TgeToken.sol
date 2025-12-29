@@ -12,6 +12,8 @@ import {Controllable2} from "../core/base/Controllable2.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
 import {ITgeToken} from "../interfaces/ITgeToken.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 
 contract TgeToken is
     ITgeToken,
@@ -20,6 +22,8 @@ contract TgeToken is
     ERC20BurnableUpgradeable,
     ERC20PermitUpgradeable
 {
+    using SafeERC20 for IERC20;
+
     /// @inheritdoc IControllable2
     string public constant VERSION = "1.0.0";
 
@@ -38,10 +42,10 @@ contract TgeToken is
         _mint(to, amount);
     }
 
-    /// @inheritdoc ITgeToken
-    function burnFrom(address from, uint value) public override(ERC20BurnableUpgradeable, ITgeToken) restricted {
-        // todo OS is allowed to burn without restriction
-
-        super.burnFrom(from, value);
+    /// @inheritdoc IRefundableToken
+    function refund(address from, uint amount, address asset, address receiver) external restricted {
+        // authority no need allowance for burning
+        super._burn(from, amount);
+        IERC20(asset).safeTransfer(receiver, amount);
     }
 }

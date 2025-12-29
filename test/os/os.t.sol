@@ -7,6 +7,8 @@ import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+
 
 contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -111,8 +113,9 @@ contract OsTest is Test, OsUtilsLib {
         vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
-        // -------------------- todo only verifier
-        // os.addLiveDAO(daoOrigin);
+        // -------------------- only verifier (restricted)
+        vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this)));
+        os.addLiveDAO(daoOrigin);
 
         // -------------------- todo validation
     }

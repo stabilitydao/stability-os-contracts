@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IRefundableToken} from "./IRefundableToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 
-interface ISeedToken is IERC20, IMintedERC20 {
+interface ISeedToken is IERC20, IMintedERC20, IRefundableToken {
 
     error NonTransferable();
 
@@ -14,9 +15,11 @@ interface ISeedToken is IERC20, IMintedERC20 {
     /// @return votes Voting power of the user
     function getVotes(address user_) external view returns (uint votes);
 
-    /// @notice Burn tokens from specific address by Authority on refund event
-    /// @param from Address to burn tokens from
-    /// @param value Amount of tokens to burn
-    function burnOnRefund(address from, uint value) external;
+    /// @notice Transfer given {amount} of {token} from balance to {to} address
+    /// @custom:restricted OS only
+    /// @param token Address of the token to transfer
+    /// @param to Address to transfer tokens to
+    /// @param amount Amount of tokens to transfer
+    function transferTo(address token, address to, uint amount) external;
 
 }

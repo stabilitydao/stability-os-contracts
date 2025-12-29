@@ -564,14 +564,25 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_2), "phase should be SEED_FAILED"
             );
+
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 1000e18, "first seeder seed token balance after funding"
+            );
         }
 
         // ------------------------------  First sender returns his funds
         {
             IERC20(daoData.deployments.seedToken).approve(address(os1), type(uint).max);
 
-            //            vm.prank(FIRST_SEEDER);
-            //            os56.refund(daoData.symbol); // todo
+            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 0, "first seeder has no asset before refund");
+
+            vm.prank(FIRST_SEEDER);
+            os1.refund(daoData.symbol);
+
+            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 1000e18, "first seeder balance after refund");
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 0, "first seeder doesn't have seed tokens any more"
+            );
         }
     }
 
@@ -666,6 +677,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
             );
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "first seeder has expected amount of seed tokens after funding"
+            );
         }
 
         // ------------------------------ Switch to TGE, refresh daoData
@@ -727,9 +741,28 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             os1.receiveVotingResults(proposalId, false);
         }
 
-        // ------------------------------ First seeker refunds funds
+        // ------------------------------ First seeker refunds (tge) funds
         {
-        // todo
+            IERC20(daoData.deployments.seedToken).approve(address(os1), type(uint).max);
+
+            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 0, "first seeder has no asset before refund");
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "first seeder has expected amount of seed tokens before refund"
+            );
+            assertEq(
+                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER), 1e18, "first seeder has expected amount of tge tokens before refund"
+            );
+
+            vm.prank(FIRST_SEEDER);
+            os1.refund(daoData.symbol);
+
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER), 50000e18, "balance of seed tokens of first seeder remains the same after refund"
+            );
+            assertEq(
+                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER), 0, "first seeder doesn't have tge tokens any more"
+            );
+            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 1e18, "first seeder balance after refund");
         }
 
         // ------------------------------ New TGE started

@@ -12,6 +12,8 @@ import {Controllable2} from "../core/base/Controllable2.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
 import {ISeedToken} from "../interfaces/ISeedToken.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 
 contract SeedToken is
     ISeedToken,
@@ -20,6 +22,8 @@ contract SeedToken is
     ERC20BurnableUpgradeable,
     ERC20PermitUpgradeable
 {
+    using SafeERC20 for IERC20;
+
     /// @inheritdoc IControllable2
     string public constant VERSION = "1.0.0";
 
@@ -38,15 +42,25 @@ contract SeedToken is
         _mint(to, amount);
     }
 
-    /// @inheritdoc ISeedToken
-    function burnOnRefund(address from, uint value) public override restricted {
+    /// @inheritdoc IRefundableToken
+    function refund(address from, uint amount, address asset, address receiver) external restricted {
         // authority no need allowance for burning
-        super._burn(from, value);
+        super._burn(from, amount);
+        IERC20(asset).safeTransfer(receiver, amount);
     }
 
     /// @inheritdoc ISeedToken
     function getVotes(address user_) public view returns (uint votes) {
         votes = balanceOf(user_);
+    }
+
+    /// @inheritdoc ISeedToken
+    function transferTo(address token, address to, uint amount) external restricted {
+        require(amount != 0, ZeroAmount());
+        require(to != address(0), ZeroAddress());
+        require(IERC20(token).balanceOf(address(this)) >= amount, InsufficientBalance());
+
+        IERC20(token).safeTransfer(to, amount);
     }
 
     /// @dev The token is not transferable, only minting and burning is allowed

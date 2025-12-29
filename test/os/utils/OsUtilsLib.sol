@@ -8,7 +8,8 @@ import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
 import {Proxy} from "../../../src/core/proxy/Proxy.sol";
-import {Token} from "../../../src/tokenomics/Token.sol";
+import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
+import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
 import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 
@@ -380,11 +381,11 @@ abstract contract OsUtilsLib {
 
     function setupSeedToken(Vm vm, IOS os, address multisig, address seedToken) public {
         AccessManager accessManager = AccessManager(IControllable2(address(os)).authority());
-        // set up multisig as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = bytes4(Token.mint.selector);
-        // todo selectors[1] = bytes4(Token.burn.selector);
-        // todo selectors[2] = bytes4(Token.burnFrom.selector);
+
+        // set up OS as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = bytes4(SeedToken.mint.selector);
+        selectors[1] = bytes4(SeedToken.refund.selector);
 
         vm.prank(multisig);
         accessManager.setTargetFunctionRole(seedToken, selectors, MINTER_ROLE);
@@ -395,11 +396,11 @@ abstract contract OsUtilsLib {
 
     function setupTgeToken(Vm vm, IOS os, address multisig, address tgeToken) public {
         AccessManager accessManager = AccessManager(IControllable2(address(os)).authority());
-        // set up multisig as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = bytes4(Token.mint.selector);
-        // todo selectors[1] = bytes4(Token.burn.selector);
-        // todo selectors[2] = bytes4(Token.burnFrom.selector);
+
+        // set up OS as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](2);
+        selectors[0] = bytes4(TgeToken.mint.selector);
+        selectors[1] = bytes4(TgeToken.refund.selector);
 
         vm.prank(multisig);
         accessManager.setTargetFunctionRole(tgeToken, selectors, MINTER_ROLE);
