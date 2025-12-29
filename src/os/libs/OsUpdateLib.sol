@@ -193,6 +193,8 @@ library OsUpdateLib {
     function updateUnits(uint daoUid, ITokenomics.UnitInfo[] memory units) internal {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
+        // todo take prices for unit creation
+
         uint32 countUnits = uint32(units.length);
         uint32 oldCountUnits = $.daos[daoUid].countUnits;
         $.daos[daoUid].countUnits = countUnits;

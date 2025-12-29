@@ -71,8 +71,7 @@ library OsLib {
 
     /// @custom:storage-location erc7201:stability-os-contracts.OS
     struct OsStorage {
-        /// @notice Auto-increment internal id for DAOs.
-        /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
+        /// @notice Internal counter of created DAOs. It's used to generate unique immutable id for each DAO.
         uint daoCount;
 
         // todo there is no way to enumerate all created DAO (or all used symbols). Probably it's not really necessary
@@ -138,6 +137,13 @@ library OsLib {
 
     function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, index));
+    }
+
+    /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
+    function generateDaoUid(OsLib.OsStorage storage $) internal returns (uint) {
+        uint count = $.daoCount + 1;
+        $.daoCount = count;
+        return uint(keccak256(abi.encodePacked(count, block.chainid)));
     }
     //endregion -------------------------------------- Internal utils
 }

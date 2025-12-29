@@ -10,6 +10,15 @@ import {OsDeployLib} from "./OsDeployLib.sol";
 library OsViewLib {
     using SafeERC20 for IERC20;
 
+    /// @notice Token kind for getTokenName and getTokenSymbol
+    enum NamingTokenKind {
+        SEED_0,
+        TGE_1,
+        TOKEN_2,
+        XTOKEN_3,
+        DAO_4
+    }
+
     /// @notice Change lifecycle phase of a DAO
     /// @param daoSymbol Symbol of the DAO
     /// @param authority_ Address of Access Manager
@@ -251,6 +260,43 @@ library OsViewLib {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         return _tasks(limit, $.daoUids[daoSymbol]);
     }
+
+    /// @notice Generate token name in same way as getTokensNaming()
+    /// @param name dao name
+    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenName(string memory name, uint kind) internal pure returns (string memory) {
+        if (kind == uint(NamingTokenKind.SEED_0)) {
+            return string(abi.encodePacked(name, " SEED"));
+        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+            return string(abi.encodePacked(name, " PRESALE"));
+        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+            return name;
+        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+            return string(abi.encodePacked("x", name));
+        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+            return string(abi.encodePacked(name, " DAO"));
+        }
+        return "";
+    }
+
+    /// @notice Generate token symbol in same way as getTokensNaming()
+    /// @param symbol dao symbol
+    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenSymbol(string memory symbol, uint kind) internal pure returns (string memory) {
+        if (kind == uint(NamingTokenKind.SEED_0)) {
+            return string(abi.encodePacked("seed", symbol));
+        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+            return string(abi.encodePacked("sale", symbol));
+        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+            return symbol;
+        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+            return string(abi.encodePacked("x", symbol));
+        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+            return string(abi.encodePacked(symbol, "_DAO"));
+        }
+        return "";
+    }
+
     //endregion -------------------------------------- View
 
     function _tasks(uint limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {

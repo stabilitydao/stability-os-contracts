@@ -45,7 +45,7 @@ library OsActionsLib {
     ) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
-        uint daoUid = ++$.daoCount;
+        uint daoUid = OsLib.generateDaoUid($);
 
         OsLib.DaoDataLocal memory daoData;
         daoData.name = name;
@@ -77,7 +77,7 @@ library OsActionsLib {
     function addLiveDAO(ITokenomics.DaoData memory dao) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
-        uint daoUid = ++$.daoCount;
+        uint daoUid = OsLib.generateDaoUid($);
 
         OsLib.DaoDataLocal memory local;
         local.name = dao.name;

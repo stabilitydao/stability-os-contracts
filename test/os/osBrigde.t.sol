@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {Test} from "forge-std/Test.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {OSBridge} from "../../src/os/OSBridge.sol";
-import {BridgeTestLib} from "../../test/os/libs/BridgeTestLib.sol";
+import {BridgeTestLib} from "../../test/os/utils/BridgeTestLib.sol";
 
 contract OsBridgeTest is Test, OsUtilsLib {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
