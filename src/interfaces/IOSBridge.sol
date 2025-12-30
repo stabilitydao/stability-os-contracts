@@ -37,8 +37,15 @@ interface IOSBridge {
         MessagingFee memory fee_
     ) external;
 
+    /// @notice Quote total fee for sending message to all registered chains
+    /// @param messageKind See IOS.CrossChainMessages
+    /// @param message_ The message (encoded to bytes) to send to destination OS
+    /// @return totalFee Total fee in native token for sending the message to all registered chains
+    function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external view returns (uint totalFee);
+
     /// @notice Send message to all registered chains
-    function sendMessageToAllChains(uint messageKind, bytes memory message_) external;
+    /// @custom:restricted Only OS contracts can call this function
+    function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable;
 
     /// @notice Get OS contract address on the current chain
     function getOs() external view returns (address);

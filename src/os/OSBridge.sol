@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {IOSBridge} from "../interfaces/IOSBridge.sol";
 import {IOS} from "../interfaces/IOS.sol";
 import {
@@ -153,7 +154,27 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     }
 
     /// @inheritdoc IOSBridge
-    function sendMessageToAllChains(uint messageKind, bytes memory message_) external {
+    function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external view returns (uint totalFee) {
+        OsBridgeStorage storage $ = _getOsBridgeStorage();
+
+        uint128 _gasLimit = $.gasLimits[messageKind];
+        bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
+
+        uint len = $.endpoints.length();
+
+        for (uint i; i < len; ++i) {
+            uint32 dstEid = uint32($.endpoints.at(i));
+            MessagingFee memory fee = _quote(dstEid, message_, options, false);
+            totalFee += fee.nativeFee;
+            console.log("fee", dstEid, fee.nativeFee, totalFee);
+        }
+
+        return totalFee;
+    }
+
+    /// @inheritdoc IOSBridge
+    function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable restricted {
+        console.log("sendMessageToAllChains", msg.value);
         OsBridgeStorage storage $ = _getOsBridgeStorage();
 
         // todo assume here that gas limit is same for all chains
@@ -167,7 +188,9 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
 
         for (uint i; i < len; ++i) {
             uint32 dstEid = uint32($.endpoints.at(i));
+            console.log("i", i, dstEid);
             MessagingFee memory fee = _quote(dstEid, message_, options, false);
+            console.log("fee", fee.nativeFee);
             _lzSend(dstEid, message_, options, fee, payable(msg.sender));
 
             emit SendMessage(dstEid, message_);
@@ -200,7 +223,9 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         address receiver = $.os;
 
-        IOS(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
+        if (receiver != address(0)) {
+            IOS(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
+        }
     }
 
     //endregion --------------------------------- Overrides

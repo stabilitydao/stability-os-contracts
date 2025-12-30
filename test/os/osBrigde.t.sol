@@ -42,11 +42,6 @@ contract OsBridgeTest is Test, OsUtilsLib {
         avalanche.osBridge = BridgeTestLib.createOSBridge(vm, avalanche);
         plasma.osBridge = BridgeTestLib.createOSBridge(vm, plasma);
 
-        // ------------------- Set up gas limits
-        OsUtilsLib.setupOsBridgeGasLimits(vm, sonic);
-        OsUtilsLib.setupOsBridgeGasLimits(vm, avalanche);
-        OsUtilsLib.setupOsBridgeGasLimits(vm, plasma);
-
         // ------------------- Set up Sonic:Avalanche
         BridgeTestLib.setUpSonicAvalanche(vm, sonic, avalanche);
 
@@ -62,7 +57,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         vm.selectFork(sonic.fork);
         IOS.OsInitPayload memory init;
         IOS osSonic = OsUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osSonic, sonic);
+        OsUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
         ITokenomics.DaoData memory dao1 = OsUtilsLib.createAliensDao(osSonic);
 
         // ----------------------------- create DAO on Avalanche
@@ -70,7 +65,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
         IOS osAvax = OsUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osAvax, avalanche);
+        OsUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
 
         vm.recordLogs();
         ITokenomics.DaoData memory dao2 = OsUtilsLib.createApesDao(osAvax);
@@ -97,7 +92,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
         IOS osPlasma = OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osPlasma, plasma);
+        OsUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
         ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(osPlasma);
         // todo process cross chain events
 

@@ -11,7 +11,7 @@ interface IControllable2 is IAccessManaged {
     error IncorrectZeroArgument();
     error ZeroAddress();
     error ZeroAmount();
-    error InsufficientBalance();
+    error InsufficientBalance(uint actualBalance, uint requiredBalance);
 
     event ContractInitialized(address authority, uint ts, uint block);
 

@@ -5,6 +5,7 @@ import {console} from "forge-std/console.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {OsLib} from "./OsLib.sol";
 import {IOSBridge} from "../../interfaces/IOSBridge.sol";
+import {IControllable2} from "../../interfaces/IControllable2.sol";
 
 /// @notice Basic data types, validation and update logic
 library OsCrossChainLib {
@@ -59,7 +60,10 @@ library OsCrossChainLib {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         address bridge = $.osChainSettings[0].osBridge;
         if (bridge != address(0)) {
-            IOSBridge(bridge).sendMessageToAllChains(uint(messageKind), payload);
+            uint totalFee = IOSBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
+            uint balance = address(this).balance;
+            require(balance >= totalFee, IControllable2.InsufficientBalance(balance, totalFee));
+            IOSBridge(bridge).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
         }
     }
 }

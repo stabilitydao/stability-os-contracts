@@ -25,6 +25,8 @@ abstract contract OsUtilsLib {
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
 
+    uint internal constant INITIAL_OS_ETHER_BALANCE = 100 ether;
+
     //region ----------------------------- Create OS and DAO instances
     function createOsInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IOS) {
         IOS.OsInitPayload memory init;
@@ -199,7 +201,17 @@ abstract contract OsUtilsLib {
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
     }
 
-    function setupOsBridge(Vm vm, IOS os, BridgeTestLib.ChainConfig memory chain) public {
+    function setupOsBridge(
+        Vm vm,
+        IOS os,
+        BridgeTestLib.ChainConfig memory chain,
+        BridgeTestLib.ChainConfig memory otherChain1,
+        BridgeTestLib.ChainConfig memory otherChain2
+    ) public {
+        // -------------------- put some ether on OS contract to send cross-chain messages
+        vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
+
+        // -------------------- set OsBridge inside os
         IOS.OsChainSettings memory config = os.getChainSettings();
 
         vm.prank(chain.multisig);
@@ -209,6 +221,17 @@ abstract contract OsUtilsLib {
                 osBridge: chain.osBridge
             })
         );
+
+        // -------------------- set os and endpoints inside osBridge
+        vm.prank(chain.multisig);
+        IOSBridge(chain.osBridge).setOs(address(os));
+
+        uint32[] memory endpoints = new uint32[](2);
+        endpoints[0] = otherChain1.endpointId;
+        endpoints[1] = otherChain2.endpointId;
+
+        vm.prank(chain.multisig);
+        IOSBridge(chain.osBridge).addEndpoint(endpoints);
 
         IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
 
@@ -235,17 +258,16 @@ abstract contract OsUtilsLib {
             vm.prank(chain.multisig);
             accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.osBridge), 0);
         }
+
+        // ----------------------------- Set gas limits
+        vm.prank(chain.multisig);
+        IOSBridge(chain.osBridge).setGasLimit(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
+
+        vm.prank(chain.multisig);
+        IOSBridge(chain.osBridge).setGasLimit(uint(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+
     }
 
-    function setupOsBridgeGasLimits(Vm vm, BridgeTestLib.ChainConfig memory src) public {
-        vm.selectFork(src.fork);
-
-        vm.prank(src.multisig);
-        IOSBridge(src.osBridge).setGasLimit(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
-
-        vm.prank(src.multisig);
-        IOSBridge(src.osBridge).setGasLimit(uint(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
-    }
     //endregion ----------------------------- Settings
 
     //region ----------------------------- Funding, DaoParams, Vesting

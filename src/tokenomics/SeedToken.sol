@@ -52,7 +52,8 @@ contract SeedToken is ISeedToken, Controllable2, ERC20Upgradeable, ERC20Burnable
     function transferTo(address token, address to, uint amount) external restricted {
         require(amount != 0, ZeroAmount());
         require(to != address(0), ZeroAddress());
-        require(IERC20(token).balanceOf(address(this)) >= amount, InsufficientBalance());
+        uint balance = IERC20(token).balanceOf(address(this));
+        require(balance >= amount, InsufficientBalance(balance, amount));
 
         IERC20(token).safeTransfer(to, amount);
     }

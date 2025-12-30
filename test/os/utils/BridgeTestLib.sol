@@ -494,7 +494,7 @@ library BridgeTestLib {
 
             // header length: 1 + 8 + 4 + 32 + 4 + 32 + 32 = 113
             uint start = 113;
-            require(encodedPayload.length == 0, "payload not found");
+            require(encodedPayload.length != 0, "payload not found");
             require(encodedPayload.length >= start, "encodedPayload too short");
             uint msgLen = encodedPayload.length - start;
             message = new bytes(msgLen);
