@@ -3,12 +3,11 @@ pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IOS} from "../../interfaces/IOS.sol";
-import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
+import {ITokenomics} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
-import {console} from "forge-std/console.sol";
 import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
-import {OsEncodingLib} from "./OsEncodingLib.sol";
-import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
+import {IControllable2} from "../../interfaces/IControllable2.sol";
+import {IRefundableToken} from "../../interfaces/IRefundableToken.sol";
 
 library OsFundingLib {
     using SafeERC20 for IERC20;
@@ -16,7 +15,7 @@ library OsFundingLib {
     /// @notice Fund DAO in the current funding round
     function fund(string calldata daoSymbol, uint amount) external {
         // todo not reentrancy
-        require(amount != 0, IOS.ZeroAmount()); // todo settings.minFunding
+        require(amount != 0, IControllable2.ZeroAmount()); // todo settings.minFunding
 
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
@@ -116,15 +115,15 @@ library OsFundingLib {
         if (balance == 0) {
             require(skipOnZeroBalance, IOS.ZeroBalance());
         } else {
-            // burn SEED tokens
-            // todo IBurnableERC20(seedToken).burn(receiver, balance);
+            OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
-            // todo decrease raised amount in funding round: do we need merkl?
+            IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 
-            // transfer exchangeAsset back to receiver
-            IERC20(exchangeAsset).safeTransferFrom(fundingToken, receiver, balance);
+            ITokenomics.Funding storage funding = $.funding[OsLib.getKey($.daoUids[daoSymbol], uint(fundingType_))];
+            uint raised = funding.raised;
+            funding.raised = raised > balance ? raised - balance : 0;
 
-            emit IOS.DaoRefunded(daoSymbol, receiver, balance, uint8(fundingType_));
+            emit IOS.DaoRefunded(daoSymbol, receiver, exchangeAsset, balance, uint8(fundingType_));
         }
     }
 }

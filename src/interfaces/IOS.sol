@@ -21,7 +21,6 @@ interface IOS {
     error WaitVestingEnd();
     error NotFundingPhase();
     error RaiseMaxExceed();
-    error ZeroAmount();
     error AlreadyReceived();
     error IncorrectProposal();
     error NonImplemented();
@@ -44,7 +43,9 @@ interface IOS {
     event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
     event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
-    event DaoRefunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
+    event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
+    event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
+    event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {
@@ -70,12 +71,21 @@ interface IOS {
 
     /// @notice Chain-dependent data of the DAO
     struct OsChainSettings {
-        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
+        /// @notice The address of the asset used to fund the DAO.
         address exchangeAsset;
+
+        /// @notice Address of the OS bridge contract on the current chain
+        address osBridge;
     }
 
     struct Task {
         string name;
+    }
+
+    /// @notice Payload for OS initialization
+    struct OsInitPayload {
+        /// @notice DAO symbols registered on other chains
+        string[] usedSymbols;
     }
 
     /// @notice Kinds of cross-chain messages
@@ -121,9 +131,11 @@ interface IOS {
     //region ---------------------------------------- Write actions
 
     /// @notice Set OS settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setSettings(OsSettings memory newSettings) external;
 
     /// @notice Set OS chain-depended settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setChainSettings(OsChainSettings memory newSettings) external;
 
     /// @notice Create new DAO
@@ -141,6 +153,7 @@ interface IOS {
     ) external;
 
     /// @notice Add live compatible DAO
+    /// @custom:restricted Restricted through access manager (only verifier)
     function addLiveDAO(ITokenomics.DaoData memory dao) external;
 
     /// @notice Change lifecycle phase of a DAO
@@ -158,7 +171,15 @@ interface IOS {
     function refund(string calldata daoSymbol) external;
 
     /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
+    /// @custom:restricted Restricted through access manager (only admin)
     function refundFor(string calldata daoSymbol, address[] memory receivers) external;
+
+    /// @notice Handle incoming cross-chain message
+    /// @custom:restricted Restricted through access manager (only OS bridge can call this function)
+    /// @param srcEid LayerZero source endpoint ID
+    /// @param guid_ Unique message identifier
+    /// @param message_ Message payload
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external;
 
     //endregion ---------------------------------------- Write actions
 

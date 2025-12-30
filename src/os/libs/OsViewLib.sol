@@ -1,27 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IOS} from "../../interfaces/IOS.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
-import {console} from "forge-std/console.sol";
-import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
-import {OsEncodingLib} from "./OsEncodingLib.sol";
-import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
+import {OsDeployLib} from "./OsDeployLib.sol";
 
 library OsViewLib {
     using SafeERC20 for IERC20;
 
+    /// @notice Token kind for getTokenName and getTokenSymbol
+    enum NamingTokenKind {
+        SEED_0,
+        TGE_1,
+        TOKEN_2,
+        XTOKEN_3,
+        DAO_4
+    }
+
     /// @notice Change lifecycle phase of a DAO
-    function changePhase(string calldata daoSymbol) external {
+    /// @param daoSymbol Symbol of the DAO
+    /// @param authority_ Address of Access Manager
+    function changePhase(string calldata daoSymbol, address authority_) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
-        require(_tasks(daoUid, 1).length == 0, IOS.SolveTasksFirst());
+        require(_tasks(1, daoUid).length == 0, IOS.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase newPhase = phase;
+
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             require(seed.start < block.timestamp, IOS.WaitFundingStart());
@@ -29,11 +38,11 @@ library OsViewLib {
             // SEED can be started not later than 1 week after configured start time
             require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IOS.TooLateSoSetupFundingAgain());
 
-            // todo deploy seedToken
-            $.deployments[daoUid].seedToken = address(0); // todo deployed seed token
+            $.deployments[daoUid].seedToken = OsDeployLib.deploySeedToken(
+                authority_, string(abi.encodePacked("Seed ", daoSymbol)), string(abi.encodePacked("seed", daoSymbol))
+            );
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_1;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.SEED_1;
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
             ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             require(seed.end <= block.timestamp, IOS.WaitFundingEnd());
@@ -41,22 +50,21 @@ library OsViewLib {
             bool success = seed.raised >= seed.minRaise;
 
             if (success) {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
             } else {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+                newPhase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
                 // now refund can be called
             }
-            // todo emit event
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
             ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
             require(tge.start <= block.timestamp, IOS.WaitFundingStart());
 
-            // todo deploy tgeToken
-            $.deployments[daoUid].tgeToken = address(0); // todo deployed tge token
+            $.deployments[daoUid].tgeToken = OsDeployLib.deployTgeToken(
+                authority_, string(abi.encodePacked("Tge ", daoSymbol)), string(abi.encodePacked("tge", daoSymbol))
+            );
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.TGE_4;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.TGE_4;
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
             ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
@@ -77,11 +85,9 @@ library OsViewLib {
                 // todo seedToken holders became xToken holders by predefined rate
 
                 // todo deploy v2 liquidity from TGE funds at predefined price
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
-                // todo emit event
+                newPhase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
             } else {
-                $.daos[daoUid].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-                // todo emit event
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
                 // now refund can be called
                 // refunding is available up to the start of next TGE
             }
@@ -101,8 +107,7 @@ library OsViewLib {
 
             require(isVestingStarted, IOS.WaitVestingStart());
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
             // slither-disable-next-line uninitialized-local
             bool isVestingNotEnded;
@@ -117,9 +122,12 @@ library OsViewLib {
 
             require(isVestingNotEnded, IOS.WaitVestingEnd());
 
-            $.daos[daoUid].phase = ITokenomics.LifecyclePhase.LIVE_7;
-            // todo emit event
+            newPhase = ITokenomics.LifecyclePhase.LIVE_7;
         }
+
+        $.daos[daoUid].phase = newPhase;
+
+        emit IOS.DaoPhaseChanged(daoSymbol, newPhase);
     }
 
     //region -------------------------------------- View
@@ -250,11 +258,48 @@ library OsViewLib {
     /// @return __tasks List of tasks. The list is limited by {limit} value
     function tasks(string calldata daoSymbol, uint limit) external view returns (IOS.Task[] memory __tasks) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
-        return _tasks(limit, $.daoUids[daoSymbol]);
+        return _tasks(uint16(limit), $.daoUids[daoSymbol]);
     }
+
+    /// @notice Generate token name in same way as getTokensNaming()
+    /// @param name dao name
+    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenName(string memory name, uint kind) internal pure returns (string memory) {
+        if (kind == uint(NamingTokenKind.SEED_0)) {
+            return string(abi.encodePacked(name, " SEED"));
+        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+            return string(abi.encodePacked(name, " PRESALE"));
+        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+            return name;
+        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+            return string(abi.encodePacked("x", name));
+        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+            return string(abi.encodePacked(name, " DAO"));
+        }
+        return "";
+    }
+
+    /// @notice Generate token symbol in same way as getTokensNaming()
+    /// @param symbol dao symbol
+    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenSymbol(string memory symbol, uint kind) internal pure returns (string memory) {
+        if (kind == uint(NamingTokenKind.SEED_0)) {
+            return string(abi.encodePacked("seed", symbol));
+        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+            return string(abi.encodePacked("sale", symbol));
+        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+            return symbol;
+        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+            return string(abi.encodePacked("x", symbol));
+        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+            return string(abi.encodePacked(symbol, "_DAO"));
+        }
+        return "";
+    }
+
     //endregion -------------------------------------- View
 
-    function _tasks(uint limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
+    function _tasks(uint16 limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
         dest = new IOS.Task[](limit);
 
@@ -325,6 +370,17 @@ library OsViewLib {
             // distribute vesting funds to leverage token
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_7) {
             // lifetime revenue generating for DAO holders till possible absorbing
+        }
+
+        // trim the dest array
+        if (index < dest.length) {
+            IOS.Task[] memory temp = new IOS.Task[](index);
+
+            for (uint i; i < index; ++i) {
+                temp[i] = dest[i];
+            }
+
+            dest = temp;
         }
 
         return dest;
