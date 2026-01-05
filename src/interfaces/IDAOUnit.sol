@@ -38,10 +38,10 @@ interface IDAOUnit {
 
     /// @notice Frontend endpoint link for a Unit.
     struct UnitUiLink {
-        /// @notice Short label for the UI link.
-        string label;
         /// @notice URL of the frontend endpoint.
-        string url;
+        string href;
+        /// @notice Short label for the UI link.
+        string title;
         // Attention: there is NO gap here so the struct is NOT extendable
     }
 

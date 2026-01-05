@@ -21,7 +21,6 @@ interface IOS {
     error WaitVestingEnd();
     error NotFundingPhase();
     error RaiseMaxExceed();
-    error ZeroAmount();
     error AlreadyReceived();
     error IncorrectProposal();
     error NonImplemented();
@@ -30,6 +29,7 @@ interface IOS {
     error ZeroBalance();
     error NotRefundPhase();
     error UnsupportedStructVersion();
+    error IncorrectConfiguration();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -44,10 +44,15 @@ interface IOS {
     event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
     event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
-    event DaoRefunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
+    event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
+    event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
+    event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
+
+    error NotEnoughNativeProvided(uint requiredValue);
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {
+        /// @notice Price of adding/creating DAO in exchange asset
         uint priceDao;
         uint priceUnit;
         uint priceOracle;
@@ -70,12 +75,21 @@ interface IOS {
 
     /// @notice Chain-dependent data of the DAO
     struct OsChainSettings {
-        /// @notice todo Move to chain-depended config. The address of the asset used to fund the DAO.
+        /// @notice The address of the asset used to fund the DAO.
         address exchangeAsset;
+
+        /// @notice Address of the OS bridge contract on the current chain
+        address osBridge;
     }
 
     struct Task {
         string name;
+    }
+
+    /// @notice Payload for OS initialization
+    struct OsInitPayload {
+        /// @notice DAO symbols registered on other chains
+        string[] usedSymbols;
     }
 
     /// @notice Kinds of cross-chain messages
@@ -121,9 +135,11 @@ interface IOS {
     //region ---------------------------------------- Write actions
 
     /// @notice Set OS settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setSettings(OsSettings memory newSettings) external;
 
     /// @notice Set OS chain-depended settings
+    /// @custom:restricted Restricted through access manager (only admin)
     function setChainSettings(OsChainSettings memory newSettings) external;
 
     /// @notice Create new DAO
@@ -138,9 +154,15 @@ interface IOS {
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
-    ) external;
+    ) external payable;
+
+    /// @notice Quote cost to create DAO
+    /// @param daoSymbol Symbol of new DAO
+    /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
+    function quoteCreateDAO(string calldata daoSymbol) external view returns (uint);
 
     /// @notice Add live compatible DAO
+    /// @custom:restricted Restricted through access manager (only verifier)
     function addLiveDAO(ITokenomics.DaoData memory dao) external;
 
     /// @notice Change lifecycle phase of a DAO
@@ -158,7 +180,15 @@ interface IOS {
     function refund(string calldata daoSymbol) external;
 
     /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
+    /// @custom:restricted Restricted through access manager (only admin)
     function refundFor(string calldata daoSymbol, address[] memory receivers) external;
+
+    /// @notice Handle incoming cross-chain message
+    /// @custom:restricted Restricted through access manager (only OS bridge can call this function)
+    /// @param srcEid LayerZero source endpoint ID
+    /// @param guid_ Unique message identifier
+    /// @param message_ Message payload
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external;
 
     //endregion ---------------------------------------- Write actions
 
@@ -180,7 +210,7 @@ interface IOS {
     function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external;
 
     /// @notice Update/create proposal to update DAO naming (name and symbol)
-    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external;
+    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable;
 
     /// @notice Update/create proposal to update on-chain DAO parameters
     function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external;

@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {OsCrossChainLib} from "./OsCrossChainLib.sol";
 import {IOS} from "../../interfaces/IOS.sol";
-import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
+import {ITokenomics} from "../../interfaces/ITokenomics.sol";
 import {OsLib} from "./OsLib.sol";
-import {console} from "forge-std/console.sol";
-import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
-import {OsEncodingLib} from "./OsEncodingLib.sol";
-import {IBurnableERC20} from "../../interfaces/IBurnableERC20.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {OsUpdateLib} from "./OsUpdateLib.sol";
 
 library OsActionsLib {
     using SafeERC20 for IERC20;
@@ -27,6 +24,16 @@ library OsActionsLib {
         $.osChainSettings[0] = st;
 
         emit IOS.OsChainSettingsUpdated(st);
+    }
+
+    /// @notice Initialize OS with existing DAO symbols from other chains
+    function initOS(IOS.OsInitPayload memory initPayload) external {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+
+        for (uint i = 0; i < initPayload.usedSymbols.length; i++) {
+            string memory daoSymbol = initPayload.usedSymbols[i];
+            $.usedSymbols[daoSymbol] = true;
+        }
     }
 
     //endregion -------------------------------------- Restricted actions
@@ -48,7 +55,7 @@ library OsActionsLib {
     ) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
-        uint daoUid = ++$.daoCount;
+        uint daoUid = OsLib.generateDaoUid($);
 
         OsLib.DaoDataLocal memory daoData;
         daoData.name = name;
@@ -57,7 +64,7 @@ library OsActionsLib {
         daoData.deployer = msg.sender;
         daoData.activity = activity;
 
-        OsLib.validate(daoData, params, funding);
+        OsUpdateLib.validate(daoData, params, funding);
 
         // ------------------------- Save DAO data to the storage
         // we don't use viaIR=true in config so we cannot make direct assignment
@@ -80,7 +87,7 @@ library OsActionsLib {
     function addLiveDAO(ITokenomics.DaoData memory dao) external {
         OsLib.OsStorage storage $ = OsLib.getOsStorage();
 
-        uint daoUid = ++$.daoCount;
+        uint daoUid = OsLib.generateDaoUid($);
 
         OsLib.DaoDataLocal memory local;
         local.name = dao.name;
@@ -92,7 +99,7 @@ library OsActionsLib {
         local.countUnits = uint32(dao.units.length);
         local.countAgents = uint32(dao.agents.length);
 
-        OsLib.validate(local, dao.params, dao.tokenomics.funding);
+        OsUpdateLib.validate(local, dao.params, dao.tokenomics.funding);
         // todo validate other fields
         // todo require block.chain == dao.tokenomics.initialChain
 
@@ -151,11 +158,20 @@ library OsActionsLib {
         string memory daoName,
         uint daoUid
     ) internal {
+        // take DAO creation fee on balance of this contract
+        address exchangeAsset = $.osChainSettings[0].exchangeAsset;
+        require(exchangeAsset != address(0), IOS.IncorrectConfiguration());
+
+        uint priceDao = $.osSettings[0].priceDao;
+        if (priceDao != 0) {
+            IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), priceDao);
+        }
+
         $.usedSymbols[daoSymbol] = true;
 
         emit IOS.DaoCreated(daoName, daoSymbol, daoUid);
 
-        OsLib._sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, OsEncodingLib.encodeSymbol(daoSymbol));
+        OsCrossChainLib.sendMessageNewSymbol(daoSymbol);
     }
     //endregion -------------------------------------- Internal logic
 

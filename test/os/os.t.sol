@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IOS, OS} from "../../src/os/OS.sol";
-import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {Test, Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
-import {ITokenOFTAdapter} from "../../src/interfaces/ITokenOFTAdapter.sol";
+import {IOS} from "../../src/os/OS.sol";
+import {OsLib} from "../../src/os/libs/OsLib.sol";
+import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {Test} from "forge-std/Test.sol";
+// import {console} from "forge-std/console.sol";
+import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract OsTest is Test {
+contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";
@@ -21,24 +25,50 @@ contract OsTest is Test {
     }
 
     //region ----------------------------------- Unit tests
+    function testStorageLocation() public pure {
+        assertEq(
+            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff)),
+            OsLib.OS_STORAGE_LOCATION,
+            "OS_STORAGE_LOCATION"
+        );
+    }
+
     function testCreateDAO() public {
-        IOS os = _createOsInstance();
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = _generateSeedFunding();
+        funding[0] = OsUtilsLib.generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = _generateDaoParams(365, 100);
-        os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
+        {
+            address exchangeAsset = os.getChainSettings().exchangeAsset;
+            uint amount = os.getSettings().priceDao;
+
+            deal(exchangeAsset, address(this), amount * 3);
+
+            // user doesn't pay for creation DAO - ERC20InsufficientAllowance
+            vm.expectRevert();
+            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+
+            IERC20(exchangeAsset).approve(address(os), amount * 3);
+
+            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+            assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "testCreateDAO - balance after");
+        }
 
         ITokenomics.DaoData memory dao = os.getDAO(DAO_SYMBOL);
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
         // -------------------- bad name length
+        _dealAndApprove(os);
+
         vm.expectRevert(abi.encodeWithSelector(IOS.NameLength.selector, uint(28)));
         os.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
 
@@ -51,7 +81,7 @@ contract OsTest is Test {
         os.createDAO("SpaceSwap", "SPACE", activity, params, funding);
 
         { // -------------------- bad vePeriod
-            ITokenomics.DaoParameters memory paramsBadVe = _generateDaoParams(
+            ITokenomics.DaoParameters memory paramsBadVe = OsUtilsLib.generateDaoParams(
                 365 * 5,
                 /* 1825 */
                 100
@@ -61,7 +91,7 @@ contract OsTest is Test {
         }
 
         { // -------------------- bad pvpFee
-            ITokenomics.DaoParameters memory paramsBadPvP = _generateDaoParams(365, 101);
+            ITokenomics.DaoParameters memory paramsBadPvP = OsUtilsLib.generateDaoParams(365, 101);
             vm.expectRevert(abi.encodeWithSelector(IOS.PvPFee.selector, uint(101)));
             os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadPvP, funding);
         }
@@ -74,28 +104,56 @@ contract OsTest is Test {
     }
 
     function testAddLiveDAO() public {
-        IOS os = _createOsInstance();
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // todo only verifier
 
-        ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
+
+        _dealAndApprove(os, MULTISIG);
+
+        vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
+
         ITokenomics.DaoData memory readDao = os.getDAO(daoOrigin.symbol);
 
         _assertDaoEqual(daoOrigin, readDao);
     }
 
     function testAddLiveDaoBadPaths() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory daoOrigin = this.createTestDaoData();
-        os.addLiveDAO(daoOrigin);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
+
+        // -------------------- success - check balances
+        {
+            address exchangeAsset = os.getChainSettings().exchangeAsset;
+            uint amount = os.getSettings().priceDao;
+
+            deal(exchangeAsset, MULTISIG, amount * 3);
+
+            // user doesn't pay for creation DAO - ERC20InsufficientAllowance
+            vm.expectRevert();
+            vm.prank(MULTISIG);
+            os.addLiveDAO(daoOrigin);
+
+            vm.prank(MULTISIG);
+            IERC20(exchangeAsset).approve(address(os), amount * 3);
+
+            vm.prank(MULTISIG);
+            os.addLiveDAO(daoOrigin);
+
+            assertEq(IERC20(exchangeAsset).balanceOf(MULTISIG), amount * 2, "balance after 1st dao");
+        }
 
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "testdao"));
+        vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
-        // -------------------- todo only verifier
-        // os.addLiveDAO(daoOrigin);
+        // -------------------- only verifier (restricted)
+        vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this)));
+        os.addLiveDAO(daoOrigin);
 
         // -------------------- todo validation
     }
@@ -106,10 +164,17 @@ contract OsTest is Test {
 
     //endregion ----------------------------------- Unit tests
 
+    //region ----------------------------------- Change life phase
+
+    // todo
+
+    //endregion ----------------------------------- Change life phase
+
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         os.updateImages(
             dao.symbol,
@@ -146,8 +211,9 @@ contract OsTest is Test {
 
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             string[] memory socials = new string[](3);
@@ -180,13 +246,14 @@ contract OsTest is Test {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link1", url: "https://link1.com"});
-            notEmptyUi[1] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link1", href: "https://link1.com"});
+            notEmptyUi[1] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](3);
             notEmptyApi[0] = "https://api1.com";
@@ -224,7 +291,7 @@ contract OsTest is Test {
 
         {
             IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](1);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({label: "link2", url: "https://link2.com"});
+            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](1);
             notEmptyApi[0] = "https://api1.com";
@@ -254,8 +321,9 @@ contract OsTest is Test {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
         seed.fundingType = ITokenomics.FundingType.SEED_0;
@@ -323,8 +391,9 @@ contract OsTest is Test {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
@@ -373,8 +442,9 @@ contract OsTest is Test {
 
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
@@ -388,12 +458,15 @@ contract OsTest is Test {
         }
     }
 
+    // todo test case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
+
     //endregion ----------------------------------- Update naming
 
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
-        IOS os = _createOsInstance();
-        ITokenomics.DaoData memory dao = _createDaoInstance(os, DAO_SYMBOL);
+        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
+        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoParameters memory a;
@@ -415,294 +488,6 @@ contract OsTest is Test {
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
-    function _createOsInstance() internal returns (IOS) {
-        OS os = new OS(MULTISIG);
-        _setOsSettings(os);
-        return IOS(address(os));
-    }
-
-    function _createDaoInstance(IOS os, string memory daoSymbol) internal returns (ITokenomics.DaoData memory) {
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = _generateSeedFunding();
-
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
-
-        ITokenomics.DaoParameters memory params = _generateDaoParams(365, 100);
-        os.createDAO(DAO_NAME, daoSymbol, activity, params, funding);
-
-        return os.getDAO(daoSymbol);
-    }
-
-    function _setOsSettings(OS os) internal {
-        // Prepare and set OS settings using the IOS.OsSettings struct
-        os.setSettings(
-            IOS.OsSettings({
-                priceDao: 1000,
-                priceUnit: 1000,
-                priceOracle: 1000,
-                priceBridge: 1000,
-                minNameLength: 1,
-                maxNameLength: 20,
-                minSymbolLength: 1,
-                maxSymbolLength: 7,
-                minVePeriod: 14,
-                maxVePeriod: 365 * 4,
-                minPvPFee: 10,
-                maxPvPFee: 100,
-                minFundingDuration: 1,
-                maxFundingDuration: 180,
-                minAbsorbOfferUsd: 50000,
-                maxSeedStartDelay: 7 days
-            })
-        );
-    }
-
-    /// @notice Generate a seed funding with sensible defaults relative to current block timestamp.
-    /// @return A populated ITokenomics.Funding struct ready to be passed to createDAO/updateFunding.
-    function _generateSeedFunding() internal view returns (ITokenomics.Funding memory) {
-        // Defaults: delaySec = 30 days, duration = 90 days, minRaise = 10_000, maxRaise = 100_000
-        uint64 delaySec = uint64(30 * 86400);
-        uint64 duration = uint64(3 * 30 * 86400);
-
-        uint64 start = uint64(block.timestamp + delaySec);
-        uint64 endt = uint64(block.timestamp + delaySec + duration);
-
-        return ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.SEED_0,
-            start: start,
-            end: endt,
-            minRaise: 10000,
-            maxRaise: 100000,
-            raised: 0,
-            claim: 0
-        });
-    }
-
-    function _generateDaoParams(
-        uint32 vePeriod_,
-        uint16 pvpFee_
-    ) internal pure returns (ITokenomics.DaoParameters memory) {
-        return ITokenomics.DaoParameters({
-            vePeriod: vePeriod_, pvpFee: pvpFee_, minPower: 0, ttBribe: 0, recoveryShare: 0, proposalThreshold: 0
-        });
-    }
-
-    function createTestDaoData() external pure returns (ITokenomics.DaoData memory data) {
-        // ---------------- base fields
-        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-        data.symbol = "testdao";
-        data.name = "Test DAO";
-        data.deployer = address(0x123);
-
-        // ---------------- socials
-        data.socials = new string[](3);
-        data.socials[0] = "https://twitter.com/testdao";
-        data.socials[1] = "https://github.com/testdao";
-        data.socials[2] = "https://discord.gg/testdao";
-
-        // ---------------- activity
-        data.activity = new ITokenomics.Activity[](2);
-        data.activity[0] = ITokenomics.Activity.SAAS_OPERATOR_1;
-        data.activity[1] = ITokenomics.Activity.BUILDER_3;
-
-        // ---------------- images
-        data.images = ITokenomics.DaoImages({
-            seedToken: "images/seed.png",
-            tgeToken: "images/tge.png",
-            token: "images/token.png",
-            xToken: "images/xtoken.png",
-            daoToken: "images/daotoken.png"
-        });
-
-        // ---------------- Deployments
-        address[] memory vestings = new address[](2);
-        vestings[0] = address(0x5001);
-        vestings[1] = address(0x5002);
-
-        data.deployments = ITokenomics.DaoDeploymentInfo({
-            seedToken: address(0x1001),
-            tgeToken: address(0x1002),
-            token: address(0x1003),
-            xToken: address(0x1004),
-            staking: address(0x2001),
-            daoToken: address(0x2002),
-            revenueRouter: address(0x2003),
-            recovery: address(0x2004),
-            vesting: vestings,
-            tokenBridge: address(0x4001),
-            xTokenBridge: address(0x4002),
-            daoTokenBridge: address(0x4003)
-        });
-
-        data.units = new ITokenomics.UnitInfo[](0);
-        data.agents = new ITokenomics.AgentInfo[](0);
-
-        // ---------------- Create 3 units
-        data.units = new ITokenomics.UnitInfo[](3);
-
-        { // Unit 0: one UI link, two API endpoints
-            ITokenomics.UnitUiLink[] memory ui0 = new ITokenomics.UnitUiLink[](1);
-            ui0[0] = IDAOUnit.UnitUiLink({label: "Dashboard", url: "https://unit0.example/dashboard"});
-
-            string[] memory api0 = new string[](2);
-            api0[0] = "https://api.unit0.example/v1/status";
-            api0[1] = "https://api.unit0.example/v1/metrics";
-
-            data.units[0] = IDAOUnit.UnitInfo({
-                unitId: "defi:protocolA",
-                name: "Protocol A",
-                status: IDAOUnit.UnitStatus.RESEARCH_0,
-                unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
-                revenueShare: 20000,
-                emoji: "zzz",
-                ui: ui0,
-                api: api0
-            });
-        }
-
-        { // Unit 1: two UI links, one API endpoint
-            ITokenomics.UnitUiLink[] memory ui1 = new ITokenomics.UnitUiLink[](2);
-            ui1[0] = IDAOUnit.UnitUiLink({label: "App", url: "https://unit1.example/app"});
-            ui1[1] = IDAOUnit.UnitUiLink({label: "Docs", url: "https://unit1.example/docs"});
-
-            string[] memory api1 = new string[](1);
-            api1[0] = "https://api.unit1.example/";
-
-            data.units[1] = IDAOUnit.UnitInfo({
-                unitId: "saas:serviceX",
-                name: "Service X",
-                status: IDAOUnit.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOUnit.UnitType.SAAS_2),
-                revenueShare: 50000,
-                emoji: "aaa",
-                ui: ui1,
-                api: api1
-            });
-        }
-
-        { // Unit 2: no UI links, empty api array
-            ITokenomics.UnitUiLink[] memory ui2 = new ITokenomics.UnitUiLink[](0);
-            string[] memory api2 = new string[](0);
-
-            data.units[2] = IDAOUnit.UnitInfo({
-                unitId: "mev:botZ",
-                name: "MEV Bot Z",
-                status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: uint16(IDAOUnit.UnitType.MEV_3),
-                revenueShare: 80000,
-                emoji: "aaaaaaaa",
-                ui: ui2,
-                api: api2
-            });
-        }
-
-        // ---------------- Create 4 agents
-        data.agents = new ITokenomics.AgentInfo[](4);
-
-        { // Agent 0: single API, multiple directives
-            string[] memory api0 = new string[](1);
-            api0[0] = "https://agent0.example/api";
-
-            uint8[] memory roles0 = new uint8[](1);
-            roles0[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives0 = new string[](2);
-            directives0[0] = "Monitor network";
-            directives0[1] = "Report incidents";
-
-            data.agents[0] = IDAOAgent.AgentInfo({
-                api: api0,
-                roles: roles0,
-                name: "Operator One",
-                directives: directives0,
-                image: "ipfs://QmAgent0Image",
-                telegram: "@operator_one"
-            });
-        }
-
-        { // Agent 1: two API endpoints, no directives
-            string[] memory api1 = new string[](2);
-            api1[0] = "https://agent1.example/status";
-            api1[1] = "https://agent1.example/health";
-
-            uint8[] memory roles1 = new uint8[](1);
-            roles1[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives1 = new string[](0);
-
-            data.agents[1] = IDAOAgent.AgentInfo({
-                api: api1,
-                roles: roles1,
-                name: "Relayer Team",
-                directives: directives1,
-                image: "https://cdn.example/relayer.png",
-                telegram: "@relayer_team"
-            });
-        }
-
-        { // Agent 2: no API endpoints, single directive
-            string[] memory api2 = new string[](0);
-            uint8[] memory roles2 = new uint8[](1);
-            roles2[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives2 = new string[](1);
-            directives2[0] = "Perform weekly audits";
-
-            data.agents[2] = IDAOAgent.AgentInfo({
-                api: api2, roles: roles2, name: "Auditor Bot", directives: directives2, image: "", telegram: ""
-            });
-
-            // Agent 3: almost same to Agent 2
-            data.agents[3] = IDAOAgent.AgentInfo({
-                api: api2, roles: roles2, name: "Auditor Bot 2", directives: directives2, image: "", telegram: ""
-            });
-        }
-
-        // ---------------- Dao params
-        data.params = ITokenomics.DaoParameters({
-            vePeriod: uint32(180),
-            pvpFee: uint16(25),
-            minPower: uint(100 ether),
-            ttBribe: uint16(20000),
-            recoveryShare: uint16(10000),
-            proposalThreshold: uint(5000)
-        });
-
-        { // ---------------- Tokenomics
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0] = ITokenomics.Funding({
-                fundingType: ITokenomics.FundingType.SEED_0,
-                start: uint64(1650000000),
-                end: uint64(1650000000 + 30 days),
-                minRaise: uint(1 ether),
-                maxRaise: uint(100 ether),
-                raised: uint(10 ether),
-                claim: uint(0)
-            });
-
-            ITokenomics.Vesting[] memory vest = new ITokenomics.Vesting[](2);
-            vest[0] = ITokenomics.Vesting({
-                name: "Founders",
-                description: "Founders allocation",
-                allocation: uint(10 ether),
-                start: uint64(1650000000),
-                end: uint64(1650000000 + 365 days)
-            });
-            vest[1] = ITokenomics.Vesting({
-                name: "Team",
-                description: "Team allocation",
-                allocation: uint(5 ether),
-                start: uint64(1650000000 + 30 days),
-                end: uint64(1650000000 + 730 days)
-            });
-
-            data.tokenomics = ITokenomics.Tokenomics({funding: funding, initialChain: uint(1), vesting: vest});
-        }
-
-        return data;
-    }
-
     function _assertDaoEqual(ITokenomics.DaoData memory expected, ITokenomics.DaoData memory actual) internal pure {
         // basic fields
         assertEq(uint(uint8(expected.phase)), uint(uint8(actual.phase)), "phase");
@@ -770,8 +555,8 @@ contract OsTest is Test {
             // ui links
             assertEq(eu.ui.length, au.ui.length, "unit.ui.length");
             for (uint j = 0; j < eu.ui.length; j++) {
-                assertEq(eu.ui[j].label, au.ui[j].label, "unit.ui.label");
-                assertEq(eu.ui[j].url, au.ui[j].url, "unit.ui.url");
+                assertEq(eu.ui[j].title, au.ui[j].title, "unit.ui.label");
+                assertEq(eu.ui[j].href, au.ui[j].href, "unit.ui.url");
             }
 
             // api endpoints
@@ -841,6 +626,21 @@ contract OsTest is Test {
 
         // initialChain
         assertEq(expected.tokenomics.initialChain, actual.tokenomics.initialChain, "tokenomics.initialChain");
+    }
+
+    /// @notice user should pay for DAO-creation
+    function _dealAndApprove(IOS os_, address user) internal {
+        address exchangeAsset = os_.getChainSettings().exchangeAsset;
+        uint amount = os_.getSettings().priceDao;
+
+        deal(exchangeAsset, user, amount);
+
+        vm.prank(user);
+        IERC20(exchangeAsset).approve(address(os_), amount);
+    }
+
+    function _dealAndApprove(IOS os_) internal {
+        _dealAndApprove(os_, address(this));
     }
 
     //endregion ----------------------------------- Internal logic
