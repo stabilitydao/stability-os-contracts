@@ -82,7 +82,7 @@ abstract contract OsUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
-    function createAliensDao(IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createAliensDao(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = OsUtilsLib.generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -94,12 +94,10 @@ abstract contract OsUtilsLib {
 
         ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
 
-        os_.createDAO("Aliens Community", "ALIENS", activity, params, funding);
-
-        return os_.getDAO("ALIENS");
+        return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
     }
 
-    function createApesDao(IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createApesDao(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = OsUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -110,12 +108,10 @@ abstract contract OsUtilsLib {
 
         ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(30, 90);
 
-        os_.createDAO("Apes Syndicate", "APES", activity, params, funding);
-
-        return os_.getDAO("APES");
+        return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
-    function createDaoMachines(IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createDaoMachines(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
         funding[0] = OsUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -127,9 +123,23 @@ abstract contract OsUtilsLib {
 
         ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(14, 99);
 
-        os_.createDAO("Machines Cartel", "MACHINE", activity, params, funding);
+        return _createDao(vm, os_, "Machines Cartel", "MACHINE", funding, activity, params);
+    }
 
-        return os_.getDAO("MACHINE");
+    function _createDao(
+        Vm vm,
+        IOS os_,
+        string memory name_,
+        string memory daoSymbol_,
+        ITokenomics.Funding[] memory funding,
+        ITokenomics.Activity[] memory activity,
+        ITokenomics.DaoParameters memory params
+    ) internal returns (ITokenomics.DaoData memory) {
+        uint value = os_.quoteCreateDAO(daoSymbol_);
+        vm.deal(address(this), value);
+        os_.createDAO{value: value}(name_, daoSymbol_, activity, params, funding);
+
+        return os_.getDAO(daoSymbol_);
     }
 
     //endregion ----------------------------- Create OS and DAO instances

@@ -174,10 +174,10 @@ library BridgeTestLib {
         vm.startPrank(avalanche.delegator);
 
         {
-            address[] memory requiredDVNs = new address[](1);
-            requiredDVNs[0] = AvalancheConstantsLib.AVALANCHE_DVN_LAYER_ZERO_PUSH;
+            address[] memory requiredDVNs = new address[](2);
+            requiredDVNs[0] = AvalancheConstantsLib.AVALANCHE_DVN_HORIZON_PULL;
+            requiredDVNs[1] = AvalancheConstantsLib.AVALANCHE_DVN_LAYER_ZERO_PUSH;
             //            requiredDVNs[1] = AVALANCHE_DVN_NETHERMIND_PULL;
-            //            requiredDVNs[2] = AVALANCHE_DVN_HORIZON_PULL;
             _setupOAppOnChain(
                 avalanche,
                 sonic.endpointId,
@@ -287,6 +287,52 @@ library BridgeTestLib {
 
         // ------------------- set peers
         _setOsBridgePeers(vm, avalanche, plasma);
+    }
+
+    function setUpAvalancheSonic(
+        Vm vm,
+        BridgeTestLib.ChainConfig memory avalanche,
+        BridgeTestLib.ChainConfig memory sonic
+    ) internal {
+        // ------------------- Set up sending chain for Avalanche:Plasma
+        vm.selectFork(avalanche.fork);
+        vm.startPrank(avalanche.delegator);
+
+        {
+            address[] memory requiredDVNs = new address[](1);
+            requiredDVNs[0] = AvalancheConstantsLib.AVALANCHE_DVN_LAYER_ZERO_PUSH;
+            //            requiredDVNs[1] = AVALANCHE_DVN_NETHERMIND_PULL;
+            //            requiredDVNs[2] = AVALANCHE_DVN_HORIZON_PULL;
+            _setupOAppOnChain(
+                avalanche,
+                sonic.endpointId,
+                requiredDVNs,
+                MIN_BLOCK_CONFIRMATIONS_SEND_TARGET,
+                MAX_MESSAGE_SIZE,
+                MIN_BLOCK_CONFIRMATIONS_RECEIVE_TARGET
+            );
+        }
+        vm.stopPrank();
+
+        // ------------------- Set up receiving chain for Avalanche:Plasma
+        vm.selectFork(sonic.fork);
+        vm.startPrank(sonic.delegator);
+        {
+            address[] memory requiredDVNs = new address[](1);
+            requiredDVNs[0] = SonicConstantsLib.SONIC_DVN_LAYER_ZERO_PUSH;
+            _setupOAppOnChain(
+                sonic,
+                avalanche.endpointId,
+                requiredDVNs,
+                MIN_BLOCK_CONFIRMATIONS_SEND_TARGET,
+                MAX_MESSAGE_SIZE,
+                MIN_BLOCK_CONFIRMATIONS_RECEIVE_TARGET
+            );
+        }
+        vm.stopPrank();
+
+        // ------------------- set peers
+        _setOsBridgePeers(vm, avalanche, sonic);
     }
 
     //endregion ------------------------------------- Setup bridges

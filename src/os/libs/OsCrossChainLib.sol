@@ -49,6 +49,18 @@ library OsCrossChainLib {
         _sendCrossChainMessage(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0, payload);
     }
 
+    /// @notice Quote cost to register new DAO symbol
+    /// @param daoSymbol Symbol of new DAO
+    /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
+    function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        bytes memory payload = abi.encode(uint16(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
+        address bridge = $.osChainSettings[0].osBridge;
+        return bridge == address(0)
+            ? 0
+            : IOSBridge(bridge).quoteSendMessageToAllChains(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), payload);
+    }
+
     /// @notice Send cross-chain notification about updating DAO symbol.
     function sendMessageUpdateSymbol(string memory oldSymbol, string memory newSymbol) internal {
         bytes memory payload = abi.encode(uint16(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), oldSymbol, newSymbol);
@@ -61,8 +73,7 @@ library OsCrossChainLib {
         address bridge = $.osChainSettings[0].osBridge;
         if (bridge != address(0)) {
             uint totalFee = IOSBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
-            uint balance = address(this).balance;
-            require(balance >= totalFee, IControllable2.InsufficientBalance(balance, totalFee));
+            require(msg.value >= totalFee, IOS.NotEnoughNativeProvided(totalFee));
             IOSBridge(bridge).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
         }
     }

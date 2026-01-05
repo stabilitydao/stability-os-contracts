@@ -76,6 +76,11 @@ contract OS is IOS, Controllable2 {
         return OsViewLib.proposalIds(daoSymbol, index, count);
     }
 
+    /// @inheritdoc IOS
+    function quoteCreateDAO(string calldata daoSymbol) external view returns (uint) {
+        return OsCrossChainLib.quoteSendMessageNewSymbol(daoSymbol);
+    }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -96,7 +101,7 @@ contract OS is IOS, Controllable2 {
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
-    ) external {
+    ) external payable {
         // no restrictions, anybody can create a DAO
         OsActionsLib.createDAO(name, daoSymbol, activity, params, funding);
     }

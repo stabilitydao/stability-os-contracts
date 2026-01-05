@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
-import {Test} from "forge-std/Test.sol";
+import {Vm, Test} from "forge-std/Test.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {OSBridge} from "../../src/os/OSBridge.sol";
 import {BridgeTestLib} from "../../test/os/utils/BridgeTestLib.sol";
@@ -50,6 +50,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
 
         // ------------------- Set up Avalanche:Plasma
         BridgeTestLib.setUpAvalanchePlasma(vm, avalanche, plasma);
+
     }
 
     function testInitialization() public {
@@ -58,7 +59,8 @@ contract OsBridgeTest is Test, OsUtilsLib {
         IOS.OsInitPayload memory init;
         IOS osSonic = OsUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
         OsUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
-        ITokenomics.DaoData memory dao1 = OsUtilsLib.createAliensDao(osSonic);
+        ITokenomics.DaoData memory dao1 = OsUtilsLib.createAliensDao(vm, osSonic);
+        console.log("done createAliensDao");
 
         // ----------------------------- create DAO on Avalanche
         vm.selectFork(avalanche.fork);
@@ -68,22 +70,13 @@ contract OsBridgeTest is Test, OsUtilsLib {
         OsUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
 
         vm.recordLogs();
-        ITokenomics.DaoData memory dao2 = OsUtilsLib.createApesDao(osAvax);
-        { // ------------------------- process cross chain events: Sonic -> Avalanche
-            (bytes memory message,) = BridgeTestLib._extractSendMessage(vm.getRecordedLogs());
-            Origin memory origin = Origin({
-                srcEid: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
-                sender: bytes32(uint(uint160(address(osSonic)))),
-                nonce: 1
-            });
-            vm.prank(avalanche.endpoint);
-            IOAppReceiver(avalanche.osBridge).lzReceive(
-                origin,
-                bytes32(0), // guid: actual value doesn't matter
-                message,
-                address(0), // executor
-                "" // extraData
-            );
+        ITokenomics.DaoData memory dao2 = OsUtilsLib.createApesDao(vm, osAvax);
+        console.log("done createApesDao");
+
+        { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+            _processCrossChainMessages(logs, avalanche, sonic);
+            _processCrossChainMessages(logs, avalanche, plasma);
         }
 
         // ----------------------------- create DAO on Plasma
@@ -93,8 +86,14 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols[1] = dao2.symbol;
         IOS osPlasma = OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
         OsUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
-        ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(osPlasma);
-        // todo process cross chain events
+        ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(vm, osPlasma);
+
+        { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+            _processCrossChainMessages(logs, plasma, sonic);
+            _processCrossChainMessages(logs, plasma, avalanche);
+        }
+
 
         // ----------------------------- Check results of cross-chain message exchange
         vm.selectFork(sonic.fork);
@@ -111,6 +110,25 @@ contract OsBridgeTest is Test, OsUtilsLib {
         assertEq(osPlasma.isDaoSymbolInUse(dao1.symbol), true, "Plasma: dao1 symbol");
         assertEq(osPlasma.isDaoSymbolInUse(dao2.symbol), true, "Plasma: dao2 symbol");
         assertEq(osPlasma.isDaoSymbolInUse(dao3.symbol), true, "Plasma: dao3 symbol");
+    }
+
+    function _processCrossChainMessages(Vm.Log[] memory logs, BridgeTestLib.ChainConfig memory from, BridgeTestLib.ChainConfig memory to) internal {
+        vm.selectFork(to.fork);
+        (bytes memory message,) = BridgeTestLib._extractSendMessage(logs);
+        Origin memory origin = Origin({
+            srcEid: from.endpointId,
+            sender: bytes32(uint(uint160(address(from.osBridge)))),
+            nonce: 1
+        });
+
+        vm.prank(to.endpoint);
+        IOAppReceiver(to.osBridge).lzReceive(
+            origin,
+            bytes32(0), // guid: actual value doesn't matter
+            message,
+            address(0), // executor
+            "" // extraData
+        );
     }
 
 

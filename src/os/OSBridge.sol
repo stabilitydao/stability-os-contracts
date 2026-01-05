@@ -186,11 +186,19 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
 
         uint len = $.endpoints.length();
 
+        /// slither-disable-next-line uninitialized-local
+        uint nativeSpent;
+
         for (uint i; i < len; ++i) {
             uint32 dstEid = uint32($.endpoints.at(i));
             console.log("i", i, dstEid);
             MessagingFee memory fee = _quote(dstEid, message_, options, false);
-            console.log("fee", fee.nativeFee);
+
+            nativeSpent += fee.nativeFee;
+            require(nativeSpent <= msg.value, NotEnoughNative(msg.value));
+
+            console.log("fee, value, spent", fee.nativeFee, msg.value, nativeSpent);
+
             _lzSend(dstEid, message_, options, fee, payable(msg.sender));
 
             emit SendMessage(dstEid, message_);
@@ -226,6 +234,21 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         if (receiver != address(0)) {
             IOS(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
         }
+    }
+
+    /// @notice Override QAppSender._payNative to be able to send multiple LayerZero messages in a single transaction
+    /// @dev Internal function to pay the native fee associated with the message.
+    /// @param _nativeFee The native fee to be paid.
+    /// @return nativeFee The amount of native currency paid.
+    ///
+    /// @dev If the OApp needs to initiate MULTIPLE LayerZero messages in a single transaction,
+    /// this will need to be overridden because msg.value would contain multiple lzFees.
+    function _payNative(uint256 _nativeFee) internal override pure returns (uint256 nativeFee) {
+
+        // Assume that msg.value and nativeFee a checked in sendMessageToAllChains
+        // if (msg.value != _nativeFee) revert NotEnoughNative(msg.value);
+
+        return _nativeFee;
     }
 
     //endregion --------------------------------- Overrides

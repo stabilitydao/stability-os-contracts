@@ -47,6 +47,8 @@ interface IOS {
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
 
+    error NotEnoughNativeProvided(uint requiredValue);
+
     /// @notice DAO-setting common for all chains
     struct OsSettings {
         uint priceDao;
@@ -150,7 +152,12 @@ interface IOS {
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
-    ) external;
+    ) external payable;
+
+    /// @notice Quote cost to create DAO
+    /// @param daoSymbol Symbol of new DAO
+    /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
+    function quoteCreateDAO(string calldata daoSymbol) external view returns (uint);
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)

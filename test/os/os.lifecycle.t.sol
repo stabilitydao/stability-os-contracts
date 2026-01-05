@@ -50,7 +50,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createAliensDao(os_);
+        ITokenomics.DaoData memory daoData = OsUtilsLib.createAliensDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
@@ -463,7 +463,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createApesDao(os_);
+        ITokenomics.DaoData memory daoData = OsUtilsLib.createApesDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
@@ -580,7 +580,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createDaoMachines(os_);
+        ITokenomics.DaoData memory daoData = OsUtilsLib.createDaoMachines(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
