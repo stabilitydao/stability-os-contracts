@@ -780,7 +780,6 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
     //endregion ------------------------------ Life cycles logic
 
-
     /// @notice user should pay for DAO-creation
     function _dealAndApprove(IOS os_) internal {
         address exchangeAsset = os_.getChainSettings().exchangeAsset;

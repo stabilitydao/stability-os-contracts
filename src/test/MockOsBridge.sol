@@ -9,6 +9,7 @@ contract MockOsBridge {
     function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external pure returns (uint) {
         return 0;
     }
+
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external {
         receivedMessages[messageKind] = message_;
     }

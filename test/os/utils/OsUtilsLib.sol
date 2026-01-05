@@ -34,8 +34,12 @@ abstract contract OsUtilsLib {
         return createOsInstance(vm, multisig, accessManager, init);
     }
 
-    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager, IOS.OsInitPayload memory init_) public returns (IOS) {
-
+    function createOsInstance(
+        Vm vm,
+        address multisig,
+        IAccessManager accessManager,
+        IOS.OsInitPayload memory init_
+    ) public returns (IOS) {
         address logic = address(new OS());
         Proxy proxy = new Proxy();
         proxy.initProxy(address(logic));
@@ -140,7 +144,6 @@ abstract contract OsUtilsLib {
         uint value = os_.quoteCreateDAO(daoSymbol_);
         vm.deal(address(this), value);
 
-
         os_.createDAO{value: value}(name_, daoSymbol_, activity, params, funding);
 
         return os_.getDAO(daoSymbol_);
@@ -229,12 +232,7 @@ abstract contract OsUtilsLib {
         IOS.OsChainSettings memory config = os.getChainSettings();
 
         vm.prank(chain.multisig);
-        os.setChainSettings(
-            IOS.OsChainSettings({
-                exchangeAsset: config.exchangeAsset,
-                osBridge: chain.osBridge
-            })
-        );
+        os.setChainSettings(IOS.OsChainSettings({exchangeAsset: config.exchangeAsset, osBridge: chain.osBridge}));
 
         // -------------------- set os and endpoints inside osBridge
         vm.prank(chain.multisig);
@@ -279,7 +277,6 @@ abstract contract OsUtilsLib {
 
         vm.prank(chain.multisig);
         IOSBridge(chain.osBridge).setGasLimit(uint(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
-
     }
 
     //endregion ----------------------------- Settings
@@ -557,6 +554,7 @@ abstract contract OsUtilsLib {
 
         return data;
     }
+
     //endregion ----------------------------- Funding, DaoParams, Vesting
 
     //region ----------------------------- Print
@@ -610,6 +608,7 @@ abstract contract OsUtilsLib {
             console.log(tasks[i].name);
         }
     }
+
     //endregion ----------------------------- Print
 
     //region ----------------------------- Utils

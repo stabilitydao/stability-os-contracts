@@ -154,7 +154,10 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     }
 
     /// @inheritdoc IOSBridge
-    function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external view returns (uint totalFee) {
+    function quoteSendMessageToAllChains(
+        uint messageKind,
+        bytes memory message_
+    ) external view returns (uint totalFee) {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
 
         uint128 _gasLimit = $.gasLimits[messageKind];
@@ -243,8 +246,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     ///
     /// @dev If the OApp needs to initiate MULTIPLE LayerZero messages in a single transaction,
     /// this will need to be overridden because msg.value would contain multiple lzFees.
-    function _payNative(uint256 _nativeFee) internal override pure returns (uint256 nativeFee) {
-
+    function _payNative(uint _nativeFee) internal pure override returns (uint nativeFee) {
         // Assume that msg.value and nativeFee a checked in sendMessageToAllChains
         // if (msg.value != _nativeFee) revert NotEnoughNative(msg.value);
 

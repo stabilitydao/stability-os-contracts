@@ -51,7 +51,6 @@ contract OsBridgeTest is Test, OsUtilsLib {
 
         // ------------------- Set up Avalanche:Plasma
         BridgeTestLib.setUpAvalanchePlasma(vm, avalanche, plasma);
-
     }
 
     function testInitialization() public {
@@ -68,7 +67,8 @@ contract OsBridgeTest is Test, OsUtilsLib {
         vm.selectFork(avalanche.fork);
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
-        IOS osAvax = OsUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
+        IOS osAvax =
+            OsUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
         OsUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
 
         _dealAndApprove(osAvax);
@@ -87,7 +87,8 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols = new string[](2);
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
-        IOS osPlasma = OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
+        IOS osPlasma =
+            OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
         OsUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
         _dealAndApprove(osPlasma);
         ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(vm, osPlasma);
@@ -97,7 +98,6 @@ contract OsBridgeTest is Test, OsUtilsLib {
             _processCrossChainMessages(logs, plasma, sonic);
             _processCrossChainMessages(logs, plasma, avalanche);
         }
-
 
         // ----------------------------- Check results of cross-chain message exchange
         vm.selectFork(sonic.fork);
@@ -116,23 +116,25 @@ contract OsBridgeTest is Test, OsUtilsLib {
         assertEq(osPlasma.isDaoSymbolInUse(dao3.symbol), true, "Plasma: dao3 symbol");
     }
 
-    function _processCrossChainMessages(Vm.Log[] memory logs, BridgeTestLib.ChainConfig memory from, BridgeTestLib.ChainConfig memory to) internal {
+    function _processCrossChainMessages(
+        Vm.Log[] memory logs,
+        BridgeTestLib.ChainConfig memory from,
+        BridgeTestLib.ChainConfig memory to
+    ) internal {
         vm.selectFork(to.fork);
         (bytes memory message,) = BridgeTestLib._extractSendMessage(logs);
-        Origin memory origin = Origin({
-            srcEid: from.endpointId,
-            sender: bytes32(uint(uint160(address(from.osBridge)))),
-            nonce: 1
-        });
+        Origin memory origin =
+            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.osBridge)))), nonce: 1});
 
         vm.prank(to.endpoint);
-        IOAppReceiver(to.osBridge).lzReceive(
-            origin,
-            bytes32(0), // guid: actual value doesn't matter
-            message,
-            address(0), // executor
-            "" // extraData
-        );
+        IOAppReceiver(to.osBridge)
+            .lzReceive(
+                origin,
+                bytes32(0), // guid: actual value doesn't matter
+                message,
+                address(0), // executor
+                "" // extraData
+            );
     }
 
     /// @notice user should pay for DAO-creation
