@@ -183,7 +183,7 @@ contract OS is IOS, Controllable2 {
     }
 
     /// @inheritdoc IOS
-    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external {
+    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable {
         // restrictions are checked below
         OsProposalsLib.updateNaming(daoSymbol, daoNames_);
     }

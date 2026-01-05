@@ -15,6 +15,7 @@ import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
 import {BridgeTestLib} from "./BridgeTestLib.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
 
 abstract contract OsUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -135,8 +136,11 @@ abstract contract OsUtilsLib {
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params
     ) internal returns (ITokenomics.DaoData memory) {
+        // user should pay for cross-chain messages
         uint value = os_.quoteCreateDAO(daoSymbol_);
         vm.deal(address(this), value);
+
+
         os_.createDAO{value: value}(name_, daoSymbol_, activity, params, funding);
 
         return os_.getDAO(daoSymbol_);
@@ -631,5 +635,6 @@ abstract contract OsUtilsLib {
     function test() public {
         // empty function to exclude the library from the coverage
     }
+
     //endregion ----------------------------- Utils
 }

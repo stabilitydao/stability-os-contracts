@@ -9,6 +9,7 @@ import {Test} from "forge-std/Test.sol";
 import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OsTest is Test, OsUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -45,13 +46,29 @@ contract OsTest is Test, OsUtilsLib {
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
         ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
-        os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+        {
+            address exchangeAsset = os.getChainSettings().exchangeAsset;
+            uint amount = os.getSettings().priceDao;
+
+            deal(exchangeAsset, address(this), amount * 3);
+
+            // user doesn't pay for creation DAO - ERC20InsufficientAllowance
+            vm.expectRevert();
+            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+
+            IERC20(exchangeAsset).approve(address(os), amount * 3);
+
+            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+            assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "testCreateDAO - balance after");
+        }
 
         ITokenomics.DaoData memory dao = os.getDAO(DAO_SYMBOL);
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
         // -------------------- bad name length
+        _dealAndApprove(os);
+
         vm.expectRevert(abi.encodeWithSelector(IOS.NameLength.selector, uint(28)));
         os.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
 
@@ -91,7 +108,10 @@ contract OsTest is Test, OsUtilsLib {
 
         // todo only verifier
 
+        _dealAndApprove(os);
         ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
+
+        _dealAndApprove(os, MULTISIG);
 
         vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
@@ -105,8 +125,26 @@ contract OsTest is Test, OsUtilsLib {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
 
-        vm.prank(MULTISIG);
-        os.addLiveDAO(daoOrigin);
+        // -------------------- success - check balances
+        {
+            address exchangeAsset = os.getChainSettings().exchangeAsset;
+            uint amount = os.getSettings().priceDao;
+
+            deal(exchangeAsset, MULTISIG, amount * 3);
+
+            // user doesn't pay for creation DAO - ERC20InsufficientAllowance
+            vm.expectRevert();
+            vm.prank(MULTISIG);
+            os.addLiveDAO(daoOrigin);
+
+            vm.prank(MULTISIG);
+            IERC20(exchangeAsset).approve(address(os), amount * 3);
+
+            vm.prank(MULTISIG);
+            os.addLiveDAO(daoOrigin);
+
+            assertEq(IERC20(exchangeAsset).balanceOf(MULTISIG), amount * 2, "balance after 1st dao");
+        }
 
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "testdao"));
@@ -135,6 +173,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         os.updateImages(
@@ -173,6 +212,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -207,6 +247,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -281,6 +322,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
@@ -350,6 +392,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -400,6 +443,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -421,6 +465,7 @@ contract OsTest is Test, OsUtilsLib {
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
         IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        _dealAndApprove(os);
         ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
@@ -582,5 +627,21 @@ contract OsTest is Test, OsUtilsLib {
         // initialChain
         assertEq(expected.tokenomics.initialChain, actual.tokenomics.initialChain, "tokenomics.initialChain");
     }
+
+    /// @notice user should pay for DAO-creation
+    function _dealAndApprove(IOS os_, address user) internal {
+        address exchangeAsset = os_.getChainSettings().exchangeAsset;
+        uint amount = os_.getSettings().priceDao;
+
+        deal(exchangeAsset, user, amount);
+
+        vm.prank(user);
+        IERC20(exchangeAsset).approve(address(os_), amount);
+    }
+
+    function _dealAndApprove(IOS os_) internal {
+        _dealAndApprove(os_, address(this));
+    }
+
     //endregion ----------------------------------- Internal logic
 }

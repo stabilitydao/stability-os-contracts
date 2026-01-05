@@ -14,6 +14,7 @@ import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
 import {AvalancheConstantsLib} from "../../chains/AvalancheConstantsLib.sol";
 import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OsBridgeTest is Test, OsUtilsLib {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -59,6 +60,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         IOS.OsInitPayload memory init;
         IOS osSonic = OsUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
         OsUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
+        _dealAndApprove(osSonic);
         ITokenomics.DaoData memory dao1 = OsUtilsLib.createAliensDao(vm, osSonic);
         console.log("done createAliensDao");
 
@@ -69,6 +71,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         IOS osAvax = OsUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
         OsUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
 
+        _dealAndApprove(osAvax);
         vm.recordLogs();
         ITokenomics.DaoData memory dao2 = OsUtilsLib.createApesDao(vm, osAvax);
         console.log("done createApesDao");
@@ -86,6 +89,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols[1] = dao2.symbol;
         IOS osPlasma = OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
         OsUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
+        _dealAndApprove(osPlasma);
         ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(vm, osPlasma);
 
         { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
@@ -131,5 +135,11 @@ contract OsBridgeTest is Test, OsUtilsLib {
         );
     }
 
-
+    /// @notice user should pay for DAO-creation
+    function _dealAndApprove(IOS os_) internal {
+        address exchangeAsset = os_.getChainSettings().exchangeAsset;
+        uint amount = os_.getSettings().priceDao;
+        deal(exchangeAsset, address(this), amount);
+        IERC20(exchangeAsset).approve(address(os_), amount);
+    }
 }

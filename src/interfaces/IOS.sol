@@ -29,6 +29,7 @@ interface IOS {
     error ZeroBalance();
     error NotRefundPhase();
     error UnsupportedStructVersion();
+    error IncorrectConfiguration();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -51,6 +52,7 @@ interface IOS {
 
     /// @notice DAO-setting common for all chains
     struct OsSettings {
+        /// @notice Price of adding/creating DAO in exchange asset
         uint priceDao;
         uint priceUnit;
         uint priceOracle;
@@ -208,7 +210,7 @@ interface IOS {
     function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external;
 
     /// @notice Update/create proposal to update DAO naming (name and symbol)
-    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external;
+    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable;
 
     /// @notice Update/create proposal to update on-chain DAO parameters
     function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external;

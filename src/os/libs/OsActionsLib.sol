@@ -158,6 +158,15 @@ library OsActionsLib {
         string memory daoName,
         uint daoUid
     ) internal {
+        // take DAO creation fee on balance of this contract
+        address exchangeAsset = $.osChainSettings[0].exchangeAsset;
+        require(exchangeAsset != address(0), IOS.IncorrectConfiguration());
+
+        uint priceDao = $.osSettings[0].priceDao;
+        if (priceDao != 0) {
+            IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), priceDao);
+        }
+
         $.usedSymbols[daoSymbol] = true;
 
         emit IOS.DaoCreated(daoName, daoSymbol, daoUid);

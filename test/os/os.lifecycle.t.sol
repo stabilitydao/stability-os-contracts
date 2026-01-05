@@ -50,6 +50,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
+        _dealAndApprove(os_);
         ITokenomics.DaoData memory daoData = OsUtilsLib.createAliensDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
@@ -463,6 +464,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
+        _dealAndApprove(os_);
         ITokenomics.DaoData memory daoData = OsUtilsLib.createApesDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
@@ -580,6 +582,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
+        _dealAndApprove(os_);
         ITokenomics.DaoData memory daoData = OsUtilsLib.createDaoMachines(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
@@ -776,4 +779,13 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
     }
 
     //endregion ------------------------------ Life cycles logic
+
+
+    /// @notice user should pay for DAO-creation
+    function _dealAndApprove(IOS os_) internal {
+        address exchangeAsset = os_.getChainSettings().exchangeAsset;
+        uint amount = os_.getSettings().priceDao;
+        deal(exchangeAsset, address(this), amount);
+        IERC20(exchangeAsset).approve(address(os_), amount);
+    }
 }
