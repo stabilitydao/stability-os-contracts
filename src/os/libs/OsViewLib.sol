@@ -39,7 +39,9 @@ library OsViewLib {
             require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IOS.TooLateSoSetupFundingAgain());
 
             $.deployments[daoUid].seedToken = OsDeployLib.deploySeedToken(
-                authority_, string(abi.encodePacked("Seed ", daoSymbol)), string(abi.encodePacked("seed", daoSymbol))
+                authority_,
+                getTokenName($.daos[daoUid].name, uint(NamingTokenKind.SEED_0)),
+                getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
             );
 
             newPhase = ITokenomics.LifecyclePhase.SEED_1;
@@ -61,7 +63,9 @@ library OsViewLib {
             require(tge.start <= block.timestamp, IOS.WaitFundingStart());
 
             $.deployments[daoUid].tgeToken = OsDeployLib.deployTgeToken(
-                authority_, string(abi.encodePacked("Tge ", daoSymbol)), string(abi.encodePacked("tge", daoSymbol))
+                authority_,
+                getTokenName($.daos[daoUid].name, uint(NamingTokenKind.TGE_1)),
+                getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
             );
 
             newPhase = ITokenomics.LifecyclePhase.TGE_4;

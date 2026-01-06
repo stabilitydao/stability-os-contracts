@@ -286,10 +286,12 @@ library OsUpdateLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.DaoNames struct
     function updateNaming(uint daoUid, bytes memory payload) internal {
+        OsLib.OsStorage storage $ = OsLib.getOsStorage();
         ITokenomics.DaoNames memory _daoNames = OsEncodingLib.decodeDaoNames(payload);
 
         // todo we must validate if the new symbol is not used already
         // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
+        require(!$.usedSymbols[_daoNames.symbol], IOS.SymbolNotUnique(_daoNames.symbol));
 
         updateNaming(daoUid, _daoNames);
     }

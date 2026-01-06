@@ -8,6 +8,7 @@ import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
 import {MockOsBridge} from "../../src/test/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 // import {console} from "forge-std/console.sol";
 
 contract OsLifeCycleTest is Test, OsUtilsLib {
@@ -150,6 +151,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             daoData = os_.getDAO(daoData.symbol);
             //OsUtilsLib.printDaoData(daoData);
             OsUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
+
+            assertEq(IERC20Metadata(daoData.deployments.seedToken).name(), "Aliens Community SEED", "seed name");
+            assertEq(IERC20Metadata(daoData.deployments.seedToken).symbol(), "seedALIENS", "seed symbol");
         }
 
         // ------------------------------ SEED started. First seeder
@@ -349,6 +353,8 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
         // ------------------------------ setup TGE token
         OsUtilsLib.setupTgeToken(vm, os_, MULTISIG, daoData.deployments.tgeToken);
+        assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
+        assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
 
         // ------------------------------ TGE funders
         {
