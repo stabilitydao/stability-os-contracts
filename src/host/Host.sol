@@ -2,18 +2,18 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {IOS} from "../interfaces/IOS.sol";
-import {OsActionsLib} from "./libs/OsActionsLib.sol";
-import {OsProposalsLib} from "./libs/OsProposalsLib.sol";
-import {OsFundingLib} from "./libs/OsFundingLib.sol";
-import {OsCrossChainLib} from "./libs/OsCrossChainLib.sol";
-import {OsViewLib} from "./libs/OsViewLib.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {HostActionsLib} from "./libs/HostActionsLib.sol";
+import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
+import {HostFundingLib} from "./libs/HostFundingLib.sol";
+import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
+import {HostViewLib} from "./libs/HostViewLib.sol";
 import {Controllable2} from "../core/base/Controllable2.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract OS is IOS, Controllable2 {
+contract Host is IHost, Controllable2 {
     /// @inheritdoc IControllable2
     string public constant VERSION = "1.0.0";
 
@@ -25,76 +25,76 @@ contract OS is IOS, Controllable2 {
         __Controllable_init(authority_);
 
         // register all symbols registered on other chains
-        IOS.OsInitPayload memory initPayload = abi.decode(payload, (IOS.OsInitPayload));
-        OsActionsLib.initOS(initPayload);
+        IHost.OsInitPayload memory initPayload = abi.decode(payload, (IHost.OsInitPayload));
+        HostActionsLib.initOS(initPayload);
     }
 
     //region -------------------------------------- View
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
-        return OsViewLib.getDAO(daoSymbol);
+        return HostViewLib.getDAO(daoSymbol);
     }
 
-    /// @inheritdoc IOS
-    function getSettings() external view returns (IOS.OsSettings memory) {
-        return OsViewLib.getSettings();
+    /// @inheritdoc IHost
+    function getSettings() external view returns (IHost.OsSettings memory) {
+        return HostViewLib.getSettings();
     }
 
-    /// @inheritdoc IOS
-    function getChainSettings() external view returns (IOS.OsChainSettings memory) {
-        return OsViewLib.getChainSettings();
+    /// @inheritdoc IHost
+    function getChainSettings() external view returns (IHost.OsChainSettings memory) {
+        return HostViewLib.getChainSettings();
     }
 
-    /// @inheritdoc IOS
-    function tasks(string calldata daoSymbol) external view returns (IOS.Task[] memory) {
-        return OsViewLib.tasks(daoSymbol, MAX_COUNT_TASKS);
+    /// @inheritdoc IHost
+    function tasks(string calldata daoSymbol) external view returns (IHost.Task[] memory) {
+        return HostViewLib.tasks(daoSymbol, MAX_COUNT_TASKS);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function getDAOOwner(string calldata daoSymbol) external view returns (address) {
-        return OsViewLib.getDAOOwner(daoSymbol);
+        return HostViewLib.getDAOOwner(daoSymbol);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
-        return OsViewLib.isDaoSymbolInUse(daoSymbol);
+        return HostViewLib.isDaoSymbolInUse(daoSymbol);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
-        return OsViewLib.proposal(proposalId);
+        return HostViewLib.proposal(proposalId);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function proposalsLength(string calldata daoSymbol) external view returns (uint) {
-        return OsViewLib.proposalsLength(daoSymbol);
+        return HostViewLib.proposalsLength(daoSymbol);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory) {
-        return OsViewLib.proposalIds(daoSymbol, index, count);
+        return HostViewLib.proposalIds(daoSymbol, index, count);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function quoteCreateDAO(string calldata daoSymbol) external view returns (uint) {
-        return OsCrossChainLib.quoteSendMessageNewSymbol(daoSymbol);
+        return HostCrossChainLib.quoteSendMessageNewSymbol(daoSymbol);
     }
 
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
-    /// @inheritdoc IOS
-    function setSettings(IOS.OsSettings memory newSettings) external restricted {
-        OsActionsLib.setSettings(newSettings);
+    /// @inheritdoc IHost
+    function setSettings(IHost.OsSettings memory newSettings) external restricted {
+        HostActionsLib.setSettings(newSettings);
     }
 
-    /// @inheritdoc IOS
-    function setChainSettings(IOS.OsChainSettings memory newSettings) external restricted {
-        OsActionsLib.setChainSettings(newSettings);
+    /// @inheritdoc IHost
+    function setChainSettings(IHost.OsChainSettings memory newSettings) external restricted {
+        HostActionsLib.setChainSettings(newSettings);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function createDAO(
         string calldata name,
         string calldata daoSymbol,
@@ -103,98 +103,98 @@ contract OS is IOS, Controllable2 {
         ITokenomics.Funding[] memory funding
     ) external payable {
         // no restrictions, anybody can create a DAO
-        OsActionsLib.createDAO(name, daoSymbol, activity, params, funding);
+        HostActionsLib.createDAO(name, daoSymbol, activity, params, funding);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function addLiveDAO(ITokenomics.DaoData calldata dao) external restricted {
-        OsActionsLib.addLiveDAO(dao);
+        HostActionsLib.addLiveDAO(dao);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function changePhase(string calldata daoSymbol) external {
         // no restrictions, anybody can call this
 
-        OsViewLib.changePhase(daoSymbol, authority());
+        HostViewLib.changePhase(daoSymbol, authority());
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function fund(string calldata daoSymbol, uint amount) external {
         // todo not reentrant
         // no restrictions, anybody can call this
 
-        OsFundingLib.fund(daoSymbol, amount);
+        HostFundingLib.fund(daoSymbol, amount);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function receiveVotingResults(bytes32 proposalId, bool succeed) external restricted {
-        OsProposalsLib.receiveVotingResults(proposalId, succeed);
+        HostProposalsLib.receiveVotingResults(proposalId, succeed);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function refund(string calldata daoSymbol) external {
         // todo not reentrant
-        OsFundingLib.refund(daoSymbol);
+        HostFundingLib.refund(daoSymbol);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function refundFor(string calldata daoSymbol, address[] memory receivers) external restricted {
         // todo not reentrant
-        OsFundingLib.refundFor(daoSymbol, receivers);
+        HostFundingLib.refundFor(daoSymbol, receivers);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
-        OsCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
+        HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
     }
 
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Update actions
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external {
         // restrictions are checked below
-        OsProposalsLib.updateImages(daoSymbol, images);
+        HostProposalsLib.updateImages(daoSymbol, images);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateSocials(string calldata daoSymbol, string[] calldata socials) external {
         // restrictions are checked below
-        OsProposalsLib.updateSocials(daoSymbol, socials);
+        HostProposalsLib.updateSocials(daoSymbol, socials);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external {
         // restrictions are checked below
-        OsProposalsLib.updateUnits(daoSymbol, units);
+        HostProposalsLib.updateUnits(daoSymbol, units);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external {
         // restrictions are checked below
-        OsProposalsLib.updateFunding(daoSymbol, funding);
+        HostProposalsLib.updateFunding(daoSymbol, funding);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external {
         // restrictions are checked below
-        OsProposalsLib.updateVesting(daoSymbol, vestings);
+        HostProposalsLib.updateVesting(daoSymbol, vestings);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable {
         // restrictions are checked below
-        OsProposalsLib.updateNaming(daoSymbol, daoNames_);
+        HostProposalsLib.updateNaming(daoSymbol, daoNames_);
     }
 
-    /// @inheritdoc IOS
+    /// @inheritdoc IHost
     function updateDaoParameters(
         string calldata daoSymbol,
         ITokenomics.DaoParameters calldata daoParameters_
     ) external {
         // restrictions are checked below
-        OsProposalsLib.updateDaoParameters(daoSymbol, daoParameters_);
+        HostProposalsLib.updateDaoParameters(daoSymbol, daoParameters_);
     }
 
     //endregion -------------------------------------- Update actions

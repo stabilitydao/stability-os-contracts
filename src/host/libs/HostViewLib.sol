@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IOS} from "../../interfaces/IOS.sol";
+import {IHost} from "../../interfaces/IHost.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
-import {OsLib} from "./OsLib.sol";
-import {OsDeployLib} from "./OsDeployLib.sol";
+import {HostLib} from "./HostLib.sol";
+import {HostDeployLib} from "./HostDeployLib.sol";
 
-library OsViewLib {
+library HostViewLib {
     using SafeERC20 for IERC20;
 
     /// @notice Token kind for getTokenName and getTokenSymbol
@@ -23,22 +23,22 @@ library OsViewLib {
     /// @param daoSymbol Symbol of the DAO
     /// @param authority_ Address of Access Manager
     function changePhase(string calldata daoSymbol, address authority_) external {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
-        require(_tasks(1, daoUid).length == 0, IOS.SolveTasksFirst());
+        require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
         ITokenomics.LifecyclePhase newPhase = phase;
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.start < block.timestamp, IOS.WaitFundingStart());
+            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
             // SEED can be started not later than 1 week after configured start time
-            require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IOS.TooLateSoSetupFundingAgain());
+            require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IHost.TooLateSoSetupFundingAgain());
 
-            $.deployments[daoUid].seedToken = OsDeployLib.deploySeedToken(
+            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
                 authority_,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.SEED_0)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
@@ -46,8 +46,8 @@ library OsViewLib {
 
             newPhase = ITokenomics.LifecyclePhase.SEED_1;
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding memory seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.end <= block.timestamp, IOS.WaitFundingEnd());
+            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
 
             bool success = seed.raised >= seed.minRaise;
 
@@ -58,11 +58,11 @@ library OsViewLib {
                 // now refund can be called
             }
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
-            ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
-            require(tge.start <= block.timestamp, IOS.WaitFundingStart());
+            require(tge.start <= block.timestamp, IHost.WaitFundingStart());
 
-            $.deployments[daoUid].tgeToken = OsDeployLib.deployTgeToken(
+            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
                 authority_,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.TGE_1)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
@@ -70,9 +70,9 @@ library OsViewLib {
 
             newPhase = ITokenomics.LifecyclePhase.TGE_4;
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding memory tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
-            require(tge.end < block.timestamp, IOS.WaitFundingEnd());
+            require(tge.end < block.timestamp, IHost.WaitFundingEnd());
 
             bool success = tge.raised >= tge.minRaise;
 
@@ -103,13 +103,13 @@ library OsViewLib {
 
             uint countVesting = $.tokenomics[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
-                if ($.vesting[OsLib.getKey(daoUid, i)].start < block.timestamp) {
+                if ($.vesting[HostLib.getKey(daoUid, i)].start < block.timestamp) {
                     isVestingStarted = true;
                     break;
                 }
             }
 
-            require(isVestingStarted, IOS.WaitVestingStart());
+            require(isVestingStarted, IHost.WaitVestingStart());
 
             newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
@@ -118,30 +118,30 @@ library OsViewLib {
 
             uint countVesting = $.tokenomics[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
-                if ($.vesting[OsLib.getKey(daoUid, i)].end <= block.timestamp) {
+                if ($.vesting[HostLib.getKey(daoUid, i)].end <= block.timestamp) {
                     isVestingNotEnded = true;
                     break;
                 }
             }
 
-            require(isVestingNotEnded, IOS.WaitVestingEnd());
+            require(isVestingNotEnded, IHost.WaitVestingEnd());
 
             newPhase = ITokenomics.LifecyclePhase.LIVE_7;
         }
 
         $.daos[daoUid].phase = newPhase;
 
-        emit IOS.DaoPhaseChanged(daoSymbol, newPhase);
+        emit IHost.DaoPhaseChanged(daoSymbol, newPhase);
     }
 
     //region -------------------------------------- View
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         uint daoUid = $.daoUids[daoSymbol];
 
         ITokenomics.DaoData memory dest;
-        OsLib.DaoDataLocal memory data = $.daos[daoUid];
+        HostLib.DaoDataLocal memory data = $.daos[daoUid];
 
         { // ------------------- basic fields
 
@@ -163,45 +163,45 @@ library OsViewLib {
         // ------------------- units
         dest.units = new ITokenomics.UnitInfo[](data.countUnits);
         for (uint i; i < data.countUnits; i++) {
-            dest.units[i] = $.units[OsLib.getKey(daoUid, i)];
+            dest.units[i] = $.units[HostLib.getKey(daoUid, i)];
         }
 
         // ------------------- agents
         dest.agents = new ITokenomics.AgentInfo[](data.countAgents);
         for (uint i; i < data.countAgents; i++) {
-            dest.agents[i] = $.agents[OsLib.getKey(daoUid, i)];
+            dest.agents[i] = $.agents[HostLib.getKey(daoUid, i)];
         }
 
         { // ------------------- tokenomics
-            OsLib.TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
+            HostLib.TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
             dest.tokenomics.initialChain = tokenomics.initialChain;
 
             dest.tokenomics.funding = new ITokenomics.Funding[](tokenomics.funding.length);
             for (uint i; i < dest.tokenomics.funding.length; i++) {
-                dest.tokenomics.funding[i] = $.funding[OsLib.getKey(daoUid, i)];
+                dest.tokenomics.funding[i] = $.funding[HostLib.getKey(daoUid, i)];
             }
 
             dest.tokenomics.vesting = new ITokenomics.Vesting[](tokenomics.countVesting);
             for (uint i; i < tokenomics.countVesting; i++) {
-                dest.tokenomics.vesting[i] = $.vesting[OsLib.getKey(daoUid, i)];
+                dest.tokenomics.vesting[i] = $.vesting[HostLib.getKey(daoUid, i)];
             }
         }
 
         return dest;
     }
 
-    function getSettings() external view returns (IOS.OsSettings memory) {
-        return OsLib.getOsStorage().osSettings[0];
+    function getSettings() external view returns (IHost.OsSettings memory) {
+        return HostLib.getOsStorage().osSettings[0];
     }
 
-    function getChainSettings() external view returns (IOS.OsChainSettings memory) {
-        return OsLib.getOsStorage().osChainSettings[0];
+    function getChainSettings() external view returns (IHost.OsChainSettings memory) {
+        return HostLib.getOsStorage().osChainSettings[0];
     }
 
     function getDAOOwner(string calldata daoSymbol) external view returns (address) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
-        require(daoUid != 0, IOS.IncorrectDao());
+        require(daoUid != 0, IHost.IncorrectDao());
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
@@ -219,13 +219,13 @@ library OsViewLib {
     }
 
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         return $.usedSymbols[daoSymbol];
     }
 
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
-        OsLib.ProposalLocal memory local = $.proposals[proposalId];
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.ProposalLocal memory local = $.proposals[proposalId];
         return ITokenomics.Proposal({
             action: local.action,
             id: proposalId,
@@ -237,7 +237,7 @@ library OsViewLib {
     }
 
     function proposalsLength(string calldata daoSymbol) external view returns (uint) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         return $.daoProposals[$.daoUids[daoSymbol]].length;
     }
 
@@ -246,7 +246,7 @@ library OsViewLib {
         uint index,
         uint count
     ) external view returns (bytes32[] memory dest) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         uint len = $.daoProposals[$.daoUids[daoSymbol]].length;
         uint size = index + count > len ? index > len ? 0 : len - index : count;
@@ -260,8 +260,8 @@ library OsViewLib {
     /// @param daoSymbol DAO symbol
     /// @param limit Maximum number of tasks to return. It must be > 0. Use 1 to check if there are any tasks.
     /// @return __tasks List of tasks. The list is limited by {limit} value
-    function tasks(string calldata daoSymbol, uint limit) external view returns (IOS.Task[] memory __tasks) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+    function tasks(string calldata daoSymbol, uint limit) external view returns (IHost.Task[] memory __tasks) {
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         return _tasks(uint16(limit), $.daoUids[daoSymbol]);
     }
 
@@ -303,9 +303,9 @@ library OsViewLib {
 
     //endregion -------------------------------------- View
 
-    function _tasks(uint16 limit, uint daoUid) internal view returns (IOS.Task[] memory dest) {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
-        dest = new IOS.Task[](limit);
+    function _tasks(uint16 limit, uint daoUid) internal view returns (IHost.Task[] memory dest) {
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        dest = new IHost.Task[](limit);
 
         // slither-disable-next-line uninitialized-local
         uint index;
@@ -315,36 +315,36 @@ library OsViewLib {
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
             if (index < limit && (bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0)) {
-                dest[index++] = IOS.Task("Need images of token and seedToken");
+                dest[index++] = IHost.Task("Need images of token and seedToken");
             }
             if (index < limit && $.daos[daoUid].socials.length < 2) {
-                dest[index++] = IOS.Task("Need at least 2 socials");
+                dest[index++] = IHost.Task("Need at least 2 socials");
             }
             if (index < limit && $.daos[daoUid].countUnits == 0) {
-                dest[index++] = IOS.Task("Need at least 1 projected unit");
+                dest[index++] = IHost.Task("Need at least 1 projected unit");
             }
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding memory f = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             if (f.fundingType == ITokenomics.FundingType.SEED_0) {
                 // todo check if funding round exists. Can SEED_0 be skipped? if yes we need different way to check if it exists
                 if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
-                    dest[index++] = IOS.Task("Need attract minimal seed funding");
+                    dest[index++] = IHost.Task("Need attract minimal seed funding");
                 }
             }
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
-            ITokenomics.Funding memory f = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
             if (index < limit && f.fundingType != ITokenomics.FundingType.TGE_1) {
-                dest[index++] = IOS.Task("Need add pre-TGE funding");
+                dest[index++] = IHost.Task("Need add pre-TGE funding");
             }
             ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
             if (
                 index < limit && bytes(daoImages.tgeToken).length == 0 || bytes(daoImages.xToken).length == 0
                     || bytes(daoImages.daoToken).length == 0
             ) {
-                dest[index++] = IOS.Task("Need images of all DAO tokens");
+                dest[index++] = IHost.Task("Need images of all DAO tokens");
             }
             if (index < limit && $.tokenomics[daoUid].countVesting == 0) {
-                dest[index++] = IOS.Task("Need vesting allocations");
+                dest[index++] = IHost.Task("Need vesting allocations");
             }
             uint countUnits = $.daos[daoUid].countUnits;
 
@@ -352,19 +352,19 @@ library OsViewLib {
             bool foundLive;
 
             for (uint i; i < countUnits; i++) {
-                ITokenomics.UnitInfo memory unit = $.units[OsLib.getKey(daoUid, i)];
+                ITokenomics.UnitInfo memory unit = $.units[HostLib.getKey(daoUid, i)];
                 if (unit.status == IDAOUnit.UnitStatus.LIVE_2) {
                     foundLive = true;
                     break;
                 }
             }
             if (index < limit && !foundLive) {
-                dest[index++] = IOS.Task("Run revenue generating units");
+                dest[index++] = IHost.Task("Run revenue generating units");
             }
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding memory f = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
             if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
-                dest[index++] = IOS.Task("Need attract minimal TGE funding");
+                dest[index++] = IHost.Task("Need attract minimal TGE funding");
             }
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
             // establish and improve
@@ -378,7 +378,7 @@ library OsViewLib {
 
         // trim the dest array
         if (index < dest.length) {
-            IOS.Task[] memory temp = new IOS.Task[](index);
+            IHost.Task[] memory temp = new IHost.Task[](index);
 
             for (uint i; i < index; ++i) {
                 temp[i] = dest[i];

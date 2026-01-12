@@ -3,15 +3,15 @@ pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {IOS} from "../../src/os/OS.sol";
-import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {MockOsBridge} from "../../src/test/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 // import {console} from "forge-std/console.sol";
 
-contract OsLifeCycleTest is Test, OsUtilsLib {
+contract HostLifeCycleTest is Test, HostUtilsLib {
     address internal immutable MULTISIG;
 
     address internal constant FIRST_SEEDER = address(0x11);
@@ -28,7 +28,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
     /// @notice Test single DAO life cycle
     function testLifeCycle56() public {
         // ------------------------------ First DAO is Aliens community
-        IOS os56 = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os56 = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         lifeCycleDaoAlien56(os56);
 
@@ -47,17 +47,17 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
     }
 
     //region ------------------------------ Life cycles logic
-    function lifeCycleDaoAlien56(IOS os_) internal {
+    function lifeCycleDaoAlien56(IHost os_) internal {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
         _dealAndApprove(os_);
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createAliensDao(vm, os_);
+        ITokenomics.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
             MockOsBridge bridge = MockOsBridge(os_.getChainSettings().osBridge);
-            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory daoSymbol) = abi.decode(message, (uint16, string));
             assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
         }
@@ -66,13 +66,13 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         {
             skip(7 days);
 
-            vm.expectRevert(IOS.SolveTasksFirst.selector);
+            vm.expectRevert(IHost.SolveTasksFirst.selector);
             os_.changePhase(daoData.symbol);
         }
 
         // ------------------------------ check what aliens need to do
         {
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertGe(tasks.length, 2, "at least 2 unsolved tasks");
 
             // deployer drew token logotypes
@@ -82,7 +82,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             os_.updateImages(daoData.symbol, images);
 
             {
-                IOS.Task[] memory tasksAfter = os_.tasks(daoData.symbol);
+                IHost.Task[] memory tasksAfter = os_.tasks(daoData.symbol);
                 assertLe(tasksAfter.length, tasks.length, "number of tasks should decrease");
             }
 
@@ -108,7 +108,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             os_.updateSocials(daoData.symbol, socials);
 
             {
-                IOS.Task[] memory tasksAfter = os_.tasks(daoData.symbol);
+                IHost.Task[] memory tasksAfter = os_.tasks(daoData.symbol);
                 assertEq(tasksAfter.length, 0, "all tasks solved");
             }
         }
@@ -129,7 +129,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
         // ------------------------------ phase cant be changed right now
         {
-            vm.expectRevert(IOS.WaitFundingStart.selector);
+            vm.expectRevert(IHost.WaitFundingStart.selector);
             os_.changePhase(daoData.symbol);
 
             skip(24 days);
@@ -142,7 +142,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
 
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "at least 1 unsolved tasks");
         }
 
@@ -150,7 +150,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         {
             daoData = os_.getDAO(daoData.symbol);
             //OsUtilsLib.printDaoData(daoData);
-            OsUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
+            HostUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
 
             assertEq(IERC20Metadata(daoData.deployments.seedToken).name(), "Aliens Community SEED", "seed name");
             assertEq(IERC20Metadata(daoData.deployments.seedToken).symbol(), "seedALIENS", "seed symbol");
@@ -196,11 +196,11 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
                 keccak256(abi.encode(socials)), keccak256(abi.encode(daoAfter.socials)), "socials data should match"
             );
 
-            vm.expectRevert(IOS.AlreadyReceived.selector);
+            vm.expectRevert(IHost.AlreadyReceived.selector);
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalIds[0], true);
 
-            vm.expectRevert(IOS.IncorrectProposal.selector);
+            vm.expectRevert(IHost.IncorrectProposal.selector);
             vm.prank(MULTISIG);
             os_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true);
         }
@@ -223,14 +223,14 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             deal(asset, SECOND_SEEDER, 100000000e18);
 
-            vm.expectRevert(IOS.RaiseMaxExceed.selector);
+            vm.expectRevert(IHost.RaiseMaxExceed.selector);
             vm.prank(SECOND_SEEDER);
             os_.fund(daoData.symbol, 100000000e18);
         }
 
         // ------------------------------ phase cant be changed right now
         {
-            vm.expectRevert(IOS.WaitFundingEnd.selector);
+            vm.expectRevert(IHost.WaitFundingEnd.selector);
             os_.changePhase(daoData.symbol);
 
             skip(100 days);
@@ -245,30 +245,30 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
             );
 
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on Development phase");
         }
 
         // ------------------------------ fill TGE funding, refresh daoData
         {
             assertEq(
-                OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
+                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
                 type(uint).max,
                 "TGE funding should not exist yet"
             );
 
-            ITokenomics.Funding memory funding = OsUtilsLib.generateTGEFunding();
+            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             os_.updateFunding(daoData.symbol, funding);
 
-            bytes32 proposalId = OsUtilsLib.getLastProposalId(os_, daoData.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(os_, daoData.symbol);
 
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalId, true);
 
             daoData = os_.getDAO(daoData.symbol);
             assertEq(
-                OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
+                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
             );
         }
 
@@ -290,7 +290,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             });
 
             os_.updateUnits(daoData.symbol, units);
-            bytes32 proposalId = OsUtilsLib.getLastProposalId(os_, daoData.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(os_, daoData.symbol);
 
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalId, true);
@@ -307,22 +307,22 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             });
             os_.updateImages(daoData.symbol, images);
 
-            bytes32 proposalId = OsUtilsLib.getLastProposalId(os_, daoData.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(os_, daoData.symbol);
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalId, true);
         }
 
         // ------------------------------ add vesting
         {
-            uint fundingIndex = OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
             ITokenomics.Funding memory tgeFunding = daoData.tokenomics.funding[fundingIndex];
 
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = OsUtilsLib.generateVesting("Development", tgeFunding.end);
+            vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             os_.updateVesting(daoData.symbol, vesting);
 
-            bytes32 proposalId = OsUtilsLib.getLastProposalId(os_, daoData.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(os_, daoData.symbol);
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalId, true);
         }
@@ -332,10 +332,10 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
         // ------------------------------ try fund on not funding phase
         {
-            vm.expectRevert(IOS.NotFundingPhase.selector);
+            vm.expectRevert(IHost.NotFundingPhase.selector);
             os_.fund(daoData.symbol, 1e18);
 
-            vm.expectRevert(IOS.WaitFundingStart.selector);
+            vm.expectRevert(IHost.WaitFundingStart.selector);
             os_.changePhase(daoData.symbol);
         }
 
@@ -347,12 +347,12 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             daoData = os_.getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
 
         // ------------------------------ setup TGE token
-        OsUtilsLib.setupTgeToken(vm, os_, MULTISIG, daoData.deployments.tgeToken);
+        HostUtilsLib.setupTgeToken(vm, os_, MULTISIG, daoData.deployments.tgeToken);
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
 
@@ -374,7 +374,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             );
 
             // assume here that first seeder already has 100000000e18 received in seed round
-            vm.expectRevert(IOS.RaiseMaxExceed.selector);
+            vm.expectRevert(IHost.RaiseMaxExceed.selector);
             vm.prank(FIRST_SEEDER);
             os_.fund(daoData.symbol, 100000000e18);
 
@@ -396,7 +396,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
         // ------------------------------ LIVE CLIFF, refresh daoData
         {
-            vm.expectRevert(IOS.WaitFundingEnd.selector);
+            vm.expectRevert(IHost.WaitFundingEnd.selector);
             os_.changePhase(daoData.symbol);
 
             skip(8 days);
@@ -410,7 +410,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
         // ------------------------------ LIVE VESTING, refresh daoData
         {
-            vm.expectRevert(IOS.WaitVestingStart.selector);
+            vm.expectRevert(IHost.WaitVestingStart.selector);
             os_.changePhase(daoData.symbol);
 
             skip(200 days);
@@ -421,13 +421,13 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "phase should be VESTING");
 
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE_VESTING phase"); // todo add task "distribute vesting funds to leverage token"
         }
 
         // ------------------------------ LIVE, refresh daoData
         {
-            vm.expectRevert(IOS.WaitVestingEnd.selector);
+            vm.expectRevert(IHost.WaitVestingEnd.selector);
             os_.changePhase(daoData.symbol);
 
             skip(4000 days);
@@ -437,7 +437,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             daoData = os_.getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_7), "phase should be LIVE");
-            IOS.Task[] memory tasks = os_.tasks(daoData.symbol);
+            IHost.Task[] memory tasks = os_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE phase");
         }
 
@@ -454,29 +454,29 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
                     claim: daoData.tokenomics.funding[i].claim
                 });
 
-                vm.expectRevert(IOS.TooLateToUpdateSuchFunding.selector);
+                vm.expectRevert(IHost.TooLateToUpdateSuchFunding.selector);
                 os_.updateFunding(daoData.symbol, funding);
             }
 
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = OsUtilsLib.generateVesting("Development", 1);
+            vesting[0] = HostUtilsLib.generateVesting("Development", 1);
 
-            vm.expectRevert(IOS.TooLateToUpdateVesting.selector);
+            vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
             os_.updateVesting(daoData.symbol, vesting);
         }
     }
 
-    function lifeCycleDaoApes1(IOS os_) internal {
+    function lifeCycleDaoApes1(IHost os_) internal {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
         _dealAndApprove(os_);
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createApesDao(vm, os_);
+        ITokenomics.DaoData memory daoData = HostUtilsLib.createApesDao(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
             MockOsBridge bridge = MockOsBridge(os_.getChainSettings().osBridge);
-            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory daoSymbol) = abi.decode(message, (uint16, string));
             assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
         }
@@ -506,9 +506,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             socials[1] = "https://b.bb/b";
 
             os_.updateSocials(daoData.symbol, socials);
-            uint fundingIndex = OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = OsUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
+            vesting[0] = HostUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
 
             os_.updateVesting(daoData.symbol, vesting);
         }
@@ -517,10 +517,10 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         {
             skip(15 days);
 
-            vm.expectRevert(IOS.TooLateSoSetupFundingAgain.selector);
+            vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
             os_.changePhase(daoData.symbol);
 
-            ITokenomics.Funding memory funding = OsUtilsLib.generateSeedFunding(
+            ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
                 7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
             );
             os_.updateFunding(daoData.symbol, funding);
@@ -537,7 +537,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             daoData = os_.getDAO(daoData.symbol);
 
             // setup seed token
-            OsUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
+            HostUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
         }
 
         // ------------------------------ Fund small amount - funding is failed, refresh daoData
@@ -584,17 +584,17 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         }
     }
 
-    function lifeCycleDaoMachines10(IOS os_) internal {
+    function lifeCycleDaoMachines10(IHost os_) internal {
         address asset = os_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
         _dealAndApprove(os_);
-        ITokenomics.DaoData memory daoData = OsUtilsLib.createDaoMachines(vm, os_);
+        ITokenomics.DaoData memory daoData = HostUtilsLib.createDaoMachines(vm, os_);
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
             MockOsBridge bridge = MockOsBridge(os_.getChainSettings().osBridge);
-            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory daoSymbol) = abi.decode(message, (uint16, string));
             assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
         }
@@ -602,7 +602,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
             MockOsBridge bridge = MockOsBridge(os_.getChainSettings().osBridge);
-            bytes memory message = bridge.receivedMessages(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0));
+            bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory daoSymbol) = abi.decode(message, (uint16, string));
             assertEq(daoSymbol, daoData.symbol, "bridge received new DAO symbol message");
         }
@@ -636,9 +636,9 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             socials[1] = "https://b.bb/b";
             os_.updateSocials(daoData.symbol, socials);
 
-            uint fundingIndex = OsUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = OsUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
+            vesting[0] = HostUtilsLib.generateVesting("Development", daoData.tokenomics.funding[fundingIndex].end);
 
             os_.updateVesting(daoData.symbol, vesting);
         }
@@ -654,7 +654,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             daoData = os_.getDAO(daoData.symbol);
 
             // setup seed token
-            OsUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
+            HostUtilsLib.setupSeedToken(vm, os_, MULTISIG, daoData.deployments.seedToken);
         }
 
         // ------------------------------ Fund enough amount, refresh daoData
@@ -692,7 +692,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
             assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
 
             // setup TGE token
-            OsUtilsLib.setupTgeToken(vm, os_, MULTISIG, daoData.deployments.tgeToken);
+            HostUtilsLib.setupTgeToken(vm, os_, MULTISIG, daoData.deployments.tgeToken);
         }
 
         // ------------------------------ Fund NOT enough amount, TGE failed, refresh daoData
@@ -735,7 +735,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
 
             os_.updateSocials(daoData.symbol, socials);
 
-            bytes32 proposalId = OsUtilsLib.getLastProposalId(os_, daoData.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(os_, daoData.symbol);
 
             vm.prank(MULTISIG);
             os_.receiveVotingResults(proposalId, false);
@@ -787,7 +787,7 @@ contract OsLifeCycleTest is Test, OsUtilsLib {
     //endregion ------------------------------ Life cycles logic
 
     /// @notice user should pay for DAO-creation
-    function _dealAndApprove(IOS os_) internal {
+    function _dealAndApprove(IHost os_) internal {
         address exchangeAsset = os_.getChainSettings().exchangeAsset;
         uint amount = os_.getSettings().priceDao;
         deal(exchangeAsset, address(this), amount);

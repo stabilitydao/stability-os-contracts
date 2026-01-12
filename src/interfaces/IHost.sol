@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
-interface IOS {
+interface IHost {
     error NameLength(uint length);
     error SymbolLength(uint length);
     error SymbolNotUnique(string symbol);
@@ -33,8 +33,8 @@ interface IOS {
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
-    event OsSettingsUpdated(IOS.OsSettings st);
-    event OsChainSettingsUpdated(IOS.OsChainSettings st);
+    event OsSettingsUpdated(IHost.OsSettings st);
+    event OsChainSettingsUpdated(IHost.OsChainSettings st);
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
     event DaoUnitsUpdated(string daoSymbol, ITokenomics.UnitInfo[] units);

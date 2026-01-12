@@ -12,7 +12,7 @@ import {ILayerZeroEndpointV2} from "@layerzerolabs/lz-evm-protocol-v2/contracts/
 import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLibManager.sol";
 import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/SendLibBase.sol";
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
-import {OSBridge} from "../../../src/os/OSBridge.sol";
+import {HostBridge} from "../../../src/host/HostBridge.sol";
 import {AccessManager} from "../../../lib/openzeppelin-contracts/contracts/access/manager/AccessManager.sol";
 
 /// @notice Auxiliary data types and utils to test STBL-bridge related functionality
@@ -65,8 +65,8 @@ library BridgeTestLib {
         vm.selectFork(chain.fork);
 
         Proxy proxy = new Proxy();
-        proxy.initProxy(address(new OSBridge(chain.endpoint)));
-        OSBridge osBridge = OSBridge(address(proxy));
+        proxy.initProxy(address(new HostBridge(chain.endpoint)));
+        HostBridge osBridge = HostBridge(address(proxy));
         osBridge.initialize(address(chain.authority), abi.encode(chain.multisig, chain.delegator));
 
         return address(osBridge);

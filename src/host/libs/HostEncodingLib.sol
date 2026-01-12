@@ -2,14 +2,14 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
-import {IOS} from "../../interfaces/IOS.sol";
+import {IHost} from "../../interfaces/IHost.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// Tokenomic uses some structs.
 /// The structs are stored as payload in proposals.
 /// New fields can be added to the structs in future versions at any moment.
 /// The library allows to decode structs of any version (old or current) correctly at any time.
-library OsEncodingLib {
+library HostEncodingLib {
     //region ----------------------- Versions of the structs
     uint8 public constant DAO_IMAGES_STRUCT_VERSION = 1;
     uint8 public constant UNIT_STRUCT_VERSION = 1;
@@ -27,7 +27,7 @@ library OsEncodingLib {
         if (version == 1) {
             return abi.encode(version, data.seedToken, data.tgeToken, data.token, data.xToken, data.daoToken);
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -38,7 +38,7 @@ library OsEncodingLib {
                 abi.decode(payload, (uint8, string, string, string, string, string));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -47,7 +47,7 @@ library OsEncodingLib {
         if (version == 1) {
             return abi.encode(version, data);
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -61,7 +61,7 @@ library OsEncodingLib {
             (version, dest) = abi.decode(payload, (uint8, IDAOUnit.UnitInfo[]));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -72,7 +72,7 @@ library OsEncodingLib {
                 version, data.fundingType, data.start, data.end, data.minRaise, data.maxRaise, data.raised, data.claim
             );
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -83,7 +83,7 @@ library OsEncodingLib {
                 abi.decode(payload, (uint8, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -92,7 +92,7 @@ library OsEncodingLib {
         if (version == 1) {
             return abi.encode(version, data);
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -107,7 +107,7 @@ library OsEncodingLib {
             (version, dest) = abi.decode(payload, (uint8, ITokenomics.Vesting[]));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -127,7 +127,7 @@ library OsEncodingLib {
                 data.proposalThreshold
             );
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -139,7 +139,7 @@ library OsEncodingLib {
                 abi.decode(payload, (uint8, uint32, uint16, uint, uint16, uint16, uint));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -147,7 +147,7 @@ library OsEncodingLib {
         if (version == 1) {
             return abi.encode(version, data.name, data.symbol);
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
 
@@ -158,7 +158,7 @@ library OsEncodingLib {
             (, dest.name, dest.symbol) = abi.decode(payload, (uint8, string, string));
             return dest;
         } else {
-            revert IOS.UnsupportedStructVersion();
+            revert IHost.UnsupportedStructVersion();
         }
     }
     //endregion ----------------------- Decode / Encode structs with versions

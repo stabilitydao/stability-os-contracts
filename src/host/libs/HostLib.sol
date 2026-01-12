@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IOS} from "../../interfaces/IOS.sol";
+import {IHost} from "../../interfaces/IHost.sol";
 import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
 
 /// @notice Basic data types and constants for OS system. This library shouldn't depend on any other libraries.
-library OsLib {
+library HostLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff));
     bytes32 public constant OS_STORAGE_LOCATION = 0x5824966c3b02e13a929a59c47f974f2669cd3c16f7c9a1165b6eab024c64c500;
 
@@ -84,13 +84,13 @@ library OsLib {
 
         /// @notice Plain data of each registered DAO
         /// @dev Full DAO data is stored on initial chain only. Other chains have only records in {usedSymbols}
-        mapping(uint daoUid => OsLib.DaoDataLocal) daos;
+        mapping(uint daoUid => HostLib.DaoDataLocal) daos;
 
         /// @notice Parameters of each DAO
         mapping(uint daoUid => ITokenomics.DaoParameters) daoParameters;
 
         /// @notice Tokenomics of each DAO
-        mapping(uint daoUid => OsLib.TokenomicsLocal) tokenomics;
+        mapping(uint daoUid => HostLib.TokenomicsLocal) tokenomics;
 
         /// @notice Images (logo/banner) of each DAO
         mapping(uint daoUid => ITokenomics.DaoImages) daoImages;
@@ -119,10 +119,10 @@ library OsLib {
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OSSettings later
-        mapping(uint zero => IOS.OsSettings) osSettings;
+        mapping(uint zero => IHost.OsSettings) osSettings;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
-        mapping(uint zero => IOS.OsChainSettings) osChainSettings;
+        mapping(uint zero => IHost.OsChainSettings) osChainSettings;
     }
 
     //endregion -------------------------------------- Data types
@@ -140,7 +140,7 @@ library OsLib {
     }
 
     /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
-    function generateDaoUid(OsLib.OsStorage storage $) internal returns (uint) {
+    function generateDaoUid(HostLib.OsStorage storage $) internal returns (uint) {
         uint count = $.daoCount + 1;
         $.daoCount = count;
         return uint(keccak256(abi.encodePacked(count, block.chainid)));

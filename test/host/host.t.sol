@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IOS} from "../../src/os/OS.sol";
-import {OsLib} from "../../src/os/libs/OsLib.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {HostLib} from "../../src/host/libs/HostLib.sol";
 import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
-import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
+import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract OsTest is Test, OsUtilsLib {
+contract HostTest is Test, HostUtilsLib {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";
@@ -28,24 +28,24 @@ contract OsTest is Test, OsUtilsLib {
     function testStorageLocation() public pure {
         assertEq(
             keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff)),
-            OsLib.OS_STORAGE_LOCATION,
+            HostLib.OS_STORAGE_LOCATION,
             "OS_STORAGE_LOCATION"
         );
     }
 
     function testCreateDAO() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = OsUtilsLib.generateSeedFunding(
+        funding[0] = HostUtilsLib.generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
         {
             address exchangeAsset = os.getChainSettings().exchangeAsset;
             uint amount = os.getSettings().priceDao;
@@ -69,47 +69,47 @@ contract OsTest is Test, OsUtilsLib {
         // -------------------- bad name length
         _dealAndApprove(os);
 
-        vm.expectRevert(abi.encodeWithSelector(IOS.NameLength.selector, uint(28)));
+        vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(28)));
         os.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
 
         // -------------------- bad symbol length
-        vm.expectRevert(abi.encodeWithSelector(IOS.SymbolLength.selector, uint(9)));
+        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolLength.selector, uint(9)));
         os.createDAO("SpaceSwap", "SPACESWAP", activity, params, funding);
 
         // -------------------- not unique symbol
-        vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "SPACE"));
+        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "SPACE"));
         os.createDAO("SpaceSwap", "SPACE", activity, params, funding);
 
         { // -------------------- bad vePeriod
-            ITokenomics.DaoParameters memory paramsBadVe = OsUtilsLib.generateDaoParams(
+            ITokenomics.DaoParameters memory paramsBadVe = HostUtilsLib.generateDaoParams(
                 365 * 5,
                 /* 1825 */
                 100
             );
-            vm.expectRevert(abi.encodeWithSelector(IOS.VePeriod.selector, uint(1825)));
+            vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(1825)));
             os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadVe, funding);
         }
 
         { // -------------------- bad pvpFee
-            ITokenomics.DaoParameters memory paramsBadPvP = OsUtilsLib.generateDaoParams(365, 101);
-            vm.expectRevert(abi.encodeWithSelector(IOS.PvPFee.selector, uint(101)));
+            ITokenomics.DaoParameters memory paramsBadPvP = HostUtilsLib.generateDaoParams(365, 101);
+            vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(101)));
             os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadPvP, funding);
         }
 
         { // -------------------- no funding
             ITokenomics.Funding[] memory emptyFunding = new ITokenomics.Funding[](0);
-            vm.expectRevert(IOS.NeedFunding.selector);
+            vm.expectRevert(IHost.NeedFunding.selector);
             os.createDAO("SpaceSwap", "SPACE1", activity, params, emptyFunding);
         }
     }
 
     function testAddLiveDAO() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // todo only verifier
 
         _dealAndApprove(os);
-        ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
+        ITokenomics.DaoData memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         _dealAndApprove(os, MULTISIG);
 
@@ -122,8 +122,8 @@ contract OsTest is Test, OsUtilsLib {
     }
 
     function testAddLiveDaoBadPaths() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
-        ITokenomics.DaoData memory daoOrigin = OsUtilsLib.createTestDaoData();
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        ITokenomics.DaoData memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         // -------------------- success - check balances
         {
@@ -147,7 +147,7 @@ contract OsTest is Test, OsUtilsLib {
         }
 
         // -------------------- not unique symbol
-        vm.expectRevert(abi.encodeWithSelector(IOS.SymbolNotUnique.selector, "testdao"));
+        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "testdao"));
         vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
@@ -172,9 +172,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         os.updateImages(
             dao.symbol,
@@ -211,9 +211,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             string[] memory socials = new string[](3);
@@ -246,9 +246,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
@@ -321,9 +321,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
         seed.fundingType = ITokenomics.FundingType.SEED_0;
@@ -391,9 +391,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
@@ -442,9 +442,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
@@ -464,9 +464,9 @@ contract OsTest is Test, OsUtilsLib {
 
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
-        IOS os = OsUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = OsUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoParameters memory a;
@@ -629,7 +629,7 @@ contract OsTest is Test, OsUtilsLib {
     }
 
     /// @notice user should pay for DAO-creation
-    function _dealAndApprove(IOS os_, address user) internal {
+    function _dealAndApprove(IHost os_, address user) internal {
         address exchangeAsset = os_.getChainSettings().exchangeAsset;
         uint amount = os_.getSettings().priceDao;
 
@@ -639,7 +639,7 @@ contract OsTest is Test, OsUtilsLib {
         IERC20(exchangeAsset).approve(address(os_), amount);
     }
 
-    function _dealAndApprove(IOS os_) internal {
+    function _dealAndApprove(IHost os_) internal {
         _dealAndApprove(os_, address(this));
     }
 

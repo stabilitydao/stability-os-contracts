@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import {IOS, OS} from "../../../src/os/OS.sol";
+import {IHost, Host} from "../../../src/host/Host.sol";
 import {IDAOUnit, IDAOAgent, ITokenomics} from "../../../src/interfaces/ITokenomics.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
-import {IOSBridge} from "../../../src/interfaces/IOSBridge.sol";
+import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {Proxy} from "../../../src/core/proxy/Proxy.sol";
 import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
@@ -15,9 +15,8 @@ import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
 import {BridgeTestLib} from "./BridgeTestLib.sol";
-import {StdCheats} from "forge-std/StdCheats.sol";
 
-abstract contract OsUtilsLib {
+abstract contract HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
     uint64 internal constant MINTER_ROLE = AccessRolesLib.OS_TOKEN_MINTER;
 
@@ -29,8 +28,8 @@ abstract contract OsUtilsLib {
     uint internal constant INITIAL_OS_ETHER_BALANCE = 100 ether;
 
     //region ----------------------------- Create OS and DAO instances
-    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IOS) {
-        IOS.OsInitPayload memory init;
+    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IHost) {
+        IHost.OsInitPayload memory init;
         return createOsInstance(vm, multisig, accessManager, init);
     }
 
@@ -38,22 +37,22 @@ abstract contract OsUtilsLib {
         Vm vm,
         address multisig,
         IAccessManager accessManager,
-        IOS.OsInitPayload memory init_
-    ) public returns (IOS) {
-        address logic = address(new OS());
+        IHost.OsInitPayload memory init_
+    ) public returns (IHost) {
+        address logic = address(new Host());
         Proxy proxy = new Proxy();
         proxy.initProxy(address(logic));
         IControllable2(address(proxy)).initialize(address(accessManager), abi.encode(init_));
 
-        IOS os = IOS(address(proxy));
+        IHost os = IHost(address(proxy));
 
         // set up multisig as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](5);
-        selectors[0] = bytes4(OS.addLiveDAO.selector);
-        selectors[1] = bytes4(OS.receiveVotingResults.selector);
-        selectors[2] = bytes4(OS.refundFor.selector);
-        selectors[3] = bytes4(OS.setSettings.selector);
-        selectors[4] = bytes4(OS.setChainSettings.selector);
+        selectors[0] = bytes4(Host.addLiveDAO.selector);
+        selectors[1] = bytes4(Host.receiveVotingResults.selector);
+        selectors[2] = bytes4(Host.refundFor.selector);
+        selectors[3] = bytes4(Host.setSettings.selector);
+        selectors[4] = bytes4(Host.setChainSettings.selector);
 
         vm.prank(multisig);
         accessManager.setTargetFunctionRole(address(os), selectors, ADMIN_ROLE);
@@ -65,11 +64,11 @@ abstract contract OsUtilsLib {
 
         setChainSettings(vm, os, multisig);
 
-        return IOS(address(os));
+        return IHost(address(os));
     }
 
     function createDaoInstance(
-        IOS os,
+        IHost os,
         string memory daoSymbol,
         string memory daoName
     ) public returns (ITokenomics.DaoData memory) {
@@ -87,9 +86,9 @@ abstract contract OsUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
-    function createAliensDao(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createAliensDao(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = OsUtilsLib.generateSeedFunding(
+        funding[0] = HostUtilsLib.generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
@@ -97,43 +96,43 @@ abstract contract OsUtilsLib {
         activity[0] = ITokenomics.Activity.BUILDER_3;
         activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(365, 100);
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
 
         return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
     }
 
-    function createApesDao(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createApesDao(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = OsUtilsLib.generateSeedFunding(
+        funding[0] = HostUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(30, 90);
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(30, 90);
 
         return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
-    function createDaoMachines(Vm vm, IOS os_) public returns (ITokenomics.DaoData memory) {
+    function createDaoMachines(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
-        funding[0] = OsUtilsLib.generateSeedFunding(
+        funding[0] = HostUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
-        funding[1] = OsUtilsLib.generateTGEFunding();
+        funding[1] = HostUtilsLib.generateTGEFunding();
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.MEV_SEARCHER_2;
 
-        ITokenomics.DaoParameters memory params = OsUtilsLib.generateDaoParams(14, 99);
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(14, 99);
 
         return _createDao(vm, os_, "Machines Cartel", "MACHINE", funding, activity, params);
     }
 
     function _createDao(
         Vm vm,
-        IOS os_,
+        IHost os_,
         string memory name_,
         string memory daoSymbol_,
         ITokenomics.Funding[] memory funding,
@@ -152,11 +151,11 @@ abstract contract OsUtilsLib {
     //endregion ----------------------------- Create OS and DAO instances
 
     //region ----------------------------- Settings
-    function setOsSettings(Vm vm, IOS os, address multisig) public {
-        // Prepare and set OS settings using the IOS.OsSettings struct
+    function setOsSettings(Vm vm, IHost os, address multisig) public {
+        // Prepare and set OS settings using the IHost.OsSettings struct
         vm.prank(multisig);
         os.setSettings(
-            IOS.OsSettings({
+            IHost.OsSettings({
                 priceDao: 1000,
                 priceUnit: 1000,
                 priceOracle: 1000,
@@ -177,18 +176,18 @@ abstract contract OsUtilsLib {
         );
     }
 
-    function setChainSettings(Vm vm, IOS os, address multisig) public {
+    function setChainSettings(Vm vm, IHost os, address multisig) public {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
         MockOsBridge bridge = new MockOsBridge();
 
-        // Prepare and set OS chain settings using the IOS.OsChainSettings struct
+        // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
-        os.setChainSettings(IOS.OsChainSettings({exchangeAsset: address(usdc), osBridge: address(bridge)}));
+        os.setChainSettings(IHost.OsChainSettings({exchangeAsset: address(usdc), osBridge: address(bridge)}));
     }
 
-    function setupSeedToken(Vm vm, IOS os, address multisig, address seedToken) public {
+    function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
         IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
 
         // set up OS as operator for all restricted functions
@@ -203,7 +202,7 @@ abstract contract OsUtilsLib {
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
     }
 
-    function setupTgeToken(Vm vm, IOS os, address multisig, address tgeToken) public {
+    function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) public {
         IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
 
         // set up OS as operator for all restricted functions
@@ -220,7 +219,7 @@ abstract contract OsUtilsLib {
 
     function setupOsBridge(
         Vm vm,
-        IOS os,
+        IHost os,
         BridgeTestLib.ChainConfig memory chain,
         BridgeTestLib.ChainConfig memory otherChain1,
         BridgeTestLib.ChainConfig memory otherChain2
@@ -229,28 +228,28 @@ abstract contract OsUtilsLib {
         vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
 
         // -------------------- set OsBridge inside os
-        IOS.OsChainSettings memory config = os.getChainSettings();
+        IHost.OsChainSettings memory config = os.getChainSettings();
 
         vm.prank(chain.multisig);
-        os.setChainSettings(IOS.OsChainSettings({exchangeAsset: config.exchangeAsset, osBridge: chain.osBridge}));
+        os.setChainSettings(IHost.OsChainSettings({exchangeAsset: config.exchangeAsset, osBridge: chain.osBridge}));
 
         // -------------------- set os and endpoints inside osBridge
         vm.prank(chain.multisig);
-        IOSBridge(chain.osBridge).setOs(address(os));
+        IHostBridge(chain.osBridge).setOs(address(os));
 
         uint32[] memory endpoints = new uint32[](2);
         endpoints[0] = otherChain1.endpointId;
         endpoints[1] = otherChain2.endpointId;
 
         vm.prank(chain.multisig);
-        IOSBridge(chain.osBridge).addEndpoint(endpoints);
+        IHostBridge(chain.osBridge).addEndpoint(endpoints);
 
         IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
 
         // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
         {
             bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = bytes4(IOSBridge.sendMessageToAllChains.selector);
+            selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
 
             vm.prank(chain.multisig);
             accessManager.setTargetFunctionRole(chain.osBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
@@ -262,7 +261,7 @@ abstract contract OsUtilsLib {
         // ----------------------------- Allow OSBridge to call OS.receiveCrossChainMessage
         {
             bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = bytes4(IOS.onReceiveCrossChainMessage.selector);
+            selectors[0] = bytes4(IHost.onReceiveCrossChainMessage.selector);
 
             vm.prank(chain.multisig);
             accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
@@ -273,10 +272,10 @@ abstract contract OsUtilsLib {
 
         // ----------------------------- Set gas limits
         vm.prank(chain.multisig);
-        IOSBridge(chain.osBridge).setGasLimit(uint(IOS.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
+        IHostBridge(chain.osBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
 
         vm.prank(chain.multisig);
-        IOSBridge(chain.osBridge).setGasLimit(uint(IOS.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+        IHostBridge(chain.osBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
     }
 
     //endregion ----------------------------- Settings
@@ -603,7 +602,7 @@ abstract contract OsUtilsLib {
         }
     }
 
-    function printTasks(IOS.Task[] memory tasks) internal pure {
+    function printTasks(IHost.Task[] memory tasks) internal pure {
         for (uint i; i < tasks.length; i++) {
             console.log(tasks[i].name);
         }
@@ -624,7 +623,7 @@ abstract contract OsUtilsLib {
         return uint(type(uint).max);
     }
 
-    function getLastProposalId(IOS os, string memory daoSymbol) public view returns (bytes32) {
+    function getLastProposalId(IHost os, string memory daoSymbol) public view returns (bytes32) {
         uint len = os.proposalsLength(daoSymbol);
         require(len != 0, "No proposals found");
         bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);

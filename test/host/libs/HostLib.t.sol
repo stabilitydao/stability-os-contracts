@@ -2,9 +2,9 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {OsLib} from "../../../src/os/libs/OsLib.sol";
+import {HostLib} from "../../../src/host/libs/HostLib.sol";
 
-contract OsLibTest is Test {
+contract HostLibTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
     uint private constant AVALANCHE_FORK_BLOCK = 71037861; // Oct-28-2025 13:17:17 UTC
 
@@ -21,20 +21,20 @@ contract OsLibTest is Test {
         {
             uint snapshot = vm.snapshotState();
             vm.selectFork(forkSonic);
-            OsLib.OsStorage storage $ = OsLib.getOsStorage();
+            HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-            uid1a = OsLib.generateDaoUid($);
-            uid2a = OsLib.generateDaoUid($);
+            uid1a = HostLib.generateDaoUid($);
+            uid2a = HostLib.generateDaoUid($);
             vm.revertToState(snapshot);
         }
 
         {
             uint snapshot = vm.snapshotState();
             vm.selectFork(forkAvalanche);
-            OsLib.OsStorage storage $ = OsLib.getOsStorage();
+            HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-            uid1b = OsLib.generateDaoUid($);
-            uid2b = OsLib.generateDaoUid($);
+            uid1b = HostLib.generateDaoUid($);
+            uid2b = HostLib.generateDaoUid($);
             vm.revertToState(snapshot);
         }
 

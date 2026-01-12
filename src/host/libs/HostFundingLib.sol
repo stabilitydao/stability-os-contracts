@@ -2,14 +2,14 @@
 pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IOS} from "../../interfaces/IOS.sol";
+import {IHost} from "../../interfaces/IHost.sol";
 import {ITokenomics} from "../../interfaces/ITokenomics.sol";
-import {OsLib} from "./OsLib.sol";
+import {HostLib} from "./HostLib.sol";
 import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
 import {IControllable2} from "../../interfaces/IControllable2.sol";
 import {IRefundableToken} from "../../interfaces/IRefundableToken.sol";
 
-library OsFundingLib {
+library HostFundingLib {
     using SafeERC20 for IERC20;
 
     /// @notice Fund DAO in the current funding round
@@ -17,15 +17,15 @@ library OsFundingLib {
         // todo not reentrancy
         require(amount != 0, IControllable2.ZeroAmount()); // todo settings.minFunding
 
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
 
         if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding storage seed = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
 
-            require(seed.raised + amount < seed.maxRaise, IOS.RaiseMaxExceed());
+            require(seed.raised + amount < seed.maxRaise, IHost.RaiseMaxExceed());
 
             // transfer amount of exchangeAsset to seedToken contract
             address seedToken = $.deployments[daoUid].seedToken;
@@ -36,11 +36,11 @@ library OsFundingLib {
             // mint seedToken to user
             IMintedERC20(seedToken).mint(msg.sender, amount);
 
-            emit IOS.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
+            emit IHost.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding storage tge = $.funding[OsLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+            ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
-            require(tge.raised + amount < tge.maxRaise, IOS.RaiseMaxExceed());
+            require(tge.raised + amount < tge.maxRaise, IHost.RaiseMaxExceed());
 
             // transfer amount of exchangeAsset to tgeToken contract
             address tgeToken = $.deployments[daoUid].tgeToken;
@@ -51,9 +51,9 @@ library OsFundingLib {
             // record msg.sender as funder with amount
             IMintedERC20(tgeToken).mint(msg.sender, amount);
 
-            emit IOS.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.TGE_1));
+            emit IHost.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.TGE_1));
         } else {
-            revert IOS.NotFundingPhase();
+            revert IHost.NotFundingPhase();
         }
     }
 
@@ -62,7 +62,7 @@ library OsFundingLib {
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
     function refund(string calldata daoSymbol) external {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
 
@@ -74,7 +74,7 @@ library OsFundingLib {
             address tgeToken = $.deployments[daoUid].tgeToken;
             _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, msg.sender, tgeToken, asset, false);
         } else {
-            revert IOS.NotRefundPhase();
+            revert IHost.NotRefundPhase();
         }
     }
 
@@ -83,7 +83,7 @@ library OsFundingLib {
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
     function refundFor(string calldata daoSymbol, address[] memory receivers) external {
-        OsLib.OsStorage storage $ = OsLib.getOsStorage();
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
 
@@ -99,7 +99,7 @@ library OsFundingLib {
                 _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, receivers[i], tgeToken, asset, true);
             }
         } else {
-            revert IOS.NotRefundPhase();
+            revert IHost.NotRefundPhase();
         }
     }
 
@@ -113,17 +113,17 @@ library OsFundingLib {
     ) internal {
         uint balance = IERC20(fundingToken).balanceOf(receiver);
         if (balance == 0) {
-            require(skipOnZeroBalance, IOS.ZeroBalance());
+            require(skipOnZeroBalance, IHost.ZeroBalance());
         } else {
-            OsLib.OsStorage storage $ = OsLib.getOsStorage();
+            HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
             IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 
-            ITokenomics.Funding storage funding = $.funding[OsLib.getKey($.daoUids[daoSymbol], uint(fundingType_))];
+            ITokenomics.Funding storage funding = $.funding[HostLib.getKey($.daoUids[daoSymbol], uint(fundingType_))];
             uint raised = funding.raised;
             funding.raised = raised > balance ? raised - balance : 0;
 
-            emit IOS.DaoRefunded(daoSymbol, receiver, exchangeAsset, balance, uint8(fundingType_));
+            emit IHost.DaoRefunded(daoSymbol, receiver, exchangeAsset, balance, uint8(fundingType_));
         }
     }
 }

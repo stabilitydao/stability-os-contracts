@@ -3,11 +3,10 @@ pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
 import {Vm, Test} from "forge-std/Test.sol";
-import {OsUtilsLib} from "./utils/OsUtilsLib.sol";
-import {OSBridge} from "../../src/os/OSBridge.sol";
-import {BridgeTestLib} from "../../test/os/utils/BridgeTestLib.sol";
+import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
+import {BridgeTestLib} from "../../test/host/utils/BridgeTestLib.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IOS} from "../../src/interfaces/IOS.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
@@ -16,7 +15,7 @@ import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppRec
 import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract OsBridgeTest is Test, OsUtilsLib {
+contract OsBridgeTest is Test, HostUtilsLib {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
     uint private constant AVALANCHE_FORK_BLOCK = 71037861; // Oct-28-2025 13:17:17 UTC
     uint private constant PLASMA_FORK_BLOCK = 5398928; // Nov-5-2025 07:38:59 UTC
@@ -56,24 +55,24 @@ contract OsBridgeTest is Test, OsUtilsLib {
     function testInitialization() public {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
-        IOS.OsInitPayload memory init;
-        IOS osSonic = OsUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
+        IHost.OsInitPayload memory init;
+        IHost osSonic = HostUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
+        HostUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
         _dealAndApprove(osSonic);
-        ITokenomics.DaoData memory dao1 = OsUtilsLib.createAliensDao(vm, osSonic);
+        ITokenomics.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
         console.log("done createAliensDao");
 
         // ----------------------------- create DAO on Avalanche
         vm.selectFork(avalanche.fork);
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
-        IOS osAvax =
-            OsUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
+        IHost osAvax =
+            HostUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
+        HostUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
 
         _dealAndApprove(osAvax);
         vm.recordLogs();
-        ITokenomics.DaoData memory dao2 = OsUtilsLib.createApesDao(vm, osAvax);
+        ITokenomics.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, osAvax);
         console.log("done createApesDao");
 
         { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
@@ -87,11 +86,11 @@ contract OsBridgeTest is Test, OsUtilsLib {
         init.usedSymbols = new string[](2);
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
-        IOS osPlasma =
-            OsUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
-        OsUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
+        IHost osPlasma =
+            HostUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
+        HostUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
         _dealAndApprove(osPlasma);
-        ITokenomics.DaoData memory dao3 = OsUtilsLib.createDaoMachines(vm, osPlasma);
+        ITokenomics.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
 
         { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
             Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -138,7 +137,7 @@ contract OsBridgeTest is Test, OsUtilsLib {
     }
 
     /// @notice user should pay for DAO-creation
-    function _dealAndApprove(IOS os_) internal {
+    function _dealAndApprove(IHost os_) internal {
         address exchangeAsset = os_.getChainSettings().exchangeAsset;
         uint amount = os_.getSettings().priceDao;
         deal(exchangeAsset, address(this), amount);

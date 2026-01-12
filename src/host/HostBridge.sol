@@ -2,20 +2,20 @@
 pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
-import {IOSBridge} from "../interfaces/IOSBridge.sol";
-import {IOS} from "../interfaces/IOS.sol";
+import {IHostBridge} from "../interfaces/IHostBridge.sol";
+import {IHost} from "../interfaces/IHost.sol";
 import {
     OAppUpgradeable,
     Origin,
     MessagingFee
 } from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
 import {IControllable2, Controllable2} from "../core/base/Controllable2.sol";
-import {IOS} from "../interfaces/IOS.sol";
+import {IHost} from "../interfaces/IHost.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import {Controllable2} from "../core/base/Controllable2.sol";
 
-contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
+contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     using EnumerableSet for EnumerableSet.UintSet;
 
     /// @inheritdoc IControllable2
@@ -60,13 +60,13 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     //endregion --------------------------------- Initializers
 
     //region --------------------------------- Views
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function getOs() external view returns (address) {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         return $.os;
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function endpoints() external view returns (uint32[] memory) {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         uint len = $.endpoints.length();
@@ -77,7 +77,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         return result;
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function gasLimit(uint messageKind) external view returns (uint128) {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         return $.gasLimits[messageKind];
@@ -86,7 +86,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
     //endregion --------------------------------- Views
 
     //region --------------------------------- Actions
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function setOs(address os_) external restricted {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         $.os = os_;
@@ -94,7 +94,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         emit SetOs(os_);
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function setGasLimit(uint messageKind, uint128 gasLimit_) external restricted {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
         $.gasLimits[messageKind] = gasLimit_;
@@ -102,7 +102,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         emit SetGasLimit(messageKind, gasLimit_);
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function addEndpoint(uint32[] memory eids_) external restricted {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
 
@@ -114,7 +114,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         }
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function removeEndpoint(uint32[] memory eids_) external restricted {
         OsBridgeStorage storage $ = _getOsBridgeStorage();
 
@@ -128,8 +128,8 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
 
     //endregion --------------------------------- Actions
 
-    //region --------------------------------- IOSBridge
-    /// @inheritdoc IOSBridge
+    //region --------------------------------- IHostBridge
+    /// @inheritdoc IHostBridge
     function quoteSendMessage(
         uint32 dstEid_,
         bytes memory options_,
@@ -138,7 +138,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         return _quote(dstEid_, message_, options_, false);
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function sendMessage(
         uint32 dstEid_,
         bytes memory options_,
@@ -153,7 +153,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         emit SendMessage(dstEid_, message_);
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function quoteSendMessageToAllChains(
         uint messageKind,
         bytes memory message_
@@ -175,7 +175,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         return totalFee;
     }
 
-    /// @inheritdoc IOSBridge
+    /// @inheritdoc IHostBridge
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable restricted {
         console.log("sendMessageToAllChains", msg.value);
         OsBridgeStorage storage $ = _getOsBridgeStorage();
@@ -208,7 +208,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         }
     }
 
-    //endregion --------------------------------- IOSBridge
+    //endregion --------------------------------- IHostBridge
 
     //region --------------------------------- Overrides
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
@@ -235,7 +235,7 @@ contract OSBridge is Controllable2, OAppUpgradeable, IOSBridge {
         address receiver = $.os;
 
         if (receiver != address(0)) {
-            IOS(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
+            IHost(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
         }
     }
 

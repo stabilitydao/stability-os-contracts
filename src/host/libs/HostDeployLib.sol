@@ -5,7 +5,7 @@ import {SeedToken} from "../../tokenomics/SeedToken.sol";
 import {TgeToken} from "../../tokenomics/TgeToken.sol";
 import {IControllable2} from "../../interfaces/IControllable2.sol";
 
-library OsDeployLib {
+library HostDeployLib {
     function deploySeedToken(
         address accessManager,
         string memory token_,

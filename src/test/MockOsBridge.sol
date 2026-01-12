@@ -7,6 +7,8 @@ contract MockOsBridge {
     mapping(uint => bytes) public receivedMessages;
 
     function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external pure returns (uint) {
+        messageKind;
+        message_;
         return 0;
     }
 

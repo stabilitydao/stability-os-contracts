@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {MessagingFee} from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
 
-interface IOSBridge {
+interface IHostBridge {
     error UnsupportedMessageKind(uint messageKind);
     error ZeroGasLimit(uint messageKind);
 
