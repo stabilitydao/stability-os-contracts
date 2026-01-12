@@ -157,7 +157,7 @@ abstract contract HostUtilsLib {
         os.setSettings(
             IHost.OsSettings({
                 priceDao: 1000,
-                priceUnit: 1000,
+                priceUnit: 0, // todo implement not zero prices, 1000,
                 priceOracle: 1000,
                 priceBridge: 1000,
                 minNameLength: 1,

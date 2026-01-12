@@ -23,7 +23,7 @@ interface IHost {
     error RaiseMaxExceed();
     error AlreadyReceived();
     error IncorrectProposal();
-    error NonImplemented();
+    error NotImplemented();
     error YouAreNotOwnerOf(string daoSymbol);
     error IncorrectDao();
     error ZeroBalance();

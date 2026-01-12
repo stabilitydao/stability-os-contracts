@@ -38,7 +38,7 @@ library HostProposalsLib {
                 HostUpdateLib.updateDaoParameters(p.daoUid, p.payload);
             } else {
                 // todo other actions
-                revert IHost.NonImplemented();
+                revert IHost.NotImplemented();
             }
         }
     }
@@ -87,6 +87,9 @@ library HostProposalsLib {
     function updateUnits(string memory daoSymbol, ITokenomics.UnitInfo[] memory units) external {
         (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        require($.osSettings[0].priceUnit == 0, IHost.NotImplemented());
+
         if (instantExecute) {
             HostUpdateLib.updateUnits(daoUid, units);
         } else {
@@ -134,8 +137,14 @@ library HostProposalsLib {
         if (instantExecute) {
             HostUpdateLib.updateNaming(daoUid, daoNames_);
         } else {
-            bytes memory payload = HostEncodingLib.encodeDaoNames(daoNames_, HostEncodingLib.DAO_NAMES_STRUCT_VERSION);
-            HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
+            // todo
+            // Renaming through proposals is not implemented yet
+            // because somebody should pay for cross-chain messages
+            // it's necessary to implement quoteReceiveVotingResults
+            revert IHost.NotImplemented();
+
+//            bytes memory payload = HostEncodingLib.encodeDaoNames(daoNames_, HostEncodingLib.DAO_NAMES_STRUCT_VERSION);
+//            HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
         }
     }
 
