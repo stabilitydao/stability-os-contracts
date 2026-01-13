@@ -2,9 +2,9 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {HostEncodingLib} from "../../../src/host/libs/HostEncodingLib.sol";
-import {ITokenomics, IDAOUnit} from "../../../src/interfaces/ITokenomics.sol";
-import {IHost} from "../../../src/interfaces/IHost.sol";
+import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
+import {ITokenomics, IDAOUnit} from "../../src/interfaces/ITokenomics.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
 
 contract HostEncodingLibTest is Test {
     uint8 private constant INCORRECT_VERSION = 255;

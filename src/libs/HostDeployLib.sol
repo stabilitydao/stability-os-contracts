@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
-import {Proxy} from "../../core/proxy/Proxy.sol";
-import {SeedToken} from "../../tokenomics/SeedToken.sol";
-import {TgeToken} from "../../tokenomics/TgeToken.sol";
-import {IControllable2} from "../../interfaces/IControllable2.sol";
+import {Proxy} from "../base/Proxy.sol";
+import {SeedToken} from "../tokenomics/SeedToken.sol";
+import {TgeToken} from "../tokenomics/TgeToken.sol";
+import {IControllable2} from "../interfaces/IControllable2.sol";
 
 library HostDeployLib {
     function deploySeedToken(

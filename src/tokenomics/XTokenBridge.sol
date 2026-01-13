@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IOAppComposer} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppComposer.sol";
 import {OFTComposeMsgCodec} from "@layerzerolabs/oft-evm/contracts/libs/OFTComposeMsgCodec.sol";
-import {IControllable, Controllable} from "../core/base/Controllable.sol";
+import {IControllable, Controllable} from "../base/Controllable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOFTPausable} from "../interfaces/IOFTPausable.sol";
 import {IXToken} from "../interfaces/IXToken.sol";

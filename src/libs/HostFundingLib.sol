@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IHost} from "../../interfaces/IHost.sol";
-import {ITokenomics} from "../../interfaces/ITokenomics.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
-import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
-import {IControllable2} from "../../interfaces/IControllable2.sol";
-import {IRefundableToken} from "../../interfaces/IRefundableToken.sol";
+import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
+import {IControllable2} from "../interfaces/IControllable2.sol";
+import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 
 library HostFundingLib {
     using SafeERC20 for IERC20;

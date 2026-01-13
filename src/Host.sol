@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "./interfaces/ITokenomics.sol";
+import {IHost} from "./interfaces/IHost.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
-import {Controllable2} from "../core/base/Controllable2.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
+import {Controllable2} from "./base/Controllable2.sol";
+import {IControllable2} from "./interfaces/IControllable2.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.

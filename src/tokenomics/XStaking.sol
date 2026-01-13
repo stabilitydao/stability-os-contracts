@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import {Controllable} from "../core/base/Controllable.sol";
+import {Controllable} from "../base/Controllable.sol";
 import {IControllable} from "../interfaces/IControllable.sol";
 import {IStabilityDAO} from "../interfaces/IStabilityDAO.sol";
 import {IXStaking} from "../interfaces/IXStaking.sol";

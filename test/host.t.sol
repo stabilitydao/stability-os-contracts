@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IHost} from "../../src/interfaces/IHost.sol";
-import {HostLib} from "../../src/host/libs/HostLib.sol";
-import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IHost} from "../src/interfaces/IHost.sol";
+import {HostLib} from "../src/libs/HostLib.sol";
+import {IDAOUnit, ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";

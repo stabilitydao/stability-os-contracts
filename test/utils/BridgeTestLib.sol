@@ -2,18 +2,18 @@
 pragma solidity ^0.8.23;
 
 import {console, Vm} from "forge-std/Test.sol";
-import {IPlatform} from "../../../src/interfaces/IPlatform.sol";
+import {IPlatform} from "../../src/interfaces/IPlatform.sol";
 import {IOAppCore} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppCore.sol";
-import {Proxy} from "../../../src/core/proxy/Proxy.sol";
-import {AvalancheConstantsLib} from "../../../chains/AvalancheConstantsLib.sol";
-import {PlasmaConstantsLib} from "../../../chains/PlasmaConstantsLib.sol";
-import {SonicConstantsLib} from "../../../chains/SonicConstantsLib.sol";
+import {Proxy} from "../../src/base/Proxy.sol";
+import {AvalancheConstantsLib} from "../../chains/AvalancheConstantsLib.sol";
+import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
+import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {ILayerZeroEndpointV2} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/IMessageLibManager.sol";
 import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/SendLibBase.sol";
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
-import {HostBridge} from "../../../src/host/HostBridge.sol";
-import {AccessManager} from "../../../lib/openzeppelin-contracts/contracts/access/manager/AccessManager.sol";
+import {HostBridge} from "../../src/HostBridge.sol";
+import {AccessManager} from "../../lib/openzeppelin-contracts/contracts/access/manager/AccessManager.sol";
 
 /// @notice Auxiliary data types and utils to test STBL-bridge related functionality
 library BridgeTestLib {

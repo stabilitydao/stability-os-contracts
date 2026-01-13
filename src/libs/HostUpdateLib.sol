@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {HostEncodingLib} from "./HostEncodingLib.sol";
-import {IHost} from "../../interfaces/IHost.sol";
-import {ITokenomics} from "../../interfaces/ITokenomics.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
 

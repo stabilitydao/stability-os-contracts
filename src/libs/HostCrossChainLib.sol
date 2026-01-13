@@ -2,9 +2,9 @@
 pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
-import {IHost} from "../../interfaces/IHost.sol";
+import {IHost} from "../interfaces/IHost.sol";
 import {HostLib} from "./HostLib.sol";
-import {IHostBridge} from "../../interfaces/IHostBridge.sol";
+import {IHostBridge} from "../interfaces/IHostBridge.sol";
 
 /// @notice Basic data types, validation and update logic
 library HostCrossChainLib {

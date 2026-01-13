@@ -2,11 +2,11 @@
 pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {Controllable2} from "../core/base/Controllable2.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
-import {IHostProxyFactory} from "../interfaces/IHostProxyFactory.sol";
-import {IProxy} from "../interfaces/IProxy.sol";
-import {Proxy} from "../core/proxy/Proxy.sol";
+import {Controllable2} from "./base/Controllable2.sol";
+import {IControllable2} from "./interfaces/IControllable2.sol";
+import {IHostProxyFactory} from "./interfaces/IHostProxyFactory.sol";
+import {IProxy} from "./interfaces/IProxy.sol";
+import {Proxy} from "./base/Proxy.sol";
 
 contract HostProxyFactory is Controllable2, IHostProxyFactory {
     using EnumerableSet for EnumerableSet.AddressSet;

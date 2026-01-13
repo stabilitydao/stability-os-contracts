@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
-import {IHost} from "../../interfaces/IHost.sol";
+import {ITokenomics, IDAOUnit} from "../interfaces/ITokenomics.sol";
+import {IHost} from "../interfaces/IHost.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// Tokenomic uses some structs.

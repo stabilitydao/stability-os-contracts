@@ -5,8 +5,8 @@ import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Ini
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {SlotsLib} from "../libs/SlotsLib.sol";
-import {IControllable} from "../../interfaces/IControllable.sol";
-import {IPlatform} from "../../interfaces/IPlatform.sol";
+import {IControllable} from "../interfaces/IControllable.sol";
+import {IPlatform} from "../interfaces/IPlatform.sol";
 
 /// @dev Base core contract.
 ///      It store an immutable platform proxy address in the storage and provides access control to inherited contracts.

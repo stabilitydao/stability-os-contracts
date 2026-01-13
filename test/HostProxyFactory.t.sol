@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../../src/tokenomics/TgeToken.sol";
+import {TgeToken} from "../src/tokenomics/TgeToken.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {AccessRolesLib} from "../../src/core/libs/AccessRolesLib.sol";
-import {HostProxyFactory} from "../../src/host/HostProxyFactory.sol";
+import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
+import {HostProxyFactory} from "../src/HostProxyFactory.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IControllable2} from "../../src/interfaces/IControllable2.sol";
+import {IControllable2} from "../src/interfaces/IControllable2.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
-import {IProxy} from "../../src/interfaces/IProxy.sol";
-import {Proxy} from "../../src/core/proxy/Proxy.sol";
-import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
+import {IProxy} from "../src/interfaces/IProxy.sol";
+import {Proxy} from "../src/base/Proxy.sol";
+import {SeedToken} from "../src/tokenomics/SeedToken.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 

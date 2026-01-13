@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {UpgradeableProxy} from "../base/UpgradeableProxy.sol";
-import {IControllable} from "../../interfaces/IControllable.sol";
-import {IProxy} from "../../interfaces/IProxy.sol";
+import {IControllable} from "../interfaces/IControllable.sol";
+import {IProxy} from "../interfaces/IProxy.sol";
 
 /// @title Proxy for Stability Platform core contracts.
 /// @dev ERC-1967: Proxy Storage Slots used.

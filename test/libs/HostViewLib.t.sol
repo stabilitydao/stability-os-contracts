@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {HostViewLib} from "../../../src/host/libs/HostViewLib.sol";
+import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 
 contract HostViewLibTest is Test {
     function testGetTokenName() public pure {

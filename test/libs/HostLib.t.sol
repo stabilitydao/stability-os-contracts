@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {HostLib} from "../../../src/host/libs/HostLib.sol";
+import {HostLib} from "../../src/libs/HostLib.sol";
 
 contract HostLibTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC

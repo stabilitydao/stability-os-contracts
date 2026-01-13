@@ -2,10 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IDAOUnit, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {IHost} from "../../src/interfaces/IHost.sol";
+import {IDAOUnit, ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {IHost} from "../src/interfaces/IHost.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
-import {MockOsBridge} from "../../src/test/MockOsBridge.sol";
+import {MockOsBridge} from "../src/test/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";

@@ -9,7 +9,7 @@ import {
     ERC20PermitUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
-import {Controllable2} from "../core/base/Controllable2.sol";
+import {Controllable2} from "../base/Controllable2.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
 import {IToken} from "../interfaces/IToken.sol";
 

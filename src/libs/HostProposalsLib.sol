@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IHost} from "../../interfaces/IHost.sol";
-import {ITokenomics} from "../../interfaces/ITokenomics.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostUpdateLib} from "./HostUpdateLib.sol";

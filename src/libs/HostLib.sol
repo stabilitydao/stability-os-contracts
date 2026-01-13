@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IHost} from "../../interfaces/IHost.sol";
-import {ITokenomics, IDAOUnit} from "../../interfaces/ITokenomics.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics, IDAOUnit} from "../interfaces/ITokenomics.sol";
 
 /// @notice Basic data types and constants for OS system. This library shouldn't depend on any other libraries.
 library HostLib {

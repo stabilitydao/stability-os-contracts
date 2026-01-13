@@ -2,18 +2,18 @@
 pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
-import {IHostBridge} from "../interfaces/IHostBridge.sol";
-import {IHost} from "../interfaces/IHost.sol";
+import {IHostBridge} from "./interfaces/IHostBridge.sol";
+import {IHost} from "./interfaces/IHost.sol";
 import {
     OAppUpgradeable,
     Origin,
     MessagingFee
 } from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
-import {IControllable2, Controllable2} from "../core/base/Controllable2.sol";
-import {IHost} from "../interfaces/IHost.sol";
+import {IControllable2, Controllable2} from "./base/Controllable2.sol";
+import {IHost} from "./interfaces/IHost.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
-import {Controllable2} from "../core/base/Controllable2.sol";
+import {Controllable2} from "./base/Controllable2.sol";
 
 contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     using EnumerableSet for EnumerableSet.UintSet;

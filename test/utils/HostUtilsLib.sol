@@ -2,21 +2,21 @@
 pragma solidity ^0.8.28;
 
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import {IHost, Host} from "../../../src/host/Host.sol";
-import {IDAOUnit, IDAOAgent, ITokenomics} from "../../../src/interfaces/ITokenomics.sol";
+import {IHost, Host} from "../../src/Host.sol";
+import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {IControllable2} from "../../../src/interfaces/IControllable2.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
-import {Proxy} from "../../../src/core/proxy/Proxy.sol";
-import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
-import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
-import {MockERC20} from "../../../src/test/MockERC20.sol";
-import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
-import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
+import {IControllable2} from "../../src/interfaces/IControllable2.sol";
+import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
+import {Proxy} from "../../src/base/Proxy.sol";
+import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
+import {MockERC20} from "../../src/test/MockERC20.sol";
+import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {MockOsBridge} from "../../src/test/MockOsBridge.sol";
 import {BridgeTestLib} from "./BridgeTestLib.sol";
-import {IHostProxyFactory} from "../../../src/interfaces/IHostProxyFactory.sol";
-import {HostProxyFactory} from "../../../src/host/HostProxyFactory.sol";
+import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
+import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 
 abstract contract HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
