@@ -16,7 +16,7 @@ library HostUpdateLib {
         ITokenomics.Funding[] memory funding
     ) internal view {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
-        IHost.OsSettings storage st = $.osSettings[0];
+        IHost.HostSettings storage st = $.osSettings[0];
 
         _validateDaoData(dao, st);
         _validateDaoParameters(params, st);
@@ -28,13 +28,13 @@ library HostUpdateLib {
     //region -------------------------------------- Validation logic
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
-    function _validateDaoData(HostLib.DaoDataLocal memory dao, IHost.OsSettings storage st) internal view {
+    function _validateDaoData(HostLib.DaoDataLocal memory dao, IHost.HostSettings storage st) internal view {
         _validateNaming(dao.name, dao.symbol, st);
 
         // todo validate activity
     }
 
-    function _validateNaming(string memory name, string memory symbol, IHost.OsSettings storage st) internal view {
+    function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         {
@@ -51,13 +51,16 @@ library HostUpdateLib {
     }
 
     /// @notice Validate DAO params according to OS settings
-    function _validateDaoParameters(ITokenomics.DaoParameters memory params, IHost.OsSettings storage st) internal view {
+    function _validateDaoParameters(
+        ITokenomics.DaoParameters memory params,
+        IHost.HostSettings storage st
+    ) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IHost.PvPFee(params.pvpFee));
         require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
     }
 
     /// @notice Ensure that funding is not empty
-    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.OsSettings storage st) internal pure {
+    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal pure {
         require(funding.length != 0, IHost.NeedFunding());
 
         st; // todo
@@ -70,7 +73,7 @@ library HostUpdateLib {
     function _validateFunding(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Funding memory funding,
-        IHost.OsSettings storage st
+        IHost.HostSettings storage st
     ) internal pure {
         if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
             require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IHost.TooLateToUpdateSuchFunding());
@@ -95,7 +98,7 @@ library HostUpdateLib {
     function _validateVestingList(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Vesting[] memory vesting,
-        IHost.OsSettings storage st
+        IHost.HostSettings storage st
     ) internal pure {
         require(
             phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6

@@ -143,8 +143,8 @@ library HostProposalsLib {
             // it's necessary to implement quoteReceiveVotingResults
             revert IHost.NotImplemented();
 
-//            bytes memory payload = HostEncodingLib.encodeDaoNames(daoNames_, HostEncodingLib.DAO_NAMES_STRUCT_VERSION);
-//            HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
+            //            bytes memory payload = HostEncodingLib.encodeDaoNames(daoNames_, HostEncodingLib.DAO_NAMES_STRUCT_VERSION);
+            //            HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_NAMING_2, payload);
         }
     }
 

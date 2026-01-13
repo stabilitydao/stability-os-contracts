@@ -33,8 +33,8 @@ interface IHost {
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
-    event OsSettingsUpdated(IHost.OsSettings st);
-    event OsChainSettingsUpdated(IHost.OsChainSettings st);
+    event OsSettingsUpdated(IHost.HostSettings st);
+    event OsChainSettingsUpdated(IHost.HostChainSettings st);
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
     event DaoUnitsUpdated(string daoSymbol, ITokenomics.UnitInfo[] units);
@@ -51,7 +51,7 @@ interface IHost {
     error NotEnoughNativeProvided(uint requiredValue);
 
     /// @notice DAO-setting common for all chains
-    struct OsSettings {
+    struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset
         uint priceDao;
         uint priceUnit;
@@ -74,20 +74,23 @@ interface IHost {
     }
 
     /// @notice Chain-dependent data of the DAO
-    struct OsChainSettings {
+    struct HostChainSettings {
         /// @notice The address of the asset used to fund the DAO.
         address exchangeAsset;
 
-        /// @notice Address of the OS bridge contract on the current chain
-        address osBridge;
+        /// @notice Address of the Host-bridge contract on the current chain
+        address hostBridge;
+
+        /// @notice Address of the Host-factory contract on the current chain
+        address hostFactory;
     }
 
     struct Task {
         string name;
     }
 
-    /// @notice Payload for OS initialization
-    struct OsInitPayload {
+    /// @notice Payload for Host initialization
+    struct HostInitPayload {
         /// @notice DAO symbols registered on other chains
         string[] usedSymbols;
     }
@@ -114,10 +117,10 @@ interface IHost {
     function tasks(string calldata daoSymbol) external view returns (Task[] memory);
 
     /// @notice Get OS settings
-    function getSettings() external view returns (OsSettings memory);
+    function getSettings() external view returns (HostSettings memory);
 
     /// @notice Get OS chain-depended settings
-    function getChainSettings() external view returns (OsChainSettings memory);
+    function getChainSettings() external view returns (HostChainSettings memory);
 
     /// @notice Governance proposals. Can be created only at initialChain of DAO.
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory);
@@ -136,11 +139,11 @@ interface IHost {
 
     /// @notice Set OS settings
     /// @custom:restricted Restricted through access manager (only admin)
-    function setSettings(OsSettings memory newSettings) external;
+    function setSettings(HostSettings memory newSettings) external;
 
     /// @notice Set OS chain-depended settings
     /// @custom:restricted Restricted through access manager (only admin)
-    function setChainSettings(OsChainSettings memory newSettings) external;
+    function setChainSettings(HostChainSettings memory newSettings) external;
 
     /// @notice Create new DAO
     /// @param name Name of new DAO (any name is allowed)

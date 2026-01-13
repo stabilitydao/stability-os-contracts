@@ -54,7 +54,7 @@ library HostCrossChainLib {
     function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
-        address bridge = $.osChainSettings[0].osBridge;
+        address bridge = $.osChainSettings[0].hostBridge;
         return bridge == address(0)
             ? 0
             : IHostBridge(bridge).quoteSendMessageToAllChains(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), payload);
@@ -69,7 +69,7 @@ library HostCrossChainLib {
     /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IHost.CrossChainMessages messageKind, bytes memory payload) internal {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
-        address bridge = $.osChainSettings[0].osBridge;
+        address bridge = $.osChainSettings[0].hostBridge;
         if (bridge != address(0)) {
             uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
             require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));

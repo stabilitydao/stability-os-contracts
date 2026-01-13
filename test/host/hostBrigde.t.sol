@@ -38,9 +38,9 @@ contract OsBridgeTest is Test, HostUtilsLib {
         }
 
         // ------------------- Create adapter and bridged token
-        sonic.osBridge = BridgeTestLib.createOSBridge(vm, sonic);
-        avalanche.osBridge = BridgeTestLib.createOSBridge(vm, avalanche);
-        plasma.osBridge = BridgeTestLib.createOSBridge(vm, plasma);
+        sonic.hostBridge = BridgeTestLib.createHostBridge(vm, sonic);
+        avalanche.hostBridge = BridgeTestLib.createHostBridge(vm, avalanche);
+        plasma.hostBridge = BridgeTestLib.createHostBridge(vm, plasma);
 
         // ------------------- Set up Sonic:Avalanche
         BridgeTestLib.setUpSonicAvalanche(vm, sonic, avalanche);
@@ -52,12 +52,21 @@ contract OsBridgeTest is Test, HostUtilsLib {
         BridgeTestLib.setUpAvalanchePlasma(vm, avalanche, plasma);
     }
 
+    function testStorageLocation() internal pure {
+        console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability-os-contracts.HostBridge))))");
+        console.logBytes32(
+            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostBridge")) - 1))
+            & ~bytes32(uint(0xff))
+        );
+    }
+
     function testInitialization() public {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
-        IHost.OsInitPayload memory init;
-        IHost osSonic = HostUtilsLib.createOsInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
-        HostUtilsLib.setupOsBridge(vm, osSonic, sonic, plasma, avalanche);
+        IHost.HostInitPayload memory init;
+        IHost osSonic =
+            HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
+        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osSonic, sonic, plasma, avalanche);
         _dealAndApprove(osSonic);
         ITokenomics.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
         console.log("done createAliensDao");
@@ -66,9 +75,10 @@ contract OsBridgeTest is Test, HostUtilsLib {
         vm.selectFork(avalanche.fork);
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
-        IHost osAvax =
-            HostUtilsLib.createOsInstance(vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init);
-        HostUtilsLib.setupOsBridge(vm, osAvax, avalanche, sonic, plasma);
+        IHost osAvax = HostUtilsLib.createHostInstance(
+            vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init
+        );
+        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osAvax, avalanche, sonic, plasma);
 
         _dealAndApprove(osAvax);
         vm.recordLogs();
@@ -87,8 +97,8 @@ contract OsBridgeTest is Test, HostUtilsLib {
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
         IHost osPlasma =
-            HostUtilsLib.createOsInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
-        HostUtilsLib.setupOsBridge(vm, osPlasma, plasma, sonic, avalanche);
+            HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
+        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osPlasma, plasma, sonic, avalanche);
         _dealAndApprove(osPlasma);
         ITokenomics.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
 
@@ -123,10 +133,10 @@ contract OsBridgeTest is Test, HostUtilsLib {
         vm.selectFork(to.fork);
         (bytes memory message,) = BridgeTestLib._extractSendMessage(logs);
         Origin memory origin =
-            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.osBridge)))), nonce: 1});
+            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
 
         vm.prank(to.endpoint);
-        IOAppReceiver(to.osBridge)
+        IOAppReceiver(to.hostBridge)
             .lzReceive(
                 origin,
                 bytes32(0), // guid: actual value doesn't matter

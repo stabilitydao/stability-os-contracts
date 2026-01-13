@@ -13,4 +13,10 @@ library AccessRolesLib {
 
     /// @notice OS Bridge contract
     uint64 internal constant OS_BRIDGE = 4;
+
+    /// @notice Admin of HostProxyFactory
+    uint64 internal constant HOST_PROXY_FACTORY_ADMIN = 5;
+
+    /// @notice Deployer of HostProxyFactory (it's Host typically)
+    uint64 internal constant HOST_PROXY_FACTORY_DEPLOYER = 6;
 }

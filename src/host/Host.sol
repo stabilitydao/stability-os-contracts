@@ -25,7 +25,7 @@ contract Host is IHost, Controllable2 {
         __Controllable_init(authority_);
 
         // register all symbols registered on other chains
-        IHost.OsInitPayload memory initPayload = abi.decode(payload, (IHost.OsInitPayload));
+        IHost.HostInitPayload memory initPayload = abi.decode(payload, (IHost.HostInitPayload));
         HostActionsLib.initOS(initPayload);
     }
 
@@ -37,12 +37,12 @@ contract Host is IHost, Controllable2 {
     }
 
     /// @inheritdoc IHost
-    function getSettings() external view returns (IHost.OsSettings memory) {
+    function getSettings() external view returns (IHost.HostSettings memory) {
         return HostViewLib.getSettings();
     }
 
     /// @inheritdoc IHost
-    function getChainSettings() external view returns (IHost.OsChainSettings memory) {
+    function getChainSettings() external view returns (IHost.HostChainSettings memory) {
         return HostViewLib.getChainSettings();
     }
 
@@ -85,12 +85,12 @@ contract Host is IHost, Controllable2 {
 
     //region -------------------------------------- Actions
     /// @inheritdoc IHost
-    function setSettings(IHost.OsSettings memory newSettings) external restricted {
+    function setSettings(IHost.HostSettings memory newSettings) external restricted {
         HostActionsLib.setSettings(newSettings);
     }
 
     /// @inheritdoc IHost
-    function setChainSettings(IHost.OsChainSettings memory newSettings) external restricted {
+    function setChainSettings(IHost.HostChainSettings memory newSettings) external restricted {
         HostActionsLib.setChainSettings(newSettings);
     }
 

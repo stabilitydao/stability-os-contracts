@@ -21,14 +21,14 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     /// @inheritdoc IControllable2
     string public constant VERSION = "1.0.0";
 
-    // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OSBridge")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 internal constant _OS_BRIDGE_STORAGE_LOCATION = 0; // todo
+    // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostBridge")) - 1)) & ~bytes32(uint(0xff));
+    bytes32 internal constant _HOST_BRIDGE_STORAGE_LOCATION = 0x3c3cab199fa7520ecb579a2026cbbd19230a0d419394967e722632d1e4478900;
 
     //region --------------------------------- Data types
-    /// @custom:storage-location erc7201:stability-os-contracts.OSBridge
-    struct OsBridgeStorage {
+    /// @custom:storage-location erc7201:stability-os-contracts.HostBridge
+    struct HostBridgeStorage {
         /// @notice Address of the OS contract on the current chain
-        address os;
+        address host;
 
         /// @notice Set of LayerZero endpoint IDs to which this bridge can send messages
         EnumerableSet.UintSet endpoints;
@@ -61,14 +61,14 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
 
     //region --------------------------------- Views
     /// @inheritdoc IHostBridge
-    function getOs() external view returns (address) {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
-        return $.os;
+    function getHost() external view returns (address) {
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
+        return $.host;
     }
 
     /// @inheritdoc IHostBridge
     function endpoints() external view returns (uint32[] memory) {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
         uint len = $.endpoints.length();
         uint32[] memory result = new uint32[](len);
         for (uint i; i < len; ++i) {
@@ -79,7 +79,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
 
     /// @inheritdoc IHostBridge
     function gasLimit(uint messageKind) external view returns (uint128) {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
         return $.gasLimits[messageKind];
     }
 
@@ -87,16 +87,16 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
 
     //region --------------------------------- Actions
     /// @inheritdoc IHostBridge
-    function setOs(address os_) external restricted {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
-        $.os = os_;
+    function setHost(address host_) external restricted {
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
+        $.host = host_;
 
-        emit SetOs(os_);
+        emit SetHost(host_);
     }
 
     /// @inheritdoc IHostBridge
     function setGasLimit(uint messageKind, uint128 gasLimit_) external restricted {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
         $.gasLimits[messageKind] = gasLimit_;
 
         emit SetGasLimit(messageKind, gasLimit_);
@@ -104,7 +104,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
 
     /// @inheritdoc IHostBridge
     function addEndpoint(uint32[] memory eids_) external restricted {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         uint len = eids_.length;
         for (uint i; i < len; ++i) {
@@ -116,7 +116,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
 
     /// @inheritdoc IHostBridge
     function removeEndpoint(uint32[] memory eids_) external restricted {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         uint len = eids_.length;
         for (uint i; i < len; ++i) {
@@ -158,7 +158,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
         uint messageKind,
         bytes memory message_
     ) external view returns (uint totalFee) {
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         uint128 _gasLimit = $.gasLimits[messageKind];
         bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
@@ -178,7 +178,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     /// @inheritdoc IHostBridge
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable restricted {
         console.log("sendMessageToAllChains", msg.value);
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         // todo assume here that gas limit is same for all chains
         // if it's not true max value should be set
@@ -231,8 +231,8 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
         // As soon as sendMessage is restricted to be called by OS only
         // nobody except OS can send messages to this contract.
 
-        OsBridgeStorage storage $ = _getOsBridgeStorage();
-        address receiver = $.os;
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
+        address receiver = $.host;
 
         if (receiver != address(0)) {
             IHost(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);
@@ -256,8 +256,8 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     //endregion --------------------------------- Overrides
 
     //region --------------------------------- Internal logic
-    function _getOsBridgeStorage() internal pure returns (OsBridgeStorage storage $) {
-        bytes32 position = _OS_BRIDGE_STORAGE_LOCATION;
+    function _getHostBridgeStorage() internal pure returns (HostBridgeStorage storage $) {
+        bytes32 position = _HOST_BRIDGE_STORAGE_LOCATION;
         assembly {
             $.slot := position
         }

@@ -15,6 +15,8 @@ import {MockERC20} from "../../../src/test/MockERC20.sol";
 import {AccessRolesLib} from "../../../src/core/libs/AccessRolesLib.sol";
 import {MockOsBridge} from "../../../src/test/MockOsBridge.sol";
 import {BridgeTestLib} from "./BridgeTestLib.sol";
+import {IHostProxyFactory} from "../../../src/interfaces/IHostProxyFactory.sol";
+import {HostProxyFactory} from "../../../src/host/HostProxyFactory.sol";
 
 abstract contract HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -28,43 +30,61 @@ abstract contract HostUtilsLib {
     uint internal constant INITIAL_OS_ETHER_BALANCE = 100 ether;
 
     //region ----------------------------- Create OS and DAO instances
-    function createOsInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IHost) {
-        IHost.OsInitPayload memory init;
-        return createOsInstance(vm, multisig, accessManager, init);
+    function createHostInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IHost) {
+        IHost.HostInitPayload memory init;
+        return createHostInstance(vm, multisig, accessManager, init);
     }
 
-    function createOsInstance(
+    function createHostInstance(
         Vm vm,
         address multisig,
         IAccessManager accessManager,
-        IHost.OsInitPayload memory init_
+        IHost.HostInitPayload memory init_
     ) public returns (IHost) {
-        address logic = address(new Host());
-        Proxy proxy = new Proxy();
-        proxy.initProxy(address(logic));
-        IControllable2(address(proxy)).initialize(address(accessManager), abi.encode(init_));
 
-        IHost os = IHost(address(proxy));
+        IHost host;
+        {
+            address logic = address(new Host());
+            Proxy proxy = new Proxy();
+            proxy.initProxy(address(logic));
+            IControllable2(address(proxy)).initialize(address(accessManager), abi.encode(init_));
 
-        // set up multisig as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](5);
-        selectors[0] = bytes4(Host.addLiveDAO.selector);
-        selectors[1] = bytes4(Host.receiveVotingResults.selector);
-        selectors[2] = bytes4(Host.refundFor.selector);
-        selectors[3] = bytes4(Host.setSettings.selector);
-        selectors[4] = bytes4(Host.setChainSettings.selector);
+            host = IHost(address(proxy));
+        }
 
-        vm.prank(multisig);
-        accessManager.setTargetFunctionRole(address(os), selectors, ADMIN_ROLE);
+        // ---------------------- set up multisig as operator for all restricted functions of host
+        {
+            bytes4[] memory selectors = new bytes4[](5);
+            selectors[0] = bytes4(Host.addLiveDAO.selector);
+            selectors[1] = bytes4(Host.receiveVotingResults.selector);
+            selectors[2] = bytes4(Host.refundFor.selector);
+            selectors[3] = bytes4(Host.setSettings.selector);
+            selectors[4] = bytes4(Host.setChainSettings.selector);
 
-        vm.prank(multisig);
-        accessManager.grantRole(ADMIN_ROLE, multisig, 0);
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(host), selectors, ADMIN_ROLE);
 
-        setOsSettings(vm, os, multisig);
+            vm.prank(multisig);
+            accessManager.grantRole(ADMIN_ROLE, multisig, 0);
+        }
 
-        setChainSettings(vm, os, multisig);
+        // ---------------------- set up host factory
+        IHostProxyFactory factory;
+        {
+            address logic = address(new HostProxyFactory());
+            Proxy proxy = new Proxy();
+            proxy.initProxy(address(logic));
+            IControllable2(address(proxy)).initialize(address(accessManager), "");
 
-        return IHost(address(os));
+            factory = IHostProxyFactory(address(proxy));
+        }
+
+        // ---------------------- set host settings
+        setHostSettings(vm, host, multisig);
+
+        setChainSettings(vm, host, multisig, factory);
+
+        return IHost(address(host));
     }
 
     function createDaoInstance(
@@ -151,11 +171,11 @@ abstract contract HostUtilsLib {
     //endregion ----------------------------- Create OS and DAO instances
 
     //region ----------------------------- Settings
-    function setOsSettings(Vm vm, IHost os, address multisig) public {
+    function setHostSettings(Vm vm, IHost host_, address multisig) public {
         // Prepare and set OS settings using the IHost.OsSettings struct
         vm.prank(multisig);
-        os.setSettings(
-            IHost.OsSettings({
+        host_.setSettings(
+            IHost.HostSettings({
                 priceDao: 1000,
                 priceUnit: 0, // todo implement not zero prices, 1000,
                 priceOracle: 1000,
@@ -176,7 +196,7 @@ abstract contract HostUtilsLib {
         );
     }
 
-    function setChainSettings(Vm vm, IHost os, address multisig) public {
+    function setChainSettings(Vm vm, IHost host_, address multisig, IHostProxyFactory factory_) public {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
@@ -184,7 +204,11 @@ abstract contract HostUtilsLib {
 
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
-        os.setChainSettings(IHost.OsChainSettings({exchangeAsset: address(usdc), osBridge: address(bridge)}));
+        host_.setChainSettings(IHost.HostChainSettings({
+            exchangeAsset: address(usdc),
+            hostBridge: address(bridge),
+            hostFactory: address(factory_)
+        }));
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
@@ -217,7 +241,7 @@ abstract contract HostUtilsLib {
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
     }
 
-    function setupOsBridge(
+    function setupHostBridgeAndHostFactory(
         Vm vm,
         IHost os,
         BridgeTestLib.ChainConfig memory chain,
@@ -227,22 +251,26 @@ abstract contract HostUtilsLib {
         // -------------------- put some ether on OS contract to send cross-chain messages
         vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
 
-        // -------------------- set OsBridge inside os
-        IHost.OsChainSettings memory config = os.getChainSettings();
+        // -------------------- set HostBridge inside host
+        IHost.HostChainSettings memory config = os.getChainSettings();
 
         vm.prank(chain.multisig);
-        os.setChainSettings(IHost.OsChainSettings({exchangeAsset: config.exchangeAsset, osBridge: chain.osBridge}));
+        os.setChainSettings(IHost.HostChainSettings({
+            exchangeAsset: config.exchangeAsset,
+            hostBridge: chain.hostBridge,
+            hostFactory: chain.hostFactory
+        }));
 
         // -------------------- set os and endpoints inside osBridge
         vm.prank(chain.multisig);
-        IHostBridge(chain.osBridge).setOs(address(os));
+        IHostBridge(chain.hostBridge).setHost(address(os));
 
         uint32[] memory endpoints = new uint32[](2);
         endpoints[0] = otherChain1.endpointId;
         endpoints[1] = otherChain2.endpointId;
 
         vm.prank(chain.multisig);
-        IHostBridge(chain.osBridge).addEndpoint(endpoints);
+        IHostBridge(chain.hostBridge).addEndpoint(endpoints);
 
         IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
 
@@ -252,7 +280,7 @@ abstract contract HostUtilsLib {
             selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
 
             vm.prank(chain.multisig);
-            accessManager.setTargetFunctionRole(chain.osBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
+            accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
 
             vm.prank(chain.multisig);
             accessManager.grantRole(AccessRolesLib.OS_BRIDGE_USER, address(os), 0);
@@ -267,15 +295,15 @@ abstract contract HostUtilsLib {
             accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
 
             vm.prank(chain.multisig);
-            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.osBridge), 0);
+            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.hostBridge), 0);
         }
 
         // ----------------------------- Set gas limits
         vm.prank(chain.multisig);
-        IHostBridge(chain.osBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
+        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
 
         vm.prank(chain.multisig);
-        IHostBridge(chain.osBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
     }
 
     //endregion ----------------------------- Settings

@@ -12,14 +12,14 @@ library HostActionsLib {
     using SafeERC20 for IERC20;
 
     //region -------------------------------------- Restricted actions
-    function setSettings(IHost.OsSettings memory st) external {
+    function setSettings(IHost.HostSettings memory st) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
         $.osSettings[0] = st;
 
         emit IHost.OsSettingsUpdated(st);
     }
 
-    function setChainSettings(IHost.OsChainSettings memory st) external {
+    function setChainSettings(IHost.HostChainSettings memory st) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
         $.osChainSettings[0] = st;
 
@@ -27,7 +27,7 @@ library HostActionsLib {
     }
 
     /// @notice Initialize OS with existing DAO symbols from other chains
-    function initOS(IHost.OsInitPayload memory initPayload) external {
+    function initOS(IHost.HostInitPayload memory initPayload) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         for (uint i = 0; i < initPayload.usedSymbols.length; i++) {

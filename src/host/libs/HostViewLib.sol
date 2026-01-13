@@ -36,7 +36,9 @@ library HostViewLib {
             require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
             // SEED can be started not later than 1 week after configured start time
-            require(block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IHost.TooLateSoSetupFundingAgain());
+            require(
+                block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IHost.TooLateSoSetupFundingAgain()
+            );
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
                 authority_,
@@ -190,11 +192,11 @@ library HostViewLib {
         return dest;
     }
 
-    function getSettings() external view returns (IHost.OsSettings memory) {
+    function getSettings() external view returns (IHost.HostSettings memory) {
         return HostLib.getOsStorage().osSettings[0];
     }
 
-    function getChainSettings() external view returns (IHost.OsChainSettings memory) {
+    function getChainSettings() external view returns (IHost.HostChainSettings memory) {
         return HostLib.getOsStorage().osChainSettings[0];
     }
 

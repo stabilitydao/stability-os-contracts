@@ -34,7 +34,7 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testCreateDAO() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -104,7 +104,7 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testAddLiveDAO() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // todo only verifier
 
@@ -122,7 +122,7 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testAddLiveDaoBadPaths() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         ITokenomics.DaoData memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         // -------------------- success - check balances
@@ -172,7 +172,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -211,7 +211,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -246,7 +246,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -321,7 +321,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -391,7 +391,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -442,7 +442,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -464,7 +464,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
-        IHost os = HostUtilsLib.createOsInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
         ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 

@@ -49,7 +49,8 @@ library BridgeTestLib {
 
         address authority;
 
-        address osBridge;
+        address hostBridge;
+        address hostFactory;
 
         uint32 endpointId;
         address endpoint;
@@ -61,7 +62,7 @@ library BridgeTestLib {
     }
 
     //region ------------------------------------- Create contracts
-    function createOSBridge(Vm vm, BridgeTestLib.ChainConfig memory chain) internal returns (address) {
+    function createHostBridge(Vm vm, BridgeTestLib.ChainConfig memory chain) internal returns (address) {
         vm.selectFork(chain.fork);
 
         Proxy proxy = new Proxy();
@@ -86,7 +87,8 @@ library BridgeTestLib {
             multisig: IPlatform(SonicConstantsLib.PLATFORM).multisig(),
             delegator: delegator,
             authority: address(new AccessManager(IPlatform(SonicConstantsLib.PLATFORM).multisig())),
-            osBridge: address(0), // to be set later
+            hostBridge: address(0), // to be set later
+            hostFactory: address(0), // to be set later
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -108,7 +110,8 @@ library BridgeTestLib {
             multisig: IPlatform(AvalancheConstantsLib.PLATFORM).multisig(),
             delegator: delegator,
             authority: address(new AccessManager(IPlatform(AvalancheConstantsLib.PLATFORM).multisig())),
-            osBridge: address(0), // to be set later
+            hostBridge: address(0), // to be set later
+            hostFactory: address(0), // to be set later
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: AvalancheConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -130,7 +133,8 @@ library BridgeTestLib {
             multisig: IPlatform(PlasmaConstantsLib.PLATFORM).multisig(),
             delegator: delegator,
             authority: address(new AccessManager(IPlatform(PlasmaConstantsLib.PLATFORM).multisig())),
-            osBridge: address(0), // to be set later
+            hostBridge: address(0), // to be set later
+            hostFactory: address(0), // to be set later
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: PlasmaConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -370,7 +374,7 @@ library BridgeTestLib {
             // Set send library for outbound messages
             ILayerZeroEndpointV2(src.endpoint)
                 .setSendLibrary(
-                    src.osBridge, // OApp address
+                    src.hostBridge, // OApp address
                     dstEndpointId, // Destination chain EID
                     src.sendLib // SendUln302 address
                 );
@@ -380,7 +384,7 @@ library BridgeTestLib {
         if (setupBothWays) {
             ILayerZeroEndpointV2(src.endpoint)
                 .setReceiveLibrary(
-                    src.osBridge, // OApp address
+                    src.hostBridge, // OApp address
                     dstEndpointId, // Source chain EID
                     src.receiveLib, // ReceiveUln302 address
                     0 // Grace period for library switch
@@ -397,13 +401,13 @@ library BridgeTestLib {
         vm.selectFork(src.fork);
 
         vm.prank(src.multisig);
-        IOAppCore(src.osBridge).setPeer(dst.endpointId, bytes32(uint(uint160(address(dst.osBridge)))));
+        IOAppCore(src.hostBridge).setPeer(dst.endpointId, bytes32(uint(uint160(address(dst.hostBridge)))));
 
         // ------------------- Avalanche: set up peer connection
         vm.selectFork(dst.fork);
 
         vm.prank(dst.multisig);
-        IOAppCore(dst.osBridge).setPeer(src.endpointId, bytes32(uint(uint160(address(src.osBridge)))));
+        IOAppCore(dst.hostBridge).setPeer(src.endpointId, bytes32(uint(uint160(address(src.hostBridge)))));
     }
 
     /// @notice Configures both ULN (DVN validators) and Executor for an OApp
@@ -440,7 +444,7 @@ library BridgeTestLib {
         params[0] = SetConfigParam({eid: dstEndpointId, configType: CONFIG_TYPE_EXECUTOR, config: encodedExec});
         params[1] = SetConfigParam({eid: dstEndpointId, configType: CONFIG_TYPE_ULN, config: encodedUln});
 
-        ILayerZeroEndpointV2(src.endpoint).setConfig(src.osBridge, src.sendLib, params);
+        ILayerZeroEndpointV2(src.endpoint).setConfig(src.hostBridge, src.sendLib, params);
     }
 
     /// @notice Configures ULN (DVN validators) for on receiving chain
@@ -468,7 +472,7 @@ library BridgeTestLib {
         SetConfigParam[] memory params = new SetConfigParam[](1);
         params[0] = SetConfigParam({eid: dstEndpointId, configType: CONFIG_TYPE_ULN, config: abi.encode(uln)});
 
-        ILayerZeroEndpointV2(src.endpoint).setConfig(src.osBridge, src.receiveLib, params);
+        ILayerZeroEndpointV2(src.endpoint).setConfig(src.hostBridge, src.receiveLib, params);
     }
 
     /// @notice Calls getConfig on the specified LayerZero Endpoint.

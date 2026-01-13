@@ -8,7 +8,7 @@ interface IHostBridge {
     error ZeroGasLimit(uint messageKind);
 
     event SendMessage(uint32 indexed dstEid, bytes payload);
-    event SetOs(address os);
+    event SetHost(address os);
     event AddEndpoint(uint32 endpointId);
     event RemoveEndpoint(uint32 endpointId);
     event SetGasLimit(uint messageKind, uint128 gasLimit);
@@ -47,8 +47,8 @@ interface IHostBridge {
     /// @custom:restricted Only OS contracts can call this function
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable;
 
-    /// @notice Get OS contract address on the current chain
-    function getOs() external view returns (address);
+    /// @notice Get Host contract address on the current chain
+    function getHost() external view returns (address);
 
     /// @notice Get supported chains endpoint LayerZero IDs
     function endpoints() external view returns (uint32[] memory);
@@ -57,10 +57,10 @@ interface IHostBridge {
     /// @param messageKind See IOS.CrossChainMessages
     function gasLimit(uint messageKind) external view returns (uint128);
 
-    /// @notice Set OS contract address on the current chain
+    /// @notice Set Host contract address on the current chain
     /// @param os_ Address of the OS contract
     /// @custom:restricted Only admin
-    function setOs(address os_) external;
+    function setHost(address os_) external;
 
     /// @notice Add supported chains by their endpoint LayerZero IDs
     /// @param eids_ Array of chain endpoint LayerZero IDs to add

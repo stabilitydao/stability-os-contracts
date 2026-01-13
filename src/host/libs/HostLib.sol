@@ -119,10 +119,10 @@ library HostLib {
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OSSettings later
-        mapping(uint zero => IHost.OsSettings) osSettings;
+        mapping(uint zero => IHost.HostSettings) osSettings;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
-        mapping(uint zero => IHost.OsChainSettings) osChainSettings;
+        mapping(uint zero => IHost.HostChainSettings) osChainSettings;
     }
 
     //endregion -------------------------------------- Data types
