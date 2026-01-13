@@ -9,6 +9,9 @@ library HostLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff));
     bytes32 public constant OS_STORAGE_LOCATION = 0x5824966c3b02e13a929a59c47f974f2669cd3c16f7c9a1165b6eab024c64c500;
 
+    /// @notice Predefined UID of the unit of host DAO. This unit is used to collect dao-creation fees
+    string public constant HOST_UNIT = "host-unit";
+
     //region -------------------------------------- Data types
     /// @notice Supply distribution and fundraising events.
     struct TokenomicsLocal {
@@ -74,6 +77,9 @@ library HostLib {
         /// @notice Internal counter of created DAOs. It's used to generate unique immutable id for each DAO.
         uint daoCount;
 
+        /// @notice UID of the host DAO
+        uint hostDaoUid;
+
         // todo there is no way to enumerate all created DAO (or all used symbols). Probably it's not really necessary
 
         /// @notice Mapping from DAO symbol (changeable) to its unique id (immutable)
@@ -123,6 +129,9 @@ library HostLib {
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
         mapping(uint zero => IHost.HostChainSettings) osChainSettings;
+
+        /// @notice Balance belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
+        mapping(bytes32 key => uint) unitBalances;
     }
 
     //endregion -------------------------------------- Data types
@@ -137,6 +146,10 @@ library HostLib {
 
     function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, index));
+    }
+
+    function getKey(uint daoUid, string memory sid) internal pure returns (bytes32) {
+        return keccak256(abi.encode(daoUid, sid));
     }
 
     /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.

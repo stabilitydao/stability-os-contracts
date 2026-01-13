@@ -81,6 +81,10 @@ contract Host is IHost, Controllable2 {
         return HostCrossChainLib.quoteSendMessageNewSymbol(daoSymbol);
     }
 
+    function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
+        return HostViewLib.unitBalance(daoSymbol, unitId);
+    }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -148,6 +152,11 @@ contract Host is IHost, Controllable2 {
         HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
     }
 
+    /// @inheritdoc IHost
+    function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
+        // todo not reentrant
+        HostActionsLib.processUnitRevenue(daoSymbol, unitId, amount);
+    }
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Update actions

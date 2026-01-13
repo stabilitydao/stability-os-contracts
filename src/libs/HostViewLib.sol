@@ -302,6 +302,12 @@ library HostViewLib {
         return "";
     }
 
+    /// @notice Get balance of the given unit for the given DAO
+    function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        return $.unitBalances[HostLib.getKey(daoUid, unitId)];
+    }
     //endregion -------------------------------------- View
 
     function _tasks(uint16 limit, uint daoUid) internal view returns (IHost.Task[] memory dest) {

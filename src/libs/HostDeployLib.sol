@@ -2,11 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {HostLib} from "./HostLib.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
 import {IHostProxyFactory} from "../interfaces/IHostProxyFactory.sol";
-import {Proxy} from "../base/Proxy.sol";
-import {SeedToken} from "../tokenomics/SeedToken.sol";
-import {TgeToken} from "../tokenomics/TgeToken.sol";
 
 /// @notice Library for deploying tokens via HostProxyFactory
 library HostDeployLib {

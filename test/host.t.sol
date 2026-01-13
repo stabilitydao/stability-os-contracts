@@ -158,6 +158,11 @@ contract HostTest is Test, HostUtilsLib {
         // -------------------- todo validation
     }
 
+    function testProcessUnitRevenue() public {
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        ITokenomics.DaoData memory daoOrigin = HostUtilsLib.createTestDaoData();
+    }
+
     function testTasks() public {
         // todo
     }

@@ -148,6 +148,17 @@ library HostActionsLib {
         _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
     }
 
+    /// @notice Process revenue for the given unit of the DAO
+    function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+
+        require(daoUid != 0, IHost.IncorrectDao());
+        // todo do we need to check unitId?
+
+        HostActionsLib._processUnitRevenue($, daoUid, unitId, amount, false);
+        emit IHost.ProcessUnitRevenue(daoSymbol, unitId, amount); // todo use daoUid + daySymbol?
+    }
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Internal logic
@@ -158,20 +169,34 @@ library HostActionsLib {
         string memory daoName,
         uint daoUid
     ) internal {
-        // take DAO creation fee on balance of this contract
-        address exchangeAsset = $.osChainSettings[0].exchangeAsset;
-        require(exchangeAsset != address(0), IHost.IncorrectConfiguration());
+        uint hostDaoUid = $.hostDaoUid;
 
-        uint priceDao = $.osSettings[0].priceDao;
-        if (priceDao != 0) {
-            IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), priceDao);
-        }
+        // take DAO creation fee on balance of this contract
+        _processUnitRevenue($, hostDaoUid, HostLib.HOST_UNIT, $.osSettings[0].priceDao, true);
 
         $.usedSymbols[daoSymbol] = true;
 
         emit IHost.DaoCreated(daoName, daoSymbol, daoUid);
 
         HostCrossChainLib.sendMessageNewSymbol(daoSymbol);
+    }
+
+    /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.
+    function _processUnitRevenue(HostLib.OsStorage storage $, uint daoUid, string memory unitId, uint amount, bool hostUnit) internal {
+        // todo refactoring
+
+        if (amount != 0) {
+            address exchangeAsset = $.osChainSettings[0].exchangeAsset;
+            require(exchangeAsset != address(0), IHost.IncorrectConfiguration());
+
+            // currently assume that all revenues should be put on the Host balance
+            IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), amount);
+            $.unitBalances[HostLib.getKey(daoUid, unitId)] += amount;
+
+            if (hostUnit) {
+                emit IHost.ProcessHostUnitRevenue(amount);
+            }
+        }
     }
     //endregion -------------------------------------- Internal logic
 
