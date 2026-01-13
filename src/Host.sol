@@ -115,7 +115,7 @@ contract Host is IHost, Controllable2 {
     function changePhase(string calldata daoSymbol) external {
         // no restrictions, anybody can call this
 
-        HostViewLib.changePhase(daoSymbol, authority());
+        HostViewLib.changePhase(daoSymbol);
     }
 
     /// @inheritdoc IHost

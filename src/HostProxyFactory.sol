@@ -95,7 +95,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     function deploySeedToken(bytes32 salt, bytes memory payload) external restricted returns (address proxy) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
 
-        proxy = address(new Proxy{salt: salt}());
+        proxy = _createNewProxy(salt);
         IProxy(proxy).initProxy($.seedTokenImplementation);
         IControllable2(proxy).initialize(authority(), payload);
 
@@ -108,7 +108,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     /// @inheritdoc IHostProxyFactory
     function deployTgeToken(bytes32 salt, bytes memory payload) external restricted returns (address) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
-        address proxy = address(new Proxy{salt: salt}());
+        address proxy = _createNewProxy(salt);
         IProxy(proxy).initProxy($.tgeTokenImplementation);
         IControllable2(proxy).initialize(authority(), payload);
 
@@ -126,6 +126,12 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
         assembly {
             $.slot := HOST_STORAGE_LOCATION
         }
+    }
+
+    function _createNewProxy(bytes32 salt) internal returns (address proxy) {
+        proxy = salt == 0
+            ? address(new Proxy()) // create
+            : address(new Proxy{salt: salt}()); // create2
     }
     //endregion -------------------------------------- Internal utils
 }

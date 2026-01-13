@@ -21,8 +21,7 @@ library HostViewLib {
 
     /// @notice Change lifecycle phase of a DAO
     /// @param daoSymbol Symbol of the DAO
-    /// @param authority_ Address of Access Manager
-    function changePhase(string calldata daoSymbol, address authority_) external {
+    function changePhase(string calldata daoSymbol) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
@@ -41,7 +40,7 @@ library HostViewLib {
             );
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
-                authority_,
+                $,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.SEED_0)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
             );
@@ -65,7 +64,7 @@ library HostViewLib {
             require(tge.start <= block.timestamp, IHost.WaitFundingStart());
 
             $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
-                authority_,
+                $,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.TGE_1)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
             );

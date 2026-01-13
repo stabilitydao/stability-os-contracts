@@ -71,12 +71,40 @@ abstract contract HostUtilsLib {
         // ---------------------- set up host factory
         IHostProxyFactory factory;
         {
+            // ---------------------- create host factory
             address logic = address(new HostProxyFactory());
             Proxy proxy = new Proxy();
             proxy.initProxy(address(logic));
             IControllable2(address(proxy)).initialize(address(accessManager), "");
 
             factory = IHostProxyFactory(address(proxy));
+
+            // ---------------------- set up access to the host factory
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = bytes4(IHostProxyFactory.setSeedTokenImplementation.selector);
+            selectors[1] = bytes4(IHostProxyFactory.setTgeTokenImplementation.selector);
+
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_ADMIN);
+
+            selectors = new bytes4[](2);
+            selectors[0] = bytes4(IHostProxyFactory.deploySeedToken.selector);
+            selectors[1] = bytes4(IHostProxyFactory.deployTgeToken.selector);
+
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(host), 0);
+
+            // ---------------------- set implementations
+            vm.startPrank(multisig);
+            factory.setSeedTokenImplementation(address(new SeedToken()));
+            factory.setTgeTokenImplementation(address(new TgeToken()));
+            vm.stopPrank();
         }
 
         // ---------------------- set host settings
