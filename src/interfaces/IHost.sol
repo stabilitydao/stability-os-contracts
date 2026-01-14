@@ -30,6 +30,7 @@ interface IHost {
     error NotRefundPhase();
     error UnsupportedStructVersion();
     error IncorrectConfiguration();
+    error UnitNotFound();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -47,8 +48,7 @@ interface IHost {
     event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
-    event ProcessUnitRevenue(string daoSymbol, string unitId, uint amount);
-    event ProcessHostUnitRevenue(uint amount);
+    event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
 
     error NotEnoughNativeProvided(uint requiredValue);
 

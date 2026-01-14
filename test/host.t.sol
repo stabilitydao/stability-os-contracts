@@ -159,8 +159,123 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testProcessUnitRevenue() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
-        ITokenomics.DaoData memory daoOrigin = HostUtilsLib.createTestDaoData();
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = HostUtilsLib.generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
+
+        // ----------------------------- prepare to pay creation fee
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+        uint amount = host.getSettings().priceDao;
+
+        deal(exchangeAsset, address(this), amount * 3);
+
+        IERC20(exchangeAsset).approve(address(host), amount * 3);
+
+        // ----------------------------- create first (host) dao
+        host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount, "host dao paid creation fee to itself");
+        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "user has paid for creation of the first dao");
+        assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
+
+        // ----------------------------- create second-dao
+        host.createDAO("name2", "symbol2", activity, params, funding);
+        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao");
+        assertEq(host.unitBalance("symbol2", HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
+        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount, "user has paid for creation of the second dao");
+        assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host");
+
+        // ----------------------------- pay to second dao to registered unit
+        {
+            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](2);
+            units[0] = IDAOUnit.UnitInfo({
+                unitId: "unitA",
+                name: "Unit A",
+                status: IDAOUnit.UnitStatus.LIVE_2,
+                unitType: uint16(1),
+                revenueShare: 1000,
+                emoji: "emoji1",
+                ui: new IDAOUnit.UnitUiLink[](0),
+                api: new string[](0)
+            });
+
+            host.updateUnits("symbol2", units);
+
+            deal(exchangeAsset, address(this), 1e18);
+            IERC20(exchangeAsset).approve(address(host), 1e18);
+            host.processUnitRevenue("symbol2", "unitA", 1e18);
+
+            assertEq(host.unitBalance("symbol2", "unitA"), 1e18, "second dao received the payment");
+        }
+
+        // ----------------------------- pay to second dao to NOT-registered unit
+        {
+            deal(exchangeAsset, address(this), 1e18);
+            IERC20(exchangeAsset).approve(address(host), 1e18);
+
+            vm.expectRevert(IHost.UnitNotFound.selector);
+            host.processUnitRevenue("symbol2", "unitB", 1e18);
+        }
+    }
+
+    function testProcessUnitRevenueAllowToUseZeroPriceDao() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = HostUtilsLib.generateSeedFunding(
+            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
+
+        // ----------------------------- Set exchange asset to zero
+        {
+            IHost.HostChainSettings memory cs = host.getChainSettings();
+            cs.exchangeAsset = address(0);
+
+            vm.prank(MULTISIG);
+            host.setChainSettings(cs);
+        }
+
+        // ----------------------------- Set priceDao to 0
+        {
+            IHost.HostSettings memory st = host.getSettings();
+            st.priceDao = 0;
+
+            vm.prank(MULTISIG);
+            host.setSettings(st);
+        }
+
+        // ----------------------------- create first (host) dao
+        host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao");
+
+        // ----------------------------- create second-dao
+        host.createDAO("name2", "symbol2", activity, params, funding);
+        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao");
+
+        // ----------------------------- Bad paths: Set priceDao to NOT zero
+        {
+            IHost.HostSettings memory st = host.getSettings();
+            st.priceDao = 1;
+
+            vm.prank(MULTISIG);
+            host.setSettings(st);
+        }
+
+        vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
+        host.createDAO("name3", "symbol3", activity, params, funding);
+
     }
 
     function testTasks() public {

@@ -18,13 +18,15 @@ contract HostLibTest is Test {
         uint uid1b;
         uint uid2b;
 
+        bool[4] memory first;
+
         {
             uint snapshot = vm.snapshotState();
             vm.selectFork(forkSonic);
             HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-            uid1a = HostLib.generateDaoUid($);
-            uid2a = HostLib.generateDaoUid($);
+            (uid1a, first[0]) = HostLib.generateDaoUid($);
+            (uid2a, first[1]) = HostLib.generateDaoUid($);
             vm.revertToState(snapshot);
         }
 
@@ -33,14 +35,19 @@ contract HostLibTest is Test {
             vm.selectFork(forkAvalanche);
             HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-            uid1b = HostLib.generateDaoUid($);
-            uid2b = HostLib.generateDaoUid($);
+            (uid1b, first[2]) = HostLib.generateDaoUid($);
+            (uid2b, first[3]) = HostLib.generateDaoUid($);
             vm.revertToState(snapshot);
         }
 
-        assertNotEq(uid1a, uid2a, "DAO UIDs should be unique");
-        assertNotEq(uid1b, uid2b, "DAO UIDs should be unique");
-        assertNotEq(uid1a, uid1b, "DAO UIDs should be unique across forks");
-        assertNotEq(uid2a, uid2b, "DAO UIDs should be unique across forks");
+        assertNotEq(uid1a, uid2a, "DAO UIDs should be unique 1");
+        assertNotEq(uid1b, uid2b, "DAO UIDs should be unique 2");
+        assertNotEq(uid1a, uid1b, "DAO UIDs should be unique across forks 1");
+        assertNotEq(uid2a, uid2b, "DAO UIDs should be unique across forks 2");
+
+        assertEq(first[0], true, "First DAO on Sonic should be first");
+        assertEq(first[1], false, "Second DAO on Sonic should not be first");
+        assertEq(first[2], true, "First DAO on Avalanche should be first");
+        assertEq(first[3], false, "Second DAO on Avalanche should not be first");
     }
 }

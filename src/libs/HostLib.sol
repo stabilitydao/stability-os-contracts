@@ -152,11 +152,13 @@ library HostLib {
         return keccak256(abi.encode(daoUid, sid));
     }
 
-    /// @dev All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
-    function generateDaoUid(HostLib.OsStorage storage $) internal returns (uint) {
+    /// @notice All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
+    /// @return uid New unique immutable id of the created DAO
+    /// @return firstDao True if it's the first DAO ever created in the system
+    function generateDaoUid(HostLib.OsStorage storage $) internal returns (uint uid, bool firstDao) {
         uint count = $.daoCount + 1;
         $.daoCount = count;
-        return uint(keccak256(abi.encodePacked(count, block.chainid)));
+        return (uint(keccak256(abi.encodePacked(count, block.chainid))), count == 1);
     }
     //endregion -------------------------------------- Internal utils
 }

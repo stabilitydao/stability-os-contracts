@@ -55,7 +55,11 @@ library HostActionsLib {
     ) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-        uint daoUid = HostLib.generateDaoUid($);
+        // todo currently host dao is set by first created dao, is it safe?
+        (uint daoUid, bool firstDao) = HostLib.generateDaoUid($);
+        if (firstDao) {
+            $.hostDaoUid = daoUid;
+        }
 
         HostLib.DaoDataLocal memory daoData;
         daoData.name = name;
@@ -87,7 +91,7 @@ library HostActionsLib {
     function addLiveDAO(ITokenomics.DaoData memory dao) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
-        uint daoUid = HostLib.generateDaoUid($);
+        (uint daoUid,) = HostLib.generateDaoUid($);
 
         HostLib.DaoDataLocal memory local;
         local.name = dao.name;
@@ -154,10 +158,9 @@ library HostActionsLib {
         uint daoUid = $.daoUids[daoSymbol];
 
         require(daoUid != 0, IHost.IncorrectDao());
-        // todo do we need to check unitId?
+        require(_isUnitExist($, daoUid, unitId), IHost.UnitNotFound());
 
-        HostActionsLib._processUnitRevenue($, daoUid, unitId, amount, false);
-        emit IHost.ProcessUnitRevenue(daoSymbol, unitId, amount); // todo use daoUid + daySymbol?
+        HostActionsLib._processUnitRevenue($, daoUid, daoSymbol, unitId, amount);
     }
     //endregion -------------------------------------- Actions
 
@@ -170,9 +173,20 @@ library HostActionsLib {
         uint daoUid
     ) internal {
         uint hostDaoUid = $.hostDaoUid;
+        // assume here that hostDaoUid cannot be 0 because $.hostDaoUid is initializing before paying creation fee
 
-        // take DAO creation fee on balance of this contract
-        _processUnitRevenue($, hostDaoUid, HostLib.HOST_UNIT, $.osSettings[0].priceDao, true);
+        // todo probably host-dao shouldn't pay creation fee to itself, so we need to check: if (hostDaoUid != daoUid) {
+
+        // we don't check if HOST_UNIT exists in host-dao because it's (only) virtual unit
+
+        // DAO creation fee is put to host-unit of the host-dao
+        _processUnitRevenue(
+            $,
+            hostDaoUid,
+            "", // todo symbol of host dao, can we keep it empty here?
+            HostLib.HOST_UNIT,
+            $.osSettings[0].priceDao
+        );
 
         $.usedSymbols[daoSymbol] = true;
 
@@ -181,10 +195,19 @@ library HostActionsLib {
         HostCrossChainLib.sendMessageNewSymbol(daoSymbol);
     }
 
-    /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.
-    function _processUnitRevenue(HostLib.OsStorage storage $, uint daoUid, string memory unitId, uint amount, bool hostUnit) internal {
-        // todo refactoring
+    /// @notice Check if the given dao has a unit with the given {unitId}
+    function _isUnitExist(HostLib.OsStorage storage $, uint daoUid, string memory unitId) internal view returns (bool) {
+        uint countUnits = $.daos[daoUid].countUnits;
+        for (uint i; i < countUnits; ++i) {
+            if (keccak256(bytes($.units[HostLib.getKey(daoUid, i)].unitId)) == keccak256(bytes(unitId))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.
+    function _processUnitRevenue(HostLib.OsStorage storage $, uint daoUid, string memory daoSymbol, string memory unitId, uint amount) internal {
         if (amount != 0) {
             address exchangeAsset = $.osChainSettings[0].exchangeAsset;
             require(exchangeAsset != address(0), IHost.IncorrectConfiguration());
@@ -193,9 +216,7 @@ library HostActionsLib {
             IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), amount);
             $.unitBalances[HostLib.getKey(daoUid, unitId)] += amount;
 
-            if (hostUnit) {
-                emit IHost.ProcessHostUnitRevenue(amount);
-            }
+            emit IHost.ProcessUnitRevenue(daoUid, daoSymbol, unitId, amount);
         }
     }
     //endregion -------------------------------------- Internal logic
