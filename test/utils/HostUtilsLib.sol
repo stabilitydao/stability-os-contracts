@@ -41,7 +41,6 @@ abstract contract HostUtilsLib {
         IAccessManager accessManager,
         IHost.HostInitPayload memory init_
     ) public returns (IHost) {
-
         IHost host;
         {
             address logic = address(new Host());
@@ -232,11 +231,11 @@ abstract contract HostUtilsLib {
 
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
-        host_.setChainSettings(IHost.HostChainSettings({
-            exchangeAsset: address(usdc),
-            hostBridge: address(bridge),
-            hostFactory: address(factory_)
-        }));
+        host_.setChainSettings(
+            IHost.HostChainSettings({
+                exchangeAsset: address(usdc), hostBridge: address(bridge), hostFactory: address(factory_)
+            })
+        );
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
@@ -283,11 +282,11 @@ abstract contract HostUtilsLib {
         IHost.HostChainSettings memory config = os.getChainSettings();
 
         vm.prank(chain.multisig);
-        os.setChainSettings(IHost.HostChainSettings({
-            exchangeAsset: config.exchangeAsset,
-            hostBridge: chain.hostBridge,
-            hostFactory: chain.hostFactory
-        }));
+        os.setChainSettings(
+            IHost.HostChainSettings({
+                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, hostFactory: chain.hostFactory
+            })
+        );
 
         // -------------------- set os and endpoints inside osBridge
         vm.prank(chain.multisig);

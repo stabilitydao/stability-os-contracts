@@ -3,24 +3,31 @@ pragma solidity ^0.8.28;
 
 import {HostLib} from "./HostLib.sol";
 import {IHostProxyFactory} from "../interfaces/IHostProxyFactory.sol";
+import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 
 /// @notice Library for deploying tokens via HostProxyFactory
 library HostDeployLib {
     function deploySeedToken(
         HostLib.OsStorage storage $,
+        uint daoUid,
         string memory token_,
         string memory symbol_
     ) internal returns (address) {
-        bytes32 seed = 0; // todo
+        bytes32 seed = $.salt[
+            HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid)
+        ];
         return IHostProxyFactory($.osChainSettings[0].hostFactory).deploySeedToken(seed, abi.encode(token_, symbol_));
     }
 
     function deployTgeToken(
         HostLib.OsStorage storage $,
+        uint daoUid,
         string memory token_,
         string memory symbol_
     ) internal returns (address) {
-        bytes32 seed = 0; // todo
+        bytes32 seed = $.salt[
+            HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), block.chainid)
+        ];
         return IHostProxyFactory($.osChainSettings[0].hostFactory).deployTgeToken(seed, abi.encode(token_, symbol_));
     }
 }

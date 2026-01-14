@@ -41,6 +41,7 @@ library HostViewLib {
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
                 $,
+                daoUid,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.SEED_0)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
             );
@@ -65,6 +66,7 @@ library HostViewLib {
 
             $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
                 $,
+                daoUid,
                 getTokenName($.daos[daoUid].name, uint(NamingTokenKind.TGE_1)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
             );
@@ -309,7 +311,7 @@ library HostViewLib {
         return $.unitBalances[HostLib.getKey(daoUid, unitId)];
     }
 
-    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (uint) {
+    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32) {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         return $.salt[HostLib.getKey(daoUid, contractIndex, chainId == 0 ? block.chainid : chainId)];

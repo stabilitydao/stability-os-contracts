@@ -76,5 +76,4 @@ library HostCrossChainLib {
             IHostBridge(bridge).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
         }
     }
-
 }

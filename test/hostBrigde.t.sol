@@ -56,7 +56,7 @@ contract OsBridgeTest is Test, HostUtilsLib {
         console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability-os-contracts.HostBridge))))");
         console.logBytes32(
             keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostBridge")) - 1))
-            & ~bytes32(uint(0xff))
+                & ~bytes32(uint(0xff))
         );
     }
 

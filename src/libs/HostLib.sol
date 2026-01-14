@@ -12,6 +12,9 @@ library HostLib {
     /// @notice Predefined UID of the unit of host DAO. This unit is used to collect dao-creation fees
     string public constant HOST_UNIT = "host-unit";
 
+    /// @notice Kind value for used salt in daoUidBySalt mapping
+    uint public constant KIND_SALT_USED = 0;
+
     //region -------------------------------------- Data types
     /// @notice Supply distribution and fundraising events.
     struct TokenomicsLocal {
@@ -130,19 +133,18 @@ library HostLib {
         /// @notice Salt configured for DAO contracts.
         /// @dev Key is generated as hash of (daoUid, ContractIndex, chainId)
         /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
-        mapping(bytes32 key => uint salt) salt;
+        mapping(bytes32 key => bytes32 salt) salt;
 
         /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
         /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
         /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
-        mapping(uint chain => mapping(uint salt => uint daoHash)) daoUidBySalt;
+        mapping(uint chain => mapping(bytes32 salt => uint daoHash)) daoUidBySalt;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OSSettings later
         mapping(uint zero => IHost.HostSettings) osSettings;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
         mapping(uint zero => IHost.HostChainSettings) osChainSettings;
-
     }
 
     //endregion -------------------------------------- Data types
@@ -174,6 +176,10 @@ library HostLib {
         uint count = $.daoCount + 1;
         $.daoCount = count;
         return (uint(keccak256(abi.encodePacked(count, block.chainid))), count == 1);
+    }
+
+    function getDaoHash(uint daoUid, uint kind) internal pure returns (uint) {
+        return uint(keccak256(abi.encode(daoUid, kind)));
     }
     //endregion -------------------------------------- Internal utils
 }

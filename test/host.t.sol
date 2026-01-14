@@ -182,15 +182,21 @@ contract HostTest is Test, HostUtilsLib {
         // ----------------------------- create first (host) dao
         host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
         assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount, "host dao paid creation fee to itself");
-        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "user has paid for creation of the first dao");
+        assertEq(
+            IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "user has paid for creation of the first dao"
+        );
         assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
 
         // ----------------------------- create second-dao
         host.createDAO("name2", "symbol2", activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao");
+        assertEq(
+            host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao"
+        );
         assertEq(host.unitBalance("symbol2", HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
         assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount, "user has paid for creation of the second dao");
-        assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host");
+        assertEq(
+            IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host"
+        );
 
         // ----------------------------- pay to second dao to registered unit
         {
@@ -275,7 +281,6 @@ contract HostTest is Test, HostUtilsLib {
 
         vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
         host.createDAO("name3", "symbol3", activity, params, funding);
-
     }
 
     function testTasks() public {

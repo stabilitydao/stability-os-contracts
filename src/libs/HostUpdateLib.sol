@@ -7,7 +7,6 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
 
 /// @notice Basic data types and constants for OS system.
 library HostUpdateLib {
@@ -116,7 +115,12 @@ library HostUpdateLib {
     }
 
     /// @notice Validate salts
-    function _validateSalt(uint16[] memory contractIndices, uint[] memory salt_, uint chainId) internal view {
+    function _validateSalt(
+        uint daoUid,
+        uint16[] memory contractIndices,
+        bytes32[] memory salt_,
+        uint chainId
+    ) internal view {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         uint len = contractIndices.length;
@@ -127,9 +131,16 @@ library HostUpdateLib {
                 contractIndices[i] < uint16(ITokenomicsAddons.ContractIndices.COUNT_CONTRACT_INDICES),
                 IHost.TooHighContractIndex(contractIndices[i])
             );
-            require($.daoUidBySalt[chainId][salt_[i]] == 0, IHost.SaltAlreadyUsed(salt_[i]));
+            uint daoHash = $.daoUidBySalt[chainId][salt_[i]];
+            require(
+                // assume that users don't try to set same salt for different contracts
+                // otherwise they will have error on creation (and will be able to fix it)
+                daoHash == 0 || daoHash == HostLib.getDaoHash(daoUid, HostLib.KIND_SALT_USED),
+                IHost.SaltAlreadyUsed(salt_[i])
+            );
         }
     }
+
     //endregion -------------------------------------- Validation logic
 
     //region -------------------------------------- Proposal logic
@@ -347,11 +358,11 @@ library HostUpdateLib {
     }
 
     function updateSalt(uint daoUid, bytes memory payload) internal {
-        (uint16[] memory contractIndices, uint[] memory salt, uint chainId) = HostEncodingLib.decodeSalt(payload);
+        (uint16[] memory contractIndices, bytes32[] memory salt, uint chainId) = HostEncodingLib.decodeSalt(payload);
         updateSalt(daoUid, contractIndices, salt, chainId);
     }
 
-    function updateSalt(uint daoUid, uint16[] memory contractIndices, uint[] memory salt_, uint chain_) internal {
+    function updateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_, uint chain_) internal {
         uint chainId = chain_ == 0 ? block.chainid : chain_;
 
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
@@ -359,7 +370,7 @@ library HostUpdateLib {
         for (uint i; i < len; ++i) {
             bytes32 key = HostLib.getKey(daoUid, contractIndices[i], chainId);
             $.salt[key] = salt_[i];
-            $.daoUidBySalt[chainId][salt_[i]] = uint(keccak256(abi.encode(daoUid, 0))); // todo 0 means kind=0 - salt is used, kind=1 - salt is only reserved
+            $.daoUidBySalt[chainId][salt_[i]] = HostLib.getDaoHash(daoUid, HostLib.KIND_SALT_USED);
         }
 
         emit IHost.SaltUpdated($.daos[daoUid].symbol, contractIndices, salt_, chainId);

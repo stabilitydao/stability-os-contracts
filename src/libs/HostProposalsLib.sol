@@ -166,15 +166,21 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update salts
-    function updateSalts(string memory daoSymbol,  uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) external {
-        (HostLib.OsStorage storage $, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
+    function updateSalts(
+        string memory daoSymbol,
+        uint16[] memory contractIndices,
+        bytes32[] memory salt_,
+        uint chainId
+    ) external {
+        (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
-        HostUpdateLib._validateSalt(contractIndices, saltValues, chainId);
+        HostUpdateLib._validateSalt(daoUid, contractIndices, salt_, chainId);
 
         if (instantExecute) {
-            HostUpdateLib.updateSalt(daoUid, contractIndices, saltValues, chainId);
+            HostUpdateLib.updateSalt(daoUid, contractIndices, salt_, chainId);
         } else {
-            bytes memory payload = HostEncodingLib.encodeSalt(contractIndices, saltValues, chainId, HostEncodingLib.SALT_VERSION);
+            bytes memory payload =
+                HostEncodingLib.encodeSalt(contractIndices, salt_, chainId, HostEncodingLib.SALT_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SALT_7, payload);
         }
     }

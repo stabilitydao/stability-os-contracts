@@ -130,7 +130,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
 
     function _createNewProxy(bytes32 salt) internal returns (address proxy) {
         proxy = salt == 0
-            ? address(new Proxy()) // create
+            ? address(new Proxy())  // create
             : address(new Proxy{salt: salt}()); // create2
     }
     //endregion -------------------------------------- Internal utils

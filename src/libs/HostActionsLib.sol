@@ -162,6 +162,7 @@ library HostActionsLib {
 
         HostActionsLib._processUnitRevenue($, daoUid, daoSymbol, unitId, amount);
     }
+
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Internal logic
@@ -207,7 +208,13 @@ library HostActionsLib {
     }
 
     /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.
-    function _processUnitRevenue(HostLib.OsStorage storage $, uint daoUid, string memory daoSymbol, string memory unitId, uint amount) internal {
+    function _processUnitRevenue(
+        HostLib.OsStorage storage $,
+        uint daoUid,
+        string memory daoSymbol,
+        string memory unitId,
+        uint amount
+    ) internal {
         if (amount != 0) {
             address exchangeAsset = $.osChainSettings[0].exchangeAsset;
             require(exchangeAsset != address(0), IHost.IncorrectConfiguration());

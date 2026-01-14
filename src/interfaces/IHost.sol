@@ -33,7 +33,7 @@ interface IHost {
     error UnitNotFound();
     error IncorrectArrayLengths();
     error TooHighContractIndex(uint16 index);
-    error SaltAlreadyUsed(uint salt);
+    error SaltAlreadyUsed(bytes32 salt);
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -51,7 +51,7 @@ interface IHost {
     event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
-    event SaltUpdated(string daoSymbol, uint16[] contractIndices, uint[] saltValues, uint chain_);
+    event SaltUpdated(string daoSymbol, uint16[] contractIndices, bytes32[] saltValues, uint chain_);
     event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
 
     error NotEnoughNativeProvided(uint requiredValue);
@@ -150,7 +150,7 @@ interface IHost {
     /// @param contractIndex Contract index, for exact values see ITokenomicsAddons.ContractIndices
     /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
     /// @return Salt value used in CREATE2
-    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (uint);
+    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -243,9 +243,14 @@ interface IHost {
 
     /// @notice Set salt to create contracts with given indices
     /// @param contractIndices Contract indices, for exact values see ITokenomicsAddons.ContractIndices
-    /// @param saltValues Salt values for the corresponded contracts. The salt is used in CREATE2
+    /// @param salt_ Salt values for the corresponded contracts. The salt is used in CREATE2
     /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
-    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) external;
+    function updateSalts(
+        string calldata daoSymbol,
+        uint16[] memory contractIndices,
+        bytes32[] memory salt_,
+        uint chainId
+    ) external;
 
     //endregion ---------------------------------------- Update actions
 }
