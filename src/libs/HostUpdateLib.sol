@@ -7,9 +7,12 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @notice Basic data types and constants for OS system.
 library HostUpdateLib {
+    using EnumerableSet for EnumerableSet.UintSet;
+
     //region -------------------------------------- Actions
     function validate(
         HostLib.DaoDataLocal memory dao,
@@ -226,37 +229,56 @@ library HostUpdateLib {
 
         // todo take prices for unit creation
 
-        uint32 countUnits = uint32(units.length);
-        uint32 oldCountUnits = $.daos[daoUid].countUnits;
-        $.daos[daoUid].countUnits = countUnits;
+        /// @dev False - insert, true - update
+        bool[] memory updates = new bool[](units.length);
 
-        for (uint32 i = 0; i < countUnits; i++) {
-            bytes32 key = HostLib.getKey(daoUid, i);
+        /// @dev hash (daoUid, unitUid) for all {units}
+        bytes32[] memory newHashes = new bytes32[](units.length);
 
-            ITokenomics.UnitInfo storage unitInfo = $.units[key];
-            unitInfo.unitId = units[i].unitId;
-            unitInfo.name = units[i].name;
-            unitInfo.status = units[i].status;
-            unitInfo.unitType = units[i].unitType;
-            unitInfo.revenueShare = units[i].revenueShare;
-            unitInfo.emoji = units[i].emoji;
+        {
+            // -------------------- detect units to update/insert and units to delete
+            /// @dev Units to delete
+            bytes32[] memory hashes = $.daos[daoUid].hashUnitIds;
+            bool[] memory toDelete = new bool[](hashes.length);
+            for (uint i; i < units.length; ++i) {
+                newHashes[i] = HostLib.getKey(daoUid, units[i].chainData.unitId);
+                for (uint j; j < hashes.length; ++j) {
+                    if (hashes[j] == newHashes[i]) {
+                        // new unit exists
+                        toDelete[j] = true;
+                        updates[i] = true;
+                        break;
+                    }
+                }
+            }
 
-            delete unitInfo.api;
-            delete unitInfo.ui;
-
-            unitInfo.api = units[i].api;
-            for (uint j; j < units[i].ui.length; ++j) {
-                unitInfo.ui.push(units[i].ui[j]);
+            // -------------------- delete old units (the units that don't exist in {units} list anymore}
+            for (uint j; j < hashes.length; ++j) {
+                if (toDelete[j]) {
+                    emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].data.unitId);
+                    // todo probably we shouldn't call delete to reduce gas costs (?)
+                    delete $.units[hashes[j]];
+                }
             }
         }
 
-        // delete old units if new list is smaller
-        for (uint32 i = countUnits; i < oldCountUnits; i++) {
-            bytes32 key = HostLib.getKey(daoUid, i);
-            delete $.units[key];
-        }
+        // -------------------- insert and update new units
 
-        emit IHost.DaoUnitsUpdated($.daos[daoUid].symbol, units);
+        $.daos[daoUid].hashUnitIds = newHashes;
+
+        for (uint i; i < newHashes.length; i++) {
+            HostLib.UnitLocal storage unit = $.units[newHashes[i]];
+            if (updates[i]) {
+                // update existing unit
+                unit.data.developerUid = units[i].chainData.developerUid;
+            } else {
+                // insert new unit
+                unit.daoUid = daoUid;
+                unit.data = units[i].chainData;
+                unit.chainIds.add(block.chainid);
+            }
+            emit IHost.DaoUnitUpdated(daoUid, units[i].metaData);
+        }
     }
 
     /// @notice Replace array of funding of the DAO by new one

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics, IDAOUnit} from "../interfaces/ITokenomics.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @notice Basic data types and constants for OS system. This library shouldn't depend on any other libraries.
 library HostLib {
@@ -50,13 +51,13 @@ library HostLib {
         /// @notice List of activities of the DAO
         ITokenomics.Activity[] activity;
 
-        /// @notice Count of registered revenue generating units owned by the organization.
-        /// @dev Actual units data are stored in the mapping (to be able to extend list of Unit fields)
-        uint32 countUnits;
-
         /// @notice Count of registered operating agents managed by the organization.
         /// @dev Actual agent data are stored in the mapping (to be able to extend list of Agent fields)
         uint32 countAgents;
+
+        /// @notice Hashes of all units registered in the DAO. Hash = hash of (daoUid, unitUid)
+        bytes32[] hashUnitIds;
+
     }
 
     /// @notice It refers to daoUid instead of daoSymbol
@@ -73,6 +74,17 @@ library HostLib {
 
         /// @notice Proposal data as bytes. Actual data depends on {action}
         bytes payload;
+    }
+
+    /// @notice Unit data stored in the storage
+    struct UnitLocal {
+        uint daoUid;
+
+        /// @notice On-chain data of the Unit
+        IDAOUnit.UnitChainData data;
+
+        /// @notice Set of chain ids where the unit is bridged
+        EnumerableSet.UintSet chainIds;
     }
 
     /// @custom:storage-location erc7201:stability-os-contracts.OS
@@ -113,9 +125,8 @@ library HostLib {
         /// @notice Vesting allocations. Key is generated as hash of (daoUid, 0-index)
         mapping(bytes32 key => ITokenomics.Vesting) vesting;
 
-        /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, 0-index)
-        /// @dev 0-index is in [0...DaoData.countUnits-1]
-        mapping(bytes32 key => IDAOUnit.UnitInfo) units;
+        /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, unitUid)
+        mapping(bytes32 key => UnitLocal) units;
 
         /// @notice Operating agents managed by the organization. Key is generated as hash of (daoUid, 0-index)
         /// @dev 0-index is in [0...DaoData.countAgents-1]

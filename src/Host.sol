@@ -26,7 +26,7 @@ contract Host is IHost, Controllable2 {
 
         // register all symbols registered on other chains
         IHost.HostInitPayload memory initPayload = abi.decode(payload, (IHost.HostInitPayload));
-        HostActionsLib.initOS(initPayload);
+        HostActionsLib.initHost(initPayload);
     }
 
     //region -------------------------------------- View
@@ -115,7 +115,7 @@ contract Host is IHost, Controllable2 {
     }
 
     /// @inheritdoc IHost
-    function addLiveDAO(ITokenomics.DaoData calldata dao) external restricted {
+    function addLiveDAO(ITokenomics.DaoMetaData calldata dao) external restricted {
         HostActionsLib.addLiveDAO(dao);
     }
 

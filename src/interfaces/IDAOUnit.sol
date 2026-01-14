@@ -45,10 +45,8 @@ interface IDAOUnit {
         // Attention: there is NO gap here so the struct is NOT extendable
     }
 
-    /// @notice Revenue generating unit owned by a DAO.
-    struct UnitInfo {
-        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
-        string unitId;
+    /// @notice Off-chain data of the Unit. It's just emitted in event
+    struct UnitMetaData {
         /// @notice Short name of the unit.
         string name;
         /// @notice Status of unit changes appear when unit starting to work and starting earning revenue.
@@ -63,6 +61,27 @@ interface IDAOUnit {
         UnitUiLink[] ui;
         /// @notice Links to API of the Unit.
         string[] api;
+    }
+
+    /// @notice On-chain data of the Unit.
+    struct UnitChainData {
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
+
+        // Attention: chainIds is stored separately and modified through special update-commands
+
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
+
         // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
+    }
+
+    /// @notice Full info about the Unit.
+    struct UnitInfo {
+        /// @notice Off-chain metadata of the Unit.
+        UnitMetaData metaData;
+
+        /// @notice On-chain data of the Unit.
+        UnitChainData chainData;
     }
 }

@@ -205,8 +205,50 @@ interface ITokenomics is IDAOAgent, IDAOUnit, ITokenomicsAddons {
         Vesting[] vesting;
     }
 
-    /// @notice Full DAO info
+    /// @notice Full DAO info available on-chain
     struct DaoData {
+        /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
+        LifecyclePhase phase;
+
+        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
+        /// While token symbol is SYM then additional DAO tokens symbols are:
+        /// seedSYM, saleSYM, xSYM, SYM_DAO
+        string symbol;
+
+        /// @notice Name of the DAO, used in token names. Without DAO word.
+        string name;
+
+        /// @notice Deployer of a DAO have power only at DRAFT phase.
+        address deployer;
+
+        /// @notice Community socials. Update by `OS.updateSocials`
+        string[] socials;
+
+        /// @notice Activities of the organization.
+        Activity[] activity;
+
+        /// @notice Images of tokens. Absolute or relative from repo /os/ folder.
+        DaoImages images;
+
+        /// @notice Deployments of running DAO on blockchains.
+        DaoDeploymentInfo deployments;
+
+        /// @notice Registered revenue generating units owned by the organization.
+        /// @dev There is not UnitMetaData here because it's stored off-chain only.
+        UnitChainData[] units;
+
+        /// @notice Operating agents managed by the organization.
+        AgentInfo[] agents;
+
+        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
+        DaoParameters params;
+
+        /// @notice Supply distribution and fundraising events + vesting + initial chain
+        Tokenomics tokenomics;
+    }
+
+    /// @notice Full DAO info used to add exist DAO into the system
+    struct DaoMetaData {
         /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
         LifecyclePhase phase;
 

@@ -394,7 +394,7 @@ abstract contract HostUtilsLib {
         });
     }
 
-    function createTestDaoData() public pure returns (ITokenomics.DaoData memory data) {
+    function createTestDaoData() public pure returns (ITokenomics.DaoMetaData memory data) {
         // ---------------- base fields
         data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
         data.symbol = "testdao";
@@ -455,8 +455,7 @@ abstract contract HostUtilsLib {
             api0[0] = "https://api.unit0.example/v1/status";
             api0[1] = "https://api.unit0.example/v1/metrics";
 
-            data.units[0] = IDAOUnit.UnitInfo({
-                unitId: "defi:protocolA",
+            data.units[0].metaData = IDAOUnit.UnitMetaData({
                 name: "Protocol A",
                 status: IDAOUnit.UnitStatus.RESEARCH_0,
                 unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
@@ -464,6 +463,10 @@ abstract contract HostUtilsLib {
                 emoji: "zzz",
                 ui: ui0,
                 api: api0
+            });
+            data.units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: "defi:protocolA",
+                developerUid: ""
             });
         }
 
@@ -475,8 +478,7 @@ abstract contract HostUtilsLib {
             string[] memory api1 = new string[](1);
             api1[0] = "https://api.unit1.example/";
 
-            data.units[1] = IDAOUnit.UnitInfo({
-                unitId: "saas:serviceX",
+            data.units[1].metaData = IDAOUnit.UnitMetaData({
                 name: "Service X",
                 status: IDAOUnit.UnitStatus.BUILDING_1,
                 unitType: uint16(IDAOUnit.UnitType.SAAS_2),
@@ -485,14 +487,17 @@ abstract contract HostUtilsLib {
                 ui: ui1,
                 api: api1
             });
+            data.units[1].chainData = IDAOUnit.UnitChainData({
+                unitId: "saas:serviceX",
+                developerUid: ""
+            });
         }
 
         { // Unit 2: no UI links, empty api array
             ITokenomics.UnitUiLink[] memory ui2 = new ITokenomics.UnitUiLink[](0);
             string[] memory api2 = new string[](0);
 
-            data.units[2] = IDAOUnit.UnitInfo({
-                unitId: "mev:botZ",
+            data.units[2].metaData = IDAOUnit.UnitMetaData({
                 name: "MEV Bot Z",
                 status: IDAOUnit.UnitStatus.LIVE_2,
                 unitType: uint16(IDAOUnit.UnitType.MEV_3),
@@ -500,6 +505,10 @@ abstract contract HostUtilsLib {
                 emoji: "aaaaaaaa",
                 ui: ui2,
                 api: api2
+            });
+            data.units[2].chainData = IDAOUnit.UnitChainData({
+                unitId: "mev:botZ",
+                developerUid: ""
             });
         }
 
@@ -648,7 +657,7 @@ abstract contract HostUtilsLib {
 
         console.log("Units:");
         for (uint i = 0; i < data.units.length; i++) {
-            console.log(i, data.units[i].unitId, data.units[i].name);
+            console.log(i, data.units[i].unitId);
         }
 
         console.log("Agents:");

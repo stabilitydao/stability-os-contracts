@@ -7,9 +7,11 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {HostUpdateLib} from "./HostUpdateLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 library HostActionsLib {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     //region -------------------------------------- Restricted actions
     function setSettings(IHost.HostSettings memory st) external {
@@ -27,7 +29,7 @@ library HostActionsLib {
     }
 
     /// @notice Initialize OS with existing DAO symbols from other chains
-    function initOS(IHost.HostInitPayload memory initPayload) external {
+    function initHost(IHost.HostInitPayload memory initPayload) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         for (uint i = 0; i < initPayload.usedSymbols.length; i++) {
@@ -88,7 +90,7 @@ library HostActionsLib {
     }
 
     /// @notice Add live DAO verified off-chain into the system
-    function addLiveDAO(ITokenomics.DaoData memory dao) external {
+    function addLiveDAO(ITokenomics.DaoMetaData memory dao) external {
         HostLib.OsStorage storage $ = HostLib.getOsStorage();
 
         (uint daoUid,) = HostLib.generateDaoUid($);
@@ -100,12 +102,25 @@ library HostActionsLib {
         local.deployer = dao.deployer;
         local.socials = dao.socials;
         local.activity = dao.activity;
-        local.countUnits = uint32(dao.units.length);
         local.countAgents = uint32(dao.agents.length);
+        local.hashUnitIds = new bytes32[](dao.units.length);
 
         HostUpdateLib.validate(local, dao.params, dao.tokenomics.funding);
         // todo validate other fields
         // todo require block.chain == dao.tokenomics.initialChain
+
+        // ------------------------- Prepare units data
+        for (uint i; i < dao.units.length; i++) {
+            local.hashUnitIds[i] = HostLib.getKey(daoUid, dao.units[i].chainData.unitId);
+            require($.units[local.hashUnitIds[i]].daoUid == 0, IHost.UnitAlreadyRegistered());
+
+            HostLib.UnitLocal storage unit = $.units[local.hashUnitIds[i]];
+            unit.daoUid = daoUid;
+            unit.data = dao.units[i].chainData;
+            unit.chainIds.add(block.chainid);
+
+            emit IHost.DaoUnitUpdated(daoUid, dao.units[i].metaData);
+        }
 
         // ------------------------- Save DAO data to the storage
         $.daoUids[dao.symbol] = daoUid;
@@ -130,24 +145,9 @@ library HostActionsLib {
             }
         }
 
-        for (uint i; i < dao.units.length; i++) {
-            ITokenomics.UnitInfo storage unitInfo = $.units[HostLib.getKey(daoUid, i)];
-            unitInfo.unitId = dao.units[i].unitId;
-            unitInfo.name = dao.units[i].name;
-            unitInfo.status = dao.units[i].status;
-            unitInfo.unitType = dao.units[i].unitType;
-            unitInfo.revenueShare = dao.units[i].revenueShare;
-            unitInfo.emoji = dao.units[i].emoji;
-            unitInfo.api = dao.units[i].api;
-            for (uint j; j < dao.units[i].ui.length; ++j) {
-                unitInfo.ui.push(dao.units[i].ui[j]);
-            }
-        }
         for (uint i; i < dao.agents.length; i++) {
             $.agents[HostLib.getKey(daoUid, i)] = dao.agents[i];
         }
-
-        // todo do we need to register exit proposals?
 
         _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
     }
@@ -198,13 +198,7 @@ library HostActionsLib {
 
     /// @notice Check if the given dao has a unit with the given {unitId}
     function _isUnitExist(HostLib.OsStorage storage $, uint daoUid, string memory unitId) internal view returns (bool) {
-        uint countUnits = $.daos[daoUid].countUnits;
-        for (uint i; i < countUnits; ++i) {
-            if (keccak256(bytes($.units[HostLib.getKey(daoUid, i)].unitId)) == keccak256(bytes(unitId))) {
-                return true;
-            }
-        }
-        return false;
+        return $.units[HostLib.getKey(daoUid, unitId)].daoUid != 0;
     }
 
     /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.

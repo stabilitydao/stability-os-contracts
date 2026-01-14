@@ -95,8 +95,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
             // units project
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: "aliens:os",
+            units[0].metaData = IDAOUnit.UnitMetaData({
                 name: "DAO Factory",
                 status: IDAOUnit.UnitStatus.BUILDING_1,
                 unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
@@ -104,6 +103,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
                 ui: new IDAOUnit.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0)
+            });
+            units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: "aliens:os",
+                developerUid: ""
             });
             host_.updateUnits(daoData.symbol, units);
 
@@ -285,8 +288,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             ui[0] = IDAOUnit.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
 
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: daoData.units[0].unitId,
+            units[0].metaData = IDAOUnit.UnitMetaData({
                 name: daoData.units[0].name,
                 status: IDAOUnit.UnitStatus.LIVE_2,
                 unitType: daoData.units[0].unitType,
@@ -294,6 +296,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
                 ui: ui,
                 emoji: daoData.units[0].emoji,
                 api: daoData.units[0].api
+            });
+            units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: daoData.units[0].unitId,
+                developerUid: ""
             });
 
             host_.updateUnits(daoData.symbol, units);

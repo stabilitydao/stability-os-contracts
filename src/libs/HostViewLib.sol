@@ -164,9 +164,9 @@ library HostViewLib {
         }
 
         // ------------------- units
-        dest.units = new ITokenomics.UnitInfo[](data.countUnits);
-        for (uint i; i < data.countUnits; i++) {
-            dest.units[i] = $.units[HostLib.getKey(daoUid, i)];
+        dest.units = new ITokenomics.UnitChainData[](data.hashUnitIds.length);
+        for (uint i; i < data.hashUnitIds.length; i++) {
+            dest.units[i] = $.units[data.hashUnitIds[i]].data;
         }
 
         // ------------------- agents
@@ -335,7 +335,7 @@ library HostViewLib {
             if (index < limit && $.daos[daoUid].socials.length < 2) {
                 dest[index++] = IHost.Task("Need at least 2 socials");
             }
-            if (index < limit && $.daos[daoUid].countUnits == 0) {
+            if (index < limit && $.daos[daoUid].hashUnitIds.length == 0) {
                 dest[index++] = IHost.Task("Need at least 1 projected unit");
             }
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
@@ -361,17 +361,18 @@ library HostViewLib {
             if (index < limit && $.tokenomics[daoUid].countVesting == 0) {
                 dest[index++] = IHost.Task("Need vesting allocations");
             }
-            uint countUnits = $.daos[daoUid].countUnits;
+            bytes32[] memory hashUnitIds = $.daos[daoUid].hashUnitIds;
 
             // slither-disable-next-line uninitialized-local
             bool foundLive;
 
-            for (uint i; i < countUnits; i++) {
-                ITokenomics.UnitInfo memory unit = $.units[HostLib.getKey(daoUid, i)];
-                if (unit.status == IDAOUnit.UnitStatus.LIVE_2) {
-                    foundLive = true;
-                    break;
-                }
+            for (uint i; i < hashUnitIds.length; i++) {
+                // todo we need status of unit on chain
+//                ITokenomics.UnitInfo memory unit = $.units[hashUnitIds[i]];
+//                if (unit.status == IDAOUnit.UnitStatus.LIVE_2) {
+//                    foundLive = true;
+//                    break;
+//                }
             }
             if (index < limit && !foundLive) {
                 dest[index++] = IHost.Task("Run revenue generating units");

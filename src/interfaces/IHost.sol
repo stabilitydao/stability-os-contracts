@@ -34,6 +34,7 @@ interface IHost {
     error IncorrectArrayLengths();
     error TooHighContractIndex(uint16 index);
     error SaltAlreadyUsed(bytes32 salt);
+    error UnitAlreadyRegistered();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -41,7 +42,11 @@ interface IHost {
     event OsChainSettingsUpdated(IHost.HostChainSettings st);
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
-    event DaoUnitsUpdated(string daoSymbol, ITokenomics.UnitInfo[] units);
+
+    /// @notice Unit is inserted or updated
+    event DaoUnitUpdated(uint daoUid, ITokenomics.UnitMetaData unit);
+    event DaoUnitDeleted(uint daoUid, string unitUid);
+
     event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
     event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
     event DaoNamingUpdated(string daoSymbol, ITokenomics.DaoNames daoNames);
@@ -184,7 +189,7 @@ interface IHost {
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)
-    function addLiveDAO(ITokenomics.DaoData memory dao) external;
+    function addLiveDAO(ITokenomics.DaoMetaData memory dao) external;
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager
