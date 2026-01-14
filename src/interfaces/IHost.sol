@@ -31,6 +31,9 @@ interface IHost {
     error UnsupportedStructVersion();
     error IncorrectConfiguration();
     error UnitNotFound();
+    error IncorrectArrayLengths();
+    error TooHighContractIndex(uint16 index);
+    error SaltAlreadyUsed(uint salt);
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -48,6 +51,7 @@ interface IHost {
     event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
+    event SaltUpdated(string daoSymbol, uint16[] contractIndices, uint[] saltValues, uint chain_);
     event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
 
     error NotEnoughNativeProvided(uint requiredValue);
@@ -106,6 +110,8 @@ interface IHost {
 
     //region ---------------------------------------- Read
 
+    // todo getDaoUid, getHostDaoUid, isSaltReserved
+
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory);
 
@@ -138,6 +144,13 @@ interface IHost {
 
     /// @notice Get balance belonging to the given unit
     function unitBalance(string calldata daoSymbol, string calldata unitUid) external view returns (uint);
+
+    /// @notice Get salt to create contract with given index
+    /// @param daoSymbol DAO symbol
+    /// @param contractIndex Contract index, for exact values see ITokenomicsAddons.ContractIndices
+    /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
+    /// @return Salt value used in CREATE2
+    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (uint);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -227,6 +240,12 @@ interface IHost {
 
     /// @notice Update/create proposal to update on-chain DAO parameters
     function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external;
+
+    /// @notice Set salt to create contracts with given indices
+    /// @param contractIndices Contract indices, for exact values see ITokenomicsAddons.ContractIndices
+    /// @param saltValues Salt values for the corresponded contracts. The salt is used in CREATE2
+    /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
+    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) external;
 
     //endregion ---------------------------------------- Update actions
 }

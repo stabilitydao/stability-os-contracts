@@ -3,8 +3,9 @@ pragma solidity ^0.8.28;
 
 import {IDAOAgent} from "./IDAOAgent.sol";
 import {IDAOUnit} from "./IDAOUnit.sol";
+import {ITokenomicsAddons} from "./ITokenomicsAddons.sol";
 
-interface ITokenomics is IDAOAgent, IDAOUnit {
+interface ITokenomics is IDAOAgent, IDAOUnit, ITokenomicsAddons {
     enum LifecyclePhase {
         /// @notice Created (draft).
         DRAFT_0,
@@ -38,7 +39,8 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         UPDATE_UNITS_3,
         UPDATE_FUNDING_4,
         UPDATE_VESTING_5,
-        UPDATE_DAO_PARAMETERS_6
+        UPDATE_DAO_PARAMETERS_6,
+        UPDATE_SALT_7
     }
 
     /// @notice Funding types.

@@ -17,6 +17,7 @@ library HostEncodingLib {
     uint8 public constant VESTING_STRUCT_VERSION = 1;
     uint8 public constant DAO_PARAMETERS_STRUCT_VERSION = 1;
     uint8 public constant DAO_NAMES_STRUCT_VERSION = 1;
+    uint8 public constant SALT_VERSION = 1;
 
     //endregion ----------------------- Versions of the structs
 
@@ -157,6 +158,25 @@ library HostEncodingLib {
         if (version == 1) {
             (, dest.name, dest.symbol) = abi.decode(payload, (uint8, string, string));
             return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function encodeSalt( uint16[] memory contractIndices, uint[] memory saltValues, uint chainId, uint8 version) internal pure returns (bytes memory) {
+        if (version == 1) {
+            return abi.encode(version, chainId, contractIndices, saltValues);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeSalt(bytes memory payload) internal pure returns (uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) {
+        (uint8 version) = abi.decode(payload, (uint8));
+
+        if (version == 1) {
+            (, chainId, contractIndices, saltValues) = abi.decode(payload, (uint8, uint, uint16[], uint[]));
+            return (contractIndices, saltValues, chainId);
         } else {
             revert IHost.UnsupportedStructVersion();
         }

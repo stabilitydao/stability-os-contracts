@@ -124,14 +124,25 @@ library HostLib {
         /// @notice List of ids of all proposals for each DAO in order
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
 
+        /// @notice Balance belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
+        mapping(bytes32 key => uint) unitBalances;
+
+        /// @notice Salt configured for DAO contracts.
+        /// @dev Key is generated as hash of (daoUid, ContractIndex, chainId)
+        /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
+        mapping(bytes32 key => uint salt) salt;
+
+        /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
+        /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
+        /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
+        mapping(uint chain => mapping(uint salt => uint daoHash)) daoUidBySalt;
+
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OSSettings later
         mapping(uint zero => IHost.HostSettings) osSettings;
 
         /// @notice 0 => Settings of the OS. Mapping is used to be able to add new fields to OsChainSettings later
         mapping(uint zero => IHost.HostChainSettings) osChainSettings;
 
-        /// @notice Balance belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
-        mapping(bytes32 key => uint) unitBalances;
     }
 
     //endregion -------------------------------------- Data types
@@ -146,6 +157,10 @@ library HostLib {
 
     function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, index));
+    }
+
+    function getKey(uint daoUid, uint value1, uint value2) internal pure returns (bytes32) {
+        return keccak256(abi.encode(daoUid, value1, value2));
     }
 
     function getKey(uint daoUid, string memory sid) internal pure returns (bytes32) {

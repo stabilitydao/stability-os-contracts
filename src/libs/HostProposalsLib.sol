@@ -36,6 +36,8 @@ library HostProposalsLib {
                 HostUpdateLib.updateNaming(p.daoUid, p.payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6) {
                 HostUpdateLib.updateDaoParameters(p.daoUid, p.payload);
+            } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
+                HostUpdateLib.updateSalt(p.daoUid, p.payload);
             } else {
                 // todo other actions
                 revert IHost.NotImplemented();
@@ -160,6 +162,20 @@ library HostProposalsLib {
             bytes memory payload =
                 HostEncodingLib.encodeDaoParameters(daoParameters_, HostEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, payload);
+        }
+    }
+
+    /// @notice Update/create proposal to update salts
+    function updateSalts(string memory daoSymbol,  uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) external {
+        (HostLib.OsStorage storage $, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
+
+        HostUpdateLib._validateSalt(contractIndices, saltValues, chainId);
+
+        if (instantExecute) {
+            HostUpdateLib.updateSalt(daoUid, contractIndices, saltValues, chainId);
+        } else {
+            bytes memory payload = HostEncodingLib.encodeSalt(contractIndices, saltValues, chainId, HostEncodingLib.SALT_VERSION);
+            HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SALT_7, payload);
         }
     }
 

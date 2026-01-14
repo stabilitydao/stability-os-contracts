@@ -85,6 +85,9 @@ contract Host is IHost, Controllable2 {
         return HostViewLib.unitBalance(daoSymbol, unitId);
     }
 
+    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (uint) {
+        return HostViewLib.salt(daoSymbol, contractIndex, chainId);
+    }
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -157,6 +160,7 @@ contract Host is IHost, Controllable2 {
         // todo not reentrant
         HostActionsLib.processUnitRevenue(daoSymbol, unitId, amount);
     }
+
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Update actions
@@ -204,6 +208,12 @@ contract Host is IHost, Controllable2 {
     ) external {
         // restrictions are checked below
         HostProposalsLib.updateDaoParameters(daoSymbol, daoParameters_);
+    }
+
+    /// @inheritdoc IHost
+    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, uint[] memory saltValues, uint chainId) external {
+        // restrictions are checked below
+        HostProposalsLib.updateSalts(daoSymbol, contractIndices, saltValues, chainId);
     }
 
     //endregion -------------------------------------- Update actions

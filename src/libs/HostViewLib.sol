@@ -308,6 +308,12 @@ library HostViewLib {
         uint daoUid = $.daoUids[daoSymbol];
         return $.unitBalances[HostLib.getKey(daoUid, unitId)];
     }
+
+    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (uint) {
+        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+        return $.salt[HostLib.getKey(daoUid, contractIndex, chainId == 0 ? block.chainid : chainId)];
+    }
     //endregion -------------------------------------- View
 
     function _tasks(uint16 limit, uint daoUid) internal view returns (IHost.Task[] memory dest) {
