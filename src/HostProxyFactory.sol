@@ -91,6 +91,21 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     //endregion -------------------------------------- Restricted actions
 
     //region -------------------------------------- Deploy actions
+
+    /// @inheritdoc IHostProxyFactory
+    function deployProxy(
+        bytes32 salt,
+        address logic,
+        bytes memory payload
+    ) external restricted returns (address proxy) {
+        proxy = _createNewProxy(salt);
+        IProxy(proxy).initProxy(logic);
+        IControllable2(proxy).initialize(authority(), payload);
+
+        emit NewContractDeployed(proxy, logic, payload);
+        return proxy;
+    }
+
     /// @inheritdoc IHostProxyFactory
     function deploySeedToken(bytes32 salt, bytes memory payload) external restricted returns (address proxy) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();

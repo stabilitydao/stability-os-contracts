@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {TgeToken} from "../src/tokenomics/TgeToken.sol";
+import {Host} from "../src/Host.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
 import {HostProxyFactory} from "../src/HostProxyFactory.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IControllable2} from "../src/interfaces/IControllable2.sol";
+import {IHost} from "../src/interfaces/IHost.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 import {IProxy} from "../src/interfaces/IProxy.sol";
 import {Proxy} from "../src/base/Proxy.sol";
 import {SeedToken} from "../src/tokenomics/SeedToken.sol";
 import {Test} from "forge-std/Test.sol";
+import {TgeToken} from "../src/tokenomics/TgeToken.sol";
 import {console} from "forge-std/console.sol";
 
 contract HostProxyFactoryTest is Test {
@@ -29,7 +31,7 @@ contract HostProxyFactoryTest is Test {
         IControllable2(proxy).initialize(address(accessManager), "");
         factory = HostProxyFactory(proxy);
 
-        setupAccessManager();
+        _setupAccessManager();
     }
 
     function testStorageLocation() internal pure {
@@ -126,7 +128,32 @@ contract HostProxyFactoryTest is Test {
         assertEq(IERC20Metadata(tgeToken).symbol(), "symbol", "Tge token symbol");
     }
 
-    function setupAccessManager() internal {
+    function testDeployProxy() public {
+        address logic = address(new Host());
+
+        bytes32 salt = "0x0101";
+        bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
+        address predictedProxyAddress = factory.getCreate2Address(salt, proxyInitCodeHash, address(factory));
+
+        string[] memory usedSymbols = new string[](2);
+        usedSymbols[0] = "AAA";
+        usedSymbols[1] = "BBB";
+
+        IHost.HostInitPayload memory init = IHost.HostInitPayload({usedSymbols: usedSymbols});
+
+        vm.expectRevert();
+        vm.prank(address(2222));
+        IHost(factory.deployProxy(salt, address(logic), abi.encode(init)));
+
+        IHost host = IHost(factory.deployProxy(salt, address(logic), abi.encode(init)));
+
+        assertTrue(host.isDaoSymbolInUse("AAA"), "AAA");
+        assertTrue(host.isDaoSymbolInUse("BBB"), "BBB");
+
+        assertEq(address(host), predictedProxyAddress, "Predicted address matches deployed");
+    }
+
+    function _setupAccessManager() internal {
         bytes4[] memory selectors = new bytes4[](2);
         selectors[0] = bytes4(IHostProxyFactory.setSeedTokenImplementation.selector);
         selectors[1] = bytes4(IHostProxyFactory.setTgeTokenImplementation.selector);
@@ -134,9 +161,10 @@ contract HostProxyFactoryTest is Test {
         vm.prank(multisig);
         accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_ADMIN);
 
-        selectors = new bytes4[](2);
+        selectors = new bytes4[](3);
         selectors[0] = bytes4(IHostProxyFactory.deploySeedToken.selector);
         selectors[1] = bytes4(IHostProxyFactory.deployTgeToken.selector);
+        selectors[2] = bytes4(IHostProxyFactory.deployProxy.selector);
 
         vm.prank(multisig);
         accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
