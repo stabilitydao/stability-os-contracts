@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
@@ -44,7 +45,7 @@ library HostEncodingLib {
     }
 
     /// @notice Encode array of UnitInfo of the given version. Version is supported explicitly to simplify testing
-    function encodeUnits(ITokenomics.UnitData[] memory data, uint8 version) internal pure returns (bytes memory payload) {
+    function encodeUnits(IDAOData.UnitDataInput[] memory data, uint8 version) internal pure returns (bytes memory payload) {
         if (version == 1) {
             return abi.encode(version, data);
         } else {
@@ -52,14 +53,14 @@ library HostEncodingLib {
         }
     }
 
-    function decodeUnits(bytes memory payload) internal pure returns (ITokenomics.UnitData[] memory dest) {
+    function decodeUnits(bytes memory payload) internal pure returns (IDAOData.UnitDataInput[] memory dest) {
         (uint8 version) = abi.decode(payload, (uint8));
         if (version == 1) {
             // if new version of UnitInfo will be created it's necessary to do following:
             // 1) create a copy of old structure UnitInfoV1
             // 2) replace ITokenomics.UnitInfo by UnitInfoV1 below
             // 3) create a branch of code for version == 2 below
-            (version, dest) = abi.decode(payload, (uint8, ITokenomics.UnitData[]));
+            (version, dest) = abi.decode(payload, (uint8, IDAOData.UnitDataInput[]));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();

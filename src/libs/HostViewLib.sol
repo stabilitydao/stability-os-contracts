@@ -6,6 +6,7 @@ import {IHost} from "../interfaces/IHost.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostDeployLib} from "./HostDeployLib.sol";
 
 library HostViewLib {
@@ -28,7 +29,7 @@ library HostViewLib {
 
         require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
 
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
         ITokenomics.LifecyclePhase newPhase = phase;
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
@@ -37,13 +38,13 @@ library HostViewLib {
 
             // SEED can be started not later than 1 week after configured start time
             require(
-                block.timestamp <= seed.start + $.osSettings[0].maxSeedStartDelay, IHost.TooLateSoSetupFundingAgain()
+                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay, IHost.TooLateSoSetupFundingAgain()
             );
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
                 $,
                 daoUid,
-                getTokenName($.daos[daoUid].name, uint(NamingTokenKind.SEED_0)),
+                getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.SEED_0)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
             );
 
@@ -68,7 +69,7 @@ library HostViewLib {
             $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
                 $,
                 daoUid,
-                getTokenName($.daos[daoUid].name, uint(NamingTokenKind.TGE_1)),
+                getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.TGE_1)),
                 getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
             );
 
@@ -105,7 +106,7 @@ library HostViewLib {
             // slither-disable-next-line uninitialized-local
             bool isVestingStarted;
 
-            uint countVesting = $.tokenomics[daoUid].countVesting;
+            uint countVesting = $.segment3[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
                 if ($.vesting[HostLib.getKey(daoUid, i)].start < block.timestamp) {
                     isVestingStarted = true;
@@ -120,7 +121,7 @@ library HostViewLib {
             // slither-disable-next-line uninitialized-local
             bool isVestingNotEnded;
 
-            uint countVesting = $.tokenomics[daoUid].countVesting;
+            uint countVesting = $.segment3[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
                 if ($.vesting[HostLib.getKey(daoUid, i)].end <= block.timestamp) {
                     isVestingNotEnded = true;
@@ -133,7 +134,7 @@ library HostViewLib {
             newPhase = ITokenomics.LifecyclePhase.LIVE_7;
         }
 
-        $.daos[daoUid].phase = newPhase;
+        $.segment2[daoUid].phase = newPhase;
 
         emit IHost.DaoPhaseChanged(daoSymbol, newPhase);
     }
@@ -145,7 +146,7 @@ library HostViewLib {
         uint daoUid = $.daoUids[daoSymbol];
 
         IDAOData.DaoData memory dest;
-        HostLib.DaoDataLocal memory data = $.daos[daoUid];
+        // todo HostLib.DaoDataLocal memory data = $.daos[daoUid];
 
 // todo
 //        { // ------------------- basic fields
@@ -190,11 +191,11 @@ library HostViewLib {
     }
 
     function getSettings() external view returns (IHost.HostSettings memory) {
-        return HostLib.getHostStorage().osSettings[0];
+        return HostConfigLib.getHostGlobalSettings();
     }
 
     function getChainSettings() external view returns (IHost.HostChainSettings memory) {
-        return HostLib.getHostStorage().osChainSettings[0];
+        return HostConfigLib.getHostChainSettings();
     }
 
     function getDAOOwner(string calldata daoSymbol) external view returns (address) {
@@ -202,9 +203,9 @@ library HostViewLib {
         uint daoUid = $.daoUids[daoSymbol];
         require(daoUid != 0, IHost.IncorrectDao());
 
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            return $.daos[daoUid].deployer;
+            return $.segment3[daoUid].deployer;
         }
 
         if (
@@ -219,7 +220,7 @@ library HostViewLib {
 
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return $.usedSymbols[daoSymbol];
+        return $.daoUids[daoSymbol] != 0;
     }
 
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
@@ -228,7 +229,7 @@ library HostViewLib {
         return ITokenomics.Proposal({
             action: local.action,
             id: proposalId,
-            daoSymbol: $.daos[local.daoUid].symbol,
+            daoSymbol: $.segment2[local.daoUid].daoSymbol,
             created: local.created,
             status: local.status,
             payload: local.payload
@@ -304,7 +305,7 @@ library HostViewLib {
     function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
-        return $.unitBalances[HostLib.getKey(daoUid, unitId)];
+        return $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
     }
 
     function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32) {
@@ -321,17 +322,17 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
             if (index < limit && (bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0)) {
                 dest[index++] = IHost.Task("Need images of token and seedToken");
             }
-            if (index < limit && $.daos[daoUid].socials.length < 2) {
+            if (index < limit && $.segment3[daoUid].socials.length < 2) {
                 dest[index++] = IHost.Task("Need at least 2 socials");
             }
-            if (index < limit && $.daos[daoUid].hashUnitIds.length == 0) {
+            if (index < limit && $.segment2[daoUid].hashUnitIds.length == 0) {
                 dest[index++] = IHost.Task("Need at least 1 projected unit");
             }
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
@@ -354,10 +355,10 @@ library HostViewLib {
             ) {
                 dest[index++] = IHost.Task("Need images of all DAO tokens");
             }
-            if (index < limit && $.tokenomics[daoUid].countVesting == 0) {
+            if (index < limit && $.segment3[daoUid].countVesting == 0) {
                 dest[index++] = IHost.Task("Need vesting allocations");
             }
-            bytes32[] memory hashUnitIds = $.daos[daoUid].hashUnitIds;
+            bytes32[] memory hashUnitIds = $.segment2[daoUid].hashUnitIds;
 
             // slither-disable-next-line uninitialized-local
             bool foundLive;

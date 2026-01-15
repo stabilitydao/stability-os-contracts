@@ -3,10 +3,12 @@ pragma solidity ^0.8.28;
 
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /// @notice Basic data types and constants for OS system.
@@ -15,14 +17,14 @@ library HostUpdateLib {
 
     //region -------------------------------------- Actions
     function validate(
-        HostLib.DaoDataLocal memory dao,
+        HostLib.DaoDataSegment2 memory daoData2,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        IHost.HostSettings storage st = $.osSettings[0];
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-        _validateDaoData(dao, st);
+        _validateDaoData(daoData2, st);
         _validateDaoParameters(params, st);
         _validateFundingList(funding, st);
     }
@@ -32,8 +34,8 @@ library HostUpdateLib {
     //region -------------------------------------- Validation logic
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
-    function _validateDaoData(HostLib.DaoDataLocal memory dao, IHost.HostSettings storage st) internal view {
-        _validateNaming(dao.name, dao.symbol, st);
+    function _validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
+        _validateNaming(dao.name, dao.daoSymbol, st);
 
         // todo validate activity
     }
@@ -50,7 +52,7 @@ library HostUpdateLib {
             uint len = bytes(symbol).length;
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
 
-            require(!$.usedSymbols[symbol], IHost.SymbolNotUnique(symbol));
+            require($.daoUids[symbol] == 0, IHost.SymbolNotUnique(symbol));
         }
     }
 
@@ -199,7 +201,7 @@ library HostUpdateLib {
     function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoImages[daoUid] = images;
-        emit IHost.DaoImagesUpdated($.daos[daoUid].symbol, images);
+        emit IHost.DaoImagesUpdated($.segment2[daoUid].daoSymbol, images);
     }
 
     /// @notice Update socials of the DAO
@@ -212,74 +214,92 @@ library HostUpdateLib {
 
     function updateSocials(uint daoUid, string[] memory socials) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        $.daos[daoUid].socials = socials;
-        emit IHost.DaoSocialsUpdated($.daos[daoUid].symbol, socials);
+        $.segment3[daoUid].socials = socials;
+        emit IHost.DaoSocialsUpdated($.segment2[daoUid].daoSymbol, socials);
     }
 
     /// @notice Update revenue generating units of the DAO
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.UnitInfo[] array
-    function updateUnits(uint daoUid, bytes memory payload) internal {
-        ITokenomics.UnitData[] memory units = HostEncodingLib.decodeUnits(payload);
-        updateUnits(daoUid, units);
+    /// @param proposalId Id of the proposal that triggered this update. Not zero here
+    function updateUnitsForProposal(uint daoUid, bytes memory payload, bytes32 proposalId) internal {
+        IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
+
+        /// @dev Empty array required by updateUnits. It's not used because proposalId is not zero here
+        IDAOData.UnitMetaData[] memory metadata;
+
+        updateUnits(daoUid, units, proposalId, metadata);
     }
 
-    function updateUnits(uint daoUid, ITokenomics.UnitData[] memory units) internal {
+    /// @param proposalId Id of the proposal that triggered this update. Zero for instant execution
+    /// @param metadata List of metadata - for instant updates only
+    function updateUnits(
+        uint daoUid,
+        IDAOData.UnitDataInput[] memory units,
+        bytes32 proposalId,
+        IDAOData.UnitMetaData[] memory metadata
+    ) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-// todo
-//        // todo take prices for unit creation
-//
-//        /// @dev False - insert, true - update
-//        bool[] memory updates = new bool[](units.length);
-//
-//        /// @dev hash (daoUid, unitUid) for all {units}
-//        bytes32[] memory newHashes = new bytes32[](units.length);
-//
-//        {
-//            // -------------------- detect units to update/insert and units to delete
-//            /// @dev Units to delete
-//            bytes32[] memory hashes = $.daos[daoUid].hashUnitIds;
-//            bool[] memory toDelete = new bool[](hashes.length);
-//            for (uint i; i < units.length; ++i) {
-//                newHashes[i] = HostLib.getKey(daoUid, units[i].chainData.unitId);
-//                for (uint j; j < hashes.length; ++j) {
-//                    if (hashes[j] == newHashes[i]) {
-//                        // new unit exists
-//                        toDelete[j] = true;
-//                        updates[i] = true;
-//                        break;
-//                    }
-//                }
-//            }
-//
-//            // -------------------- delete old units (the units that don't exist in {units} list anymore}
-//            for (uint j; j < hashes.length; ++j) {
-//                if (toDelete[j]) {
-//                    emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].data.unitId);
-//                    // todo probably we shouldn't call delete to reduce gas costs (?)
-//                    delete $.units[hashes[j]];
-//                }
-//            }
-//        }
-//
-//        // -------------------- insert and update new units
-//
-//        $.daos[daoUid].hashUnitIds = newHashes;
-//
-//        for (uint i; i < newHashes.length; i++) {
-//            HostLib.UnitLocal storage unit = $.units[newHashes[i]];
-//            if (updates[i]) {
-//                // update existing unit
-//                unit.data.developerUid = units[i].chainData.developerUid;
-//            } else {
-//                // insert new unit
-//                unit.daoUid = daoUid;
-//                unit.data = units[i].chainData;
-//                unit.chainIds.add(block.chainid);
-//            }
-//            emit IHost.DaoUnitUpdated(daoUid, units[i].metaData);
-//        }
+        // todo take prices for unit creation
+
+        /// @dev False - insert, true - update
+        bool[] memory updates = new bool[](units.length);
+
+        /// @dev hash (daoUid, unitUid) for all {units}
+        bytes32[] memory newHashes = new bytes32[](units.length);
+
+        {
+            // -------------------- detect units to update/insert and units to delete
+            /// @dev Units to delete
+            bytes32[] memory hashes = $.segment2[daoUid].hashUnitIds;
+            bool[] memory toDelete = new bool[](hashes.length);
+            for (uint i; i < units.length; ++i) {
+                newHashes[i] = HostLib.getUnitKey(daoUid, units[i].unitId);
+                for (uint j; j < hashes.length; ++j) {
+                    if (hashes[j] == newHashes[i]) {
+                        // new unit exists
+                        toDelete[j] = true;
+                        updates[i] = true;
+                        break;
+                    }
+                }
+            }
+
+            // -------------------- delete old units (the units that don't exist in {units} list anymore}
+            for (uint j; j < hashes.length; ++j) {
+                if (toDelete[j]) {
+                    emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].unitId, proposalId);
+                    // todo probably we shouldn't call delete to reduce gas costs (?)
+                    delete $.units[hashes[j]];
+                }
+            }
+        }
+
+        // -------------------- insert and update new units
+
+        $.segment2[daoUid].hashUnitIds = newHashes;
+
+        for (uint i; i < newHashes.length; i++) {
+            HostLib.UnitLocal storage unit = $.units[newHashes[i]];
+            if (updates[i]) {
+                // update existing unit
+                unit.developerUid = units[i].developerUid;
+            } else {
+                // todo move code below to a separate function
+                // insert new unit
+                unit.daoUid = daoUid;
+                unit.unitId = units[i].unitId;
+                unit.developerUid = units[i].developerUid;
+                unit.chainIds.add(block.chainid);
+            }
+
+            if (proposalId == 0) {
+                emit IHost.DaoUnitUpdatedInstantly(daoUid, units[i].unitId, metadata[i]);
+            } else {
+                emit IHost.DaoUnitUpdatedByProposal(daoUid, units[i].unitId, proposalId);
+            }
+        }
     }
 
     /// @notice Replace array of funding of the DAO by new one
@@ -293,7 +313,7 @@ library HostUpdateLib {
     function updateFunding(uint daoUid, ITokenomics.Funding memory newFunding) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.FundingType[] memory listFunding = $.tokenomics[daoUid].funding;
+        ITokenomics.FundingType[] memory listFunding = $.segment3[daoUid].funding;
 
         // slither-disable-next-line uninitialized-local
         bool updated;
@@ -305,13 +325,13 @@ library HostUpdateLib {
             }
         }
         if (!updated) {
-            $.tokenomics[daoUid].funding.push(newFunding.fundingType);
+            $.segment3[daoUid].funding.push(newFunding.fundingType);
         }
 
         bytes32 fundingId = HostLib.getKey(daoUid, uint(newFunding.fundingType));
         $.funding[fundingId] = newFunding;
 
-        emit IHost.DaoFundingUpdated($.daos[daoUid].symbol, newFunding);
+        emit IHost.DaoFundingUpdated($.segment2[daoUid].daoSymbol, newFunding);
     }
 
     /// @notice Update vesting allocations of the DAO
@@ -326,14 +346,14 @@ library HostUpdateLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint countVesting = vesting.length;
-        $.tokenomics[daoUid].countVesting = countVesting;
+        $.segment3[daoUid].countVesting = countVesting;
 
         for (uint i = 0; i < countVesting; i++) {
-            bytes32 key = HostLib.getKey(daoUid, i);
+            bytes32 key = HostLib.getIndexKey(daoUid, i);
             $.vesting[key] = vesting[i];
         }
 
-        emit IHost.DaoVestingUpdated($.daos[daoUid].symbol, vesting);
+        emit IHost.DaoVestingUpdated($.segment2[daoUid].daoSymbol, vesting);
     }
 
     /// @notice Update DAO naming (name and symbol)
@@ -345,7 +365,7 @@ library HostUpdateLib {
 
         // todo we must validate if the new symbol is not used already
         // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
-        require(!$.usedSymbols[_daoNames.symbol], IHost.SymbolNotUnique(_daoNames.symbol));
+        require($.daoUids[_daoNames.symbol] == 0, IHost.SymbolNotUnique(_daoNames.symbol));
 
         updateNaming(daoUid, _daoNames);
     }
@@ -353,15 +373,11 @@ library HostUpdateLib {
     function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        string memory oldSymbol = $.daos[daoUid].symbol;
-        delete $.usedSymbols[oldSymbol];
+        string memory oldSymbol = $.segment2[daoUid].daoSymbol;
         delete $.daoUids[oldSymbol];
 
-        $.daos[daoUid].symbol = daoNames_.symbol;
-        $.daos[daoUid].name = daoNames_.name;
-
-        // register new symbol
-        $.usedSymbols[daoNames_.symbol] = true;
+        $.segment2[daoUid].daoSymbol = daoNames_.symbol;
+        $.segment2[daoUid].name = daoNames_.name;
         $.daoUids[daoNames_.symbol] = daoUid;
 
         emit IHost.DaoNamingUpdated(oldSymbol, daoNames_);
@@ -377,7 +393,7 @@ library HostUpdateLib {
     function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoParameters[daoUid] = daoParameters_;
-        emit IHost.DaoParametersUpdated($.daos[daoUid].symbol, daoParameters_);
+        emit IHost.DaoParametersUpdated($.segment2[daoUid].daoSymbol, daoParameters_);
     }
 
     function updateSalt(uint daoUid, bytes memory payload) internal {
@@ -396,7 +412,7 @@ library HostUpdateLib {
             $.daoUidBySalt[chainId][salt_[i]] = HostLib.getDaoHash(daoUid, HostLib.KIND_SALT_USED);
         }
 
-        emit IHost.SaltUpdated($.daos[daoUid].symbol, contractIndices, salt_, chainId);
+        emit IHost.SaltUpdated($.segment2[daoUid].daoSymbol, contractIndices, salt_, chainId);
     }
 
     //endregion -------------------------------------- Update logic

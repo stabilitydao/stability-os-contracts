@@ -5,6 +5,7 @@ pragma solidity ^0.8.28;
 import {IHost} from "../interfaces/IHost.sol";
 import {HostLib} from "./HostLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
 
 /// @notice Basic data types, validation and update logic
 library HostCrossChainLib {
@@ -27,14 +28,14 @@ library HostCrossChainLib {
         if (messageKind == uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)) {
             (, string memory daoSymbol) = abi.decode(message_, (uint16, string));
 
-            $.usedSymbols[daoSymbol] = true;
+            $.daoUids[daoSymbol] = HostLib.getDaoUidStub();
 
             emit IHost.OnRegisterDaoSymbol(daoSymbol, srcEid, guid_);
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1)) {
             (, string memory oldSymbol, string memory newSymbol) = abi.decode(message_, (uint16, string, string));
 
-            delete $.usedSymbols[oldSymbol];
-            $.usedSymbols[newSymbol] = true;
+            delete $.daoUids[oldSymbol];
+            $.daoUids[newSymbol] = HostLib.getDaoUidStub();
 
             emit IHost.OnRenameDaoSymbol(oldSymbol, newSymbol, srcEid, guid_);
         } else {
@@ -54,7 +55,7 @@ library HostCrossChainLib {
     function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
-        address bridge = $.osChainSettings[0].hostBridge;
+        address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         return bridge == address(0)
             ? 0
             : IHostBridge(bridge).quoteSendMessageToAllChains(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), payload);
@@ -69,7 +70,7 @@ library HostCrossChainLib {
     /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IHost.CrossChainMessages messageKind, bytes memory payload) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        address bridge = $.osChainSettings[0].hostBridge;
+        address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         if (bridge != address(0)) {
             uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
             require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));

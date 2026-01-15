@@ -100,8 +100,11 @@ library HostLib {
     struct UnitLocal {
         uint daoUid;
 
-        /// @notice On-chain data of the Unit
-        ITokenomics.UnitData data;
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
+
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
 
         /// @notice Set of chain ids where the unit is bridged
         EnumerableSet.UintSet chainIds;
@@ -166,7 +169,7 @@ library HostLib {
         mapping(bytes32 key => ITokenomics.Vesting) vesting;
 
         /// @notice Settings of DAO Governance
-        mapping(uint daoUid => GovernanceSettings) governanceSettings;
+        mapping(uint daoUid => ITokenomics.GovernanceSettings) governanceSettings;
 
         // todo DAOChainSettings are not used on chain so we don't store them here
         // todo same situation with sending salt to other chains
@@ -206,15 +209,22 @@ library HostLib {
         }
     }
 
-    function getKey(uint daoUid, uint index) internal pure returns (bytes32) {
-        return keccak256(abi.encode(daoUid, index));
+    /// @notice Generate hash of (daoUid + index in the array)
+    /// @param daoUid Unique immutable id of the DAO
+    /// @param index 0-based index in the array
+    function getIndexKey(uint daoUid, uint index) internal pure returns (bytes32) {
+        return getKey(daoUid, index);
+    }
+
+    function getKey(uint daoUid, uint value) internal pure returns (bytes32) {
+        return keccak256(abi.encode(daoUid, value));
     }
 
     function getKey(uint daoUid, uint value1, uint value2) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, value1, value2));
     }
 
-    function getKey(uint daoUid, string memory sid) internal pure returns (bytes32) {
+    function getUnitKey(uint daoUid, string memory sid) internal pure returns (bytes32) {
         return keccak256(abi.encode(daoUid, sid));
     }
 
@@ -229,6 +239,11 @@ library HostLib {
 
     function getDaoHash(uint daoUid, uint kind) internal pure returns (uint) {
         return uint(keccak256(abi.encode(daoUid, kind)));
+    }
+
+    /// @notice This value is used in daoUids mapping to mark that the given symbol is registered
+    function getDaoUidStub() internal pure returns (uint) {
+        return uint(keccak256(abi.encodePacked(DAO_UID_STUB_SYMBOL_REGISTERED, block.chainid)));
     }
     //endregion -------------------------------------- Internal utils
 }

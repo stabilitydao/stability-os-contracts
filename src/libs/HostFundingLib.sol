@@ -8,6 +8,7 @@ import {HostLib} from "./HostLib.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 import {IControllable2} from "../interfaces/IControllable2.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
 
 library HostFundingLib {
     using SafeERC20 for IERC20;
@@ -20,7 +21,7 @@ library HostFundingLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         if (phase == ITokenomics.LifecyclePhase.SEED_1) {
             ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
@@ -29,7 +30,7 @@ library HostFundingLib {
 
             // transfer amount of exchangeAsset to seedToken contract
             address seedToken = $.deployments[daoUid].seedToken;
-            IERC20($.osChainSettings[0].exchangeAsset).safeTransferFrom(msg.sender, seedToken, amount);
+            IERC20(HostConfigLib.getHostChainSettings().exchangeAsset).safeTransferFrom(msg.sender, seedToken, amount);
 
             seed.raised += amount;
 
@@ -44,7 +45,7 @@ library HostFundingLib {
 
             // transfer amount of exchangeAsset to tgeToken contract
             address tgeToken = $.deployments[daoUid].tgeToken;
-            IERC20($.osChainSettings[0].exchangeAsset).safeTransferFrom(msg.sender, tgeToken, amount);
+            IERC20(HostConfigLib.getHostChainSettings().exchangeAsset).safeTransferFrom(msg.sender, tgeToken, amount);
 
             tge.raised += amount;
 
@@ -64,9 +65,9 @@ library HostFundingLib {
     function refund(string calldata daoSymbol) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
-        address asset = $.osChainSettings[0].exchangeAsset;
+        address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
             _refundFunding(daoSymbol, ITokenomics.FundingType.SEED_0, msg.sender, seedToken, asset, false);
@@ -85,9 +86,9 @@ library HostFundingLib {
     function refundFor(string calldata daoSymbol, address[] memory receivers) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
-        ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
-        address asset = $.osChainSettings[0].exchangeAsset;
+        address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
             for (uint i; i < receivers.length; i++) {

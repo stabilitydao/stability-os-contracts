@@ -45,9 +45,23 @@ interface IHost {
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
 
+    /// @notice Units are updated via proposal or instantly
+    event ProposalToUpdateDaoUnits(
+        bytes32 proposalUid,
+        uint daoUid,
+        IDAOData.UnitDataInput[] units,
+        IDAOData.UnitMetaData[] metaData
+    );
+
     /// @notice Unit is inserted or updated
-    event DaoUnitUpdated(uint daoUid, IDAOMetadata.UnitMetaData unit);
-    event DaoUnitDeleted(uint daoUid, string unitUid);
+    /// @param proposalUid Zero if updated instantly
+    event DaoUnitUpdatedByProposal(uint daoUid, string unitId, bytes32 proposalUid);
+
+    event DaoUnitUpdatedInstantly(uint daoUid, string unitId, IDAOData.UnitMetaData metaData);
+
+    /// @notice Unit is deleted
+    /// @param proposalUid Zero if updated instantly
+    event DaoUnitDeleted(uint daoUid, string unitId, bytes32 proposalUid);
 
     event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
     event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
@@ -233,8 +247,15 @@ interface IHost {
     /// @notice Update/create proposal to update list of socials of the DAO
     function updateSocials(string calldata daoSymbol, string[] calldata socials) external;
 
-    /// @notice Update/create proposal to update tokenomics units of the DAO
-    function updateUnits(string calldata daoSymbol, IDAOData.UnitDataInput[] calldata units) external;
+    /// @notice Update list of units/create a proposal to update list of units of the DAO
+    /// @param daoSymbol DAO symbol
+    /// @param units Units data to be stored on-chain
+    /// @param metadata Units metadata to be emitted and used off-chain only
+    function updateUnits(
+        string calldata daoSymbol,
+        IDAOData.UnitDataInput[] calldata units,
+        IDAOData.UnitMetaData[] calldata metadata
+    ) external;
 
     /// @notice Update/create proposal to update funding rounds of the DAO
     function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external;

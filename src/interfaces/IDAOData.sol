@@ -148,4 +148,15 @@ interface IDAOData is ITokenomics, ITokenomicsAddons, IDAOMetadata {
         // @notice All emitted data (not stored on chain)
         UnitMetaData[] unitsMetaData;
     }
+
+    /// @notice On-chain data of the Unit.
+    struct UnitDataInput {
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
+
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
+
+        // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
+    }
 }

@@ -22,24 +22,26 @@ library HostConfigLib {
     }
 
     function getHostGlobalSettings() internal pure returns (IHost.HostSettings storage $) {
-        HostGlobalStorage storage _storage;
-
-        //slither-disable-next-line assembly
-        assembly {
-            _storage.slot := HOST_GLOBAL_STORAGE_LOCATION
-        }
-
-        return _storage.globalSettings;
+        return getHostGlobalStorage().globalSettings;
     }
 
     function getHostChainSettings() internal pure returns (IHost.HostChainSettings storage $) {
-        HostChainStorage storage _storage;
+        return getHostChainStorage().chainSettings;
+    }
 
+    function getHostGlobalStorage() internal pure returns (HostGlobalStorage storage $) {
         //slither-disable-next-line assembly
         assembly {
-            _storage.slot := HOST_CHAIN_STORAGE_LOCATION
+            $.slot := HOST_GLOBAL_STORAGE_LOCATION
+        }
+    }
+
+    function getHostChainStorage() internal pure returns (HostChainStorage storage $) {
+        //slither-disable-next-line assembly
+        assembly {
+            $.slot := HOST_CHAIN_STORAGE_LOCATION
         }
 
-        return _storage.chainSettings;
     }
+
 }

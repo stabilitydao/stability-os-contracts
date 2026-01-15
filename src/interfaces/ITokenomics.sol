@@ -213,17 +213,5 @@ interface ITokenomics {
         /// @notice DAO UID of Unit Developer (Pool tasks solver)
         string developerUid;
     }
-
-    /// @notice On-chain data of the Unit.
-    struct UnitDataInput {
-        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
-        string unitId;
-
-        /// @notice DAO UID of Unit Developer (Pool tasks solver)
-        string developerUid;
-
-        // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
-    }
-
 }
 
