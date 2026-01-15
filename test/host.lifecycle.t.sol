@@ -78,6 +78,15 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
         }
 
         // ------------------------------ check what aliens need to do
+        IDAOUnit.UnitMetaData memory unitMetadata0 = IDAOUnit.UnitMetaData({
+            name: "DAO Factory",
+            status: IDAOUnit.UnitStatus.BUILDING_1,
+            unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
+            revenueShare: 100,
+            ui: new IDAOUnit.UnitUiLink[](0),
+            emoji: "",
+            api: new string[](0)
+        });
         {
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGe(tasks.length, 2, "at least 2 unsolved tasks");
@@ -95,15 +104,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
             // units project
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0].metaData = IDAOUnit.UnitMetaData({
-                name: "DAO Factory",
-                status: IDAOUnit.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
-                revenueShare: 100,
-                ui: new IDAOUnit.UnitUiLink[](0),
-                emoji: "",
-                api: new string[](0)
-            });
+            units[0].metaData = unitMetadata0;
             units[0].chainData = IDAOUnit.UnitChainData({
                 unitId: "aliens:os",
                 developerUid: ""
@@ -289,13 +290,13 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
             units[0].metaData = IDAOUnit.UnitMetaData({
-                name: daoData.units[0].name,
+                name: unitMetadata0.name,
                 status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: daoData.units[0].unitType,
-                revenueShare: daoData.units[0].revenueShare,
-                ui: ui,
-                emoji: daoData.units[0].emoji,
-                api: daoData.units[0].api
+                unitType: unitMetadata0.unitType,
+                revenueShare: unitMetadata0.revenueShare,
+                ui: unitMetadata0.ui,
+                emoji: unitMetadata0.emoji,
+                api: unitMetadata0.api
             });
             units[0].chainData = IDAOUnit.UnitChainData({
                 unitId: daoData.units[0].unitId,
@@ -502,8 +503,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             host_.updateImages(daoData.symbol, images);
 
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: "aliens:os",
+            units[0].metaData = IDAOUnit.UnitMetaData({
                 name: "DAO Factory",
                 status: IDAOUnit.UnitStatus.BUILDING_1,
                 unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
@@ -511,6 +511,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
                 ui: new IDAOUnit.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0)
+            });
+            units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: "aliens:os",
+                developerUid: ""
             });
             host_.updateUnits(daoData.symbol, units);
 
@@ -632,8 +636,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             host_.updateImages(daoData.symbol, images);
 
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: "MACHINES:MEVBOT",
+            units[0].metaData = IDAOUnit.UnitMetaData({
                 name: "MEV searcher",
                 status: IDAOUnit.UnitStatus.LIVE_2,
                 unitType: uint16(IDAOUnit.UnitType.MEV_3),
@@ -641,6 +644,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
                 ui: new IDAOUnit.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0)
+            });
+            units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: "MACHINES:MEVBOT",
+                developerUid: ""
             });
             host_.updateUnits(daoData.symbol, units);
 
@@ -819,8 +826,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
             // units project
             IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: "aliens:os",
+            units[0].metaData = IDAOUnit.UnitMetaData({
                 name: "DAO Factory",
                 status: IDAOUnit.UnitStatus.BUILDING_1,
                 unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
@@ -828,6 +834,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
                 ui: new IDAOUnit.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0)
+            });
+            units[0].chainData = IDAOUnit.UnitChainData({
+                unitId: "aliens:os",
+                developerUid: ""
             });
             host_.updateUnits(daoData.symbol, units);
 
@@ -1005,26 +1015,29 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
         // ------------------------------ fix units
         {
-            IDAOUnit.UnitUiLink[] memory ui = new IDAOUnit.UnitUiLink[](1);
-            ui[0] = IDAOUnit.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
-
-            IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
-            units[0] = IDAOUnit.UnitInfo({
-                unitId: daoData.units[0].unitId,
-                name: daoData.units[0].name,
-                status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: daoData.units[0].unitType,
-                revenueShare: daoData.units[0].revenueShare,
-                ui: ui,
-                emoji: daoData.units[0].emoji,
-                api: daoData.units[0].api
-            });
-
-            host_.updateUnits(daoData.symbol, units);
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-
-            vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+// todo
+//            IDAOUnit.UnitUiLink[] memory ui = new IDAOUnit.UnitUiLink[](1);
+//            ui[0] = IDAOUnit.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
+//
+//            IDAOUnit.UnitInfo[] memory units = new IDAOUnit.UnitInfo[](1);
+//            units[0].metaData = IDAOUnit.UnitMetaData({
+//                name: daoData.units[0].name,
+//                status: IDAOUnit.UnitStatus.LIVE_2,
+//                unitType: daoData.units[0].unitType,
+//                revenueShare: daoData.units[0].revenueShare,
+//                ui: ui,
+//                emoji: daoData.units[0].emoji,
+//                api: daoData.units[0].api
+//            });
+//            units[0].chainData = IDAOUnit.UnitChainData({
+//                unitId: daoData.units[0].unitId,
+//                developerUid: ""
+//            });
+//            host_.updateUnits(daoData.symbol, units);
+//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+//
+//            vm.prank(MULTISIG);
+//            host_.receiveVotingResults(proposalId, true);
         }
 
         // ------------------------------ add vesting

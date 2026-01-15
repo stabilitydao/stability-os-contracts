@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.28;  // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Controllable2} from "./base/Controllable2.sol";

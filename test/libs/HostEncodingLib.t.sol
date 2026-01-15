@@ -123,8 +123,7 @@ contract HostEncodingLibTest is Test {
         notEmptyApi[1] = "https://api2.com";
         notEmptyApi[2] = "https://api3.com";
 
-        a[0] = IDAOUnit.UnitInfo({
-            unitId: "unitA",
+        a[0].metaData = IDAOUnit.UnitMetaData({
             name: "Unit A",
             status: IDAOUnit.UnitStatus.LIVE_2,
             unitType: uint16(1),
@@ -133,9 +132,12 @@ contract HostEncodingLibTest is Test {
             ui: emptyUi,
             api: emptyApi
         });
+        a[0].chainData = IDAOUnit.UnitChainData({
+            unitId: "unitA",
+            developerUid: ""
+        });
 
-        b[0] = IDAOUnit.UnitInfo({
-            unitId: "unitB1",
+        b[0].metaData = IDAOUnit.UnitMetaData({
             name: "Unit B1",
             status: IDAOUnit.UnitStatus.BUILDING_1,
             unitType: uint16(2),
@@ -144,8 +146,11 @@ contract HostEncodingLibTest is Test {
             ui: notEmptyUi,
             api: emptyApi
         });
-        b[1] = IDAOUnit.UnitInfo({
-            unitId: "unitB2",
+        b[0].chainData = IDAOUnit.UnitChainData({
+            unitId: "unitB1",
+            developerUid: ""
+        });
+        b[1].metaData = IDAOUnit.UnitMetaData({
             name: "Unit B2",
             status: IDAOUnit.UnitStatus.RESEARCH_0,
             unitType: uint16(3),
@@ -153,6 +158,10 @@ contract HostEncodingLibTest is Test {
             emoji: "emoji3",
             ui: notEmptyUi,
             api: notEmptyApi
+        });
+        b[1].chainData = IDAOUnit.UnitChainData({
+            unitId: "unitB2",
+            developerUid: ""
         });
 
         // encode with supported version
@@ -172,8 +181,7 @@ contract HostEncodingLibTest is Test {
     function testEncodeUnitsBadPaths() public {
         IDAOUnit.UnitInfo[] memory a = new IDAOUnit.UnitInfo[](1);
 
-        a[0] = IDAOUnit.UnitInfo({
-            unitId: "unitA",
+        a[0].metaData = IDAOUnit.UnitMetaData({
             name: "Unit A",
             status: IDAOUnit.UnitStatus(uint8(0)),
             unitType: uint16(1),
@@ -182,7 +190,10 @@ contract HostEncodingLibTest is Test {
             ui: new IDAOUnit.UnitUiLink[](0),
             api: new string[](0)
         });
-
+        a[0].chainData = IDAOUnit.UnitChainData({
+            unitId: "unitA",
+            developerUid: ""
+        });
         // encode with incorrect version should revert
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         this._encodeUnitsWrapper(a, INCORRECT_VERSION);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.28; // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
 
 /// @dev Proxy of core contract implementation
 interface IProxy {
