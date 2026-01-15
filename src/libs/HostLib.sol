@@ -2,8 +2,9 @@
 pragma solidity ^0.8.28;
 
 import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics, IDAOUnit} from "../interfaces/ITokenomics.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 
 /// @notice Basic data types and constants for OS system. This library shouldn't depend on any other libraries.
 library HostLib {
@@ -81,14 +82,14 @@ library HostLib {
         uint daoUid;
 
         /// @notice On-chain data of the Unit
-        IDAOUnit.UnitChainData data;
+        ITokenomics.UnitData data;
 
         /// @notice Set of chain ids where the unit is bridged
         EnumerableSet.UintSet chainIds;
     }
 
     /// @custom:storage-location erc7201:stability-os-contracts.OS
-    struct OsStorage {
+    struct HostStorage {
         /// @notice Internal counter of created DAOs. It's used to generate unique immutable id for each DAO.
         uint daoCount;
 
@@ -128,10 +129,6 @@ library HostLib {
         /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, unitUid)
         mapping(bytes32 key => UnitLocal) units;
 
-        /// @notice Operating agents managed by the organization. Key is generated as hash of (daoUid, 0-index)
-        /// @dev 0-index is in [0...DaoData.countAgents-1]
-        mapping(bytes32 key => ITokenomics.AgentInfo) agents;
-
         /// @notice All registered proposals. Proposal id is unique across all DAOs
         mapping(bytes32 proposalId => ProposalLocal) proposals;
 
@@ -161,7 +158,7 @@ library HostLib {
     //endregion -------------------------------------- Data types
 
     //region -------------------------------------- Internal utils
-    function getOsStorage() internal pure returns (OsStorage storage $) {
+    function getOsStorage() internal pure returns (HostStorage storage $) {
         //slither-disable-next-line assembly
         assembly {
             $.slot := OS_STORAGE_LOCATION
@@ -183,7 +180,7 @@ library HostLib {
     /// @notice All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
     /// @return uid New unique immutable id of the created DAO
     /// @return firstDao True if it's the first DAO ever created in the system
-    function generateDaoUid(HostLib.OsStorage storage $) internal returns (uint uid, bool firstDao) {
+    function generateDaoUid(HostLib.HostStorage storage $) internal returns (uint uid, bool firstDao) {
         uint count = $.daoCount + 1;
         $.daoCount = count;
         return (uint(keccak256(abi.encodePacked(count, block.chainid))), count == 1);

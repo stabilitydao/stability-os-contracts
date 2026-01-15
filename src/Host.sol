@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "./interfaces/ITokenomics.sol";
+import {IDAOData} from "./interfaces/IDAOData.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
@@ -32,7 +33,7 @@ contract Host is IHost, Controllable2 {
     //region -------------------------------------- View
 
     /// @inheritdoc IHost
-    function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
+    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory) {
         return HostViewLib.getDAO(daoSymbol);
     }
 
@@ -115,7 +116,7 @@ contract Host is IHost, Controllable2 {
     }
 
     /// @inheritdoc IHost
-    function addLiveDAO(ITokenomics.DaoMetaData calldata dao) external restricted {
+    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external restricted {
         HostActionsLib.addLiveDAO(dao);
     }
 
@@ -179,7 +180,7 @@ contract Host is IHost, Controllable2 {
     }
 
     /// @inheritdoc IHost
-    function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external {
+    function updateUnits(string calldata daoSymbol, IDAOData.UnitDataInput[] calldata units) external {
         // restrictions are checked below
         HostProposalsLib.updateUnits(daoSymbol, units);
     }

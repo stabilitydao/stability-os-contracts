@@ -8,7 +8,7 @@ import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 /// @notice Library for deploying tokens via HostProxyFactory
 library HostDeployLib {
     function deploySeedToken(
-        HostLib.OsStorage storage $,
+        HostLib.HostStorage storage $,
         uint daoUid,
         string memory token_,
         string memory symbol_
@@ -20,7 +20,7 @@ library HostDeployLib {
     }
 
     function deployTgeToken(
-        HostLib.OsStorage storage $,
+        HostLib.HostStorage storage $,
         uint daoUid,
         string memory token_,
         string memory symbol_

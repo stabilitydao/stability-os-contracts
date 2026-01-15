@@ -7,6 +7,7 @@ import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
+import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {PlasmaConstantsLib} from "../chains/PlasmaConstantsLib.sol";
@@ -68,7 +69,7 @@ contract OsBridgeTest is Test, HostUtilsLib {
             HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
         HostUtilsLib.setupHostBridgeAndHostFactory(vm, osSonic, sonic, plasma, avalanche);
         _dealAndApprove(osSonic);
-        ITokenomics.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
+        IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
         console.log("done createAliensDao");
 
         // ----------------------------- create DAO on Avalanche
@@ -82,7 +83,7 @@ contract OsBridgeTest is Test, HostUtilsLib {
 
         _dealAndApprove(osAvax);
         vm.recordLogs();
-        ITokenomics.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, osAvax);
+        IDAOData.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, osAvax);
         console.log("done createApesDao");
 
         { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
@@ -100,7 +101,7 @@ contract OsBridgeTest is Test, HostUtilsLib {
             HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
         HostUtilsLib.setupHostBridgeAndHostFactory(vm, osPlasma, plasma, sonic, avalanche);
         _dealAndApprove(osPlasma);
-        ITokenomics.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
+        IDAOData.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
 
         { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
             Vm.Log[] memory logs = vm.getRecordedLogs();

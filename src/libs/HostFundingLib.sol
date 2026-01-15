@@ -17,7 +17,7 @@ library HostFundingLib {
         // todo not reentrancy
         require(amount != 0, IControllable2.ZeroAmount()); // todo settings.minFunding
 
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
@@ -62,7 +62,7 @@ library HostFundingLib {
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
     function refund(string calldata daoSymbol) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
 
@@ -83,7 +83,7 @@ library HostFundingLib {
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
     function refundFor(string calldata daoSymbol, address[] memory receivers) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         ITokenomics.LifecyclePhase phase = $.daos[daoUid].phase;
 
@@ -115,7 +115,7 @@ library HostFundingLib {
         if (balance == 0) {
             require(skipOnZeroBalance, IHost.ZeroBalance());
         } else {
-            HostLib.OsStorage storage $ = HostLib.getOsStorage();
+            HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
             IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 

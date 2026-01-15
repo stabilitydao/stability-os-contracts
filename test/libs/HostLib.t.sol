@@ -23,7 +23,7 @@ contract HostLibTest is Test {
         {
             uint snapshot = vm.snapshotState();
             vm.selectFork(forkSonic);
-            HostLib.OsStorage storage $ = HostLib.getOsStorage();
+            HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
             (uid1a, first[0]) = HostLib.generateDaoUid($);
             (uid2a, first[1]) = HostLib.generateDaoUid($);
@@ -33,7 +33,7 @@ contract HostLibTest is Test {
         {
             uint snapshot = vm.snapshotState();
             vm.selectFork(forkAvalanche);
-            HostLib.OsStorage storage $ = HostLib.getOsStorage();
+            HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
             (uid1b, first[2]) = HostLib.generateDaoUid($);
             (uid2b, first[3]) = HostLib.generateDaoUid($);

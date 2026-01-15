@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {HostLib} from "./HostLib.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {HostUpdateLib} from "./HostUpdateLib.sol";
@@ -15,14 +16,14 @@ library HostActionsLib {
 
     //region -------------------------------------- Restricted actions
     function setSettings(IHost.HostSettings memory st) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         $.osSettings[0] = st;
 
         emit IHost.OsSettingsUpdated(st);
     }
 
     function setChainSettings(IHost.HostChainSettings memory st) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         $.osChainSettings[0] = st;
 
         emit IHost.OsChainSettingsUpdated(st);
@@ -30,7 +31,7 @@ library HostActionsLib {
 
     /// @notice Initialize OS with existing DAO symbols from other chains
     function initHost(IHost.HostInitPayload memory initPayload) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
         for (uint i = 0; i < initPayload.usedSymbols.length; i++) {
             string memory daoSymbol = initPayload.usedSymbols[i];
@@ -55,7 +56,7 @@ library HostActionsLib {
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
         // todo currently host dao is set by first created dao, is it safe?
         (uint daoUid, bool firstDao) = HostLib.generateDaoUid($);
@@ -90,71 +91,72 @@ library HostActionsLib {
     }
 
     /// @notice Add live DAO verified off-chain into the system
-    function addLiveDAO(ITokenomics.DaoMetaData memory dao) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external {
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
         (uint daoUid,) = HostLib.generateDaoUid($);
 
         HostLib.DaoDataLocal memory local;
-        local.name = dao.name;
-        local.symbol = dao.symbol;
-        local.phase = dao.phase;
-        local.deployer = dao.deployer;
-        local.socials = dao.socials;
-        local.activity = dao.activity;
-        local.countAgents = uint32(dao.agents.length);
-        local.hashUnitIds = new bytes32[](dao.units.length);
-
-        HostUpdateLib.validate(local, dao.params, dao.tokenomics.funding);
-        // todo validate other fields
-        // todo require block.chain == dao.tokenomics.initialChain
-
-        // ------------------------- Prepare units data
-        for (uint i; i < dao.units.length; i++) {
-            local.hashUnitIds[i] = HostLib.getKey(daoUid, dao.units[i].chainData.unitId);
-            require($.units[local.hashUnitIds[i]].daoUid == 0, IHost.UnitAlreadyRegistered());
-
-            HostLib.UnitLocal storage unit = $.units[local.hashUnitIds[i]];
-            unit.daoUid = daoUid;
-            unit.data = dao.units[i].chainData;
-            unit.chainIds.add(block.chainid);
-
-            emit IHost.DaoUnitUpdated(daoUid, dao.units[i].metaData);
-        }
-
-        // ------------------------- Save DAO data to the storage
-        $.daoUids[dao.symbol] = daoUid;
-        $.daos[daoUid] = local;
-        $.daoImages[daoUid] = dao.images;
-        $.deployments[daoUid] = dao.deployments;
-        $.daoParameters[daoUid] = dao.params;
-
-        { // ------------------------- tokenomics
-            HostLib.TokenomicsLocal memory tokenomics;
-            tokenomics.initialChain = dao.tokenomics.initialChain;
-            tokenomics.countVesting = uint32(dao.tokenomics.vesting.length);
-
-            $.tokenomics[daoUid] = tokenomics;
-
-            for (uint i; i < dao.tokenomics.funding.length; i++) {
-                $.tokenomics[daoUid].funding.push(dao.tokenomics.funding[i].fundingType);
-                $.funding[HostLib.getKey(daoUid, i)] = dao.tokenomics.funding[i];
-            }
-            for (uint i; i < dao.tokenomics.vesting.length; i++) {
-                $.vesting[HostLib.getKey(daoUid, i)] = dao.tokenomics.vesting[i];
-            }
-        }
-
-        for (uint i; i < dao.agents.length; i++) {
-            $.agents[HostLib.getKey(daoUid, i)] = dao.agents[i];
-        }
-
-        _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
+// todo
+//        local.name = dao.name;
+//        local.symbol = dao.symbol;
+//        local.phase = dao.phase;
+//        local.deployer = dao.deployer;
+//        local.socials = dao.socials;
+//        local.activity = dao.activity;
+//        local.countAgents = uint32(dao.agents.length);
+//        local.hashUnitIds = new bytes32[](dao.units.length);
+//
+//        HostUpdateLib.validate(local, dao.params, dao.tokenomics.funding);
+//        // todo validate other fields
+//        // todo require block.chain == dao.tokenomics.initialChain
+//
+//        // ------------------------- Prepare units data
+//        for (uint i; i < dao.units.length; i++) {
+//            local.hashUnitIds[i] = HostLib.getKey(daoUid, dao.units[i].chainData.unitId);
+//            require($.units[local.hashUnitIds[i]].daoUid == 0, IHost.UnitAlreadyRegistered());
+//
+//            HostLib.UnitLocal storage unit = $.units[local.hashUnitIds[i]];
+//            unit.daoUid = daoUid;
+//            unit.data = dao.units[i].chainData;
+//            unit.chainIds.add(block.chainid);
+//
+//            emit IHost.DaoUnitUpdated(daoUid, dao.units[i].metaData);
+//        }
+//
+//        // ------------------------- Save DAO data to the storage
+//        $.daoUids[dao.symbol] = daoUid;
+//        $.daos[daoUid] = local;
+//        $.daoImages[daoUid] = dao.images;
+//        $.deployments[daoUid] = dao.deployments;
+//        $.daoParameters[daoUid] = dao.params;
+//
+//        { // ------------------------- tokenomics
+//            HostLib.TokenomicsLocal memory tokenomics;
+//            tokenomics.initialChain = dao.tokenomics.initialChain;
+//            tokenomics.countVesting = uint32(dao.tokenomics.vesting.length);
+//
+//            $.tokenomics[daoUid] = tokenomics;
+//
+//            for (uint i; i < dao.tokenomics.funding.length; i++) {
+//                $.tokenomics[daoUid].funding.push(dao.tokenomics.funding[i].fundingType);
+//                $.funding[HostLib.getKey(daoUid, i)] = dao.tokenomics.funding[i];
+//            }
+//            for (uint i; i < dao.tokenomics.vesting.length; i++) {
+//                $.vesting[HostLib.getKey(daoUid, i)] = dao.tokenomics.vesting[i];
+//            }
+//        }
+//
+//        for (uint i; i < dao.agents.length; i++) {
+//            $.agents[HostLib.getKey(daoUid, i)] = dao.agents[i];
+//        }
+//
+//        _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
     }
 
     /// @notice Process revenue for the given unit of the DAO
     function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
         require(daoUid != 0, IHost.IncorrectDao());
@@ -168,7 +170,7 @@ library HostActionsLib {
     //region -------------------------------------- Internal logic
     /// @notice Mark DAO symbol as used and emit events
     function _finalizeDaoCreation(
-        HostLib.OsStorage storage $,
+        HostLib.HostStorage storage $,
         string memory daoSymbol,
         string memory daoName,
         uint daoUid
@@ -197,13 +199,13 @@ library HostActionsLib {
     }
 
     /// @notice Check if the given dao has a unit with the given {unitId}
-    function _isUnitExist(HostLib.OsStorage storage $, uint daoUid, string memory unitId) internal view returns (bool) {
+    function _isUnitExist(HostLib.HostStorage storage $, uint daoUid, string memory unitId) internal view returns (bool) {
         return $.units[HostLib.getKey(daoUid, unitId)].daoUid != 0;
     }
 
     /// @notice Take revenue from the given user on balance of the Host. Register revenue to the given unit.
     function _processUnitRevenue(
-        HostLib.OsStorage storage $,
+        HostLib.HostStorage storage $,
         uint daoUid,
         string memory daoSymbol,
         string memory unitId,

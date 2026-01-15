@@ -2,6 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOMetadata} from "../interfaces/IDAOMetadata.sol";
+import {IDAOData} from "./IDAOData.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 interface IHost {
@@ -44,7 +46,7 @@ interface IHost {
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
 
     /// @notice Unit is inserted or updated
-    event DaoUnitUpdated(uint daoUid, ITokenomics.UnitMetaData unit);
+    event DaoUnitUpdated(uint daoUid, IDAOMetadata.UnitMetaData unit);
     event DaoUnitDeleted(uint daoUid, string unitUid);
 
     event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
@@ -118,7 +120,7 @@ interface IHost {
     // todo getDaoUid, getHostDaoUid, isSaltReserved
 
     /// @notice Local DAOs storage (in form of a mapping)
-    function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory);
+    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory);
 
     /// @notice Owner of the DAO
     function getDAOOwner(string calldata daoSymbol) external view returns (address);
@@ -189,7 +191,7 @@ interface IHost {
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)
-    function addLiveDAO(ITokenomics.DaoMetaData memory dao) external;
+    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external;
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager
@@ -232,7 +234,7 @@ interface IHost {
     function updateSocials(string calldata daoSymbol, string[] calldata socials) external;
 
     /// @notice Update/create proposal to update tokenomics units of the DAO
-    function updateUnits(string calldata daoSymbol, ITokenomics.UnitInfo[] calldata units) external;
+    function updateUnits(string calldata daoSymbol, IDAOData.UnitDataInput[] calldata units) external;
 
     /// @notice Update/create proposal to update funding rounds of the DAO
     function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external;

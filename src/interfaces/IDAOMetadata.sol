@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-interface IDAOUnit {
+/// @notice All DAO-related data emitted off-chain and not stored on chain
+interface IDAOMetadata {
     /// @notice Unit status can be changed automatically on DAO lifecycle phase changes or manually by DAO holders.
     enum UnitStatus {
         /// @notice Researching state.
@@ -12,17 +13,17 @@ interface IDAOUnit {
         LIVE_2
     }
 
-    /// @notice Supported categories of running units.
-    enum UnitComponentCategory {
-        /// @notice Chain support (blockchain integrations, relayers).
-        CHAIN_SUPPORT_0,
-        /// @notice Engine support (infrastructure and execution engine).
-        ENGINE_SUPPORT_1,
-        /// @notice DeFi strategy components.
-        DEFI_STRATEGY_2,
-        /// @notice MEV strategy components.
-        MEV_STRATEGY_3
-    }
+//    /// @notice Supported categories of running units.
+//    enum UnitComponentCategory {
+//        /// @notice Chain support (blockchain integrations, relayers).
+//        CHAIN_SUPPORT_0,
+//        /// @notice Engine support (infrastructure and execution engine).
+//        ENGINE_SUPPORT_1,
+//        /// @notice DeFi strategy components.
+//        DEFI_STRATEGY_2,
+//        /// @notice MEV strategy components.
+//        MEV_STRATEGY_3
+//    }
 
     /// @notice Supported unit types.
     enum UnitType {
@@ -61,27 +62,5 @@ interface IDAOUnit {
         UnitUiLink[] ui;
         /// @notice Links to API of the Unit.
         string[] api;
-    }
-
-    /// @notice On-chain data of the Unit.
-    struct UnitChainData {
-        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
-        string unitId;
-
-        // Attention: chainIds is stored separately and modified through special update-commands
-
-        /// @notice DAO UID of Unit Developer (Pool tasks solver)
-        string developerUid;
-
-        // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
-    }
-
-    /// @notice Full info about the Unit.
-    struct UnitInfo {
-        /// @notice Off-chain metadata of the Unit.
-        UnitMetaData metaData;
-
-        /// @notice On-chain data of the Unit.
-        UnitChainData chainData;
     }
 }

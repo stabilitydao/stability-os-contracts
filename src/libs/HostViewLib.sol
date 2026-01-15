@@ -3,7 +3,8 @@ pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics, IDAOUnit} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostDeployLib} from "./HostDeployLib.sol";
 
@@ -22,7 +23,7 @@ library HostViewLib {
     /// @notice Change lifecycle phase of a DAO
     /// @param daoSymbol Symbol of the DAO
     function changePhase(string calldata daoSymbol) external {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
         require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
@@ -138,57 +139,52 @@ library HostViewLib {
     }
 
     //region -------------------------------------- View
-    function getDAO(string calldata daoSymbol) external view returns (ITokenomics.DaoData memory) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory) {
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
 
         uint daoUid = $.daoUids[daoSymbol];
 
-        ITokenomics.DaoData memory dest;
+        IDAOData.DaoData memory dest;
         HostLib.DaoDataLocal memory data = $.daos[daoUid];
 
-        { // ------------------- basic fields
-
-            dest.symbol = data.symbol;
-            dest.name = data.name;
-            dest.deployer = data.deployer;
-            dest.phase = data.phase;
-
-            dest.socials = $.daos[daoUid].socials;
-            dest.activity = $.daos[daoUid].activity;
-        }
-
-        { // ------------------- images, deployments, params
-            dest.images = $.daoImages[daoUid];
-            dest.deployments = $.deployments[daoUid];
-            dest.params = $.daoParameters[daoUid];
-        }
-
-        // ------------------- units
-        dest.units = new ITokenomics.UnitChainData[](data.hashUnitIds.length);
-        for (uint i; i < data.hashUnitIds.length; i++) {
-            dest.units[i] = $.units[data.hashUnitIds[i]].data;
-        }
-
-        // ------------------- agents
-        dest.agents = new ITokenomics.AgentInfo[](data.countAgents);
-        for (uint i; i < data.countAgents; i++) {
-            dest.agents[i] = $.agents[HostLib.getKey(daoUid, i)];
-        }
-
-        { // ------------------- tokenomics
-            HostLib.TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
-            dest.tokenomics.initialChain = tokenomics.initialChain;
-
-            dest.tokenomics.funding = new ITokenomics.Funding[](tokenomics.funding.length);
-            for (uint i; i < dest.tokenomics.funding.length; i++) {
-                dest.tokenomics.funding[i] = $.funding[HostLib.getKey(daoUid, i)];
-            }
-
-            dest.tokenomics.vesting = new ITokenomics.Vesting[](tokenomics.countVesting);
-            for (uint i; i < tokenomics.countVesting; i++) {
-                dest.tokenomics.vesting[i] = $.vesting[HostLib.getKey(daoUid, i)];
-            }
-        }
+// todo
+//        { // ------------------- basic fields
+//
+//            dest.symbol = data.symbol;
+//            dest.name = data.name;
+//            dest.deployer = data.deployer;
+//            dest.phase = data.phase;
+//
+//            dest.socials = $.daos[daoUid].socials;
+//            dest.activity = $.daos[daoUid].activity;
+//        }
+//
+//        { // ------------------- images, deployments, params
+//            dest.images = $.daoImages[daoUid];
+//            dest.deployments = $.deployments[daoUid];
+//            dest.params = $.daoParameters[daoUid];
+//        }
+//
+//        // ------------------- units
+//        dest.units = new ITokenomics.UnitChainData[](data.hashUnitIds.length);
+//        for (uint i; i < data.hashUnitIds.length; i++) {
+//            dest.units[i] = $.units[data.hashUnitIds[i]].data;
+//        }
+//
+//        { // ------------------- tokenomics
+//            HostLib.TokenomicsLocal memory tokenomics = $.tokenomics[daoUid];
+//            dest.tokenomics.initialChain = tokenomics.initialChain;
+//
+//            dest.tokenomics.funding = new ITokenomics.Funding[](tokenomics.funding.length);
+//            for (uint i; i < dest.tokenomics.funding.length; i++) {
+//                dest.tokenomics.funding[i] = $.funding[HostLib.getKey(daoUid, i)];
+//            }
+//
+//            dest.tokenomics.vesting = new ITokenomics.Vesting[](tokenomics.countVesting);
+//            for (uint i; i < tokenomics.countVesting; i++) {
+//                dest.tokenomics.vesting[i] = $.vesting[HostLib.getKey(daoUid, i)];
+//            }
+//        }
 
         return dest;
     }
@@ -202,7 +198,7 @@ library HostViewLib {
     }
 
     function getDAOOwner(string calldata daoSymbol) external view returns (address) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         require(daoUid != 0, IHost.IncorrectDao());
 
@@ -222,12 +218,12 @@ library HostViewLib {
     }
 
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         return $.usedSymbols[daoSymbol];
     }
 
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         HostLib.ProposalLocal memory local = $.proposals[proposalId];
         return ITokenomics.Proposal({
             action: local.action,
@@ -240,7 +236,7 @@ library HostViewLib {
     }
 
     function proposalsLength(string calldata daoSymbol) external view returns (uint) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         return $.daoProposals[$.daoUids[daoSymbol]].length;
     }
 
@@ -249,7 +245,7 @@ library HostViewLib {
         uint index,
         uint count
     ) external view returns (bytes32[] memory dest) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         uint len = $.daoProposals[$.daoUids[daoSymbol]].length;
         uint size = index + count > len ? index > len ? 0 : len - index : count;
@@ -264,7 +260,7 @@ library HostViewLib {
     /// @param limit Maximum number of tasks to return. It must be > 0. Use 1 to check if there are any tasks.
     /// @return __tasks List of tasks. The list is limited by {limit} value
     function tasks(string calldata daoSymbol, uint limit) external view returns (IHost.Task[] memory __tasks) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         return _tasks(uint16(limit), $.daoUids[daoSymbol]);
     }
 
@@ -306,20 +302,20 @@ library HostViewLib {
 
     /// @notice Get balance of the given unit for the given DAO
     function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         return $.unitBalances[HostLib.getKey(daoUid, unitId)];
     }
 
     function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         uint daoUid = $.daoUids[daoSymbol];
         return $.salt[HostLib.getKey(daoUid, contractIndex, chainId == 0 ? block.chainid : chainId)];
     }
     //endregion -------------------------------------- View
 
     function _tasks(uint16 limit, uint daoUid) internal view returns (IHost.Task[] memory dest) {
-        HostLib.OsStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getOsStorage();
         dest = new IHost.Task[](limit);
 
         // slither-disable-next-line uninitialized-local
@@ -369,7 +365,7 @@ library HostViewLib {
             for (uint i; i < hashUnitIds.length; i++) {
                 // todo we need status of unit on chain
 //                ITokenomics.UnitInfo memory unit = $.units[hashUnitIds[i]];
-//                if (unit.status == IDAOUnit.UnitStatus.LIVE_2) {
+//                if (unit.status == IDAOMetadata.sol.UnitStatus.LIVE_2) {
 //                    foundLive = true;
 //                    break;
 //                }

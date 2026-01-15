@@ -3,7 +3,9 @@ pragma solidity ^0.8.28;
 
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IHost, Host} from "../../src/Host.sol";
-import {IDAOUnit, IDAOAgent, ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {IControllable2} from "../../src/interfaces/IControllable2.sol";
@@ -118,7 +120,7 @@ abstract contract HostUtilsLib {
         IHost os,
         string memory daoSymbol,
         string memory daoName
-    ) public returns (ITokenomics.DaoData memory) {
+    ) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -133,7 +135,7 @@ abstract contract HostUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
-    function createAliensDao(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
+    function createAliensDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -148,7 +150,7 @@ abstract contract HostUtilsLib {
         return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
     }
 
-    function createApesDao(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
+    function createApesDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -162,7 +164,7 @@ abstract contract HostUtilsLib {
         return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
-    function createDaoMachines(Vm vm, IHost os_) public returns (ITokenomics.DaoData memory) {
+    function createDaoMachines(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
         funding[0] = HostUtilsLib.generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -185,7 +187,7 @@ abstract contract HostUtilsLib {
         ITokenomics.Funding[] memory funding,
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params
-    ) internal returns (ITokenomics.DaoData memory) {
+    ) internal returns (IDAOData.DaoData memory) {
         // user should pay for cross-chain messages
         uint value = os_.quoteCreateDAO(daoSymbol_);
         vm.deal(address(this), value);
@@ -394,226 +396,165 @@ abstract contract HostUtilsLib {
         });
     }
 
-    function createTestDaoData() public pure returns (ITokenomics.DaoMetaData memory data) {
-        // ---------------- base fields
-        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-        data.symbol = "testdao";
-        data.name = "Test DAO";
-        data.deployer = address(0x123);
-
-        // ---------------- socials
-        data.socials = new string[](3);
-        data.socials[0] = "https://twitter.com/testdao";
-        data.socials[1] = "https://github.com/testdao";
-        data.socials[2] = "https://discord.gg/testdao";
-
-        // ---------------- activity
-        data.activity = new ITokenomics.Activity[](2);
-        data.activity[0] = ITokenomics.Activity.SAAS_OPERATOR_1;
-        data.activity[1] = ITokenomics.Activity.BUILDER_3;
-
-        // ---------------- images
-        data.images = ITokenomics.DaoImages({
-            seedToken: "images/seed.png",
-            tgeToken: "images/tge.png",
-            token: "images/token.png",
-            xToken: "images/xtoken.png",
-            daoToken: "images/daotoken.png"
-        });
-
-        // ---------------- Deployments
-        address[] memory vestings = new address[](2);
-        vestings[0] = address(0x5001);
-        vestings[1] = address(0x5002);
-
-        data.deployments = ITokenomics.DaoDeploymentInfo({
-            seedToken: address(0x1001),
-            tgeToken: address(0x1002),
-            token: address(0x1003),
-            xToken: address(0x1004),
-            staking: address(0x2001),
-            daoToken: address(0x2002),
-            revenueRouter: address(0x2003),
-            recovery: address(0x2004),
-            vesting: vestings,
-            tokenBridge: address(0x4001),
-            xTokenBridge: address(0x4002),
-            daoTokenBridge: address(0x4003)
-        });
-
-        data.units = new ITokenomics.UnitInfo[](0);
-        data.agents = new ITokenomics.AgentInfo[](0);
-
-        // ---------------- Create 3 units
-        data.units = new ITokenomics.UnitInfo[](3);
-
-        { // Unit 0: one UI link, two API endpoints
-            ITokenomics.UnitUiLink[] memory ui0 = new ITokenomics.UnitUiLink[](1);
-            ui0[0] = IDAOUnit.UnitUiLink({title: "Dashboard", href: "https://unit0.example/dashboard"});
-
-            string[] memory api0 = new string[](2);
-            api0[0] = "https://api.unit0.example/v1/status";
-            api0[1] = "https://api.unit0.example/v1/metrics";
-
-            data.units[0].metaData = IDAOUnit.UnitMetaData({
-                name: "Protocol A",
-                status: IDAOUnit.UnitStatus.RESEARCH_0,
-                unitType: uint16(IDAOUnit.UnitType.DEFI_PROTOCOL_1),
-                revenueShare: 20000,
-                emoji: "zzz",
-                ui: ui0,
-                api: api0
-            });
-            data.units[0].chainData = IDAOUnit.UnitChainData({
-                unitId: "defi:protocolA",
-                developerUid: ""
-            });
-        }
-
-        { // Unit 1: two UI links, one API endpoint
-            ITokenomics.UnitUiLink[] memory ui1 = new ITokenomics.UnitUiLink[](2);
-            ui1[0] = IDAOUnit.UnitUiLink({title: "App", href: "https://unit1.example/app"});
-            ui1[1] = IDAOUnit.UnitUiLink({title: "Docs", href: "https://unit1.example/docs"});
-
-            string[] memory api1 = new string[](1);
-            api1[0] = "https://api.unit1.example/";
-
-            data.units[1].metaData = IDAOUnit.UnitMetaData({
-                name: "Service X",
-                status: IDAOUnit.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOUnit.UnitType.SAAS_2),
-                revenueShare: 50000,
-                emoji: "aaa",
-                ui: ui1,
-                api: api1
-            });
-            data.units[1].chainData = IDAOUnit.UnitChainData({
-                unitId: "saas:serviceX",
-                developerUid: ""
-            });
-        }
-
-        { // Unit 2: no UI links, empty api array
-            ITokenomics.UnitUiLink[] memory ui2 = new ITokenomics.UnitUiLink[](0);
-            string[] memory api2 = new string[](0);
-
-            data.units[2].metaData = IDAOUnit.UnitMetaData({
-                name: "MEV Bot Z",
-                status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: uint16(IDAOUnit.UnitType.MEV_3),
-                revenueShare: 80000,
-                emoji: "aaaaaaaa",
-                ui: ui2,
-                api: api2
-            });
-            data.units[2].chainData = IDAOUnit.UnitChainData({
-                unitId: "mev:botZ",
-                developerUid: ""
-            });
-        }
-
-        // ---------------- Create 4 agents
-        data.agents = new ITokenomics.AgentInfo[](4);
-
-        { // Agent 0: single API, multiple directives
-            string[] memory api0 = new string[](1);
-            api0[0] = "https://agent0.example/api";
-
-            uint8[] memory roles0 = new uint8[](1);
-            roles0[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives0 = new string[](2);
-            directives0[0] = "Monitor network";
-            directives0[1] = "Report incidents";
-
-            data.agents[0] = IDAOAgent.AgentInfo({
-                api: api0,
-                roles: roles0,
-                name: "Operator One",
-                directives: directives0,
-                image: "ipfs://QmAgent0Image",
-                telegram: "@operator_one"
-            });
-        }
-
-        { // Agent 1: two API endpoints, no directives
-            string[] memory api1 = new string[](2);
-            api1[0] = "https://agent1.example/status";
-            api1[1] = "https://agent1.example/health";
-
-            uint8[] memory roles1 = new uint8[](1);
-            roles1[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives1 = new string[](0);
-
-            data.agents[1] = IDAOAgent.AgentInfo({
-                api: api1,
-                roles: roles1,
-                name: "Relayer Team",
-                directives: directives1,
-                image: "https://cdn.example/relayer.png",
-                telegram: "@relayer_team"
-            });
-        }
-
-        { // Agent 2: no API endpoints, single directive
-            string[] memory api2 = new string[](0);
-            uint8[] memory roles2 = new uint8[](1);
-            roles2[0] = uint8(IDAOAgent.AgentRole.OPERATOR_0);
-
-            string[] memory directives2 = new string[](1);
-            directives2[0] = "Perform weekly audits";
-
-            data.agents[2] = IDAOAgent.AgentInfo({
-                api: api2, roles: roles2, name: "Auditor Bot", directives: directives2, image: "", telegram: ""
-            });
-
-            // Agent 3: almost same to Agent 2
-            data.agents[3] = IDAOAgent.AgentInfo({
-                api: api2, roles: roles2, name: "Auditor Bot 2", directives: directives2, image: "", telegram: ""
-            });
-        }
-
-        // ---------------- Dao params
-        data.params = ITokenomics.DaoParameters({
-            vePeriod: uint32(180),
-            pvpFee: uint16(25),
-            minPower: uint(100 ether),
-            ttBribe: uint16(20000),
-            recoveryShare: uint16(10000),
-            proposalThreshold: uint(5000)
-        });
-
-        { // ---------------- Tokenomics
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0] = ITokenomics.Funding({
-                fundingType: ITokenomics.FundingType.SEED_0,
-                start: uint64(1650000000),
-                end: uint64(1650000000 + 30 days),
-                minRaise: uint(1 ether),
-                maxRaise: uint(100 ether),
-                raised: uint(10 ether),
-                claim: uint(0)
-            });
-
-            ITokenomics.Vesting[] memory vest = new ITokenomics.Vesting[](2);
-            vest[0] = ITokenomics.Vesting({
-                name: "Founders",
-                description: "Founders allocation",
-                allocation: uint(10 ether),
-                start: uint64(1650000000),
-                end: uint64(1650000000 + 365 days)
-            });
-            vest[1] = ITokenomics.Vesting({
-                name: "Team",
-                description: "Team allocation",
-                allocation: uint(5 ether),
-                start: uint64(1650000000 + 30 days),
-                end: uint64(1650000000 + 730 days)
-            });
-
-            data.tokenomics = ITokenomics.Tokenomics({funding: funding, initialChain: uint(1), vesting: vest});
-        }
+    function createTestDaoData() public pure returns (IDAOData.DaoDataInput memory data) {
+// todo
+//        // ---------------- base fields
+//        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+//        data.symbol = "testdao";
+//        data.name = "Test DAO";
+//        data.deployer = address(0x123);
+//
+//        // ---------------- socials
+//        data.socials = new string[](3);
+//        data.socials[0] = "https://twitter.com/testdao";
+//        data.socials[1] = "https://github.com/testdao";
+//        data.socials[2] = "https://discord.gg/testdao";
+//
+//        // ---------------- activity
+//        data.activity = new ITokenomics.Activity[](2);
+//        data.activity[0] = ITokenomics.Activity.SAAS_OPERATOR_1;
+//        data.activity[1] = ITokenomics.Activity.BUILDER_3;
+//
+//        // ---------------- images
+//        data.images = ITokenomics.DaoImages({
+//            seedToken: "images/seed.png",
+//            tgeToken: "images/tge.png",
+//            token: "images/token.png",
+//            xToken: "images/xtoken.png",
+//            daoToken: "images/daotoken.png"
+//        });
+//
+//        // ---------------- Deployments
+//        address[] memory vestings = new address[](2);
+//        vestings[0] = address(0x5001);
+//        vestings[1] = address(0x5002);
+//
+//        data.deployments = ITokenomics.DaoDeploymentInfo({
+//            seedToken: address(0x1001),
+//            tgeToken: address(0x1002),
+//            token: address(0x1003),
+//            xToken: address(0x1004),
+//            staking: address(0x2001),
+//            daoToken: address(0x2002),
+//            revenueRouter: address(0x2003),
+//            recovery: address(0x2004),
+//            vesting: vestings,
+//            tokenBridge: address(0x4001),
+//            xTokenBridge: address(0x4002),
+//            daoTokenBridge: address(0x4003)
+//        });
+//
+//        data.units = new ITokenomics.UnitChainData[](0);
+//
+//        // ---------------- Create 3 units
+//        data.units = new ITokenomics.UnitChainData[](3);
+//
+//        { // Unit 0: one UI link, two API endpoints
+//            IDAOMetadata.UnitUiLink[] memory ui0 = new IDAOMetadata.UnitUiLink[](1);
+//            ui0[0] = IDAOMetadata.UnitUiLink({title: "Dashboard", href: "https://unit0.example/dashboard"});
+//
+//            string[] memory api0 = new string[](2);
+//            api0[0] = "https://api.unit0.example/v1/status";
+//            api0[1] = "https://api.unit0.example/v1/metrics";
+//
+//            data.units[0].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Protocol A",
+//                status: IDAOMetadata.UnitStatus.RESEARCH_0,
+//                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+//                revenueShare: 20000,
+//                emoji: "zzz",
+//                ui: ui0,
+//                api: api0
+//            });
+//            data.units[0].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "defi:protocolA",
+//                developerUid: ""
+//            });
+//        }
+//
+//        { // Unit 1: two UI links, one API endpoint
+//            IDAOMetadata.UnitUiLink[] memory ui1 = new IDAOMetadata.UnitUiLink[](2);
+//            ui1[0] = IDAOMetadata.UnitUiLink({title: "App", href: "https://unit1.example/app"});
+//            ui1[1] = IDAOMetadata.UnitUiLink({title: "Docs", href: "https://unit1.example/docs"});
+//
+//            string[] memory api1 = new string[](1);
+//            api1[0] = "https://api.unit1.example/";
+//
+//            data.units[1].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Service X",
+//                status: IDAOMetadata.UnitStatus.BUILDING_1,
+//                unitType: uint16(IDAOMetadata.UnitType.SAAS_2),
+//                revenueShare: 50000,
+//                emoji: "aaa",
+//                ui: ui1,
+//                api: api1
+//            });
+//            data.units[1].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "saas:serviceX",
+//                developerUid: ""
+//            });
+//        }
+//
+//        { // Unit 2: no UI links, empty api array
+//            IDAOMetadata.UnitUiLink[] memory ui2 = new IDAOMetadata.UnitUiLink[](0);
+//            string[] memory api2 = new string[](0);
+//
+//            data.units[2].metaData = IDAOMetadata.UnitMetaData({
+//                name: "MEV Bot Z",
+//                status: IDAOMetadata.UnitStatus.LIVE_2,
+//                unitType: uint16(IDAOMetadata.UnitType.MEV_3),
+//                revenueShare: 80000,
+//                emoji: "aaaaaaaa",
+//                ui: ui2,
+//                api: api2
+//            });
+//            data.units[2].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "mev:botZ",
+//                developerUid: ""
+//            });
+//        }
+//
+//
+//        // ---------------- Dao params
+//        data.params = ITokenomics.DaoParameters({
+//            vePeriod: uint32(180),
+//            pvpFee: uint16(25),
+//            minPower: uint(100 ether),
+//            ttBribe: uint16(20000),
+//            recoveryShare: uint16(10000),
+//            proposalThreshold: uint(5000)
+//        });
+//
+//        { // ---------------- Tokenomics
+//            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+//            funding[0] = ITokenomics.Funding({
+//                fundingType: ITokenomics.FundingType.SEED_0,
+//                start: uint64(1650000000),
+//                end: uint64(1650000000 + 30 days),
+//                minRaise: uint(1 ether),
+//                maxRaise: uint(100 ether),
+//                raised: uint(10 ether),
+//                claim: uint(0)
+//            });
+//
+//            ITokenomics.Vesting[] memory vest = new ITokenomics.Vesting[](2);
+//            vest[0] = ITokenomics.Vesting({
+//                name: "Founders",
+//                description: "Founders allocation",
+//                allocation: uint(10 ether),
+//                start: uint64(1650000000),
+//                end: uint64(1650000000 + 365 days)
+//            });
+//            vest[1] = ITokenomics.Vesting({
+//                name: "Team",
+//                description: "Team allocation",
+//                allocation: uint(5 ether),
+//                start: uint64(1650000000 + 30 days),
+//                end: uint64(1650000000 + 730 days)
+//            });
+//
+//            data.tokenomics = ITokenomics.Tokenomics({funding: funding, initialChain: uint(1), vesting: vest});
+//        }
 
         return data;
     }
@@ -621,49 +562,50 @@ abstract contract HostUtilsLib {
     //endregion ----------------------------- Funding, DaoParams, Vesting
 
     //region ----------------------------- Print
-    function printDaoData(ITokenomics.DaoData memory data) public pure {
-        console.log("DAO Symbol:", data.symbol);
-        console.log("DAO Name:", data.name);
-        console.log("Deployer:", data.deployer);
-        console.log("Phase:", uint8(data.phase));
-
-        console.log("Deployments:");
-        console.log("  Seed Token:", data.deployments.seedToken);
-        console.log("  TGE Token:", data.deployments.tgeToken);
-        console.log("  Token:", data.deployments.token);
-        console.log("  xToken:", data.deployments.xToken);
-        console.log("  Staking:", data.deployments.staking);
-        console.log("  DAO Token:", data.deployments.daoToken);
-        console.log("  Revenue Router:", data.deployments.revenueRouter);
-        console.log("  Recovery:", data.deployments.recovery);
-        console.log("  Token Bridge:", data.deployments.tokenBridge);
-        console.log("  xToken Bridge:", data.deployments.xTokenBridge);
-        console.log("  DAO Token Bridge:", data.deployments.daoTokenBridge);
-        for (uint i = 0; i < data.deployments.vesting.length; i++) {
-            console.log(i, data.deployments.vesting[i]);
-        }
-
-        console.log("Images:");
-        console.log("  Seed Token:", data.images.seedToken);
-        console.log("  TGE Token:", data.images.tgeToken);
-        console.log("  Token:", data.images.token);
-        console.log("  xToken:", data.images.xToken);
-        console.log("  DAO Token:", data.images.daoToken);
-
-        console.log("Socials:");
-        for (uint i = 0; i < data.socials.length; i++) {
-            console.log(i, data.socials[i]);
-        }
-
-        console.log("Units:");
-        for (uint i = 0; i < data.units.length; i++) {
-            console.log(i, data.units[i].unitId);
-        }
-
-        console.log("Agents:");
-        for (uint i = 0; i < data.agents.length; i++) {
-            console.log(i, data.agents[i].name);
-        }
+    function printDaoData(IDAOData.DaoData memory data) public pure {
+// todo
+//        console.log("DAO Symbol:", data.symbol);
+//        console.log("DAO Name:", data.name);
+//        console.log("Deployer:", data.deployer);
+//        console.log("Phase:", uint8(data.phase));
+//
+//        console.log("Deployments:");
+//        console.log("  Seed Token:", data.deployments.seedToken);
+//        console.log("  TGE Token:", data.deployments.tgeToken);
+//        console.log("  Token:", data.deployments.token);
+//        console.log("  xToken:", data.deployments.xToken);
+//        console.log("  Staking:", data.deployments.staking);
+//        console.log("  DAO Token:", data.deployments.daoToken);
+//        console.log("  Revenue Router:", data.deployments.revenueRouter);
+//        console.log("  Recovery:", data.deployments.recovery);
+//        console.log("  Token Bridge:", data.deployments.tokenBridge);
+//        console.log("  xToken Bridge:", data.deployments.xTokenBridge);
+//        console.log("  DAO Token Bridge:", data.deployments.daoTokenBridge);
+//        for (uint i = 0; i < data.deployments.vesting.length; i++) {
+//            console.log(i, data.deployments.vesting[i]);
+//        }
+//
+//        console.log("Images:");
+//        console.log("  Seed Token:", data.images.seedToken);
+//        console.log("  TGE Token:", data.images.tgeToken);
+//        console.log("  Token:", data.images.token);
+//        console.log("  xToken:", data.images.xToken);
+//        console.log("  DAO Token:", data.images.daoToken);
+//
+//        console.log("Socials:");
+//        for (uint i = 0; i < data.socials.length; i++) {
+//            console.log(i, data.socials[i]);
+//        }
+//
+//        console.log("Units:");
+//        for (uint i = 0; i < data.units.length; i++) {
+//            console.log(i, data.units[i].unitId);
+//        }
+//
+//        console.log("Agents:");
+//        for (uint i = 0; i < data.agents.length; i++) {
+//            console.log(i, data.agents[i].name);
+//        }
     }
 
     function printTasks(IHost.Task[] memory tasks) internal pure {
@@ -676,11 +618,11 @@ abstract contract HostUtilsLib {
 
     //region ----------------------------- Utils
     function getFundingIndex(
-        ITokenomics.DaoData memory data,
+        IDAOData.DaoData memory data,
         ITokenomics.FundingType fType
     ) public pure returns (uint index) {
-        for (uint i; i < data.tokenomics.funding.length; i++) {
-            if (data.tokenomics.funding[i].fundingType == fType) {
+        for (uint i; i < data.funding.length; i++) {
+            if (data.funding[i].fundingType == fType) {
                 return i;
             }
         }

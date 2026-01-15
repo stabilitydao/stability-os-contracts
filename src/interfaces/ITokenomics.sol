@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDAOAgent} from "./IDAOAgent.sol";
-import {IDAOUnit} from "./IDAOUnit.sol";
-import {ITokenomicsAddons} from "./ITokenomicsAddons.sol";
-
-interface ITokenomics is IDAOAgent, IDAOUnit, ITokenomicsAddons {
+interface ITokenomics {
     enum LifecyclePhase {
         /// @notice Created (draft).
         DRAFT_0,
@@ -193,99 +189,41 @@ interface ITokenomics is IDAOAgent, IDAOUnit, ITokenomicsAddons {
         bytes payload;
     }
 
-    /// @notice Tokenomics related grouped fields
-    struct Tokenomics {
-        /// @notice Fundraising rounds
-        Funding[] funding;
-
-        /// @notice Where initial deployment happened (chain id)
-        uint initialChain;
-
-        /// @notice Vesting allocations (optional)
-        Vesting[] vesting;
+    struct DAOChainSettings {
+        /// @notice Todo comment
+        uint bbRate;
     }
 
-    /// @notice Full DAO info available on-chain
-    struct DaoData {
-        /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
-        LifecyclePhase phase;
+    struct GovernanceSettings {
+        /// @notice Minimal total voting power (self and delegated) need to create a proposal
+        uint proposalThreshold;
 
-        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
-        /// While token symbol is SYM then additional DAO tokens symbols are:
-        /// seedSYM, saleSYM, xSYM, SYM_DAO
-        string symbol;
-
-        /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name;
-
-        /// @notice Deployer of a DAO have power only at DRAFT phase.
-        address deployer;
-
-        /// @notice Community socials. Update by `OS.updateSocials`
-        string[] socials;
-
-        /// @notice Activities of the organization.
-        Activity[] activity;
-
-        /// @notice Images of tokens. Absolute or relative from repo /os/ folder.
-        DaoImages images;
-
-        /// @notice Deployments of running DAO on blockchains.
-        DaoDeploymentInfo deployments;
-
-        /// @notice Registered revenue generating units owned by the organization.
-        /// @dev There is not UnitMetaData here because it's stored off-chain only.
-        UnitChainData[] units;
-
-        /// @notice Operating agents managed by the organization.
-        AgentInfo[] agents;
-
-        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
-        DaoParameters params;
-
-        /// @notice Supply distribution and fundraising events + vesting + initial chain
-        Tokenomics tokenomics;
+        /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent  todo decimals?
+        uint ttBribe;
     }
 
-    /// @notice Full DAO info used to add exist DAO into the system
-    struct DaoMetaData {
-        /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
-        LifecyclePhase phase;
+    /// @notice On-chain data of the Unit.
+    struct UnitData {
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
 
-        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
-        /// While token symbol is SYM then additional DAO tokens symbols are:
-        /// seedSYM, saleSYM, xSYM, SYM_DAO
-        string symbol;
+        /// @notice Blockchains where Unit deployed. Filled only for initial DAO chain Host instance.
+        uint[] chainIds;
 
-        /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name;
-
-        /// @notice Deployer of a DAO have power only at DRAFT phase.
-        address deployer;
-
-        /// @notice Community socials. Update by `OS.updateSocials`
-        string[] socials;
-
-        /// @notice Activities of the organization.
-        Activity[] activity;
-
-        /// @notice Images of tokens. Absolute or relative from repo /os/ folder.
-        DaoImages images;
-
-        /// @notice Deployments of running DAO on blockchains.
-        DaoDeploymentInfo deployments;
-
-        /// @notice Registered revenue generating units owned by the organization.
-        UnitInfo[] units;
-
-        /// @notice Operating agents managed by the organization.
-        AgentInfo[] agents;
-
-        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
-        DaoParameters params;
-
-        /// @notice Supply distribution and fundraising events + vesting + initial chain
-        Tokenomics tokenomics;
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
     }
+
+    /// @notice On-chain data of the Unit.
+    struct UnitDataInput {
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
+
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
+
+        // Attention: Don't forget to increment OsEncodingLib.UNIT_STRUCT_VERSION if you add new fields here
+    }
+
 }
 

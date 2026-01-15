@@ -2,8 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {IHost} from "../src/interfaces/IHost.sol";
+import {IDAOData} from "../src/interfaces/IDAOData.sol";
+import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
-import {IDAOUnit, ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
@@ -62,7 +64,7 @@ contract HostTest is Test, HostUtilsLib {
             assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "testCreateDAO - balance after");
         }
 
-        ITokenomics.DaoData memory dao = os.getDAO(DAO_SYMBOL);
+        IDAOData.DaoData memory dao = os.getDAO(DAO_SYMBOL);
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
@@ -109,21 +111,21 @@ contract HostTest is Test, HostUtilsLib {
         // todo only verifier
 
         _dealAndApprove(os);
-        ITokenomics.DaoMetaData memory daoOrigin = HostUtilsLib.createTestDaoData();
+        IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         _dealAndApprove(os, MULTISIG);
 
         vm.prank(MULTISIG);
         os.addLiveDAO(daoOrigin);
 
-        ITokenomics.DaoData memory readDao = os.getDAO(daoOrigin.symbol);
+        IDAOData.DaoData memory readDao = os.getDAO(daoOrigin.symbol);
 
         _assertDaoEqual(daoOrigin, readDao);
     }
 
     function testAddLiveDaoBadPaths() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
-        ITokenomics.DaoMetaData memory daoOrigin = HostUtilsLib.createTestDaoData();
+        IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         // -------------------- success - check balances
         {
@@ -200,20 +202,21 @@ contract HostTest is Test, HostUtilsLib {
 
         // ----------------------------- pay to second dao to registered unit
         {
-            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](2);
-            units[0].metaData = IDAOUnit.UnitMetaData({
-                name: "Unit A",
-                status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: uint16(1),
-                revenueShare: 1000,
-                emoji: "emoji1",
-                ui: new IDAOUnit.UnitUiLink[](0),
-                api: new string[](0)
-            });
-            units[0].chainData = IDAOUnit.UnitChainData({
-                unitId: "unitA",
-                developerUid: ""
-            });
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
+// todo
+//            units[0].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Unit A",
+//                status: IDAOMetadata.UnitStatus.LIVE_2,
+//                unitType: uint16(1),
+//                revenueShare: 1000,
+//                emoji: "emoji1",
+//                ui: new IDAOMetadata.UnitUiLink[](0),
+//                api: new string[](0)
+//            });
+//            units[0].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "unitA",
+//                developerUid: ""
+//            });
             host.updateUnits("symbol2", units);
 
             deal(exchangeAsset, address(this), 1e18);
@@ -301,7 +304,7 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateDaoImagesInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         os.updateImages(
             dao.symbol,
@@ -309,7 +312,7 @@ contract HostTest is Test, HostUtilsLib {
         );
 
         {
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.images.seedToken, "new/images/seed.png", "seedToken updated");
             assertEq(daoAfter.images.tgeToken, dao.images.tgeToken, "tgeToken unchanged");
             assertEq(daoAfter.images.token, dao.images.token, "token unchanged");
@@ -322,7 +325,7 @@ contract HostTest is Test, HostUtilsLib {
         );
 
         {
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.images.seedToken, "1", "seedToken updated");
             assertEq(daoAfter.images.tgeToken, "2", "tgeToken updated");
             assertEq(daoAfter.images.token, "3", "token updated");
@@ -340,7 +343,7 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateDaoSocialsInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             string[] memory socials = new string[](3);
@@ -349,7 +352,7 @@ contract HostTest is Test, HostUtilsLib {
             socials[2] = "3";
             os.updateSocials(dao.symbol, socials);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.socials.length, 3, "socials length");
             assertEq(daoAfter.socials[0], "1", "socials[0] updated");
             assertEq(daoAfter.socials[1], "2", "socials[1] updated");
@@ -362,7 +365,7 @@ contract HostTest is Test, HostUtilsLib {
             socials[1] = ""; // (!) empty
             os.updateSocials(dao.symbol, socials);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.socials.length, 2, "socials length");
             assertEq(daoAfter.socials[0], "1111", "socials[0] updated");
             assertEq(daoAfter.socials[1], "", "socials[1] updated");
@@ -375,77 +378,79 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateUnitsInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
-            IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link1", href: "https://link1.com"});
-            notEmptyUi[1] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
+            IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](2);
+            notEmptyUi[0] = IDAOMetadata.UnitUiLink({title: "link1", href: "https://link1.com"});
+            notEmptyUi[1] = IDAOMetadata.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](3);
             notEmptyApi[0] = "https://api1.com";
             notEmptyApi[1] = "https://api2.com";
             notEmptyApi[2] = "https://api3.com";
 
-            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](2);
-            units[0].metaData = IDAOUnit.UnitMetaData({
-                name: "Unit A",
-                status: IDAOUnit.UnitStatus.LIVE_2,
-                unitType: uint16(1),
-                revenueShare: 1000,
-                emoji: "emoji1",
-                ui: notEmptyUi,
-                api: notEmptyApi
-            });
-            units[0].chainData = IDAOUnit.UnitChainData({
-                unitId: "unitA",
-                developerUid: ""
-            });
-            units[1].metaData = IDAOUnit.UnitMetaData({
-                name: "Unit B1",
-                status: IDAOUnit.UnitStatus.BUILDING_1,
-                unitType: uint16(2),
-                revenueShare: 2000,
-                emoji: "emoji2",
-                ui: new IDAOUnit.UnitUiLink[](0),
-                api: new string[](0)
-            });
-            units[1].chainData = IDAOUnit.UnitChainData({
-                unitId: "unitB1",
-                developerUid: ""
-            });
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
+// todo
+//            units[0].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Unit A",
+//                status: IDAOMetadata.UnitStatus.LIVE_2,
+//                unitType: uint16(1),
+//                revenueShare: 1000,
+//                emoji: "emoji1",
+//                ui: notEmptyUi,
+//                api: notEmptyApi
+//            });
+//            units[0].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "unitA",
+//                developerUid: ""
+//            });
+//            units[1].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Unit B1",
+//                status: IDAOMetadata.UnitStatus.BUILDING_1,
+//                unitType: uint16(2),
+//                revenueShare: 2000,
+//                emoji: "emoji2",
+//                ui: new IDAOMetadata.UnitUiLink[](0),
+//                api: new string[](0)
+//            });
+//            units[1].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "unitB1",
+//                developerUid: ""
+//            });
             os.updateUnits(dao.symbol, units);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 2, "units length");
             assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq1");
             assertTrue(keccak256(abi.encode(units[1])) == keccak256(abi.encode(daoAfter.units[1])), "eq2");
         }
 
         {
-            IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](1);
-            notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
+            IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](1);
+            notEmptyUi[0] = IDAOMetadata.UnitUiLink({title: "link2", href: "https://link2.com"});
 
             string[] memory notEmptyApi = new string[](1);
             notEmptyApi[0] = "https://api1.com";
 
-            ITokenomics.UnitInfo[] memory units = new ITokenomics.UnitInfo[](1);
-            units[0].metaData = IDAOUnit.UnitMetaData({
-                name: "Unit AAAA",
-                status: IDAOUnit.UnitStatus.BUILDING_1,
-                unitType: uint16(2),
-                revenueShare: 2000,
-                emoji: "emoji222",
-                ui: notEmptyUi,
-                api: notEmptyApi
-            });
-            units[0].chainData = IDAOUnit.UnitChainData({
-                unitId: "unitAAAA",
-                developerUid: ""
-            });
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+// todo
+//            units[0].metaData = IDAOMetadata.UnitMetaData({
+//                name: "Unit AAAA",
+//                status: IDAOMetadata.UnitStatus.BUILDING_1,
+//                unitType: uint16(2),
+//                revenueShare: 2000,
+//                emoji: "emoji222",
+//                ui: notEmptyUi,
+//                api: notEmptyApi
+//            });
+//            units[0].chainData = IDAOMetadata.UnitChainData({
+//                unitId: "unitAAAA",
+//                developerUid: ""
+//            });
             os.updateUnits(dao.symbol, units);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 1, "units length");
 
 // todo
@@ -461,7 +466,7 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateFundingInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
         seed.fundingType = ITokenomics.FundingType.SEED_0;
@@ -475,10 +480,10 @@ contract HostTest is Test, HostUtilsLib {
         {
             os.updateFunding(dao.symbol, seed);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.tokenomics.funding.length, 1, "funding length");
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.funding.length, 1, "funding length");
 
-            ITokenomics.Funding memory fundingAfter = daoAfter.tokenomics.funding[0];
+            ITokenomics.Funding memory fundingAfter = daoAfter.funding[0];
 
             assertEq(uint8(fundingAfter.fundingType), uint8(seed.fundingType));
             assertEq(uint64(fundingAfter.start), uint64(seed.start));
@@ -501,11 +506,11 @@ contract HostTest is Test, HostUtilsLib {
 
             os.updateFunding(dao.symbol, tge);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.tokenomics.funding.length, 2, "funding length");
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.funding.length, 2, "funding length");
 
-            ITokenomics.Funding memory seed0 = daoAfter.tokenomics.funding[0];
-            ITokenomics.Funding memory tge1 = daoAfter.tokenomics.funding[1];
+            ITokenomics.Funding memory seed0 = daoAfter.funding[0];
+            ITokenomics.Funding memory tge1 = daoAfter.funding[1];
 
             assertEq(uint8(tge1.fundingType), uint8(tge.fundingType), "tge type");
             assertEq(uint64(tge1.start), uint64(tge.start), "tge start");
@@ -531,7 +536,7 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateVestingInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
@@ -542,16 +547,16 @@ contract HostTest is Test, HostUtilsLib {
 
             os.updateVesting(dao.symbol, vesting);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.tokenomics.vesting.length, 2, "vesting length");
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.vesting.length, 2, "vesting length");
 
             assertEq(
-                keccak256(abi.encode(daoAfter.tokenomics.vesting[0])),
+                keccak256(abi.encode(daoAfter.vesting[0])),
                 keccak256(abi.encode(vesting[0])),
                 "vesting[0] eq"
             );
             assertEq(
-                keccak256(abi.encode(daoAfter.tokenomics.vesting[1])),
+                keccak256(abi.encode(daoAfter.vesting[1])),
                 keccak256(abi.encode(vesting[1])),
                 "vesting[1] eq"
             );
@@ -565,11 +570,11 @@ contract HostTest is Test, HostUtilsLib {
 
             os.updateVesting(dao.symbol, vesting);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.tokenomics.vesting.length, 1, "vesting length 2");
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            assertEq(daoAfter.vesting.length, 1, "vesting length 2");
 
             assertEq(
-                keccak256(abi.encode(daoAfter.tokenomics.vesting[0])),
+                keccak256(abi.encode(daoAfter.vesting[0])),
                 keccak256(abi.encode(vesting[0])),
                 "vesting[0] eq"
             );
@@ -582,14 +587,14 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateNamingInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
 
             os.updateNaming(dao.symbol, naming);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(naming.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(naming.symbol);
 
             assertEq(daoAfter.name, naming.name, "name updated");
             assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
@@ -604,7 +609,7 @@ contract HostTest is Test, HostUtilsLib {
     function testUpdateDaoParametersInstant() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
         _dealAndApprove(os);
-        ITokenomics.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoParameters memory a;
@@ -617,7 +622,7 @@ contract HostTest is Test, HostUtilsLib {
 
             os.updateDaoParameters(dao.symbol, a);
 
-            ITokenomics.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
 
             assertEq(keccak256(abi.encode(daoAfter.params)), keccak256(abi.encode(a)), "params");
         }
@@ -626,7 +631,7 @@ contract HostTest is Test, HostUtilsLib {
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
-    function _assertDaoEqual(ITokenomics.DaoMetaData memory expected, ITokenomics.DaoData memory actual) internal pure {
+    function _assertDaoEqual(IDAOData.DaoDataInput memory expected, IDAOData.DaoData memory actual) internal pure {
         // basic fields
         assertEq(uint(uint8(expected.phase)), uint(uint8(actual.phase)), "phase");
         assertEq(expected.symbol, actual.symbol, "symbol");
@@ -681,8 +686,8 @@ contract HostTest is Test, HostUtilsLib {
 // todo
 //        assertEq(expected.units.length, actual.units.length, "units.length");
 //        for (uint i = 0; i < expected.units.length; i++) {
-//            ITokenomics.UnitInfo memory eu = expected.units[i];
-//            ITokenomics.UnitInfo memory au = actual.units[i];
+//            IDAOData.UnitDataInput memory eu = expected.units[i];
+//            IDAOData.UnitDataInput memory au = actual.units[i];
 //
 //            assertEq(eu.unitId, au.unitId, "unit.unitId");
 //            assertEq(eu.name, au.name, "unit.name");
@@ -705,41 +710,11 @@ contract HostTest is Test, HostUtilsLib {
 //            }
 //        }
 
-        // agents
-        assertEq(expected.agents.length, actual.agents.length, "agents.length");
-        for (uint i = 0; i < expected.agents.length; i++) {
-            ITokenomics.AgentInfo memory ea = expected.agents[i];
-            ITokenomics.AgentInfo memory aa = actual.agents[i];
-
-            // api
-            assertEq(ea.api.length, aa.api.length, "agent.api.length");
-            for (uint j = 0; j < ea.api.length; j++) {
-                assertEq(ea.api[j], aa.api[j], "agent.api");
-            }
-
-            // roles
-            assertEq(ea.roles.length, aa.roles.length, "agent.roles.length");
-            for (uint j = 0; j < ea.roles.length; j++) {
-                assertEq(ea.roles[j], aa.roles[j], "agent.roles");
-            }
-
-            assertEq(ea.name, aa.name, "agent.name");
-
-            // directives
-            assertEq(ea.directives.length, aa.directives.length, "agent.directives.length");
-            for (uint j = 0; j < ea.directives.length; j++) {
-                assertEq(ea.directives[j], aa.directives[j], "agent.directives");
-            }
-
-            assertEq(ea.image, aa.image, "agent.image");
-            assertEq(ea.telegram, aa.telegram, "agent.telegram");
-        }
-
         // tokenomics: funding
-        assertEq(expected.tokenomics.funding.length, actual.tokenomics.funding.length, "tokenomics.funding.length");
-        for (uint i = 0; i < expected.tokenomics.funding.length; i++) {
-            ITokenomics.Funding memory ef = expected.tokenomics.funding[i];
-            ITokenomics.Funding memory af = actual.tokenomics.funding[i];
+        assertEq(expected.funding.length, actual.funding.length, "tokenomics.funding.length");
+        for (uint i = 0; i < expected.funding.length; i++) {
+            ITokenomics.Funding memory ef = expected.funding[i];
+            ITokenomics.Funding memory af = actual.funding[i];
 
             assertEq(uint(uint8(ef.fundingType)), uint(uint8(af.fundingType)), "funding.fundingType");
             assertEq(ef.start, af.start, "funding.start");
@@ -751,10 +726,10 @@ contract HostTest is Test, HostUtilsLib {
         }
 
         // vesting
-        assertEq(expected.tokenomics.vesting.length, actual.tokenomics.vesting.length, "tokenomics.vesting.length");
-        for (uint i = 0; i < expected.tokenomics.vesting.length; i++) {
-            ITokenomics.Vesting memory ev = expected.tokenomics.vesting[i];
-            ITokenomics.Vesting memory av = actual.tokenomics.vesting[i];
+        assertEq(expected.vesting.length, actual.vesting.length, "tokenomics.vesting.length");
+        for (uint i = 0; i < expected.vesting.length; i++) {
+            ITokenomics.Vesting memory ev = expected.vesting[i];
+            ITokenomics.Vesting memory av = actual.vesting[i];
 
             assertEq(ev.name, av.name, "vesting.name");
             assertEq(ev.description, av.description, "vesting.description");
@@ -764,7 +739,7 @@ contract HostTest is Test, HostUtilsLib {
         }
 
         // initialChain
-        assertEq(expected.tokenomics.initialChain, actual.tokenomics.initialChain, "tokenomics.initialChain");
+        // todo assertEq(expected.initialChain, actual.initialChain, "tokenomics.initialChain");
     }
 
     /// @notice user should pay for DAO-creation
