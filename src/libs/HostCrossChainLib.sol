@@ -17,7 +17,7 @@ library HostCrossChainLib {
     /// @param guid_ Unique message identifier
     /// @param message_ Message payload
     function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo do we need to check sender here? require(msg.sender == bridge, NotBridge());
         require(message_.length >= 32, TooShortCrossChainMessage());
@@ -52,7 +52,7 @@ library HostCrossChainLib {
     /// @param daoSymbol Symbol of new DAO
     /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
     function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
         address bridge = $.osChainSettings[0].hostBridge;
         return bridge == address(0)
@@ -68,7 +68,7 @@ library HostCrossChainLib {
 
     /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IHost.CrossChainMessages messageKind, bytes memory payload) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         address bridge = $.osChainSettings[0].hostBridge;
         if (bridge != address(0)) {
             uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);

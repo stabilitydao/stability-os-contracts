@@ -12,7 +12,7 @@ import {HostUpdateLib} from "./HostUpdateLib.sol";
 library HostProposalsLib {
     /// @notice Receive voting results from voting module and execute proposal if approved
     function receiveVotingResults(bytes32 proposalId, bool succeed) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
 
@@ -52,7 +52,7 @@ library HostProposalsLib {
         view
         returns (HostLib.HostStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase)
     {
-        $ = HostLib.getOsStorage();
+        $ = HostLib.getHostStorage();
         daoUid = $.daoUids[daoSymbol];
         phase = $.daos[daoUid].phase;
         require(daoUid != 0, IHost.IncorrectDao());
@@ -90,7 +90,7 @@ library HostProposalsLib {
     function updateUnits(string memory daoSymbol, IDAOData.UnitDataInput[] memory units) external {
         (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         require($.osSettings[0].priceUnit == 0, IHost.NotImplemented());
 
 // todo

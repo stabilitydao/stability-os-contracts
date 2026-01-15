@@ -54,9 +54,9 @@ contract OsBridgeTest is Test, HostUtilsLib {
     }
 
     function testStorageLocation() internal pure {
-        console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability-os-contracts.HostBridge))))");
+        console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability.host-contracts.HostBridge))))");
         console.logBytes32(
-            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostBridge")) - 1))
+            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostBridge")) - 1))
                 & ~bytes32(uint(0xff))
         );
     }

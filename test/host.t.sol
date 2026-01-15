@@ -29,9 +29,9 @@ contract HostTest is Test, HostUtilsLib {
     //region ----------------------------------- Unit tests
     function testStorageLocation() public pure {
         assertEq(
-            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.OS")) - 1)) & ~bytes32(uint(0xff)),
-            HostLib.OS_STORAGE_LOCATION,
-            "OS_STORAGE_LOCATION"
+            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.Host")) - 1)) & ~bytes32(uint(0xff)),
+            HostLib.HOST_STORAGE_LOCATION,
+            "HOST_STORAGE_LOCATION"
         );
     }
 

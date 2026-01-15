@@ -12,7 +12,7 @@ interface IHostProxyFactory {
     event NewSeedTokenImplementation(address implementation);
     event NewTgeTokenImplementation(address implementation);
 
-    /// @custom:storage-location erc7201:stability-os-contracts.HostProxyFactory
+    /// @custom:storage-location erc7201:stability.host-contracts.HostProxyFactory
     struct HostProxyFactoryStorage {
         /// @notice Current implementation of SeedToken logic contract
         address seedTokenImplementation;

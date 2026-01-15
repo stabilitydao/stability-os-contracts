@@ -16,14 +16,14 @@ library HostActionsLib {
 
     //region -------------------------------------- Restricted actions
     function setSettings(IHost.HostSettings memory st) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.osSettings[0] = st;
 
         emit IHost.OsSettingsUpdated(st);
     }
 
     function setChainSettings(IHost.HostChainSettings memory st) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.osChainSettings[0] = st;
 
         emit IHost.OsChainSettingsUpdated(st);
@@ -31,7 +31,9 @@ library HostActionsLib {
 
     /// @notice Initialize OS with existing DAO symbols from other chains
     function initHost(IHost.HostInitPayload memory initPayload) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        $.daoCounter = HostLib.MIN_DAO_UID;
 
         for (uint i = 0; i < initPayload.usedSymbols.length; i++) {
             string memory daoSymbol = initPayload.usedSymbols[i];
@@ -56,7 +58,7 @@ library HostActionsLib {
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo currently host dao is set by first created dao, is it safe?
         (uint daoUid, bool firstDao) = HostLib.generateDaoUid($);
@@ -92,7 +94,7 @@ library HostActionsLib {
 
     /// @notice Add live DAO verified off-chain into the system
     function addLiveDAO(IDAOData.DaoDataInput calldata dao) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         (uint daoUid,) = HostLib.generateDaoUid($);
 
@@ -156,7 +158,7 @@ library HostActionsLib {
 
     /// @notice Process revenue for the given unit of the DAO
     function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
         require(daoUid != 0, IHost.IncorrectDao());

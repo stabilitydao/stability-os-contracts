@@ -19,7 +19,7 @@ library HostUpdateLib {
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) internal view {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         IHost.HostSettings storage st = $.osSettings[0];
 
         _validateDaoData(dao, st);
@@ -39,7 +39,7 @@ library HostUpdateLib {
     }
 
     function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         {
             uint len = bytes(name).length;
@@ -124,7 +124,7 @@ library HostUpdateLib {
         bytes32[] memory salt_,
         uint chainId
     ) internal view {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint len = contractIndices.length;
         require(len != 0 && len == salt_.length, IHost.IncorrectArrayLengths());
@@ -154,7 +154,7 @@ library HostUpdateLib {
     /// @param payload Encoded proposal data
     /// @return proposalId Id of the created proposal. It is unique across all DAOs
     function proposeAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal returns (bytes32) {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo check for initial chain
         // todo get user power
@@ -181,7 +181,7 @@ library HostUpdateLib {
         ITokenomics.DAOAction action,
         bytes memory payload
     ) internal view returns (bytes32) {
-        return keccak256(abi.encode(daoUid, HostLib.getOsStorage().daoProposals[daoUid].length, action, payload));
+        return keccak256(abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payload));
     }
 
     //endregion -------------------------------------- Proposal logic
@@ -197,7 +197,7 @@ library HostUpdateLib {
     }
 
     function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoImages[daoUid] = images;
         emit IHost.DaoImagesUpdated($.daos[daoUid].symbol, images);
     }
@@ -211,7 +211,7 @@ library HostUpdateLib {
     }
 
     function updateSocials(uint daoUid, string[] memory socials) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daos[daoUid].socials = socials;
         emit IHost.DaoSocialsUpdated($.daos[daoUid].symbol, socials);
     }
@@ -225,7 +225,7 @@ library HostUpdateLib {
     }
 
     function updateUnits(uint daoUid, ITokenomics.UnitData[] memory units) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
 // todo
 //        // todo take prices for unit creation
@@ -291,7 +291,7 @@ library HostUpdateLib {
     }
 
     function updateFunding(uint daoUid, ITokenomics.Funding memory newFunding) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         ITokenomics.FundingType[] memory listFunding = $.tokenomics[daoUid].funding;
 
@@ -323,7 +323,7 @@ library HostUpdateLib {
     }
 
     function updateVesting(uint daoUid, ITokenomics.Vesting[] memory vesting) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint countVesting = vesting.length;
         $.tokenomics[daoUid].countVesting = countVesting;
@@ -340,7 +340,7 @@ library HostUpdateLib {
     /// @param daoUid Unique id of the DAO
     /// @param payload Encoded ITokenomics.DaoNames struct
     function updateNaming(uint daoUid, bytes memory payload) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         ITokenomics.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
 
         // todo we must validate if the new symbol is not used already
@@ -351,7 +351,7 @@ library HostUpdateLib {
     }
 
     function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         string memory oldSymbol = $.daos[daoUid].symbol;
         delete $.usedSymbols[oldSymbol];
@@ -375,7 +375,7 @@ library HostUpdateLib {
     }
 
     function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoParameters[daoUid] = daoParameters_;
         emit IHost.DaoParametersUpdated($.daos[daoUid].symbol, daoParameters_);
     }
@@ -388,7 +388,7 @@ library HostUpdateLib {
     function updateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_, uint chain_) internal {
         uint chainId = chain_ == 0 ? block.chainid : chain_;
 
-        HostLib.HostStorage storage $ = HostLib.getOsStorage();
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint len = contractIndices.length;
         for (uint i; i < len; ++i) {
             bytes32 key = HostLib.getKey(daoUid, contractIndices[i], chainId);

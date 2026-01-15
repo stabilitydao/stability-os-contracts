@@ -82,7 +82,7 @@ interface IDAOData is ITokenomics, ITokenomicsAddons, IDAOMetadata {
 
     }
 
-    /// @notice DAO data to be input when creating or updating DAO
+    /// @notice DAO data to be input when creating DAO
     struct DaoDataInput {
         // ---------------------------- SEGMENT 1: ON-CHAIN on all chains where Host deployed
 

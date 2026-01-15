@@ -35,9 +35,9 @@ contract HostProxyFactoryTest is Test {
     }
 
     function testStorageLocation() internal pure {
-        console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability-os-contracts.HostProxyFactory))))");
+        console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability.host-contracts.HostProxyFactory))))");
         console.logBytes32(
-            keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostProxyFactory")) - 1))
+            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactory")) - 1))
                 & ~bytes32(uint(0xff))
         );
     }

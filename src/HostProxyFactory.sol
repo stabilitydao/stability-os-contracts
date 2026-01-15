@@ -15,8 +15,8 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     /// @inheritdoc IControllable2
     string public constant VERSION = "1.0.0";
 
-    // keccak256(abi.encode(uint(keccak256("erc7201:stability-os-contracts.HostProxyFactory")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 public constant HOST_STORAGE_LOCATION = 0xf89955ccc15fd1298e401a60272fc8444970d225cf711f81058f63f307199e00;
+    // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactory")) - 1)) & ~bytes32(uint(0xff));
+    bytes32 public constant HOST_STORAGE_LOCATION = 0; // todo
 
     //endregion -------------------------------------- Constants
 
