@@ -9,19 +9,19 @@ import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
-import {Controllable2} from "./base/Controllable2.sol";
-import {IControllable2} from "./interfaces/IControllable2.sol";
+import {Hosted} from "./base/Hosted.sol";
+import {IHosted} from "./interfaces/IHosted.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract Host is IHost, Controllable2 {
-    /// @inheritdoc IControllable2
+contract Host is IHost, Hosted {
+    /// @inheritdoc IHosted
     string public constant VERSION = "1.0.0";
 
     /// @notice Max number of tasks returned by `tasks` function
     uint internal constant MAX_COUNT_TASKS = 25;
 
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public initializer {
         __Controllable_init(authority_);
 

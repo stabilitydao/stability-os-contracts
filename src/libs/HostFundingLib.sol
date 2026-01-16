@@ -6,7 +6,7 @@ import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
+import {IHosted} from "../interfaces/IHosted.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 
@@ -16,7 +16,7 @@ library HostFundingLib {
     /// @notice Fund DAO in the current funding round
     function fund(string calldata daoSymbol, uint amount) external {
         // todo not reentrancy
-        require(amount != 0, IControllable2.ZeroAmount()); // todo settings.minFunding
+        require(amount != 0, IHosted.ZeroAmount()); // todo settings.minFunding
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];

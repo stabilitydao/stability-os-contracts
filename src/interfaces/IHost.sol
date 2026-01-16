@@ -146,7 +146,6 @@ interface IHost {
 
         /// @notice todo DAO chains settings are updated
         UPDATE_SALTS_6
-
     }
 
     //region ---------------------------------------- Read

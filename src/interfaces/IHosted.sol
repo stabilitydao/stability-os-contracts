@@ -3,16 +3,12 @@ pragma solidity ^0.8.28;
 
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 
-/// @dev Base core interface implemented by most platform contracts.
-///      Inherited contracts store an todo immutable (???) authority address in the storage,
-///      which provides authorization capabilities and infrastructure contract addresses.
-///  todo rename to IControllable later
-interface IControllable2 is IAccessManaged {
+/// @dev Base core interface implemented by most host-platform contracts.
+interface IHosted is IAccessManaged {
     error IncorrectZeroArgument();
     error ZeroAddress();
     error ZeroAmount();
     error InsufficientBalance(uint actualBalance, uint requiredBalance);
-
     event ContractInitialized(address authority, uint ts, uint block);
 
     /// @notice Initialize contract with authority and payload

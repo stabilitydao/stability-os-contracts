@@ -13,7 +13,7 @@ import {MockOsBridge} from "../src/test/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 
 contract HostLifeCycleTest is Test, HostUtilsLib {
     address internal immutable MULTISIG;

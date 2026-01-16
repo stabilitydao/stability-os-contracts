@@ -8,7 +8,7 @@ import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {IControllable2} from "../../src/interfaces/IControllable2.sol";
+import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
 import {Proxy} from "../../src/base/Proxy.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
@@ -48,7 +48,7 @@ abstract contract HostUtilsLib {
             address logic = address(new Host());
             Proxy proxy = new Proxy();
             proxy.initProxy(address(logic));
-            IControllable2(address(proxy)).initialize(address(accessManager), abi.encode(init_));
+            IHosted(address(proxy)).initialize(address(accessManager), abi.encode(init_));
 
             host = IHost(address(proxy));
         }
@@ -76,7 +76,7 @@ abstract contract HostUtilsLib {
             address logic = address(new HostProxyFactory());
             Proxy proxy = new Proxy();
             proxy.initProxy(address(logic));
-            IControllable2(address(proxy)).initialize(address(accessManager), "");
+            IHosted(address(proxy)).initialize(address(accessManager), "");
 
             factory = IHostProxyFactory(address(proxy));
 
@@ -241,7 +241,7 @@ abstract contract HostUtilsLib {
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
-        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);
@@ -256,7 +256,7 @@ abstract contract HostUtilsLib {
     }
 
     function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) public {
-        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);
@@ -301,7 +301,7 @@ abstract contract HostUtilsLib {
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).addEndpoint(endpoints);
 
-        IAccessManager accessManager = IAccessManager(IControllable2(address(os)).authority());
+        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
 
         // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
         {

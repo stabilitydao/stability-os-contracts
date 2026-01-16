@@ -9,16 +9,16 @@ import {
     Origin,
     MessagingFee
 } from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
-import {IControllable2, Controllable2} from "./base/Controllable2.sol";
+import {IHosted, Hosted} from "./base/Hosted.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
-import {Controllable2} from "./base/Controllable2.sol";
+import {Hosted} from "./base/Hosted.sol";
 
-contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
+contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     using EnumerableSet for EnumerableSet.UintSet;
 
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     string public constant VERSION = "1.0.0";
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostBridge")) - 1)) & ~bytes32(uint(0xff));
@@ -50,7 +50,7 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
         _disableInitializers();
     }
 
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public initializer {
         (address _owner, address _delegate) = abi.decode(payload, (address, address));
         __Controllable_init(authority_);

@@ -9,22 +9,15 @@ import {
     ERC20PermitUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
-import {Controllable2} from "../base/Controllable2.sol";
-import {IControllable2} from "../interfaces/IControllable2.sol";
+import {Hosted} from "../base/Hosted.sol";
+import {IHosted} from "../interfaces/IHosted.sol";
 import {IToken} from "../interfaces/IToken.sol";
 
-contract Token is
-    IToken,
-    Controllable2,
-    ERC20Upgradeable,
-    ERC20BurnableUpgradeable,
-    ERC20PermitUpgradeable,
-    IMintedERC20
-{
-    /// @inheritdoc IControllable2
+contract Token is IToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeable, ERC20PermitUpgradeable, IMintedERC20 {
+    /// @inheritdoc IHosted
     string public constant VERSION = "1.0.0";
 
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public initializer {
         (string memory _name, string memory _symbol) = abi.decode(payload, (string, string));
 

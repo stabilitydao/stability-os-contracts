@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28; // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
+pragma solidity 0.8.28; // We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
 
 /// @title Simple ERC-1967 upgradeable proxy implementation
 abstract contract UpgradeableProxy {

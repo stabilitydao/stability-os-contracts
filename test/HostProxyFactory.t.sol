@@ -6,7 +6,7 @@ import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManage
 import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
 import {HostProxyFactory} from "../src/HostProxyFactory.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IControllable2} from "../src/interfaces/IControllable2.sol";
+import {IHosted} from "../src/interfaces/IHosted.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
@@ -22,13 +22,19 @@ contract HostProxyFactoryTest is Test {
     address internal multisig;
     HostProxyFactory internal factory;
 
+    /// @notice Precalculated result of factory.getProxyInitCodeHash(). For simplicity assume that proxy is never changed.
+    /// If we need to change Proxy contract we need to create Proxy2 contract
+    /// and I.E. use old generated salt with old proxy and new generated salt with new proxy.
+    bytes32 internal constant PROXY_CREATION_CODE_HASH =
+    0x35656ab11a97544d46860e81ce9d5904c38b74f4dec412bba7ab1795d1266f5f;
+
     constructor() {
         multisig = makeAddr("multisig");
         accessManager = new AccessManager(multisig);
 
         address proxy = address(new Proxy());
         IProxy(proxy).initProxy(address(new HostProxyFactory()));
-        IControllable2(proxy).initialize(address(accessManager), "");
+        IHosted(proxy).initialize(address(accessManager), "");
         factory = HostProxyFactory(proxy);
 
         _setupAccessManager();
@@ -139,7 +145,8 @@ contract HostProxyFactoryTest is Test {
         usedSymbols[0] = "AAA";
         usedSymbols[1] = "BBB";
 
-        IHost.HostInitPayload memory init = IHost.HostInitPayload({usedSymbols: usedSymbols});
+        IHost.HostInitPayload memory init =
+            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "CCC", daoHostUid: 12345});
 
         vm.expectRevert();
         vm.prank(address(2222));
@@ -149,6 +156,9 @@ contract HostProxyFactoryTest is Test {
 
         assertTrue(host.isDaoSymbolInUse("AAA"), "AAA");
         assertTrue(host.isDaoSymbolInUse("BBB"), "BBB");
+
+        assertTrue(host.isDaoSymbolInUse("CCC"), "CCC");
+        assertEq(host.getHostDaoUid(), 12345, "CCC uid");
 
         assertEq(address(host), predictedProxyAddress, "Predicted address matches deployed");
     }
@@ -174,5 +184,13 @@ contract HostProxyFactoryTest is Test {
 
         vm.prank(multisig);
         accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(this), 0);
+    }
+
+    function testProxyCreationCode() public view {
+        assertEq(
+            factory.getProxyInitCodeHash(),
+            PROXY_CREATION_CODE_HASH,
+            "Proxy creation code shouldn't change because of CREATE2 address calculation relies on it"
+        );
     }
 }

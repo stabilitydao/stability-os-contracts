@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28; // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
+pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {Controllable2} from "./base/Controllable2.sol";
-import {IControllable2} from "./interfaces/IControllable2.sol";
+import {Hosted} from "./base/Hosted.sol";
+import {IHosted} from "./interfaces/IHosted.sol";
 import {IHostProxyFactory} from "./interfaces/IHostProxyFactory.sol";
 import {IProxy} from "./interfaces/IProxy.sol";
 import {Proxy} from "./base/Proxy.sol";
 
-contract HostProxyFactory is Controllable2, IHostProxyFactory {
+contract HostProxyFactory is Hosted, IHostProxyFactory {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     //region -------------------------------------- Constant
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     string public constant VERSION = "1.0.0";
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactory")) - 1)) & ~bytes32(uint(0xff));
@@ -22,7 +22,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     //endregion -------------------------------------- Constants
 
     //region -------------------------------------- Initialization
-    /// @inheritdoc IControllable2
+    /// @inheritdoc IHosted
     function initialize(
         address authority_,
         bytes memory /*payload*/
@@ -101,7 +101,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     ) external restricted returns (address proxy) {
         proxy = _createNewProxy(salt);
         IProxy(proxy).initProxy(logic);
-        IControllable2(proxy).initialize(authority(), payload);
+        IHosted(proxy).initialize(authority(), payload);
 
         emit NewContractDeployed(proxy, logic, payload);
         return proxy;
@@ -113,7 +113,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
 
         proxy = _createNewProxy(salt);
         IProxy(proxy).initProxy($.seedTokenImplementation);
-        IControllable2(proxy).initialize(authority(), payload);
+        IHosted(proxy).initialize(authority(), payload);
 
         $.seedTokens.add(proxy);
 
@@ -126,7 +126,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
         address proxy = _createNewProxy(salt);
         IProxy(proxy).initProxy($.tgeTokenImplementation);
-        IControllable2(proxy).initialize(authority(), payload);
+        IHosted(proxy).initialize(authority(), payload);
 
         $.tgeTokens.add(proxy);
 
@@ -146,7 +146,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
 
     function _createNewProxy(bytes32 salt) internal returns (address proxy) {
         proxy = salt == 0
-            ? address(new Proxy())  // create
+            ? address(new Proxy())  // create   // todo if create is not allowed we must require salt != 0
             : address(new Proxy{salt: salt}()); // create2
     }
     //endregion -------------------------------------- Internal utils

@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-/// @notice Factory interface for deploying proxy contracts based in IControllable2
+/// @notice Factory interface for deploying proxy contracts based in IHosted
 interface IHostProxyFactory {
     event NewSeedToken(address seedToken, bytes payload);
     event NewTgeToken(address tgeToken, bytes payload);
@@ -76,7 +76,7 @@ interface IHostProxyFactory {
     /// @notice Deploy new proxy contract
     /// @param salt Salt for create2 deployment
     /// @param logic Address of logic contract
-    /// @param payload Initialization payload to pass to IControllable2.initialize.
+    /// @param payload Initialization payload to pass to IHosted.initialize.
     /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
     /// @return Address of deployed proxy contract
     function deployProxy(bytes32 salt, address logic, bytes memory payload) external returns (address);
@@ -84,7 +84,7 @@ interface IHostProxyFactory {
     /// @notice Deploy new SeedToken proxy contract
     /// @custom:require Host
     /// @param salt Salt for create2 deployment
-    /// @param payload Initialization payload to pass to IControllable2.initialize.
+    /// @param payload Initialization payload to pass to IHosted.initialize.
     /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
     /// @return Address of deployed proxy contract
     function deploySeedToken(bytes32 salt, bytes memory payload) external returns (address);
@@ -92,7 +92,7 @@ interface IHostProxyFactory {
     /// @notice Deploy new TgeToken proxy contract
     /// @custom:require Host
     /// @param salt Salt for create2 deployment
-    /// @param payload Initialization payload to pass to IControllable2.initialize.
+    /// @param payload Initialization payload to pass to IHosted.initialize.
     /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
     /// @return Address of deployed proxy contract
     function deployTgeToken(bytes32 salt, bytes memory payload) external returns (address);
