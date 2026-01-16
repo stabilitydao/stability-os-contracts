@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
@@ -21,7 +22,6 @@ library HostUpdateLib {
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) internal view {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         _validateDaoData(daoData2, st);
@@ -253,13 +253,13 @@ library HostUpdateLib {
             // -------------------- detect units to update/insert and units to delete
             /// @dev Units to delete
             bytes32[] memory hashes = $.segment2[daoUid].hashUnitIds;
-            bool[] memory toDelete = new bool[](hashes.length);
+            bool[] memory notDelete = new bool[](hashes.length);
             for (uint i; i < units.length; ++i) {
                 newHashes[i] = HostLib.getUnitKey(daoUid, units[i].unitId);
                 for (uint j; j < hashes.length; ++j) {
                     if (hashes[j] == newHashes[i]) {
                         // new unit exists
-                        toDelete[j] = true;
+                        notDelete[j] = true;
                         updates[i] = true;
                         break;
                     }
@@ -268,9 +268,10 @@ library HostUpdateLib {
 
             // -------------------- delete old units (the units that don't exist in {units} list anymore}
             for (uint j; j < hashes.length; ++j) {
-                if (toDelete[j]) {
+                if (!notDelete[j]) {
                     emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].unitId, proposalId);
                     // todo probably we shouldn't call delete to reduce gas costs (?)
+                    console.log("delete");console.logBytes32(hashes[j]);
                     delete $.units[hashes[j]];
                 }
             }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {IDAOMetadata} from "../interfaces/IDAOMetadata.sol";
 import {IDAOData} from "./IDAOData.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
@@ -47,10 +46,7 @@ interface IHost {
 
     /// @notice Units are updated via proposal or instantly
     event ProposalToUpdateDaoUnits(
-        bytes32 proposalUid,
-        uint daoUid,
-        IDAOData.UnitDataInput[] units,
-        IDAOData.UnitMetaData[] metaData
+        bytes32 proposalUid, uint daoUid, IDAOData.UnitDataInput[] units, IDAOData.UnitMetaData[] metaData
     );
 
     /// @notice Unit is inserted or updated
@@ -131,13 +127,16 @@ interface IHost {
 
     //region ---------------------------------------- Read
 
-    // todo getDaoUid, getHostDaoUid, isSaltReserved
+    // todo isSaltReserved
 
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory);
 
     /// @notice Owner of the DAO
     function getDAOOwner(string calldata daoSymbol) external view returns (address);
+
+    /// @notice Get UID of the Host DAO
+    function getHostDaoUid() external view returns (uint);
 
     /// @notice True if a DAO with such symbol already exists
     function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool);

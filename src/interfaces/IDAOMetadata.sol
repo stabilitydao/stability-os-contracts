@@ -13,17 +13,17 @@ interface IDAOMetadata {
         LIVE_2
     }
 
-//    /// @notice Supported categories of running units.
-//    enum UnitComponentCategory {
-//        /// @notice Chain support (blockchain integrations, relayers).
-//        CHAIN_SUPPORT_0,
-//        /// @notice Engine support (infrastructure and execution engine).
-//        ENGINE_SUPPORT_1,
-//        /// @notice DeFi strategy components.
-//        DEFI_STRATEGY_2,
-//        /// @notice MEV strategy components.
-//        MEV_STRATEGY_3
-//    }
+    //    /// @notice Supported categories of running units.
+    //    enum UnitComponentCategory {
+    //        /// @notice Chain support (blockchain integrations, relayers).
+    //        CHAIN_SUPPORT_0,
+    //        /// @notice Engine support (infrastructure and execution engine).
+    //        ENGINE_SUPPORT_1,
+    //        /// @notice DeFi strategy components.
+    //        DEFI_STRATEGY_2,
+    //        /// @notice MEV strategy components.
+    //        MEV_STRATEGY_3
+    //    }
 
     /// @notice Supported unit types.
     enum UnitType {

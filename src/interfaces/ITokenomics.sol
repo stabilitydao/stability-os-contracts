@@ -189,7 +189,7 @@ interface ITokenomics {
         bytes payload;
     }
 
-    struct DAOChainSettings {
+    struct DaoChainSettings {
         /// @notice Todo comment
         uint bbRate;
     }

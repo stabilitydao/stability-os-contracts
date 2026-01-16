@@ -34,7 +34,7 @@ library HostActionsLib {
     function initHost(IHost.HostInitPayload memory initPayload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        $.daoCounter = HostLib.MIN_DAO_UID;
+        HostLib.setupDaoCounter();
 
         uint len = initPayload.usedSymbols.length;
         if (len != 0) {
@@ -140,8 +140,13 @@ library HostActionsLib {
         HostLib.DaoDataSegment3 storage segment3 = $.segment3[daoUid];
         segment3.initialChain = block.chainid; // TODO: how to add exist bridged DAO?
         segment3.deployer = dao.deployer;
-        segment3.socials = dao.socials;
         segment3.activity = dao.activity;
+        { // segment3.socials = dao.socials;
+            uint len = dao.socials.length;
+            for (uint i; i < len; i++) {
+                segment3.socials.push(dao.socials[i]);
+            }
+        }
 
         // todo validate other fields
 
@@ -213,7 +218,11 @@ library HostActionsLib {
     }
 
     /// @notice Check if the given dao has a unit with the given {unitId}
-    function _isUnitExist(HostLib.HostStorage storage $, uint daoUid, string memory unitId) internal view returns (bool) {
+    function _isUnitExist(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        string memory unitId
+    ) internal view returns (bool) {
         return $.units[HostLib.getUnitKey(daoUid, unitId)].daoUid != 0;
     }
 

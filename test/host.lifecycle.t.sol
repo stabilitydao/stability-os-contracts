@@ -32,9 +32,16 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
     /// @notice Test single DAO life cycle
     function testLifeCycle56() public {
         // ------------------------------ First DAO is Aliens community
-        IHost os56 = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
-        lifeCycleDaoAlien56(os56);
+        lifeCycleDaoAlien56(host56);
+
+        // ------------------------------ Ensure that first DAO becomes Host DAO
+        {
+            uint uid = host56.getHostDaoUid();
+            IDAOData.DaoData memory data = host56.getDAO("ALIENS");
+            assertEq(data.uid, uid, "ALIENS is Host dao");
+        }
 
         // ------------------------------ Second DAO
         // second DAO are APES syndicate
@@ -42,12 +49,12 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
         // they do many errors
 
         // todo Second DAO should be created on chain 1 but currently it's created on chain 56
-        lifeCycleDaoApes1(os56);
+        lifeCycleDaoApes1(host56);
 
         // ------------------------------ Third DAO
         // third DAO are Machines Cartel
         // todo Third DAO should be created on chain 10 but currently it's created on chain 56
-        lifeCycleDaoMachines10(os56);
+        lifeCycleDaoMachines10(host56);
     }
 
     function testLifeCycleWithSalt() public {
@@ -105,383 +112,383 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             }
 
             // units project
-// todo
-//            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-//            units[0].metaData = unitMetadata0;
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "aliens:os",
-//                developerUid: ""
-//            });
-//            host_.updateUnits(daoData.symbol, units);
-//
-//            // registered socials
-//            string[] memory socials = new string[](2);
-//            socials[0] = "https://a.aa/a";
-//            socials[1] = "https://b.bb/b";
-//
-//            host_.updateSocials(daoData.symbol, socials);
-//
-//            {
-//                IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
-//                assertEq(tasksAfter.length, 0, "all tasks solved");
-//            }
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = unitMetadata0;
+            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
+
+            // registered socials
+            string[] memory socials = new string[](2);
+            socials[0] = "https://a.aa/a";
+            socials[1] = "https://b.bb/b";
+
+            host_.updateSocials(daoData.symbol, socials);
+
+            {
+                IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
+                assertEq(tasksAfter.length, 0, "all tasks solved");
+            }
         }
 
-// todo
-//        // ------------------------------ fix funding
-//        {
-//            ITokenomics.Funding memory funding = ITokenomics.Funding({
-//                fundingType: daoData.tokenomics.funding[0].fundingType,
-//                start: daoData.tokenomics.funding[0].start,
-//                end: daoData.tokenomics.funding[0].end,
-//                minRaise: daoData.tokenomics.funding[0].minRaise,
-//                maxRaise: 90_000e18,
-//                raised: daoData.tokenomics.funding[0].raised,
-//                claim: daoData.tokenomics.funding[0].claim
-//            });
-//            host_.updateFunding(daoData.symbol, funding);
-//        }
-//
-//        // ------------------------------ phase cant be changed right now
-//        {
-//            vm.expectRevert(IHost.WaitFundingStart.selector);
-//            host_.changePhase(daoData.symbol);
-//
-//            skip(24 days);
-//        }
-//
-//        // ------------------------------ change phase to seed
-//        {
-//            host_.changePhase(daoData.symbol);
-//            IDAOData.DaoDataView memory daoDataAfter = host_.getDAO(daoData.symbol);
-//
-//            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
-//
-//            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
-//            assertGt(tasks.length, 0, "at least 1 unsolved tasks");
-//        }
-//
-//        // ------------------------------ setup seed token, refresh daoData
-//        {
-//            daoData = host_.getDAO(daoData.symbol);
-//            //OsUtilsLib.printDaoData(daoData);
-//            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
-//
-//            assertEq(IERC20Metadata(daoData.deployments.seedToken).name(), "Aliens Community SEED", "seed name");
-//            assertEq(IERC20Metadata(daoData.deployments.seedToken).symbol(), "seedALIENS", "seed symbol");
-//        }
-//
-//        // ------------------------------ SEED started. First seeder
-//        {
-//            deal(asset, FIRST_SEEDER, 5000e18);
-//
-//            vm.prank(FIRST_SEEDER);
-//            IERC20(asset).approve(address(host_), 5000e18);
-//
-//            vm.prank(FIRST_SEEDER);
-//            host_.fund(daoData.symbol, 1000e18);
-//
-//            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 4000e18, "first seeder balance after funding");
-//            assertEq(
-//                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
-//                1000e18,
-//                "first seeder seed token balance after funding"
-//            );
-//        }
-//
-//        // ------------------------------ since seed has funds first governance proposal can be created
-//        {
-//            string[] memory socials = new string[](3);
-//            socials[0] = "https://a.aa/a1";
-//            socials[1] = "https://b.bb/b2";
-//            socials[2] = "https://c.cc/c3";
-//
-//            host_.updateSocials(daoData.symbol, socials);
-//
-//            bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
-//            assertEq(proposalIds.length, 1, "one proposal should be created");
-//
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalIds[0], true);
-//
-//            IDAOData.DaoDataView memory daoAfter = host_.getDAO("ALIENS");
-//            assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
-//
-//            assertEq(
-//                keccak256(abi.encode(socials)), keccak256(abi.encode(daoAfter.socials)), "socials data should match"
-//            );
-//
-//            vm.expectRevert(IHost.AlreadyReceived.selector);
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalIds[0], true);
-//
-//            vm.expectRevert(IHost.IncorrectProposal.selector);
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true);
-//        }
-//
-//        // ------------------------------ Second seeder
-//        {
-//            deal(asset, SECOND_SEEDER, 10000e18);
-//
-//            vm.prank(SECOND_SEEDER);
-//            IERC20(asset).approve(address(host_), type(uint).max);
-//
-//            vm.prank(SECOND_SEEDER);
-//            host_.fund(daoData.symbol, 10000e18);
-//
-//            assertEq(
-//                IERC20(daoData.deployments.seedToken).balanceOf(SECOND_SEEDER),
-//                10000e18,
-//                "second seeder seed token balance after funding"
-//            );
-//
-//            deal(asset, SECOND_SEEDER, 100000000e18);
-//
-//            vm.expectRevert(IHost.RaiseMaxExceed.selector);
-//            vm.prank(SECOND_SEEDER);
-//            host_.fund(daoData.symbol, 100000000e18);
-//        }
-//
-//        // ------------------------------ phase cant be changed right now
-//        {
-//            vm.expectRevert(IHost.WaitFundingEnd.selector);
-//            host_.changePhase(daoData.symbol);
-//
-//            skip(100 days);
-//        }
-//
-//        // ------------------------------ DEVELOPMENT phase started (SEED succeed), refresh daoData
-//        {
-//            host_.changePhase(daoData.symbol);
-//            daoData = host_.getDAO(daoData.symbol);
-//
-//            assertEq(
-//                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
-//            );
-//
-//            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
-//            assertGt(tasks.length, 0, "there are unsolved tasks on Development phase");
-//        }
-//
-//        // ------------------------------ fill TGE funding, refresh daoData
-//        {
-//            assertEq(
-//                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
-//                type(uint).max,
-//                "TGE funding should not exist yet"
-//            );
-//
-//            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
-//
-//            host_.updateFunding(daoData.symbol, funding);
-//
-//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-//
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalId, true);
-//
-//            daoData = host_.getDAO(daoData.symbol);
-//            assertEq(
-//                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
-//            );
-//        }
-//
-//        // ------------------------------ fix units
-//        {
-//            IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
-//            ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
-//
-//            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: unitMetadata0.name,
-//                status: IDAOMetadata.UnitStatus.LIVE_2,
-//                unitType: unitMetadata0.unitType,
-//                revenueShare: unitMetadata0.revenueShare,
-//                ui: unitMetadata0.ui,
-//                emoji: unitMetadata0.emoji,
-//                api: unitMetadata0.api
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: daoData.units[0].unitId,
-//                developerUid: ""
-//            });
-//
-//            host_.updateUnits(daoData.symbol, units);
-//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-//
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalId, true);
-//        }
-//
-//        // ------------------------------ fix images
-//        {
-//            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
-//                seedToken: "/seedALIENS.png",
-//                tgeToken: "/ALIENS.png",
-//                token: "/tgeALIENS.png",
-//                xToken: "/xALIENS.png",
-//                daoToken: "/ALIENS_DAO.png"
-//            });
-//            host_.updateImages(daoData.symbol, images);
-//
-//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalId, true);
-//        }
-//
-//        // ------------------------------ add vesting
-//        {
-//            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
-//            ITokenomics.Funding memory tgeFunding = daoData.tokenomics.funding[fundingIndex];
-//
-//            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-//            vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
-//
-//            host_.updateVesting(daoData.symbol, vesting);
-//
-//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalId, true);
-//        }
-//
-//        // ------------------------------ owner of DAO is seed token
-//        assertEq(host_.getDAOOwner(daoData.symbol), daoData.deployments.seedToken, "owner should be seed token");
-//
-//        // ------------------------------ try fund on not funding phase
-//        {
-//            vm.expectRevert(IHost.NotFundingPhase.selector);
-//            host_.fund(daoData.symbol, 1e18);
-//
-//            vm.expectRevert(IHost.WaitFundingStart.selector);
-//            host_.changePhase(daoData.symbol);
-//        }
-//
-//        // ------------------------------ TGE phase started (DEVELOPMENT done), refresh daoData
-//        {
-//            skip(180 days);
-//
-//            host_.changePhase(daoData.symbol);
-//            daoData = host_.getDAO(daoData.symbol);
-//
-//            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
-//            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
-//            assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
-//        }
-//
-//        // ------------------------------ setup TGE token
-//        HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
-//        assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
-//        assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
-//
-//        // ------------------------------ TGE funders
-//        {
-//            // first seeder
-//            deal(asset, FIRST_SEEDER, 10_000e18);
-//
-//            vm.prank(FIRST_SEEDER);
-//            IERC20(asset).approve(address(host_), 10_000e18);
-//
-//            vm.prank(FIRST_SEEDER);
-//            host_.fund(daoData.symbol, 10_000e18);
-//
-//            assertEq(
-//                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER),
-//                10_000e18,
-//                "third seeder seed token balance after funding"
-//            );
-//
-//            // assume here that first seeder already has 100000000e18 received in seed round
-//            vm.expectRevert(IHost.RaiseMaxExceed.selector);
-//            vm.prank(FIRST_SEEDER);
-//            host_.fund(daoData.symbol, 100000000e18);
-//
-//            // third seeder
-//            deal(asset, THIRD_SEEDER, 100_000e18);
-//
-//            vm.prank(THIRD_SEEDER);
-//            IERC20(asset).approve(address(host_), 100_000e18);
-//
-//            vm.prank(THIRD_SEEDER);
-//            host_.fund(daoData.symbol, 100_000e18);
-//
-//            assertEq(
-//                IERC20(daoData.deployments.tgeToken).balanceOf(THIRD_SEEDER),
-//                100_000e18,
-//                "third seeder seed token balance after funding"
-//            );
-//        }
-//
-//        // ------------------------------ LIVE CLIFF, refresh daoData
-//        {
-//            vm.expectRevert(IHost.WaitFundingEnd.selector);
-//            host_.changePhase(daoData.symbol);
-//
-//            skip(8 days);
-//
-//            host_.changePhase(daoData.symbol);
-//
-//            daoData = host_.getDAO(daoData.symbol);
-//
-//            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "phase should be LIVE_CLIFF");
-//        }
-//
-//        // ------------------------------ LIVE VESTING, refresh daoData
-//        {
-//            vm.expectRevert(IHost.WaitVestingStart.selector);
-//            host_.changePhase(daoData.symbol);
-//
-//            skip(200 days);
-//
-//            host_.changePhase(daoData.symbol);
-//
-//            daoData = host_.getDAO(daoData.symbol);
-//
-//            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "phase should be VESTING");
-//
-//            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
-//            assertEq(tasks.length, 0, "all tasks should be solved on LIVE_VESTING phase"); // todo add task "distribute vesting funds to leverage token"
-//        }
-//
-//        // ------------------------------ LIVE, refresh daoData
-//        {
-//            vm.expectRevert(IHost.WaitVestingEnd.selector);
-//            host_.changePhase(daoData.symbol);
-//
-//            skip(4000 days);
-//
-//            host_.changePhase(daoData.symbol);
-//
-//            daoData = host_.getDAO(daoData.symbol);
-//
-//            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_7), "phase should be LIVE");
-//            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
-//            assertEq(tasks.length, 0, "all tasks should be solved on LIVE phase");
-//        }
-//
-//        // ------------------------------ Try to update funding, vesting - bad paths
-//        {
-//            for (uint i = 0; i < daoData.tokenomics.funding.length; i++) {
-//                ITokenomics.Funding memory funding = ITokenomics.Funding({
-//                    fundingType: daoData.tokenomics.funding[i].fundingType,
-//                    start: daoData.tokenomics.funding[i].start,
-//                    end: daoData.tokenomics.funding[i].end,
-//                    minRaise: daoData.tokenomics.funding[i].minRaise,
-//                    maxRaise: 90_000e18,
-//                    raised: daoData.tokenomics.funding[i].raised,
-//                    claim: daoData.tokenomics.funding[i].claim
-//                });
-//
-//                vm.expectRevert(IHost.TooLateToUpdateSuchFunding.selector);
-//                host_.updateFunding(daoData.symbol, funding);
-//            }
-//
-//            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-//            vesting[0] = HostUtilsLib.generateVesting("Development", 1);
-//
-//            vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
-//            host_.updateVesting(daoData.symbol, vesting);
-//        }
+        // ------------------------------ fix funding
+        {
+            ITokenomics.Funding memory funding = ITokenomics.Funding({
+                fundingType: daoData.funding[0].fundingType,
+                start: daoData.funding[0].start,
+                end: daoData.funding[0].end,
+                minRaise: daoData.funding[0].minRaise,
+                maxRaise: 90_000e18,
+                raised: daoData.funding[0].raised,
+                claim: daoData.funding[0].claim
+            });
+            host_.updateFunding(daoData.symbol, funding);
+        }
+
+        // ------------------------------ phase cant be changed right now
+        {
+            vm.expectRevert(IHost.WaitFundingStart.selector);
+            host_.changePhase(daoData.symbol);
+
+            skip(24 days);
+        }
+
+        // ------------------------------ change phase to seed
+        {
+            host_.changePhase(daoData.symbol);
+            IDAOData.DaoData memory daoDataAfter = host_.getDAO(daoData.symbol);
+
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertGt(tasks.length, 0, "at least 1 unsolved tasks");
+        }
+
+        // ------------------------------ setup seed token, refresh daoData
+        {
+            daoData = host_.getDAO(daoData.symbol);
+            //OsUtilsLib.printDaoData(daoData);
+            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
+
+            assertEq(IERC20Metadata(daoData.deployments.seedToken).name(), "Aliens Community SEED", "seed name");
+            assertEq(IERC20Metadata(daoData.deployments.seedToken).symbol(), "seedALIENS", "seed symbol");
+        }
+
+        // ------------------------------ SEED started. First seeder
+        {
+            deal(asset, FIRST_SEEDER, 5000e18);
+
+            vm.prank(FIRST_SEEDER);
+            IERC20(asset).approve(address(host_), 5000e18);
+
+            vm.prank(FIRST_SEEDER);
+            host_.fund(daoData.symbol, 1000e18);
+
+            assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 4000e18, "first seeder balance after funding");
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
+                1000e18,
+                "first seeder seed token balance after funding"
+            );
+        }
+
+        // ------------------------------ since seed has funds first governance proposal can be created
+        {
+            string[] memory socials = new string[](3);
+            socials[0] = "https://a.aa/a1";
+            socials[1] = "https://b.bb/b2";
+            socials[2] = "https://c.cc/c3";
+
+            host_.updateSocials(daoData.symbol, socials);
+
+            bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
+            assertEq(proposalIds.length, 1, "one proposal should be created");
+
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalIds[0], true);
+
+            IDAOData.DaoData memory daoAfter = host_.getDAO("ALIENS");
+            assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
+
+            assertEq(
+                keccak256(abi.encode(socials)), keccak256(abi.encode(daoAfter.socials)), "socials data should match"
+            );
+
+            vm.expectRevert(IHost.AlreadyReceived.selector);
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalIds[0], true);
+
+            vm.expectRevert(IHost.IncorrectProposal.selector);
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true);
+        }
+
+        // ------------------------------ Second seeder
+        {
+            deal(asset, SECOND_SEEDER, 10000e18);
+
+            vm.prank(SECOND_SEEDER);
+            IERC20(asset).approve(address(host_), type(uint).max);
+
+            vm.prank(SECOND_SEEDER);
+            host_.fund(daoData.symbol, 10000e18);
+
+            assertEq(
+                IERC20(daoData.deployments.seedToken).balanceOf(SECOND_SEEDER),
+                10000e18,
+                "second seeder seed token balance after funding"
+            );
+
+            deal(asset, SECOND_SEEDER, 100000000e18);
+
+            vm.expectRevert(IHost.RaiseMaxExceed.selector);
+            vm.prank(SECOND_SEEDER);
+            host_.fund(daoData.symbol, 100000000e18);
+        }
+
+        // ------------------------------ phase cant be changed right now
+        {
+            vm.expectRevert(IHost.WaitFundingEnd.selector);
+            host_.changePhase(daoData.symbol);
+
+            skip(100 days);
+        }
+
+        // ------------------------------ DEVELOPMENT phase started (SEED succeed), refresh daoData
+        {
+            host_.changePhase(daoData.symbol);
+            daoData = host_.getDAO(daoData.symbol);
+
+            assertEq(
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
+            );
+
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertGt(tasks.length, 0, "there are unsolved tasks on Development phase");
+        }
+
+        // ------------------------------ fill TGE funding, refresh daoData
+        {
+            assertEq(
+                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
+                type(uint).max,
+                "TGE funding should not exist yet"
+            );
+
+            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
+
+            host_.updateFunding(daoData.symbol, funding);
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true);
+
+            daoData = host_.getDAO(daoData.symbol);
+            assertEq(
+                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
+            );
+        }
+
+        // ------------------------------ fix units
+        {
+            IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
+            ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
+
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: unitMetadata0.name,
+                status: IDAOMetadata.UnitStatus.BUILDING_1, // (!) any status is allowed here, we don't check it
+                unitType: unitMetadata0.unitType,
+                revenueShare: unitMetadata0.revenueShare,
+                ui: unitMetadata0.ui,
+                emoji: unitMetadata0.emoji,
+                api: unitMetadata0.api
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+
+            host_.updateUnits(daoData.symbol, units, metas);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+
+            // put some amount on unit balance - it means that the unit is "live"
+            address exchangeAsset = host_.getChainSettings().exchangeAsset;
+            deal(exchangeAsset, address(this), 1000e18);
+            IERC20(exchangeAsset).approve(address(host_), 1000e18);
+            host_.processUnitRevenue(daoData.symbol, daoData.units[0].unitId, 1000e18);
+
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true);
+        }
+
+        // ------------------------------ fix images
+        {
+            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+                seedToken: "/seedALIENS.png",
+                tgeToken: "/ALIENS.png",
+                token: "/tgeALIENS.png",
+                xToken: "/xALIENS.png",
+                daoToken: "/ALIENS_DAO.png"
+            });
+            host_.updateImages(daoData.symbol, images);
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true);
+        }
+
+        // ------------------------------ add vesting
+        {
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
+            ITokenomics.Funding memory tgeFunding = daoData.funding[fundingIndex];
+
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
+
+            host_.updateVesting(daoData.symbol, vesting);
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true);
+        }
+
+        // ------------------------------ owner of DAO is seed token
+        assertEq(host_.getDAOOwner(daoData.symbol), daoData.deployments.seedToken, "owner should be seed token");
+
+        // ------------------------------ try fund on not funding phase
+        {
+            vm.expectRevert(IHost.NotFundingPhase.selector);
+            host_.fund(daoData.symbol, 1e18);
+
+            vm.expectRevert(IHost.WaitFundingStart.selector);
+            host_.changePhase(daoData.symbol);
+        }
+
+        // ------------------------------ TGE phase started (DEVELOPMENT done), refresh daoData
+        {
+            skip(180 days);
+
+            host_.changePhase(daoData.symbol);
+            daoData = host_.getDAO(daoData.symbol);
+
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
+        }
+
+        // ------------------------------ setup TGE token
+        HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
+        assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
+        assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
+
+        // ------------------------------ TGE funders
+        {
+            // first seeder
+            deal(asset, FIRST_SEEDER, 10_000e18);
+
+            vm.prank(FIRST_SEEDER);
+            IERC20(asset).approve(address(host_), 10_000e18);
+
+            vm.prank(FIRST_SEEDER);
+            host_.fund(daoData.symbol, 10_000e18);
+
+            assertEq(
+                IERC20(daoData.deployments.tgeToken).balanceOf(FIRST_SEEDER),
+                10_000e18,
+                "third seeder seed token balance after funding"
+            );
+
+            // assume here that first seeder already has 100000000e18 received in seed round
+            vm.expectRevert(IHost.RaiseMaxExceed.selector);
+            vm.prank(FIRST_SEEDER);
+            host_.fund(daoData.symbol, 100000000e18);
+
+            // third seeder
+            deal(asset, THIRD_SEEDER, 100_000e18);
+
+            vm.prank(THIRD_SEEDER);
+            IERC20(asset).approve(address(host_), 100_000e18);
+
+            vm.prank(THIRD_SEEDER);
+            host_.fund(daoData.symbol, 100_000e18);
+
+            assertEq(
+                IERC20(daoData.deployments.tgeToken).balanceOf(THIRD_SEEDER),
+                100_000e18,
+                "third seeder seed token balance after funding"
+            );
+        }
+
+        // ------------------------------ LIVE CLIFF, refresh daoData
+        {
+            vm.expectRevert(IHost.WaitFundingEnd.selector);
+            host_.changePhase(daoData.symbol);
+
+            skip(8 days);
+
+            host_.changePhase(daoData.symbol);
+
+            daoData = host_.getDAO(daoData.symbol);
+
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "phase should be LIVE_CLIFF");
+        }
+
+        // ------------------------------ LIVE VESTING, refresh daoData
+        {
+            vm.expectRevert(IHost.WaitVestingStart.selector);
+            host_.changePhase(daoData.symbol);
+
+            skip(200 days);
+
+            host_.changePhase(daoData.symbol);
+
+            daoData = host_.getDAO(daoData.symbol);
+
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "phase should be VESTING");
+
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertEq(tasks.length, 0, "all tasks should be solved on LIVE_VESTING phase"); // todo add task "distribute vesting funds to leverage token"
+        }
+
+        // ------------------------------ LIVE, refresh daoData
+        {
+            vm.expectRevert(IHost.WaitVestingEnd.selector);
+            host_.changePhase(daoData.symbol);
+
+            skip(4000 days);
+
+            host_.changePhase(daoData.symbol);
+
+            daoData = host_.getDAO(daoData.symbol);
+
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_7), "phase should be LIVE");
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertEq(tasks.length, 0, "all tasks should be solved on LIVE phase");
+        }
+
+        // ------------------------------ Try to update funding, vesting - bad paths
+        {
+            for (uint i = 0; i < daoData.funding.length; i++) {
+                ITokenomics.Funding memory funding = ITokenomics.Funding({
+                    fundingType: daoData.funding[i].fundingType,
+                    start: daoData.funding[i].start,
+                    end: daoData.funding[i].end,
+                    minRaise: daoData.funding[i].minRaise,
+                    maxRaise: 90_000e18,
+                    raised: daoData.funding[i].raised,
+                    claim: daoData.funding[i].claim
+                });
+
+                vm.expectRevert(IHost.TooLateToUpdateSuchFunding.selector);
+                host_.updateFunding(daoData.symbol, funding);
+            }
+
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0] = HostUtilsLib.generateVesting("Development", 1);
+
+            vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
+            host_.updateVesting(daoData.symbol, vesting);
+        }
     }
 
     function lifeCycleDaoApes1(IHost host_) internal {
@@ -507,21 +514,18 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             host_.updateImages(daoData.symbol, images);
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "DAO Factory",
-//                status: IDAOMetadata.UnitStatus.BUILDING_1,
-//                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-//                revenueShare: 100,
-//                ui: new IDAOMetadata.UnitUiLink[](0),
-//                emoji: "",
-//                api: new string[](0)
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "aliens:os",
-//                developerUid: ""
-//            });
-//            host_.updateUnits(daoData.symbol, units);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: "DAO Factory",
+                status: IDAOMetadata.UnitStatus.BUILDING_1,
+                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+                revenueShare: 100,
+                ui: new IDAOMetadata.UnitUiLink[](0),
+                emoji: "",
+                api: new string[](0)
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
 
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
@@ -641,21 +645,18 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             host_.updateImages(daoData.symbol, images);
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "MEV searcher",
-//                status: IDAOMetadata.UnitStatus.LIVE_2,
-//                unitType: uint16(IDAOMetadata.UnitType.MEV_3),
-//                revenueShare: 100,
-//                ui: new IDAOMetadata.UnitUiLink[](0),
-//                emoji: "",
-//                api: new string[](0)
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "MACHINES:MEVBOT",
-//                developerUid: ""
-//            });
-            host_.updateUnits(daoData.symbol, units);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: "MEV searcher",
+                status: IDAOMetadata.UnitStatus.LIVE_2,
+                unitType: uint16(IDAOMetadata.UnitType.MEV_3),
+                revenueShare: 100,
+                ui: new IDAOMetadata.UnitUiLink[](0),
+                emoji: "",
+                api: new string[](0)
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: "MACHINES:MEVBOT", developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
 
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
@@ -667,6 +668,16 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
 
             host_.updateVesting(daoData.symbol, vesting);
+        }
+
+        daoData = host_.getDAO(daoData.symbol);
+
+        {
+            // put some amount on unit balance - it means that the unit is "live"
+            address exchangeAsset = host_.getChainSettings().exchangeAsset;
+            deal(exchangeAsset, address(this), 1000e18);
+            IERC20(exchangeAsset).approve(address(host_), 1000e18);
+            host_.processUnitRevenue(daoData.symbol, daoData.units[0].unitId, 1000e18);
         }
 
         // ------------------------------ change phase to SEED, refresh daoData
@@ -821,6 +832,16 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
         IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_);
 
         // ------------------------------ solve required tasks
+        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
+            name: "DAO Factory",
+            status: IDAOMetadata.UnitStatus.BUILDING_1,
+            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+            revenueShare: 100,
+            ui: new IDAOMetadata.UnitUiLink[](0),
+            emoji: "",
+            api: new string[](0)
+        });
+
         {
             skip(7 days);
 
@@ -832,21 +853,10 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
             // units project
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "DAO Factory",
-//                status: IDAOMetadata.UnitStatus.BUILDING_1,
-//                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-//                revenueShare: 100,
-//                ui: new IDAOMetadata.UnitUiLink[](0),
-//                emoji: "",
-//                api: new string[](0)
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "aliens:os",
-//                developerUid: ""
-//            });
-            host_.updateUnits(daoData.symbol, units);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = unitMetadata0;
+            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
 
             // registered socials
             string[] memory socials = new string[](2);
@@ -1022,29 +1032,33 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
 
         // ------------------------------ fix units
         {
-// todo
-//            IDAOMetadata.sol.UnitUiLink[] memory ui = new IDAOMetadata.sol.UnitUiLink[](1);
-//            ui[0] = IDAOMetadata.sol.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
-//
-//            IDAOMetadata.sol.UnitInfo[] memory units = new IDAOMetadata.sol.UnitInfo[](1);
-//            units[0].metaData = IDAOMetadata.sol.UnitMetaData({
-//                name: daoData.units[0].name,
-//                status: IDAOMetadata.sol.UnitStatus.LIVE_2,
-//                unitType: daoData.units[0].unitType,
-//                revenueShare: daoData.units[0].revenueShare,
-//                ui: ui,
-//                emoji: daoData.units[0].emoji,
-//                api: daoData.units[0].api
-//            });
-//            units[0].chainData = IDAOMetadata.sol.UnitChainData({
-//                unitId: daoData.units[0].unitId,
-//                developerUid: ""
-//            });
-//            host_.updateUnits(daoData.symbol, units);
-//            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
-//
-//            vm.prank(MULTISIG);
-//            host_.receiveVotingResults(proposalId, true);
+            IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
+            ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
+
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: unitMetadata0.name,
+                status: IDAOMetadata.UnitStatus.LIVE_2,
+                unitType: unitMetadata0.unitType,
+                revenueShare: unitMetadata0.revenueShare,
+                ui: ui,
+                emoji: unitMetadata0.emoji,
+                api: unitMetadata0.api
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true);
+
+            // put some amount on unit balance - it means that the unit is "live"
+            address exchangeAsset = host_.getChainSettings().exchangeAsset;
+            deal(exchangeAsset, address(this), 1000e18);
+            IERC20(exchangeAsset).approve(address(host_), 1000e18);
+            host_.processUnitRevenue(daoData.symbol, daoData.units[0].unitId, 1000e18);
         }
 
         // ------------------------------ add vesting

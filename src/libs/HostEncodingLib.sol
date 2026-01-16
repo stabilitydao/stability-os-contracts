@@ -45,7 +45,10 @@ library HostEncodingLib {
     }
 
     /// @notice Encode array of UnitInfo of the given version. Version is supported explicitly to simplify testing
-    function encodeUnits(IDAOData.UnitDataInput[] memory data, uint8 version) internal pure returns (bytes memory payload) {
+    function encodeUnits(
+        IDAOData.UnitDataInput[] memory data,
+        uint8 version
+    ) internal pure returns (bytes memory payload) {
         if (version == 1) {
             return abi.encode(version, data);
         } else {

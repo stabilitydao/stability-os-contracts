@@ -17,7 +17,8 @@ library HostDeployLib {
         bytes32 seed = $.salt[
             HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid)
         ];
-        return IHostProxyFactory(HostConfigLib.getHostChainSettings().hostFactory).deploySeedToken(seed, abi.encode(token_, symbol_));
+        return IHostProxyFactory(HostConfigLib.getHostChainSettings().hostFactory)
+            .deploySeedToken(seed, abi.encode(token_, symbol_));
     }
 
     function deployTgeToken(
@@ -29,6 +30,7 @@ library HostDeployLib {
         bytes32 seed = $.salt[
             HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), block.chainid)
         ];
-        return IHostProxyFactory(HostConfigLib.getHostChainSettings().hostFactory).deployTgeToken(seed, abi.encode(token_, symbol_));
+        return IHostProxyFactory(HostConfigLib.getHostChainSettings().hostFactory)
+            .deployTgeToken(seed, abi.encode(token_, symbol_));
     }
 }

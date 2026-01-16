@@ -53,7 +53,6 @@ library HostCrossChainLib {
     /// @param daoSymbol Symbol of new DAO
     /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
     function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         return bridge == address(0)
@@ -69,7 +68,6 @@ library HostCrossChainLib {
 
     /// @notice Send cross-chain message about DAO event
     function _sendCrossChainMessage(IHost.CrossChainMessages messageKind, bytes memory payload) internal {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         if (bridge != address(0)) {
             uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);

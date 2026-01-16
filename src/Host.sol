@@ -37,6 +37,10 @@ contract Host is IHost, Controllable2 {
         return HostViewLib.getDAO(daoSymbol);
     }
 
+    function getHostDaoUid() external view returns (uint) {
+        return HostViewLib.getHostDaoUid();
+    }
+
     /// @inheritdoc IHost
     function getSettings() external view returns (IHost.HostSettings memory) {
         return HostViewLib.getSettings();
@@ -180,7 +184,11 @@ contract Host is IHost, Controllable2 {
     }
 
     /// @inheritdoc IHost
-    function updateUnits(string calldata daoSymbol, IDAOData.UnitDataInput[] calldata units, IDAOData.UnitMetaData[] calldata metadata) external {
+    function updateUnits(
+        string calldata daoSymbol,
+        IDAOData.UnitDataInput[] calldata units,
+        IDAOData.UnitMetaData[] calldata metadata
+    ) external {
         // restrictions are checked below
         HostProposalsLib.updateUnits(daoSymbol, units, metadata);
     }

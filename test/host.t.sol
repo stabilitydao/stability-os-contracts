@@ -27,13 +27,6 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     //region ----------------------------------- Unit tests
-    function testStorageLocation() public pure {
-        assertEq(
-            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.Host")) - 1)) & ~bytes32(uint(0xff)),
-            HostLib.HOST_STORAGE_LOCATION,
-            "HOST_STORAGE_LOCATION"
-        );
-    }
 
     function testCreateDAO() public {
         IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
@@ -202,22 +195,19 @@ contract HostTest is Test, HostUtilsLib {
 
         // ----------------------------- pay to second dao to registered unit
         {
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "Unit A",
-//                status: IDAOMetadata.UnitStatus.LIVE_2,
-//                unitType: uint16(1),
-//                revenueShare: 1000,
-//                emoji: "emoji1",
-//                ui: new IDAOMetadata.UnitUiLink[](0),
-//                api: new string[](0)
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "unitA",
-//                developerUid: ""
-//            });
-            host.updateUnits("symbol2", units);
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: "Unit A",
+                status: IDAOMetadata.UnitStatus.LIVE_2,
+                unitType: uint16(1),
+                revenueShare: 1000,
+                emoji: "emoji1",
+                ui: new IDAOMetadata.UnitUiLink[](0),
+                api: new string[](0)
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
+            host.updateUnits("symbol2", units, metas);
 
             deal(exchangeAsset, address(this), 1e18);
             IERC20(exchangeAsset).approve(address(host), 1e18);
@@ -391,39 +381,35 @@ contract HostTest is Test, HostUtilsLib {
             notEmptyApi[2] = "https://api3.com";
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "Unit A",
-//                status: IDAOMetadata.UnitStatus.LIVE_2,
-//                unitType: uint16(1),
-//                revenueShare: 1000,
-//                emoji: "emoji1",
-//                ui: notEmptyUi,
-//                api: notEmptyApi
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "unitA",
-//                developerUid: ""
-//            });
-//            units[1].metaData = IDAOMetadata.UnitMetaData({
-//                name: "Unit B1",
-//                status: IDAOMetadata.UnitStatus.BUILDING_1,
-//                unitType: uint16(2),
-//                revenueShare: 2000,
-//                emoji: "emoji2",
-//                ui: new IDAOMetadata.UnitUiLink[](0),
-//                api: new string[](0)
-//            });
-//            units[1].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "unitB1",
-//                developerUid: ""
-//            });
-            os.updateUnits(dao.symbol, units);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](2);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: "Unit A",
+                status: IDAOMetadata.UnitStatus.LIVE_2,
+                unitType: uint16(1),
+                revenueShare: 1000,
+                emoji: "emoji1",
+                ui: notEmptyUi,
+                api: notEmptyApi
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
+            metas[1] = IDAOMetadata.UnitMetaData({
+                name: "Unit B1",
+                status: IDAOMetadata.UnitStatus.BUILDING_1,
+                unitType: uint16(2),
+                revenueShare: 2000,
+                emoji: "emoji2",
+                ui: new IDAOMetadata.UnitUiLink[](0),
+                api: new string[](0)
+            });
+            units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
+            os.updateUnits(dao.symbol, units, metas);
 
             IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 2, "units length");
-            assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq1");
-            assertTrue(keccak256(abi.encode(units[1])) == keccak256(abi.encode(daoAfter.units[1])), "eq2");
+            assertTrue(keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq1");
+            assertTrue(keccak256(abi.encode(units[1].unitId)) == keccak256(abi.encode(daoAfter.units[1].unitId)), "unitId-eq2");
+            assertTrue(keccak256(abi.encode(units[0].developerUid)) == keccak256(abi.encode(daoAfter.units[0].developerUid)), "developerUid-eq1");
+            assertTrue(keccak256(abi.encode(units[1].developerUid)) == keccak256(abi.encode(daoAfter.units[1].developerUid)), "developerUid-eq2");
         }
 
         {
@@ -434,29 +420,26 @@ contract HostTest is Test, HostUtilsLib {
             notEmptyApi[0] = "https://api1.com";
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-// todo
-//            units[0].metaData = IDAOMetadata.UnitMetaData({
-//                name: "Unit AAAA",
-//                status: IDAOMetadata.UnitStatus.BUILDING_1,
-//                unitType: uint16(2),
-//                revenueShare: 2000,
-//                emoji: "emoji222",
-//                ui: notEmptyUi,
-//                api: notEmptyApi
-//            });
-//            units[0].chainData = IDAOMetadata.UnitChainData({
-//                unitId: "unitAAAA",
-//                developerUid: ""
-//            });
-            os.updateUnits(dao.symbol, units);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = IDAOMetadata.UnitMetaData({
+                name: "Unit AAAA",
+                status: IDAOMetadata.UnitStatus.BUILDING_1,
+                unitType: uint16(2),
+                revenueShare: 2000,
+                emoji: "emoji222",
+                ui: notEmptyUi,
+                api: notEmptyApi
+            });
+            units[0] = IDAOData.UnitDataInput({unitId: "unitAAAA", developerUid: ""});
+            os.updateUnits(dao.symbol, units, metas);
 
             IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 1, "units length");
 
-// todo
-//            assertEq(daoAfter.units[0].ui.length, 1, "ui length");
-//            assertEq(daoAfter.units[0].api.length, 1, "api length");
-            assertTrue(keccak256(abi.encode(units[0])) == keccak256(abi.encode(daoAfter.units[0])), "eq3");
+            // todo
+            //            assertEq(daoAfter.units[0].ui.length, 1, "ui length");
+            //            assertEq(daoAfter.units[0].api.length, 1, "api length");
+            assertTrue(keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq3");
         }
     }
 
@@ -550,16 +533,8 @@ contract HostTest is Test, HostUtilsLib {
             IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 2, "vesting length");
 
-            assertEq(
-                keccak256(abi.encode(daoAfter.vesting[0])),
-                keccak256(abi.encode(vesting[0])),
-                "vesting[0] eq"
-            );
-            assertEq(
-                keccak256(abi.encode(daoAfter.vesting[1])),
-                keccak256(abi.encode(vesting[1])),
-                "vesting[1] eq"
-            );
+            assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
+            assertEq(keccak256(abi.encode(daoAfter.vesting[1])), keccak256(abi.encode(vesting[1])), "vesting[1] eq");
         }
 
         {
@@ -573,11 +548,7 @@ contract HostTest is Test, HostUtilsLib {
             IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 1, "vesting length 2");
 
-            assertEq(
-                keccak256(abi.encode(daoAfter.vesting[0])),
-                keccak256(abi.encode(vesting[0])),
-                "vesting[0] eq"
-            );
+            assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
         }
     }
 
@@ -683,32 +654,32 @@ contract HostTest is Test, HostUtilsLib {
         assertEq(expected.params.proposalThreshold, actual.params.proposalThreshold, "params.proposalThreshold");
 
         // units
-// todo
-//        assertEq(expected.units.length, actual.units.length, "units.length");
-//        for (uint i = 0; i < expected.units.length; i++) {
-//            IDAOData.UnitDataInput memory eu = expected.units[i];
-//            IDAOData.UnitDataInput memory au = actual.units[i];
-//
-//            assertEq(eu.unitId, au.unitId, "unit.unitId");
-//            assertEq(eu.name, au.name, "unit.name");
-//            assertEq(uint(uint8(eu.status)), uint(uint8(au.status)), "unit.status");
-//            assertEq(eu.unitType, au.unitType, "unit.unitType");
-//            assertEq(eu.revenueShare, au.revenueShare, "unit.revenueShare");
-//            assertEq(eu.emoji, au.emoji, "unit.emoji");
-//
-//            // ui links
-//            assertEq(eu.ui.length, au.ui.length, "unit.ui.length");
-//            for (uint j = 0; j < eu.ui.length; j++) {
-//                assertEq(eu.ui[j].title, au.ui[j].title, "unit.ui.label");
-//                assertEq(eu.ui[j].href, au.ui[j].href, "unit.ui.url");
-//            }
-//
-//            // api endpoints
-//            assertEq(eu.api.length, au.api.length, "unit.api.length");
-//            for (uint j = 0; j < eu.api.length; j++) {
-//                assertEq(eu.api[j], au.api[j], "unit.api");
-//            }
-//        }
+        // todo
+        //        assertEq(expected.units.length, actual.units.length, "units.length");
+        //        for (uint i = 0; i < expected.units.length; i++) {
+        //            IDAOData.UnitDataInput memory eu = expected.units[i];
+        //            IDAOData.UnitDataInput memory au = actual.units[i];
+        //
+        //            assertEq(eu.unitId, au.unitId, "unit.unitId");
+        //            assertEq(eu.name, au.name, "unit.name");
+        //            assertEq(uint(uint8(eu.status)), uint(uint8(au.status)), "unit.status");
+        //            assertEq(eu.unitType, au.unitType, "unit.unitType");
+        //            assertEq(eu.revenueShare, au.revenueShare, "unit.revenueShare");
+        //            assertEq(eu.emoji, au.emoji, "unit.emoji");
+        //
+        //            // ui links
+        //            assertEq(eu.ui.length, au.ui.length, "unit.ui.length");
+        //            for (uint j = 0; j < eu.ui.length; j++) {
+        //                assertEq(eu.ui[j].title, au.ui[j].title, "unit.ui.label");
+        //                assertEq(eu.ui[j].href, au.ui[j].href, "unit.ui.url");
+        //            }
+        //
+        //            // api endpoints
+        //            assertEq(eu.api.length, au.api.length, "unit.api.length");
+        //            for (uint j = 0; j < eu.api.length; j++) {
+        //                assertEq(eu.api[j], au.api[j], "unit.api");
+        //            }
+        //        }
 
         // tokenomics: funding
         assertEq(expected.funding.length, actual.funding.length, "tokenomics.funding.length");

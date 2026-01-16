@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {IDAOData} from "../interfaces/IDAOData.sol";
+import {EfficientHashLib} from "../../lib/solady/src/utils/EfficientHashLib.sol";
 
 /// @notice Basic data types and constants for Host system. This library shouldn't depend on any other libraries.
 library HostLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.Host")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 public constant HOST_STORAGE_LOCATION = 0; // todo
+    bytes32 public constant HOST_STORAGE_LOCATION = 0x361148703eaf4fc488297f0e16b0f65ec74281fb03e045d7f0f5434276acc900;
 
     /// @notice Predefined UID of the unit of host DAO. This unit is used to collect dao-creation fees
     string public constant HOST_UNIT = "host-unit";
@@ -18,7 +17,7 @@ library HostLib {
     uint public constant KIND_SALT_USED = 0;
 
     /// @notice Values in range [0..99) are reserved for internal use (so we can use some values as stubs)
-    uint internal constant MIN_DAO_UID = 100;
+    uint private constant MIN_DAO_UID = 100;
 
     /// @notice This value is used in daoUids mapping to mark that the given symbol is registered
     /// @dev We don't know exact daoUid at the moment of registration at segment 1, we only know that the symbol is in use
@@ -48,6 +47,7 @@ library HostLib {
         string name;
 
         /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
+        /// @dev This value is updated on bridged chains only after passing LIVE_CLIFF_5
         ITokenomics.LifecyclePhase phase;
 
         /// @notice Hashes of all units registered in the DAO. Hash = hash of (daoUid, unitUid)
@@ -122,14 +122,12 @@ library HostLib {
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap;
 
-
         // -------------------------------------- SEGMENT 1: ALl chains with Host deployed
         /// @notice Mapping from DAO symbol (changeable) to its unique id
         /// @dev This mapping is used to store:
         ///    daoSymbol => DAO_UID_STUB_SYMBOL_REGISTERED (segment 1: the symbol is in use but it's daoUid is not known)
         ///    daoSymbol => daoUid (segment 2: actual uid of the dao with the given symbol is stored)
         mapping(string daoSymbol => uint daoUid) daoUids;
-
 
         // -------------------------------------- SEGMENT 2: All chains where DAO is bridged
 
@@ -140,7 +138,7 @@ library HostLib {
         mapping(uint daoUid => ITokenomics.DaoDeploymentInfo) deployments;
 
         /// @notice Settings of DAO for current chain. This is the only place to save settings of DAO for chains.
-        mapping(uint daoUid => ITokenomics.DAOChainSettings) chainSettings;
+        mapping(uint daoUid => ITokenomics.DaoChainSettings) chainSettings;
 
         /// @notice Parameters of each DAO
         mapping(uint daoUid => ITokenomics.DaoParameters) daoParameters;
@@ -150,7 +148,6 @@ library HostLib {
 
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment2;
-
 
         // -------------------------------------- SEGMENT 3: Initial chain only
         /// @notice Data of each DAO deployed to the current chain
@@ -177,14 +174,12 @@ library HostLib {
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment3;
 
-
         // -------------------------------------- Proposals
         /// @notice All registered proposals. Proposal id is unique across all DAOs
         mapping(bytes32 proposalId => ProposalLocal) proposals;
 
         /// @notice List of ids of all proposals for each DAO in order
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
-
 
         // -------------------------------------- SALT
         /// @notice Salt configured for DAO contracts.
@@ -196,7 +191,6 @@ library HostLib {
         /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
         /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
         mapping(uint chain => mapping(bytes32 salt => uint daoHash)) daoUidBySalt;
-
     }
 
     //endregion -------------------------------------- Data types
@@ -209,23 +203,30 @@ library HostLib {
         }
     }
 
+    function setupDaoCounter() internal {
+        HostStorage storage $ = getHostStorage();
+        if ($.daoCounter < MIN_DAO_UID) {
+            $.daoCounter = MIN_DAO_UID;
+        }
+    }
+
     /// @notice Generate hash of (daoUid + index in the array)
     /// @param daoUid Unique immutable id of the DAO
     /// @param index 0-based index in the array
     function getIndexKey(uint daoUid, uint index) internal pure returns (bytes32) {
-        return getKey(daoUid, index);
+        return EfficientHashLib.hash(daoUid, index);
     }
 
     function getKey(uint daoUid, uint value) internal pure returns (bytes32) {
-        return keccak256(abi.encode(daoUid, value));
+        return EfficientHashLib.hash(daoUid, value);
     }
 
     function getKey(uint daoUid, uint value1, uint value2) internal pure returns (bytes32) {
-        return keccak256(abi.encode(daoUid, value1, value2));
+        return EfficientHashLib.hash(daoUid, value1, value2);
     }
 
-    function getUnitKey(uint daoUid, string memory sid) internal pure returns (bytes32) {
-        return keccak256(abi.encode(daoUid, sid));
+    function getUnitKey(uint daoUid, string memory unitId) internal pure returns (bytes32) {
+        return keccak256(abi.encode(daoUid, unitId));
     }
 
     /// @notice All DAO have unique symbol but it can be changed. We need immutable unique id for various internal processes.
@@ -234,16 +235,25 @@ library HostLib {
     function generateDaoUid(HostLib.HostStorage storage $) internal returns (uint uid, bool firstDao) {
         uint count = $.daoCounter + 1;
         $.daoCounter = count;
-        return (uint(keccak256(abi.encodePacked(count, block.chainid))), count == MIN_DAO_UID);
+        return (generateDaoUid(count, block.chainid), count == MIN_DAO_UID + 1);
     }
 
+    /// @notice Generate hash of (daoUid, kind)
+    /// @param daoUid Unique immutable id of the DAO
+    /// @param kind Kind of the hash (0 - used, 1 - reserved salt)
     function getDaoHash(uint daoUid, uint kind) internal pure returns (uint) {
-        return uint(keccak256(abi.encode(daoUid, kind)));
+        return uint(EfficientHashLib.hash(daoUid, kind));
     }
 
     /// @notice This value is used in daoUids mapping to mark that the given symbol is registered
-    function getDaoUidStub() internal pure returns (uint) {
-        return uint(keccak256(abi.encodePacked(DAO_UID_STUB_SYMBOL_REGISTERED, block.chainid)));
+    function getDaoUidStub() internal view returns (uint) {
+        return generateDaoUid(DAO_UID_STUB_SYMBOL_REGISTERED, block.chainid);
+    }
+
+    /// @notice Calculate DAO id, it's unique for all chains
+    function generateDaoUid(uint count_, uint chain_) internal pure returns (uint) {
+        //return uint(keccak256(abi.encodePacked(count_, chain_)));
+        return uint(EfficientHashLib.hash(count_, chain_));
     }
     //endregion -------------------------------------- Internal utils
 }

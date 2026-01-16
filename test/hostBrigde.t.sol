@@ -8,7 +8,6 @@ import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {PlasmaConstantsLib} from "../chains/PlasmaConstantsLib.sol";
 import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
@@ -16,7 +15,7 @@ import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppRec
 import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract OsBridgeTest is Test, HostUtilsLib {
+contract HostBridgeTest is Test, HostUtilsLib {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
     uint private constant AVALANCHE_FORK_BLOCK = 71037861; // Oct-28-2025 13:17:17 UTC
     uint private constant PLASMA_FORK_BLOCK = 5398928; // Nov-5-2025 07:38:59 UTC

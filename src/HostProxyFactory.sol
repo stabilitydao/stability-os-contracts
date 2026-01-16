@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;  // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
+pragma solidity ^0.8.28; // todo We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {Controllable2} from "./base/Controllable2.sol";
@@ -16,7 +16,8 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     string public constant VERSION = "1.0.0";
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactory")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 public constant HOST_STORAGE_LOCATION = 0; // todo
+    bytes32 public constant HOST_PROXY_STORAGE_LOCATION =
+        0x6e1ec94684dca8034e98f557b164c745fd4b39d7b8f15d7f0549b34b10dd8a00;
 
     //endregion -------------------------------------- Constants
 
@@ -139,7 +140,7 @@ contract HostProxyFactory is Controllable2, IHostProxyFactory {
     function getHostProxyFactoryStorage() internal pure returns (HostProxyFactoryStorage storage $) {
         //slither-disable-next-line assembly
         assembly {
-            $.slot := HOST_STORAGE_LOCATION
+            $.slot := HOST_PROXY_STORAGE_LOCATION
         }
     }
 

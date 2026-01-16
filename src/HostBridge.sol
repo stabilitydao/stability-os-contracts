@@ -22,7 +22,8 @@ contract HostBridge is Controllable2, OAppUpgradeable, IHostBridge {
     string public constant VERSION = "1.0.0";
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostBridge")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 internal constant _HOST_BRIDGE_STORAGE_LOCATION = 0; // todo
+    bytes32 internal constant _HOST_BRIDGE_STORAGE_LOCATION =
+        0x28a3e8e9ef264537f6f33b62bc141537ded5381f3a1c45a8310d293ea7607600;
 
     //region --------------------------------- Data types
     /// @custom:storage-location erc7201:stability.host-contracts.HostBridge

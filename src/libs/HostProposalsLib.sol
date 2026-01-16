@@ -88,10 +88,13 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update tokenomics units of the DAO
-    function updateUnits(string memory daoSymbol, IDAOData.UnitDataInput[] memory units, IDAOData.UnitMetaData[] memory metadata) external {
+    function updateUnits(
+        string memory daoSymbol,
+        IDAOData.UnitDataInput[] memory units,
+        IDAOData.UnitMetaData[] memory metadata
+    ) external {
         (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         require(HostConfigLib.getHostGlobalSettings().priceUnit == 0, IHost.NotImplemented());
 
         bytes32 proposalId;
@@ -108,8 +111,7 @@ library HostProposalsLib {
 
     /// @notice Update/create proposal to update funding rounds of the DAO
     function updateFunding(string memory daoSymbol, ITokenomics.Funding memory funding) external {
-        (HostLib.HostStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) =
-            _beforeUpdate(daoSymbol);
+        (, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) = _beforeUpdate(daoSymbol);
 
         HostUpdateLib._validateFunding(phase, funding, HostConfigLib.getHostGlobalSettings());
 
@@ -123,8 +125,7 @@ library HostProposalsLib {
 
     /// @notice Update/create proposal to update vesting schedules of the DAO
     function updateVesting(string memory daoSymbol, ITokenomics.Vesting[] memory vesting) external {
-        (HostLib.HostStorage storage $, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) =
-            _beforeUpdate(daoSymbol);
+        (, uint daoUid, bool instantExecute, ITokenomics.LifecyclePhase phase) = _beforeUpdate(daoSymbol);
 
         HostUpdateLib._validateVestingList(phase, vesting, HostConfigLib.getHostGlobalSettings());
 
@@ -138,7 +139,7 @@ library HostProposalsLib {
 
     /// @notice Update/create proposal to update DAO naming (name and symbol)
     function updateNaming(string memory daoSymbol, ITokenomics.DaoNames memory daoNames_) external {
-        (HostLib.HostStorage storage $, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
+        (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
         HostUpdateLib._validateNaming(daoNames_.name, daoNames_.symbol, HostConfigLib.getHostGlobalSettings());
 
@@ -158,7 +159,7 @@ library HostProposalsLib {
 
     /// @notice Update/create proposal to update on-chain DAO parameters
     function updateDaoParameters(string memory daoSymbol, ITokenomics.DaoParameters memory daoParameters_) external {
-        (HostLib.HostStorage storage $, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
+        (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
         HostUpdateLib._validateDaoParameters(daoParameters_, HostConfigLib.getHostGlobalSettings());
 
