@@ -37,6 +37,7 @@ contract Host is IHost, Controllable2 {
         return HostViewLib.getDAO(daoSymbol);
     }
 
+    /// @inheritdoc IHost
     function getHostDaoUid() external view returns (uint) {
         return HostViewLib.getHostDaoUid();
     }

@@ -14,7 +14,7 @@ import {
 ///      It store an immutable platform proxy address in the storage and provides access control to inherited contracts.
 /// @author Alien Deployer (https://github.com/a17)
 /// @author 0xhokugava (https://github.com/0xhokugava)
-abstract contract Controllable2 is Initializable, AccessManagedUpgradeable, IControllable2, ERC165 {
+abstract contract Controllable2 is Initializable, AccessManagedUpgradeable, IControllable2, ERC165 { // todo rename to hosted
     using SlotsLib for bytes32;
 
     string public constant CONTROLLABLE_VERSION = "1.0.0";

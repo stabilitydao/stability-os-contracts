@@ -116,13 +116,37 @@ interface IHost {
     struct HostInitPayload {
         /// @notice DAO symbols registered on other chains
         string[] usedSymbols;
+
+        /// @notice Symbol of host DAO. Empty if this is a first DAO on the first host
+        string daoHostSymbol;
+
+        /// @notice UID of host DAO. Zero if this is a first DAO on the first host
+        uint daoHostUid;
     }
 
     /// @notice Kinds of cross-chain messages
     enum CrossChainMessages {
+        /// @notice New DAO with given symbol is created on another chain
         NEW_DAO_SYMBOL_0,
+
+        /// @notice DAO symbol was changed
         DAO_RENAME_SYMBOL_1,
-        DAO_BRIDGED_2
+
+        /// @notice DAO is bridged to another chain
+        DAO_BRIDGED_2,
+
+        /// @notice todo Unit is bridged to another chain
+        UNIT_BRIDGED_3,
+
+        /// @notice todo Life phase of the bridged DAO is changed to LIFE_CLIFF
+        SET_LIVE_CLIFF_4,
+
+        /// @notice todo DAO parameters are updated
+        UPDATE_SEGMENT2_5,
+
+        /// @notice todo DAO chains settings are updated
+        UPDATE_SALTS_6
+
     }
 
     //region ---------------------------------------- Read

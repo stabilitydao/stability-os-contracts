@@ -34,8 +34,10 @@ library HostActionsLib {
     function initHost(IHost.HostInitPayload memory initPayload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
+        // ------------------------- Setup DAO counter
         HostLib.setupDaoCounter();
 
+        // ------------------------- Register all used symbols
         uint len = initPayload.usedSymbols.length;
         if (len != 0) {
             uint daoUidStub = HostLib.getDaoUidStub();
@@ -43,6 +45,12 @@ library HostActionsLib {
                 string memory daoSymbol = initPayload.usedSymbols[i];
                 $.daoUids[daoSymbol] = daoUidStub;
             }
+        }
+
+        // ------------------------- Set up host DAO if any
+        if (initPayload.daoHostUid != 0) {
+            $.daoUids[initPayload.daoHostSymbol] = initPayload.daoHostUid;
+            $.hostDaoUid = initPayload.daoHostUid;
         }
     }
 
