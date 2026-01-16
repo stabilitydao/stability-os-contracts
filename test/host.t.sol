@@ -406,10 +406,20 @@ contract HostTest is Test, HostUtilsLib {
 
             IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 2, "units length");
-            assertTrue(keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq1");
-            assertTrue(keccak256(abi.encode(units[1].unitId)) == keccak256(abi.encode(daoAfter.units[1].unitId)), "unitId-eq2");
-            assertTrue(keccak256(abi.encode(units[0].developerUid)) == keccak256(abi.encode(daoAfter.units[0].developerUid)), "developerUid-eq1");
-            assertTrue(keccak256(abi.encode(units[1].developerUid)) == keccak256(abi.encode(daoAfter.units[1].developerUid)), "developerUid-eq2");
+            assertTrue(
+                keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq1"
+            );
+            assertTrue(
+                keccak256(abi.encode(units[1].unitId)) == keccak256(abi.encode(daoAfter.units[1].unitId)), "unitId-eq2"
+            );
+            assertTrue(
+                keccak256(abi.encode(units[0].developerUid)) == keccak256(abi.encode(daoAfter.units[0].developerUid)),
+                "developerUid-eq1"
+            );
+            assertTrue(
+                keccak256(abi.encode(units[1].developerUid)) == keccak256(abi.encode(daoAfter.units[1].developerUid)),
+                "developerUid-eq2"
+            );
         }
 
         {
@@ -439,7 +449,9 @@ contract HostTest is Test, HostUtilsLib {
             // todo
             //            assertEq(daoAfter.units[0].ui.length, 1, "ui length");
             //            assertEq(daoAfter.units[0].api.length, 1, "api length");
-            assertTrue(keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq3");
+            assertTrue(
+                keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq3"
+            );
         }
     }
 

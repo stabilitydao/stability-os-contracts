@@ -176,5 +176,4 @@ contract HostLibTest is Test {
         assertNotEq(uid2, uid4, "uid2 != uid4");
         assertNotEq(uid3, uid4, "uid3 != uid4");
     }
-
 }

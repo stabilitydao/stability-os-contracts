@@ -271,7 +271,8 @@ library HostUpdateLib {
                 if (!notDelete[j]) {
                     emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].unitId, proposalId);
                     // todo probably we shouldn't call delete to reduce gas costs (?)
-                    console.log("delete");console.logBytes32(hashes[j]);
+                    console.log("delete");
+                    console.logBytes32(hashes[j]);
                     delete $.units[hashes[j]];
                 }
             }
