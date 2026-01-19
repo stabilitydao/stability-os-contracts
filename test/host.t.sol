@@ -278,14 +278,6 @@ contract HostTest is Test, HostUtilsLib {
         host.createDAO("name3", "symbol3", activity, params, funding);
     }
 
-    function testChangePhase() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
-
-        vm.expectRevert(IHost.IncorrectDao.selector);
-        vm.prank(MULTISIG);
-        host.changePhase("unknown");
-    }
-
     function testTasks() public {
         // todo
     }
@@ -293,8 +285,13 @@ contract HostTest is Test, HostUtilsLib {
     //endregion ----------------------------------- Unit tests
 
     //region ----------------------------------- Change life phase
+    function testChangePhase() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
-    // todo
+        vm.expectRevert(IHost.IncorrectDao.selector);
+        vm.prank(MULTISIG);
+        host.changePhase("unknown");
+    }
 
     //endregion ----------------------------------- Change life phase
 
