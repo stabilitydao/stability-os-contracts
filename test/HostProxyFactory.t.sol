@@ -186,12 +186,12 @@ contract HostProxyFactoryTest is Test {
         accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(this), 0);
     }
 
-// todo
-//    function testProxyCreationCode() public view {
-//        assertEq(
-//            factory.getProxyInitCodeHash(),
-//            PROXY_CREATION_CODE_HASH,
-//            "Proxy creation code shouldn't change because of CREATE2 address calculation relies on it"
-//        );
-//    }
+    // todo
+    //    function testProxyCreationCode() public view {
+    //        assertEq(
+    //            factory.getProxyInitCodeHash(),
+    //            PROXY_CREATION_CODE_HASH,
+    //            "Proxy creation code shouldn't change because of CREATE2 address calculation relies on it"
+    //        );
+    //    }
 }

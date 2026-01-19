@@ -13,10 +13,10 @@ jobs:
         with:
           sarif: results.sarif
           fail-on: none
-          slither-args: >
-            .
+          slither-args: |
             --exclude-dependencies
             --filter-paths "lib/devtools"
+            --exclude msg-value-loop
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3

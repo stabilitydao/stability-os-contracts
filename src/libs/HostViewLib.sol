@@ -29,6 +29,7 @@ library HostViewLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
+        require(daoUid != 0, IHost.IncorrectDao());
         require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
