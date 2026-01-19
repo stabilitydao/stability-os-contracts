@@ -17,7 +17,6 @@ jobs:
             .
             --exclude-dependencies
             --filter-paths "lib/devtools"
-            --exclude-detectors msg-value-in-loop
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
