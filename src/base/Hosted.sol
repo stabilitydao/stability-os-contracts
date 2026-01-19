@@ -36,6 +36,7 @@ abstract contract Hosted is Initializable, UUPSUpgradeable, AccessManagedUpgrade
     function __Controllable_init(address authority_) internal onlyInitializing {
         require(authority_ != address(0), IncorrectZeroArgument());
         AccessManagedUpgradeable.__AccessManaged_init(authority_);
+        __UUPSUpgradeable_init();
         _CREATED_BLOCK_SLOT.set(block.number);
         emit ContractInitialized(authority_, block.timestamp, block.number);
     }

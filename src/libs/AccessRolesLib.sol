@@ -19,4 +19,7 @@ library AccessRolesLib {
 
     /// @notice Deployer of HostProxyFactory (it's Host typically)
     uint64 internal constant HOST_PROXY_FACTORY_DEPLOYER = 6;
+
+    /// @notice Allow to upgrade proxy implementations
+    uint64 internal constant CONTRACTS_UPGRADER = 7;
 }

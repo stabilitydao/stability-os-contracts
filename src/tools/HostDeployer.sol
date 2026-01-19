@@ -6,8 +6,6 @@ import {Proxy} from "../base/Proxy.sol";
 import {HostAccessManager} from "../HostAccessManager.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IHostAccessManager} from "../interfaces/IHostAccessManager.sol";
-import {HostProxyFactory} from "../HostProxyFactory.sol";
-import {Host} from "../Host.sol";
 
 /// @notice Auxiliary contract to deploy HostAccessManager, HostProxyFactory and Host in proper order
 contract HostDeployer {
@@ -38,7 +36,9 @@ contract HostDeployer {
         bytes32 hostProxyFactorySalt,
         bytes32 hostSalt,
         address authorityInitialAdmin,
-        bytes memory hostPayload
+        bytes memory hostPayload,
+        address hostProxyFactoryImplementation,
+        address hostImplementation
     ) external returns (address accessManager, address hostProxyFactory, address host) {
         require(msg.sender == DEPLOYER, "HostDeployer: only deployer");
 
@@ -47,11 +47,11 @@ contract HostDeployer {
         accessManager = address(new HostAccessManager(authorityInitialAdmin, hostPredicted));
 
         hostProxyFactory = _createNewProxy(hostProxyFactorySalt);
-        IProxy(hostProxyFactory).initProxy(address(new HostProxyFactory()));
+        IProxy(hostProxyFactory).initProxy(hostProxyFactoryImplementation);
         IHosted(hostProxyFactory).initialize(accessManager, "");
 
         host = _createNewProxy(hostSalt);
-        IProxy(host).initProxy(address(new Host()));
+        IProxy(host).initProxy(hostImplementation);
         IHosted(host).initialize(accessManager, hostPayload);
 
         require(IHostAccessManager(accessManager).HOST() == host, "HostDeployer: invalid host in access manager");

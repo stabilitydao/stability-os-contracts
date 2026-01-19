@@ -26,7 +26,7 @@ contract HostProxyFactoryTest is Test {
     /// If we need to change Proxy contract we need to create Proxy2 contract
     /// and I.E. use old generated salt with old proxy and new generated salt with new proxy.
     bytes32 internal constant PROXY_CREATION_CODE_HASH =
-    0x35656ab11a97544d46860e81ce9d5904c38b74f4dec412bba7ab1795d1266f5f;
+        0x35656ab11a97544d46860e81ce9d5904c38b74f4dec412bba7ab1795d1266f5f;
 
     constructor() {
         multisig = makeAddr("multisig");
