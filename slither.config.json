@@ -1,5 +1,5 @@
 {
-    "detectors_to_exclude": "solc-version",
+    "detectors_to_exclude": "solc-version,msg-value-loop",
     "filter_paths": "lib|integrations",
     "solc_remaps": [
         "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/",

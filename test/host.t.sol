@@ -29,7 +29,7 @@ contract HostTest is Test, HostUtilsLib {
     //region ----------------------------------- Unit tests
 
     function testCreateDAO() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -42,38 +42,38 @@ contract HostTest is Test, HostUtilsLib {
 
         ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
         {
-            address exchangeAsset = os.getChainSettings().exchangeAsset;
-            uint amount = os.getSettings().priceDao;
+            address exchangeAsset = host.getChainSettings().exchangeAsset;
+            uint amount = host.getSettings().priceDao;
 
             deal(exchangeAsset, address(this), amount * 3);
 
             // user doesn't pay for creation DAO - ERC20InsufficientAllowance
             vm.expectRevert();
-            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+            host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
 
-            IERC20(exchangeAsset).approve(address(os), amount * 3);
+            IERC20(exchangeAsset).approve(address(host), amount * 3);
 
-            os.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
+            host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
             assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "testCreateDAO - balance after");
         }
 
-        IDAOData.DaoData memory dao = os.getDAO(DAO_SYMBOL);
+        IDAOData.DaoData memory dao = host.getDAO(DAO_SYMBOL);
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
         // -------------------- bad name length
-        _dealAndApprove(os);
+        _dealAndApprove(host);
 
         vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(28)));
-        os.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
+        host.createDAO("SpaceSwap_000000000000000000", "SPACE2", activity, params, funding);
 
         // -------------------- bad symbol length
         vm.expectRevert(abi.encodeWithSelector(IHost.SymbolLength.selector, uint(9)));
-        os.createDAO("SpaceSwap", "SPACESWAP", activity, params, funding);
+        host.createDAO("SpaceSwap", "SPACESWAP", activity, params, funding);
 
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "SPACE"));
-        os.createDAO("SpaceSwap", "SPACE", activity, params, funding);
+        host.createDAO("SpaceSwap", "SPACE", activity, params, funding);
 
         { // -------------------- bad vePeriod
             ITokenomics.DaoParameters memory paramsBadVe = HostUtilsLib.generateDaoParams(
@@ -82,19 +82,19 @@ contract HostTest is Test, HostUtilsLib {
                 100
             );
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(1825)));
-            os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadVe, funding);
+            host.createDAO("SpaceSwap", "SPACE1", activity, paramsBadVe, funding);
         }
 
         { // -------------------- bad pvpFee
             ITokenomics.DaoParameters memory paramsBadPvP = HostUtilsLib.generateDaoParams(365, 101);
             vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(101)));
-            os.createDAO("SpaceSwap", "SPACE1", activity, paramsBadPvP, funding);
+            host.createDAO("SpaceSwap", "SPACE1", activity, paramsBadPvP, funding);
         }
 
         { // -------------------- no funding
             ITokenomics.Funding[] memory emptyFunding = new ITokenomics.Funding[](0);
             vm.expectRevert(IHost.NeedFunding.selector);
-            os.createDAO("SpaceSwap", "SPACE1", activity, params, emptyFunding);
+            host.createDAO("SpaceSwap", "SPACE1", activity, params, emptyFunding);
         }
     }
 
@@ -276,6 +276,14 @@ contract HostTest is Test, HostUtilsLib {
 
         vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
         host.createDAO("name3", "symbol3", activity, params, funding);
+    }
+
+    function testChangePhase() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+
+        vm.expectRevert(IHost.IncorrectDao.selector);
+        vm.prank(MULTISIG);
+        host.changePhase("unknown");
     }
 
     function testTasks() public {
