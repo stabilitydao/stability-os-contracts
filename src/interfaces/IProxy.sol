@@ -5,10 +5,6 @@ pragma solidity 0.8.28; // We need to fix version of compilator because changing
 /// @dev To upgrade proxy use UUPSUpgradeable functions - Proxy.upgradeToAndCall()
 /// @dev Proxy will redirect the call to the implementation - UUPSUpgradeable.upgradeToAndCall()
 interface IProxy {
-    /// @dev Initialize proxy logic. Need to call after deploy new proxy.
-    /// @param logic Address of core contract implementation
-    function initProxy(address logic) external;
-
     /// @notice Return current logic implementation
     /// @return Address of implementation contract
     function implementation() external view returns (address);

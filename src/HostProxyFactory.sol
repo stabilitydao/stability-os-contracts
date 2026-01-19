@@ -2,11 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {IHostProxyFactory} from "./interfaces/IHostProxyFactory.sol";
 import {IProxy} from "./interfaces/IProxy.sol";
-import {Proxy} from "./base/Proxy.sol";
+import {ERC1967Proxy} from "../lib/solady/src/utils/ext/zksync/ERC1967Proxy.sol";
 
 contract HostProxyFactory is Hosted, IHostProxyFactory {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -33,6 +34,13 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
     //endregion -------------------------------------- Initialization
 
     //region -------------------------------------- View
+    function predictProxyAddress(bytes32 salt) public view returns (address) {
+        return Clones.predictDeterministicAddress(
+            defaultImplementation,
+            salt,
+            address(this) // deployer
+        );
+    }
 
     /// @inheritdoc IHostProxyFactory
     function getCreate2Address(
@@ -99,8 +107,7 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
         address logic,
         bytes memory payload
     ) external restricted returns (address proxy) {
-        proxy = _createNewProxy(salt);
-        IProxy(proxy).initProxy(logic);
+        proxy = _createNewProxy(salt, logic);
         IHosted(proxy).initialize(authority(), payload);
 
         emit NewContractDeployed(proxy, logic, payload);
@@ -111,8 +118,7 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
     function deploySeedToken(bytes32 salt, bytes memory payload) external restricted returns (address proxy) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
 
-        proxy = _createNewProxy(salt);
-        IProxy(proxy).initProxy($.seedTokenImplementation);
+        proxy = _createNewProxy(salt, $.seedTokenImplementation);
         IHosted(proxy).initialize(authority(), payload);
 
         $.seedTokens.add(proxy);
@@ -124,8 +130,7 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
     /// @inheritdoc IHostProxyFactory
     function deployTgeToken(bytes32 salt, bytes memory payload) external restricted returns (address) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
-        address proxy = _createNewProxy(salt);
-        IProxy(proxy).initProxy($.tgeTokenImplementation);
+        address proxy = _createNewProxy(salt, $.tgeTokenImplementation);
         IHosted(proxy).initialize(authority(), payload);
 
         $.tgeTokens.add(proxy);
@@ -144,10 +149,10 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
         }
     }
 
-    function _createNewProxy(bytes32 salt) internal returns (address proxy) {
+    function _createNewProxy(bytes32 salt, address implementation) internal returns (address proxy) {
         proxy = salt == 0
-            ? address(new Proxy())  // create   // todo if create is not allowed we must require salt != 0
-            : address(new Proxy{salt: salt}()); // create2
+            ? address(new ERC1967Proxy(implementation, ""))  // create   // todo if create is not allowed we must require salt != 0
+            : address(new ERC1967Proxy{salt: salt}(implementation, "")); // create2
     }
     //endregion -------------------------------------- Internal utils
 }
