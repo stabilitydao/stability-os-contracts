@@ -10,10 +10,9 @@ import {Test} from "forge-std/Test.sol";
 // import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract HostTest is Test, HostUtilsLib {
+contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";
@@ -29,12 +28,12 @@ contract HostTest is Test, HostUtilsLib {
     //region ----------------------------------- Unit tests
 
     function testCreateDAO() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -99,7 +98,7 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testAddLiveDAO() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         // todo only verifier
 
@@ -117,7 +116,7 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testAddLiveDaoBadPaths() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         // -------------------- success - check balances
@@ -154,11 +153,11 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testProcessUnitRevenue() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -227,11 +226,11 @@ contract HostTest is Test, HostUtilsLib {
     }
 
     function testProcessUnitRevenueAllowToUseZeroPriceDao() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -286,7 +285,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Change life phase
     function testChangePhase() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         vm.expectRevert(IHost.IncorrectDao.selector);
         vm.prank(MULTISIG);
@@ -297,7 +296,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update dao images
     function testUpdateDaoImagesInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -336,7 +335,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update socials
     function testUpdateDaoSocialsInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -371,7 +370,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -464,7 +463,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -534,7 +533,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -573,7 +572,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update naming
     function testUpdateNamingInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 
@@ -595,7 +594,7 @@ contract HostTest is Test, HostUtilsLib {
 
     //region ----------------------------------- Update dao parameters
     function testUpdateDaoParametersInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
         _dealAndApprove(os);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
 

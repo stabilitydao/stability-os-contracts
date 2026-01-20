@@ -1,26 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import {IHost, Host} from "../../src/Host.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {HostDeployer} from "../../src/tools/HostDeployer.sol";
+import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {ERC1967ProxyFactory} from "../../src/base/ERC1967ProxyFactory.sol";
+import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
-import {Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
+import {IHost, Host} from "../../src/Host.sol";
+import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
+import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
-import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
-import {Proxy} from "../../src/base/Proxy.sol";
+import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {MockERC20} from "../mocks/MockERC20.sol";
+import {MockOsBridge} from "../mocks/MockOsBridge.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
-import {MockERC20} from "../mocks/MockERC20.sol";
-import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {MockOsBridge} from "../mocks/MockOsBridge.sol";
-import {BridgeTestLib} from "./BridgeTestLib.sol";
-import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
-import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
+import {Vm} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
 
-abstract contract HostUtilsLib {
+library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
     uint64 internal constant MINTER_ROLE = AccessRolesLib.OS_TOKEN_MINTER;
 
@@ -29,29 +28,39 @@ abstract contract HostUtilsLib {
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
 
-    uint internal constant INITIAL_OS_ETHER_BALANCE = 100 ether;
+    function deployHost(
+        address multisig,
+        IHost.HostInitPayload memory hostPayload
+    ) internal returns (IHostAccessManager, IHostProxyFactory, IHost) {
+        ERC1967ProxyFactory erc1967ProxyFactory = new ERC1967ProxyFactory();
+        HostDeployer hostDeployer = new HostDeployer(address(erc1967ProxyFactory));
+
+        address hostProxyFactoryImplementation = address(new HostProxyFactory(address(erc1967ProxyFactory)));
+        address hostImplementation = address(new Host());
+        (address accessManager, address hostProxyFactory, address host) = hostDeployer.deploy(
+            "0x99155227",
+            "0x22957322",
+            multisig,
+            abi.encode(hostPayload),
+            hostProxyFactoryImplementation,
+            hostImplementation
+        );
+
+        return (IHostAccessManager(accessManager), IHostProxyFactory(hostProxyFactory), IHost(host));
+    }
 
     //region ----------------------------- Create OS and DAO instances
-    function createHostInstance(Vm vm, address multisig, IAccessManager accessManager) public returns (IHost) {
+    function createHostInstance(Vm vm, address multisig) public returns (IHost) {
         IHost.HostInitPayload memory init;
-        return createHostInstance(vm, multisig, accessManager, init);
+        return createHostInstance(vm, multisig, init);
     }
 
     function createHostInstance(
         Vm vm,
         address multisig,
-        IAccessManager accessManager,
         IHost.HostInitPayload memory init_
     ) public returns (IHost) {
-        IHost host;
-        {
-            address logic = address(new Host());
-            Proxy proxy = new Proxy();
-            proxy.initProxy(address(logic));
-            IHosted(address(proxy)).initialize(address(accessManager), abi.encode(init_));
-
-            host = IHost(address(proxy));
-        }
+        (IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) = deployHost(multisig, init_);
 
         // ---------------------- set up multisig as operator for all restricted functions of host
         {
@@ -70,16 +79,7 @@ abstract contract HostUtilsLib {
         }
 
         // ---------------------- set up host factory
-        IHostProxyFactory factory;
         {
-            // ---------------------- create host factory
-            address logic = address(new HostProxyFactory());
-            Proxy proxy = new Proxy();
-            proxy.initProxy(address(logic));
-            IHosted(address(proxy)).initialize(address(accessManager), "");
-
-            factory = IHostProxyFactory(address(proxy));
-
             // ---------------------- set up access to the host factory
             bytes4[] memory selectors = new bytes4[](2);
             selectors[0] = bytes4(IHostProxyFactory.setSeedTokenImplementation.selector);
@@ -137,7 +137,7 @@ abstract contract HostUtilsLib {
 
     function createAliensDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = HostUtilsLib.generateSeedFunding(
+        funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
@@ -145,36 +145,36 @@ abstract contract HostUtilsLib {
         activity[0] = ITokenomics.Activity.BUILDER_3;
         activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
+        ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
 
         return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
     }
 
     function createApesDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = HostUtilsLib.generateSeedFunding(
+        funding[0] = generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(30, 90);
+        ITokenomics.DaoParameters memory params = generateDaoParams(30, 90);
 
         return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
     function createDaoMachines(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
-        funding[0] = HostUtilsLib.generateSeedFunding(
+        funding[0] = generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
-        funding[1] = HostUtilsLib.generateTGEFunding();
+        funding[1] = generateTGEFunding();
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.MEV_SEARCHER_2;
 
-        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(14, 99);
+        ITokenomics.DaoParameters memory params = generateDaoParams(14, 99);
 
         return _createDao(vm, os_, "Machines Cartel", "MACHINE", funding, activity, params);
     }
@@ -241,7 +241,7 @@ abstract contract HostUtilsLib {
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
-        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
+        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);
@@ -256,7 +256,7 @@ abstract contract HostUtilsLib {
     }
 
     function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) public {
-        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
+        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);
@@ -268,71 +268,6 @@ abstract contract HostUtilsLib {
 
         vm.prank(multisig);
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
-    }
-
-    function setupHostBridgeAndHostFactory(
-        Vm vm,
-        IHost os,
-        BridgeTestLib.ChainConfig memory chain,
-        BridgeTestLib.ChainConfig memory otherChain1,
-        BridgeTestLib.ChainConfig memory otherChain2
-    ) public {
-        // -------------------- put some ether on OS contract to send cross-chain messages
-        vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
-
-        // -------------------- set HostBridge inside host
-        IHost.HostChainSettings memory config = os.getChainSettings();
-
-        vm.prank(chain.multisig);
-        os.setChainSettings(
-            IHost.HostChainSettings({
-                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, hostFactory: chain.hostFactory
-            })
-        );
-
-        // -------------------- set os and endpoints inside osBridge
-        vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).setHost(address(os));
-
-        uint32[] memory endpoints = new uint32[](2);
-        endpoints[0] = otherChain1.endpointId;
-        endpoints[1] = otherChain2.endpointId;
-
-        vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).addEndpoint(endpoints);
-
-        IAccessManager accessManager = IAccessManager(IHosted(address(os)).authority());
-
-        // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
-        {
-            bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
-
-            vm.prank(chain.multisig);
-            accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
-
-            vm.prank(chain.multisig);
-            accessManager.grantRole(AccessRolesLib.OS_BRIDGE_USER, address(os), 0);
-        }
-
-        // ----------------------------- Allow OSBridge to call OS.receiveCrossChainMessage
-        {
-            bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = bytes4(IHost.onReceiveCrossChainMessage.selector);
-
-            vm.prank(chain.multisig);
-            accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
-
-            vm.prank(chain.multisig);
-            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.hostBridge), 0);
-        }
-
-        // ----------------------------- Set gas limits
-        vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
-
-        vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
     }
 
     //endregion ----------------------------- Settings

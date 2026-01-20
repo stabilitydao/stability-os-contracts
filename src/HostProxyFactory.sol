@@ -2,12 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {IHostProxyFactory} from "./interfaces/IHostProxyFactory.sol";
-import {IProxy} from "./interfaces/IProxy.sol";
-import {ERC1967Proxy} from "../lib/solady/src/utils/ext/zksync/ERC1967Proxy.sol";
+import {IERC1967ProxyFactory} from "./interfaces/IERC1967ProxyFactory.sol";
 
 contract HostProxyFactory is Hosted, IHostProxyFactory {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -20,49 +18,32 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
     bytes32 public constant HOST_PROXY_STORAGE_LOCATION =
         0x6e1ec94684dca8034e98f557b164c745fd4b39d7b8f15d7f0549b34b10dd8a00;
 
+    /// @inheritdoc IHostProxyFactory
+    address public immutable ERC1967_PROXY_FACTORY;
+
     //endregion -------------------------------------- Constants
 
     //region -------------------------------------- Initialization
+    /// @param erc1967ProxyFactory_ Address of deployed ERC1967ProxyFactory. This factory is used to deploy all proxies.
+    constructor(address erc1967ProxyFactory_) {
+        ERC1967_PROXY_FACTORY = erc1967ProxyFactory_;
+    }
+
     /// @inheritdoc IHosted
-    function initialize(
-        address authority_,
-        bytes memory /*payload*/
-    ) public initializer {
+    function initialize(address authority_, bytes memory /*payload*/) public initializer {
         __Controllable_init(authority_);
     }
 
     //endregion -------------------------------------- Initialization
 
     //region -------------------------------------- View
-    function predictProxyAddress(bytes32 salt) public view returns (address) {
-        return Clones.predictDeterministicAddress(
-            defaultImplementation,
-            salt,
-            address(this) // deployer
-        );
-    }
-
     /// @inheritdoc IHostProxyFactory
-    function getCreate2Address(
-        bytes32 salt,
-        bytes32 initCodeHash,
-        address thisAddress
-    ) external pure returns (address) {
-        return address(uint160(uint(keccak256(abi.encodePacked(bytes1(0xff), thisAddress, salt, initCodeHash)))));
-    }
-
-    /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
-    function getProxyInitCodeHash() external pure returns (bytes32) {
-        return keccak256(type(Proxy).creationCode);
-    }
-
-    /// @notice Deployed seed tokens
     function seedTokens() external view returns (address[] memory) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
         return $.seedTokens.values();
     }
 
-    /// @notice Deployed tge tokens
+    /// @inheritdoc IHostProxyFactory
     function tgeTokens() external view returns (address[] memory) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
         return $.tgeTokens.values();
@@ -151,8 +132,8 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
 
     function _createNewProxy(bytes32 salt, address implementation) internal returns (address proxy) {
         proxy = salt == 0
-            ? address(new ERC1967Proxy(implementation, ""))  // create   // todo if create is not allowed we must require salt != 0
-            : address(new ERC1967Proxy{salt: salt}(implementation, "")); // create2
+            ? IERC1967ProxyFactory(ERC1967_PROXY_FACTORY).createNewProxy(implementation, "")
+            : IERC1967ProxyFactory(ERC1967_PROXY_FACTORY).create2NewProxy(salt, implementation, "");
     }
     //endregion -------------------------------------- Internal utils
 }

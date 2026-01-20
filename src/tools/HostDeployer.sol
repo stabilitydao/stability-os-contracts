@@ -1,27 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IProxy} from "../interfaces/IProxy.sol";
-import {Proxy} from "../base/Proxy.sol";
+import {console} from "forge-std/console.sol";
 import {HostAccessManager} from "../HostAccessManager.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IHostAccessManager} from "../interfaces/IHostAccessManager.sol";
+import {IERC1967ProxyFactory} from "../interfaces/IERC1967ProxyFactory.sol";
 
-/// @notice Auxiliary contract to deploy HostAccessManager, HostProxyFactory and Host in proper order
+/// @notice Auxiliary contract to deploy HostAccessManager, HostProxyFactory and Host in proper order.
+/// @dev The main goal is to create and initialize HostProxyFactory inside single tx.
+/// @dev All other contracts should be deployed using HostProxyFactory.
+/// @author omriss (https://github.com/omriss)
 contract HostDeployer {
     address public immutable DEPLOYER;
 
-    constructor() {
+    /// @notice Address of deployed ERC1967ProxyFactory
+    IERC1967ProxyFactory public immutable ERC1967_PROXY_FACTORY;
+
+    error NotDeployer();
+    error UnexpectedHostAddress();
+    event DeployHost(address authorityInitialAdmin, address accessManager, address hostProxyFactory, address host);
+
+    /// @param erc1967ProxyFactory_ Address of deployed ERC1967ProxyFactory. This factory is used to deploy all proxies.
+    constructor(address erc1967ProxyFactory_) {
+        ERC1967_PROXY_FACTORY = IERC1967ProxyFactory(erc1967ProxyFactory_);
         DEPLOYER = msg.sender;
-    }
-
-    /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
-    function getProxyInitCodeHash() external pure returns (bytes32) {
-        return keccak256(type(Proxy).creationCode);
-    }
-
-    function getCreate2Address(bytes32 salt, bytes32 initCodeHash, address thisAddress) public pure returns (address) {
-        return address(uint160(uint(keccak256(abi.encodePacked(bytes1(0xff), thisAddress, salt, initCodeHash)))));
     }
 
     /// @notice Deploy HostAccessManager (immutable) and two proxy contracts: HostProxyFactory and Host
@@ -40,26 +43,38 @@ contract HostDeployer {
         address hostProxyFactoryImplementation,
         address hostImplementation
     ) external returns (address accessManager, address hostProxyFactory, address host) {
-        require(msg.sender == DEPLOYER, "HostDeployer: only deployer");
+        require(msg.sender == DEPLOYER, NotDeployer());
 
-        address hostPredicted = getCreate2Address(hostSalt, this.getProxyInitCodeHash(), address(this));
+        address hostPredicted = ERC1967_PROXY_FACTORY.getCreate2Address(
+            hostSalt,
+            ERC1967_PROXY_FACTORY.getProxyInitCodeHash(hostImplementation, ""),
+            address(ERC1967_PROXY_FACTORY)
+        );
+        address hostFactoryPredicted = ERC1967_PROXY_FACTORY.getCreate2Address(
+            hostProxyFactorySalt,
+            ERC1967_PROXY_FACTORY.getProxyInitCodeHash(hostProxyFactory, ""),
+            address(ERC1967_PROXY_FACTORY)
+        );
+        console.log("hostPredicted", hostPredicted);
+        console.log("hostFactoryPredicted", hostFactoryPredicted);
 
         accessManager = address(new HostAccessManager(authorityInitialAdmin, hostPredicted));
 
-        hostProxyFactory = _createNewProxy(hostProxyFactorySalt);
-        IProxy(hostProxyFactory).initProxy(hostProxyFactoryImplementation);
+        // we can use abi.encodeCall(IHosted.initialize, (accessManager, ""))
+        // but HostDeployer is more convenient than pure deploy script
+        hostProxyFactory = ERC1967_PROXY_FACTORY.create2NewProxy(hostProxyFactorySalt, hostProxyFactoryImplementation, "");
         IHosted(hostProxyFactory).initialize(accessManager, "");
 
-        host = _createNewProxy(hostSalt);
-        IProxy(host).initProxy(hostImplementation);
+        // authority is not configured yet so we cannot deploy Host through HostProxyFactory
+        //host = IHostProxyFactory(hostProxyFactory).deployProxy(hostSalt, hostImplementation, hostPayload);
+        host = ERC1967_PROXY_FACTORY.create2NewProxy(hostSalt, hostImplementation, "");
         IHosted(host).initialize(accessManager, hostPayload);
 
-        require(IHostAccessManager(accessManager).HOST() == host, "HostDeployer: invalid host in access manager");
-    }
+        console.log("host", host);
+        console.log("hostProxyFactory", hostProxyFactory);
 
-    function _createNewProxy(bytes32 salt) internal returns (address proxy) {
-        proxy = salt == 0
-            ? address(new Proxy())  // create   // todo if create is not allowed we must require salt != 0
-            : address(new Proxy{salt: salt}()); // create2
+        require(IHostAccessManager(accessManager).HOST() == host, UnexpectedHostAddress());
+
+        emit DeployHost(authorityInitialAdmin, accessManager, hostProxyFactory, host);
     }
 }

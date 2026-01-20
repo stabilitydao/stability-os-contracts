@@ -5,7 +5,6 @@ import {console} from "forge-std/console.sol";
 import {Vm, Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
@@ -15,7 +14,7 @@ import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppRec
 import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract HostBridgeTest is Test, HostUtilsLib {
+contract HostBridgeTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
     uint private constant AVALANCHE_FORK_BLOCK = 71037861; // Oct-28-2025 13:17:17 UTC
     uint private constant PLASMA_FORK_BLOCK = 5398928; // Nov-5-2025 07:38:59 UTC
@@ -36,11 +35,6 @@ contract HostBridgeTest is Test, HostUtilsLib {
             avalanche = BridgeTestLib.createConfigAvalanche(vm, forkAvalanche, TEST_DELEGATOR);
             plasma = BridgeTestLib.createConfigPlasma(vm, forkPlasma, TEST_DELEGATOR);
         }
-
-        // ------------------- Create adapter and bridged token
-        sonic.hostBridge = BridgeTestLib.createHostBridge(vm, sonic);
-        avalanche.hostBridge = BridgeTestLib.createHostBridge(vm, avalanche);
-        plasma.hostBridge = BridgeTestLib.createHostBridge(vm, plasma);
 
         // ------------------- Set up Sonic:Avalanche
         BridgeTestLib.setUpSonicAvalanche(vm, sonic, avalanche);
@@ -64,9 +58,8 @@ contract HostBridgeTest is Test, HostUtilsLib {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
         IHost.HostInitPayload memory init;
-        IHost osSonic =
-            HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, IAccessManager(sonic.authority), init);
-        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osSonic, sonic, plasma, avalanche);
+        IHost osSonic = HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osSonic, sonic, plasma, avalanche);
         _dealAndApprove(osSonic);
         IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
         console.log("done createAliensDao");
@@ -75,10 +68,8 @@ contract HostBridgeTest is Test, HostUtilsLib {
         vm.selectFork(avalanche.fork);
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
-        IHost osAvax = HostUtilsLib.createHostInstance(
-            vm, AvalancheConstantsLib.MULTISIG, IAccessManager(avalanche.authority), init
-        );
-        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osAvax, avalanche, sonic, plasma);
+        IHost osAvax = HostUtilsLib.createHostInstance(vm, AvalancheConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osAvax, avalanche, sonic, plasma);
 
         _dealAndApprove(osAvax);
         vm.recordLogs();
@@ -96,9 +87,8 @@ contract HostBridgeTest is Test, HostUtilsLib {
         init.usedSymbols = new string[](2);
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
-        IHost osPlasma =
-            HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, IAccessManager(plasma.authority), init);
-        HostUtilsLib.setupHostBridgeAndHostFactory(vm, osPlasma, plasma, sonic, avalanche);
+        IHost osPlasma = HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osPlasma, plasma, sonic, avalanche);
         _dealAndApprove(osPlasma);
         IDAOData.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
 

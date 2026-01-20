@@ -2,9 +2,13 @@
 pragma solidity ^0.8.23;
 
 import {console, Vm} from "forge-std/Test.sol";
-import {IPlatform} from "../../src/interfaces/IPlatform.sol";
+import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
+import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
+import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IOAppCore} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppCore.sol";
-import {Proxy} from "../../src/base/Proxy.sol";
 import {AvalancheConstantsLib} from "../../chains/AvalancheConstantsLib.sol";
 import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
 import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
@@ -13,7 +17,7 @@ import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interf
 import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/SendLibBase.sol";
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
 import {HostBridge} from "../../src/HostBridge.sol";
-import {AccessManager} from "../../lib/openzeppelin-contracts/contracts/access/manager/AccessManager.sol";
+import {HostUtilsLib} from "./HostUtilsLib.sol";
 
 /// @notice Auxiliary data types and utils to test STBL-bridge related functionality
 library BridgeTestLib {
@@ -23,6 +27,7 @@ library BridgeTestLib {
     uint32 internal constant CONFIG_TYPE_ULN = 2;
 
     uint32 internal constant MAX_MESSAGE_SIZE = 256;
+    uint internal constant INITIAL_OS_ETHER_BALANCE = 100 ether;
 
     // --------------- Confirmations: send >= receive, see https://docs.layerzero.network/v2/developers/evm/configuration/dvn-executor-config
 
@@ -61,20 +66,6 @@ library BridgeTestLib {
         //        address xTokenBridge;
     }
 
-    //region ------------------------------------- Create contracts
-    function createHostBridge(Vm vm, BridgeTestLib.ChainConfig memory chain) internal returns (address) {
-        vm.selectFork(chain.fork);
-
-        Proxy proxy = new Proxy();
-        proxy.initProxy(address(new HostBridge(chain.endpoint)));
-        HostBridge osBridge = HostBridge(address(proxy));
-        osBridge.initialize(address(chain.authority), abi.encode(chain.multisig, chain.delegator));
-
-        return address(osBridge);
-    }
-
-    //endregion ------------------------------------- Create contracts
-
     //region ------------------------------------- Chains
     function createConfigSonic(
         Vm vm,
@@ -82,15 +73,23 @@ library BridgeTestLib {
         address delegator
     ) internal returns (BridgeTestLib.ChainConfig memory) {
         vm.selectFork(forkId);
+
+        address multisig = SonicConstantsLib.MULTISIG;
+        IHost.HostInitPayload memory emptyHostPayload;
+        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+
+        address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
+        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+
         return BridgeTestLib.ChainConfig({
             fork: forkId,
-            multisig: IPlatform(SonicConstantsLib.PLATFORM).multisig(),
+            multisig: multisig,
             delegator: delegator,
-            authority: address(new AccessManager(IPlatform(SonicConstantsLib.PLATFORM).multisig())),
-            hostBridge: address(0), // to be set later
-            hostFactory: address(0), // to be set later
+            authority: address(accessManager),
+            hostBridge: hostBridge,
+            hostFactory: address(factory),
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
-            endpoint: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT,
+            endpoint: endpoint,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: SonicConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
             executor: SonicConstantsLib.LAYER_ZERO_V2_EXECUTOR
@@ -105,13 +104,20 @@ library BridgeTestLib {
         address delegator
     ) internal returns (BridgeTestLib.ChainConfig memory) {
         vm.selectFork(forkId);
+        address multisig = AvalancheConstantsLib.MULTISIG;
+        IHost.HostInitPayload memory emptyHostPayload;
+        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+
+        address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
+        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+
         return BridgeTestLib.ChainConfig({
             fork: forkId,
-            multisig: IPlatform(AvalancheConstantsLib.PLATFORM).multisig(),
+            multisig: multisig,
             delegator: delegator,
-            authority: address(new AccessManager(IPlatform(AvalancheConstantsLib.PLATFORM).multisig())),
-            hostBridge: address(0), // to be set later
-            hostFactory: address(0), // to be set later
+            authority: address(accessManager),
+            hostBridge: hostBridge,
+            hostFactory: address(factory),
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: AvalancheConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -128,13 +134,20 @@ library BridgeTestLib {
         address delegator
     ) internal returns (BridgeTestLib.ChainConfig memory) {
         vm.selectFork(forkId);
+        address multisig = PlasmaConstantsLib.MULTISIG;
+        IHost.HostInitPayload memory emptyHostPayload;
+        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+
+        address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
+        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+
         return BridgeTestLib.ChainConfig({
             fork: forkId,
-            multisig: IPlatform(PlasmaConstantsLib.PLATFORM).multisig(),
+            multisig: multisig,
             delegator: delegator,
-            authority: address(new AccessManager(IPlatform(PlasmaConstantsLib.PLATFORM).multisig())),
-            hostBridge: address(0), // to be set later
-            hostFactory: address(0), // to be set later
+            authority: address(accessManager),
+            hostBridge: hostBridge,
+            hostFactory: address(factory),
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: PlasmaConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -625,6 +638,73 @@ library BridgeTestLib {
     }
 
     //endregion ------------------------------------- Layer zero utils
+
+
+    function setupHostBridgeAndHostFactory(
+        Vm vm,
+        IHost os,
+        BridgeTestLib.ChainConfig memory chain,
+        BridgeTestLib.ChainConfig memory otherChain1,
+        BridgeTestLib.ChainConfig memory otherChain2
+    ) public {
+        // -------------------- put some ether on OS contract to send cross-chain messages
+        vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
+
+        // -------------------- set HostBridge inside host
+        IHost.HostChainSettings memory config = os.getChainSettings();
+
+        vm.prank(chain.multisig);
+        os.setChainSettings(
+            IHost.HostChainSettings({
+                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, hostFactory: chain.hostFactory
+            })
+        );
+
+        // -------------------- set os and endpoints inside osBridge
+        vm.prank(chain.multisig);
+        IHostBridge(chain.hostBridge).setHost(address(os));
+
+        uint32[] memory endpoints = new uint32[](2);
+        endpoints[0] = otherChain1.endpointId;
+        endpoints[1] = otherChain2.endpointId;
+
+        vm.prank(chain.multisig);
+        IHostBridge(chain.hostBridge).addEndpoint(endpoints);
+
+        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
+
+        // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
+
+            vm.prank(chain.multisig);
+            accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
+
+            vm.prank(chain.multisig);
+            accessManager.grantRole(AccessRolesLib.OS_BRIDGE_USER, address(os), 0);
+        }
+
+        // ----------------------------- Allow OSBridge to call OS.receiveCrossChainMessage
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IHost.onReceiveCrossChainMessage.selector);
+
+            vm.prank(chain.multisig);
+            accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
+
+            vm.prank(chain.multisig);
+            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.hostBridge), 0);
+        }
+
+        // ----------------------------- Set gas limits
+        vm.prank(chain.multisig);
+        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
+
+        vm.prank(chain.multisig);
+        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+    }
+
 
     /// @notice Empty function to exclude this test from coverage
     function test() public {}

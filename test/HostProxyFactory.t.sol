@@ -2,40 +2,28 @@
 pragma solidity ^0.8.28;
 
 import {Host} from "../src/Host.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
-import {HostProxyFactory} from "../src/HostProxyFactory.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IHosted} from "../src/interfaces/IHosted.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
+import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
-import {IProxy} from "../src/interfaces/IProxy.sol";
-import {Proxy} from "../src/base/Proxy.sol";
+import {IERC1967ProxyFactory} from "../src/interfaces/IERC1967ProxyFactory.sol";
 import {SeedToken} from "../src/tokenomics/SeedToken.sol";
 import {Test} from "forge-std/Test.sol";
 import {TgeToken} from "../src/tokenomics/TgeToken.sol";
 import {console} from "forge-std/console.sol";
+import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 
 contract HostProxyFactoryTest is Test {
-    IAccessManager internal accessManager;
+    IERC1967ProxyFactory internal erc1967ProxyFactory;
+    IHostAccessManager internal accessManager;
     address internal multisig;
-    HostProxyFactory internal factory;
-
-    /// @notice Precalculated result of factory.getProxyInitCodeHash(). For simplicity assume that proxy is never changed.
-    /// If we need to change Proxy contract we need to create Proxy2 contract
-    /// and I.E. use old generated salt with old proxy and new generated salt with new proxy.
-    bytes32 internal constant PROXY_CREATION_CODE_HASH =
-        0x35656ab11a97544d46860e81ce9d5904c38b74f4dec412bba7ab1795d1266f5f;
+    IHostProxyFactory internal factory;
 
     constructor() {
         multisig = makeAddr("multisig");
-        accessManager = new AccessManager(multisig);
-
-        address proxy = address(new Proxy());
-        IProxy(proxy).initProxy(address(new HostProxyFactory()));
-        IHosted(proxy).initialize(address(accessManager), "");
-        factory = HostProxyFactory(proxy);
+        IHost.HostInitPayload memory emptyHostPayload;
+        (accessManager, factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
 
         _setupAccessManager();
     }
@@ -82,9 +70,12 @@ contract HostProxyFactoryTest is Test {
         factory.setSeedTokenImplementation(seedTokenImplementation);
 
         // ------------------------ Deploy seed token
+
+        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
+
         bytes32 salt = "0x0101";
-        bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
-        address predictedProxyAddress = factory.getCreate2Address(salt, proxyInitCodeHash, address(factory));
+        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(factory.seedTokenImplementation(), "");
+        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash, erc1967ProxyFactory);
 
         vm.expectRevert();
         vm.prank(address(2222));
@@ -108,13 +99,15 @@ contract HostProxyFactoryTest is Test {
         // ------------------------ Setup implementations
         address tgeTokenImplementation = address(new TgeToken());
 
+        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
+
         vm.prank(multisig);
         factory.setTgeTokenImplementation(tgeTokenImplementation);
 
         // ------------------------ Deploy seed token
         bytes32 salt = "0x0101";
-        bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
-        address predictedProxyAddress = factory.getCreate2Address(salt, proxyInitCodeHash, address(factory));
+        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(factory.tgeTokenImplementation(), "");
+        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash,erc1967ProxyFactory);
 
         vm.expectRevert();
         vm.prank(address(2222));
@@ -138,8 +131,9 @@ contract HostProxyFactoryTest is Test {
         address logic = address(new Host());
 
         bytes32 salt = "0x0101";
-        bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
-        address predictedProxyAddress = factory.getCreate2Address(salt, proxyInitCodeHash, address(factory));
+        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
+        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(logic, "");
+        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash, address(erc1967ProxyFactory));
 
         string[] memory usedSymbols = new string[](2);
         usedSymbols[0] = "AAA";
@@ -185,13 +179,4 @@ contract HostProxyFactoryTest is Test {
         vm.prank(multisig);
         accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(this), 0);
     }
-
-    // todo
-    //    function testProxyCreationCode() public view {
-    //        assertEq(
-    //            factory.getProxyInitCodeHash(),
-    //            PROXY_CREATION_CODE_HASH,
-    //            "Proxy creation code shouldn't change because of CREATE2 address calculation relies on it"
-    //        );
-    //    }
 }

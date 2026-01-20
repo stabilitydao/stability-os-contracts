@@ -11,6 +11,7 @@ import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 import {HostAccessManager} from "../../src/HostAccessManager.sol";
 import {Host} from "../../src/Host.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {ERC1967ProxyFactory} from "../../src/base/ERC1967ProxyFactory.sol";
 
 contract HostDeployerTest is Test {
     bytes32 internal constant HOST_PROXY_FACTORY_SALT = "0x111";
@@ -19,24 +20,24 @@ contract HostDeployerTest is Test {
     address internal constant UPGRADER = address(0x888);
 
     function testDeploy() public {
-        HostDeployer deployer = new HostDeployer();
-        assertEq(deployer.DEPLOYER(), address(this), "Deployer address");
+        ERC1967ProxyFactory erc1967ProxyFactory = new ERC1967ProxyFactory();
+        HostDeployer hostDeployer = new HostDeployer(address(erc1967ProxyFactory));
+        assertEq(hostDeployer.DEPLOYER(), address(this), "Deployer address");
 
-        address hostProxyFactoryImpl = address(new HostProxyFactory());
+        address hostProxyFactoryImpl = address(new HostProxyFactory(address(erc1967ProxyFactory)));
         address hostImpl = address(new Host());
         bytes memory payload =
             abi.encode(IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "A", daoHostUid: 999}));
 
         vm.prank(address(123));
         vm.expectRevert("HostDeployer: only deployer");
-        deployer.deploy(HOST_PROXY_FACTORY_SALT, HOST_SALT, ADMIN, payload, hostProxyFactoryImpl, hostImpl);
+        hostDeployer.deploy(HOST_PROXY_FACTORY_SALT, HOST_SALT, ADMIN, payload, hostProxyFactoryImpl, hostImpl);
 
         (address accessManager, address hostProxyFactory, address host) =
-            deployer.deploy(HOST_PROXY_FACTORY_SALT, HOST_SALT, ADMIN, payload, hostProxyFactoryImpl, hostImpl);
+            hostDeployer.deploy(HOST_PROXY_FACTORY_SALT, HOST_SALT, ADMIN, payload, hostProxyFactoryImpl, hostImpl);
 
-        address expectedHost = deployer.getCreate2Address(HOST_SALT, deployer.getProxyInitCodeHash(), address(deployer));
-        address expectedHostProxyFactory =
-            deployer.getCreate2Address(HOST_PROXY_FACTORY_SALT, deployer.getProxyInitCodeHash(), address(deployer));
+        address expectedHost = erc1967ProxyFactory.getCreate2Address(HOST_SALT, erc1967ProxyFactory.getProxyInitCodeHash(hostImpl, ""), address(hostDeployer));
+        address expectedHostProxyFactory = erc1967ProxyFactory.getCreate2Address(HOST_PROXY_FACTORY_SALT, erc1967ProxyFactory.getProxyInitCodeHash(hostProxyFactoryImpl, ""), address(hostDeployer));
 
         assertEq(expectedHostProxyFactory, hostProxyFactory, "HostProxyFactory address");
 
@@ -49,16 +50,17 @@ contract HostDeployerTest is Test {
     }
 
     function testUpgradeProxy() public {
+        ERC1967ProxyFactory erc1967ProxyFactory = new ERC1967ProxyFactory();
         HostAccessManager accessManager;
         HostProxyFactory hostProxyFactory;
         Host host;
 
         // ------------------------------ Deploy initial contracts: HostAccessManager, HostProxyFactory, Host
         {
-            HostDeployer deployer = new HostDeployer();
+            HostDeployer deployer = new HostDeployer(address(erc1967ProxyFactory));
             assertEq(deployer.DEPLOYER(), address(this), "Deployer address");
 
-            address hostProxyFactoryImpl = address(new HostProxyFactory());
+            address hostProxyFactoryImpl = address(new HostProxyFactory(address(erc1967ProxyFactory)));
             address hostImpl = address(new Host());
             bytes memory payload =
                 abi.encode(IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "A", daoHostUid: 999}));
@@ -90,7 +92,7 @@ contract HostDeployerTest is Test {
 
         // ------------------------------ UPGRADER upgrades implementation of HostProxyFactory
         {
-            address newHostProxyFactoryImpl = address(new HostProxyFactory());
+            address newHostProxyFactoryImpl = address(new HostProxyFactory(address(erc1967ProxyFactory)));
 
             vm.expectRevert(); // AccessManagedUnauthorized
             hostProxyFactory.upgradeToAndCall(newHostProxyFactoryImpl, "");

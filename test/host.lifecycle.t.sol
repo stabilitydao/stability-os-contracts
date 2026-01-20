@@ -5,17 +5,17 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {IERC1967ProxyFactory} from "../src/interfaces/IERC1967ProxyFactory.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {MockOsBridge} from "./mocks/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 // import {console} from "forge-std/console.sol";
 
-contract HostLifeCycleTest is Test, HostUtilsLib {
+contract HostLifeCycleTest is Test {
     address internal immutable MULTISIG;
 
     address internal constant FIRST_SEEDER = address(0x11);
@@ -32,7 +32,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
     /// @notice Test single DAO life cycle
     function testLifeCycle56() public {
         // ------------------------------ First DAO is Aliens community
-        IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         lifeCycleDaoAlien56(host56);
 
@@ -58,7 +58,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
     }
 
     function testLifeCycleWithSalt() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG, new AccessManager(MULTISIG));
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         lifeCycleWithSalt(host);
     }
 
@@ -547,7 +547,7 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             host_.changePhase(daoData.symbol);
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
-                7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+                7 days, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
             );
             host_.updateFunding(daoData.symbol, funding);
         }
@@ -885,8 +885,8 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             bytes32[] memory salts = new bytes32[](1);
             salts[0] = "0x0101";
 
-            bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
-            predictedSeedAddress = factory.getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
+            bytes32 proxyInitCodeHash = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getProxyInitCodeHash(factory.seedTokenImplementation(), "");
+            predictedSeedAddress = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
 
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
@@ -942,8 +942,8 @@ contract HostLifeCycleTest is Test, HostUtilsLib {
             salts[0] = "0x0101";
             salts[1] = "0x0202";
 
-            bytes32 proxyInitCodeHash = factory.getProxyInitCodeHash();
-            predictedTgeAddress = factory.getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
+            bytes32 proxyInitCodeHash = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getProxyInitCodeHash(factory.tgeTokenImplementation(), "");
+            predictedTgeAddress = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
 
             uint16[] memory indices = new uint16[](2);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created

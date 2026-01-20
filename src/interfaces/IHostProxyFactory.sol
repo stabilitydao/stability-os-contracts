@@ -27,15 +27,8 @@ interface IHostProxyFactory {
         EnumerableSet.AddressSet tgeTokens;
     }
 
-    /// @notice Get CREATE2 address
-    /// @param salt Provided salt for CREATE2
-    /// @param initCodeHash Hash of contract creationCode
-    /// @param thisAddress Address of this factory
-    /// @return Future deployment address
-    function getCreate2Address(bytes32 salt, bytes32 initCodeHash, address thisAddress) external pure returns (address);
-
-    /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
-    function getProxyInitCodeHash() external view returns (bytes32);
+    /// @notice Address of deployed ERC1967ProxyFactory. It's used to deploy all proxies.
+    function ERC1967_PROXY_FACTORY() external view returns (address);
 
     //region -------------------- View deployed addresses
 
