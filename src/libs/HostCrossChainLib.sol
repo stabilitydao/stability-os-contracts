@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {HostLib} from "./HostLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
@@ -18,6 +18,7 @@ library HostCrossChainLib {
     /// @param guid_ Unique message identifier
     /// @param message_ Message payload
     function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external {
+        console.log("onReceiveCrossChainMessage", block.chainid);
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo do we need to check sender here? require(msg.sender == bridge, NotBridge());
@@ -72,6 +73,8 @@ library HostCrossChainLib {
         if (bridge != address(0)) {
             uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
             require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));
+            console.log("_sendCrossChainMessage.bridge", bridge);
+            console.log("_sendCrossChainMessage.host", address(this));
             IHostBridge(bridge).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
         }
     }

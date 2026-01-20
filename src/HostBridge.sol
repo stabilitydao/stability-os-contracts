@@ -56,6 +56,7 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
         __Controllable_init(authority_);
         __OApp_init(_delegate == address(0) ? _owner : _delegate);
         __Ownable_init(_owner);
+        console.log("Initialize HostBridge: authority_", authority_);
     }
 
     //endregion --------------------------------- Initializers

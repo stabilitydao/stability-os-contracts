@@ -90,7 +90,11 @@ library BridgeTestLib {
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = factory.deployProxy("0x65172386", hostBridgeImpl, abi.encode(multisig, delegator));
+            hostBridge = factory.deployProxy("0x6512222222", hostBridgeImpl, abi.encode(multisig, delegator));
+
+            console.log("createConfigSonic.hostBridge", hostBridge);
+            console.log("createConfigSonic.accessManager", address(accessManager));
+            console.log("createConfigSonic.factory", address(factory));
         }
 
         return BridgeTestLib.ChainConfig({
@@ -719,6 +723,8 @@ library BridgeTestLib {
 
             vm.prank(chain.multisig);
             accessManager.grantRole(AccessRolesLib.HOST_BRIDGE_USER, address(host), 0);
+
+            console.log("Grand host, bridge, accessManager", address(host), chain.hostBridge, address(accessManager));
         }
 
         // ----------------------------- Allow HostBridge to call Host.receiveCrossChainMessage

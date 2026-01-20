@@ -61,7 +61,11 @@ library HostUtilsLib {
         IHost.HostInitPayload memory init_
     ) public returns (IHost) {
         (IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) = deployHost(multisig, init_);
+        setupHostInstance(vm, multisig, accessManager, factory, host);
+        return IHost(address(host));
+    }
 
+    function setupHostInstance(Vm vm, address multisig, IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) internal {
         // ---------------------- set up multisig as operator for all restricted functions of host
         {
             bytes4[] memory selectors = new bytes4[](5);
@@ -112,8 +116,6 @@ library HostUtilsLib {
         setHostSettings(vm, host, multisig);
 
         setChainSettings(vm, host, multisig, factory);
-
-        return IHost(address(host));
     }
 
     function createDaoInstance(
