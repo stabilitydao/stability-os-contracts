@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {HostDeployer} from "../../src/tools/HostDeployer.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {ERC1967ProxyFactory} from "../../src/base/ERC1967ProxyFactory.sol";
+import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
@@ -32,7 +32,7 @@ library HostUtilsLib {
         address multisig,
         IHost.HostInitPayload memory hostPayload
     ) internal returns (IHostAccessManager, IHostProxyFactory, IHost) {
-        ERC1967ProxyFactory erc1967ProxyFactory = new ERC1967ProxyFactory();
+        ProxyFactory erc1967ProxyFactory = new ProxyFactory();
         HostDeployer hostDeployer = new HostDeployer(address(erc1967ProxyFactory));
 
         address hostProxyFactoryImplementation = address(new HostProxyFactory(address(erc1967ProxyFactory)));

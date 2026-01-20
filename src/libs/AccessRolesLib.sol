@@ -9,10 +9,10 @@ library AccessRolesLib {
     uint64 internal constant OS_TOKEN_MINTER = 2;
 
     /// @notice Access role to use OS Bridge functionality. Only OS itself should have this role
-    uint64 internal constant OS_BRIDGE_USER = 3;
+    uint64 internal constant HOST_BRIDGE_USER = 3;
 
     /// @notice OS Bridge contract
-    uint64 internal constant OS_BRIDGE = 4;
+    uint64 internal constant HOST_BRIDGE = 4;
 
     /// @notice Admin of HostProxyFactory
     uint64 internal constant HOST_PROXY_FACTORY_ADMIN = 5;
@@ -22,4 +22,7 @@ library AccessRolesLib {
 
     /// @notice Allow to upgrade proxy implementations
     uint64 internal constant CONTRACTS_UPGRADER = 7;
+
+    /// @notice Allow to deploy proxy using fabrics
+    uint64 internal constant PROXY_DEPLOYER = 8;
 }

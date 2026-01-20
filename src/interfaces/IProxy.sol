@@ -5,6 +5,11 @@ pragma solidity 0.8.28; // We need to fix version of compilator because changing
 /// @dev To upgrade proxy use UUPSUpgradeable functions - Proxy.upgradeToAndCall()
 /// @dev Proxy will redirect the call to the implementation - UUPSUpgradeable.upgradeToAndCall()
 interface IProxy {
+    /// @notice Set first implementation address
+    /// @dev Separate function is used instead of constructor here to be able to use CREATE2 addresses.
+    /// CREATE2 address depends on constructor parameters (if any). It is not suitable for Host implementation.
+    function initProxy(address logic) external;
+
     /// @notice Return current logic implementation
     /// @return Address of implementation contract
     function implementation() external view returns (address);

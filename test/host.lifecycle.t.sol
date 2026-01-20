@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
-import {IERC1967ProxyFactory} from "../src/interfaces/IERC1967ProxyFactory.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
@@ -885,8 +885,8 @@ contract HostLifeCycleTest is Test {
             bytes32[] memory salts = new bytes32[](1);
             salts[0] = "0x0101";
 
-            bytes32 proxyInitCodeHash = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getProxyInitCodeHash(factory.seedTokenImplementation(), "");
-            predictedSeedAddress = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
+            bytes32 proxyInitCodeHash = IProxyFactory(factory.PROXY_FACTORY()).getProxyInitCodeHash();
+            predictedSeedAddress = IProxyFactory(factory.PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory.PROXY_FACTORY()));
 
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
@@ -942,8 +942,8 @@ contract HostLifeCycleTest is Test {
             salts[0] = "0x0101";
             salts[1] = "0x0202";
 
-            bytes32 proxyInitCodeHash = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getProxyInitCodeHash(factory.tgeTokenImplementation(), "");
-            predictedTgeAddress = IERC1967ProxyFactory(factory.ERC1967_PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
+            bytes32 proxyInitCodeHash = IProxyFactory(factory.PROXY_FACTORY()).getProxyInitCodeHash();
+            predictedTgeAddress = IProxyFactory(factory.PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
 
             uint16[] memory indices = new uint16[](2);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created

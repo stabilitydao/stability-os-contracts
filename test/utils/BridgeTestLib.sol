@@ -79,7 +79,19 @@ library BridgeTestLib {
         (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
 
         address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
-        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+        address hostBridge;
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+
+            address hostBridgeImpl = address(new HostBridge(endpoint));
+            hostBridge = factory.deployProxy("0x65172386", hostBridgeImpl, abi.encode(multisig, delegator));
+        }
 
         return BridgeTestLib.ChainConfig({
             fork: forkId,
@@ -109,7 +121,19 @@ library BridgeTestLib {
         (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
 
         address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
-        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+        address hostBridge;
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+
+            address hostBridgeImpl = address(new HostBridge(endpoint));
+            hostBridge = factory.deployProxy("0x65172300", hostBridgeImpl, abi.encode(multisig, delegator));
+        }
 
         return BridgeTestLib.ChainConfig({
             fork: forkId,
@@ -139,7 +163,19 @@ library BridgeTestLib {
         (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
 
         address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
-        address hostBridge = factory.deployProxy("0x65172386", address(new HostBridge(endpoint)), abi.encode(multisig, delegator));
+        address hostBridge;
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+
+            address hostBridgeImpl = address(new HostBridge(endpoint));
+            hostBridge = factory.deployProxy("0x65172399", hostBridgeImpl, abi.encode(multisig, delegator));
+        }
 
         return BridgeTestLib.ChainConfig({
             fork: forkId,
@@ -642,19 +678,19 @@ library BridgeTestLib {
 
     function setupHostBridgeAndHostFactory(
         Vm vm,
-        IHost os,
+        IHost host,
         BridgeTestLib.ChainConfig memory chain,
         BridgeTestLib.ChainConfig memory otherChain1,
         BridgeTestLib.ChainConfig memory otherChain2
     ) public {
         // -------------------- put some ether on OS contract to send cross-chain messages
-        vm.deal(address(os), INITIAL_OS_ETHER_BALANCE);
+        vm.deal(address(host), INITIAL_OS_ETHER_BALANCE);
 
         // -------------------- set HostBridge inside host
-        IHost.HostChainSettings memory config = os.getChainSettings();
+        IHost.HostChainSettings memory config = host.getChainSettings();
 
         vm.prank(chain.multisig);
-        os.setChainSettings(
+        host.setChainSettings(
             IHost.HostChainSettings({
                 exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, hostFactory: chain.hostFactory
             })
@@ -662,7 +698,7 @@ library BridgeTestLib {
 
         // -------------------- set os and endpoints inside osBridge
         vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).setHost(address(os));
+        IHostBridge(chain.hostBridge).setHost(address(host));
 
         uint32[] memory endpoints = new uint32[](2);
         endpoints[0] = otherChain1.endpointId;
@@ -671,30 +707,30 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).addEndpoint(endpoints);
 
-        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
+        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(host)).authority());
 
-        // ----------------------------- Allow OS to call OSBridge.sendMessageToAllChains
+        // ----------------------------- Allow HOST to call OSBridge.sendMessageToAllChains
         {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
 
             vm.prank(chain.multisig);
-            accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.OS_BRIDGE_USER);
+            accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.HOST_BRIDGE_USER);
 
             vm.prank(chain.multisig);
-            accessManager.grantRole(AccessRolesLib.OS_BRIDGE_USER, address(os), 0);
+            accessManager.grantRole(AccessRolesLib.HOST_BRIDGE_USER, address(host), 0);
         }
 
-        // ----------------------------- Allow OSBridge to call OS.receiveCrossChainMessage
+        // ----------------------------- Allow HostBridge to call Host.receiveCrossChainMessage
         {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = bytes4(IHost.onReceiveCrossChainMessage.selector);
 
             vm.prank(chain.multisig);
-            accessManager.setTargetFunctionRole(address(os), selectors, AccessRolesLib.OS_BRIDGE);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_BRIDGE);
 
             vm.prank(chain.multisig);
-            accessManager.grantRole(AccessRolesLib.OS_BRIDGE, address(chain.hostBridge), 0);
+            accessManager.grantRole(AccessRolesLib.HOST_BRIDGE, address(chain.hostBridge), 0);
         }
 
         // ----------------------------- Set gas limits

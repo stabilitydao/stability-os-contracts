@@ -58,22 +58,22 @@ contract HostBridgeTest is Test {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
         IHost.HostInitPayload memory init;
-        IHost osSonic = HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, init);
-        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osSonic, sonic, plasma, avalanche);
-        _dealAndApprove(osSonic);
-        IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, osSonic);
+        IHost hostSonic = HostUtilsLib.createHostInstance(vm, SonicConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostSonic, sonic, plasma, avalanche);
+        _dealAndApprove(hostSonic);
+        IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, hostSonic);
         console.log("done createAliensDao");
 
         // ----------------------------- create DAO on Avalanche
         vm.selectFork(avalanche.fork);
         init.usedSymbols = new string[](1);
         init.usedSymbols[0] = dao1.symbol;
-        IHost osAvax = HostUtilsLib.createHostInstance(vm, AvalancheConstantsLib.MULTISIG, init);
-        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osAvax, avalanche, sonic, plasma);
+        IHost hostAvax = HostUtilsLib.createHostInstance(vm, AvalancheConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostAvax, avalanche, sonic, plasma);
 
-        _dealAndApprove(osAvax);
+        _dealAndApprove(hostAvax);
         vm.recordLogs();
-        IDAOData.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, osAvax);
+        IDAOData.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, hostAvax);
         console.log("done createApesDao");
 
         { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
@@ -87,10 +87,10 @@ contract HostBridgeTest is Test {
         init.usedSymbols = new string[](2);
         init.usedSymbols[0] = dao1.symbol;
         init.usedSymbols[1] = dao2.symbol;
-        IHost osPlasma = HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, init);
-        BridgeTestLib.setupHostBridgeAndHostFactory(vm, osPlasma, plasma, sonic, avalanche);
-        _dealAndApprove(osPlasma);
-        IDAOData.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, osPlasma);
+        IHost hostPlasma = HostUtilsLib.createHostInstance(vm, PlasmaConstantsLib.MULTISIG, init);
+        BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostPlasma, plasma, sonic, avalanche);
+        _dealAndApprove(hostPlasma);
+        IDAOData.DaoData memory dao3 = HostUtilsLib.createDaoMachines(vm, hostPlasma);
 
         { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
             Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -100,19 +100,19 @@ contract HostBridgeTest is Test {
 
         // ----------------------------- Check results of cross-chain message exchange
         vm.selectFork(sonic.fork);
-        assertEq(osSonic.isDaoSymbolInUse(dao1.symbol), true, "Sonic: dao1 symbol");
-        assertEq(osSonic.isDaoSymbolInUse(dao2.symbol), true, "Sonic: dao2 symbol");
-        assertEq(osSonic.isDaoSymbolInUse(dao3.symbol), true, "Sonic: dao3 symbol");
+        assertEq(hostSonic.isDaoSymbolInUse(dao1.symbol), true, "Sonic: dao1 symbol");
+        assertEq(hostSonic.isDaoSymbolInUse(dao2.symbol), true, "Sonic: dao2 symbol");
+        assertEq(hostSonic.isDaoSymbolInUse(dao3.symbol), true, "Sonic: dao3 symbol");
 
         vm.selectFork(avalanche.fork);
-        assertEq(osAvax.isDaoSymbolInUse(dao1.symbol), true, "Avax: dao1 symbol");
-        assertEq(osAvax.isDaoSymbolInUse(dao2.symbol), true, "Avax: dao2 symbol");
-        assertEq(osAvax.isDaoSymbolInUse(dao3.symbol), true, "Avax:; dao3 symbol");
+        assertEq(hostAvax.isDaoSymbolInUse(dao1.symbol), true, "Avax: dao1 symbol");
+        assertEq(hostAvax.isDaoSymbolInUse(dao2.symbol), true, "Avax: dao2 symbol");
+        assertEq(hostAvax.isDaoSymbolInUse(dao3.symbol), true, "Avax:; dao3 symbol");
 
         vm.selectFork(plasma.fork);
-        assertEq(osPlasma.isDaoSymbolInUse(dao1.symbol), true, "Plasma: dao1 symbol");
-        assertEq(osPlasma.isDaoSymbolInUse(dao2.symbol), true, "Plasma: dao2 symbol");
-        assertEq(osPlasma.isDaoSymbolInUse(dao3.symbol), true, "Plasma: dao3 symbol");
+        assertEq(hostPlasma.isDaoSymbolInUse(dao1.symbol), true, "Plasma: dao1 symbol");
+        assertEq(hostPlasma.isDaoSymbolInUse(dao2.symbol), true, "Plasma: dao2 symbol");
+        assertEq(hostPlasma.isDaoSymbolInUse(dao3.symbol), true, "Plasma: dao3 symbol");
     }
 
     function _processCrossChainMessages(

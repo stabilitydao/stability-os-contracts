@@ -7,7 +7,7 @@ import {IHost} from "../src/interfaces/IHost.sol";
 import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
-import {IERC1967ProxyFactory} from "../src/interfaces/IERC1967ProxyFactory.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {SeedToken} from "../src/tokenomics/SeedToken.sol";
 import {Test} from "forge-std/Test.sol";
 import {TgeToken} from "../src/tokenomics/TgeToken.sol";
@@ -15,7 +15,7 @@ import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 
 contract HostProxyFactoryTest is Test {
-    IERC1967ProxyFactory internal erc1967ProxyFactory;
+    IProxyFactory internal proxyFactory;
     IHostAccessManager internal accessManager;
     address internal multisig;
     IHostProxyFactory internal factory;
@@ -24,6 +24,7 @@ contract HostProxyFactoryTest is Test {
         multisig = makeAddr("multisig");
         IHost.HostInitPayload memory emptyHostPayload;
         (accessManager, factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+        proxyFactory = IProxyFactory(factory.PROXY_FACTORY());
 
         _setupAccessManager();
     }
@@ -71,11 +72,9 @@ contract HostProxyFactoryTest is Test {
 
         // ------------------------ Deploy seed token
 
-        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
-
         bytes32 salt = "0x0101";
-        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(factory.seedTokenImplementation(), "");
-        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash, erc1967ProxyFactory);
+        bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
+        address predictedProxyAddress = IProxyFactory(proxyFactory).getCreate2Address(salt, proxyInitCodeHash, address(proxyFactory));
 
         vm.expectRevert();
         vm.prank(address(2222));
@@ -99,15 +98,13 @@ contract HostProxyFactoryTest is Test {
         // ------------------------ Setup implementations
         address tgeTokenImplementation = address(new TgeToken());
 
-        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
-
         vm.prank(multisig);
         factory.setTgeTokenImplementation(tgeTokenImplementation);
 
         // ------------------------ Deploy seed token
         bytes32 salt = "0x0101";
-        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(factory.tgeTokenImplementation(), "");
-        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash,erc1967ProxyFactory);
+        bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
+        address predictedProxyAddress = IProxyFactory(proxyFactory).getCreate2Address(salt, proxyInitCodeHash, address(proxyFactory));
 
         vm.expectRevert();
         vm.prank(address(2222));
@@ -131,9 +128,8 @@ contract HostProxyFactoryTest is Test {
         address logic = address(new Host());
 
         bytes32 salt = "0x0101";
-        address erc1967ProxyFactory = factory.ERC1967_PROXY_FACTORY();
-        bytes32 proxyInitCodeHash = IERC1967ProxyFactory(erc1967ProxyFactory).getProxyInitCodeHash(logic, "");
-        address predictedProxyAddress = IERC1967ProxyFactory(erc1967ProxyFactory).getCreate2Address(salt, proxyInitCodeHash, address(erc1967ProxyFactory));
+        bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
+        address predictedProxyAddress = IProxyFactory(proxyFactory).getCreate2Address(salt, proxyInitCodeHash, address(proxyFactory));
 
         string[] memory usedSymbols = new string[](2);
         usedSymbols[0] = "AAA";
