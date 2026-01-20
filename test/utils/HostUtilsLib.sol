@@ -28,6 +28,10 @@ library HostUtilsLib {
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
 
+    function setup() internal {
+        // todo
+    }
+
     function deployHost(
         address multisig,
         IHost.HostInitPayload memory hostPayload
@@ -50,7 +54,7 @@ library HostUtilsLib {
     }
 
     //region ----------------------------- Create OS and DAO instances
-    function createHostInstance(Vm vm, address multisig) public returns (IHost) {
+    function createHostInstance(Vm vm, address multisig) internal returns (IHost) {
         IHost.HostInitPayload memory init;
         return createHostInstance(vm, multisig, init);
     }
@@ -59,7 +63,7 @@ library HostUtilsLib {
         Vm vm,
         address multisig,
         IHost.HostInitPayload memory init_
-    ) public returns (IHost) {
+    ) internal returns (IHost) {
         (IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) = deployHost(multisig, init_);
         setupHostInstance(vm, multisig, accessManager, factory, host);
         return IHost(address(host));
@@ -137,7 +141,7 @@ library HostUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
-    function createAliensDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
+    function createAliensDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -152,7 +156,7 @@ library HostUtilsLib {
         return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
     }
 
-    function createApesDao(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
+    function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -166,7 +170,7 @@ library HostUtilsLib {
         return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
-    function createDaoMachines(Vm vm, IHost os_) public returns (IDAOData.DaoData memory) {
+    function createDaoMachines(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
         funding[0] = generateSeedFunding(
             7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -202,7 +206,7 @@ library HostUtilsLib {
     //endregion ----------------------------- Create OS and DAO instances
 
     //region ----------------------------- Settings
-    function setHostSettings(Vm vm, IHost host_, address multisig) public {
+    function setHostSettings(Vm vm, IHost host_, address multisig) internal {
         // Prepare and set OS settings using the IHost.OsSettings struct
         vm.prank(multisig);
         host_.setSettings(
@@ -227,7 +231,7 @@ library HostUtilsLib {
         );
     }
 
-    function setChainSettings(Vm vm, IHost host_, address multisig, IHostProxyFactory factory_) public {
+    function setChainSettings(Vm vm, IHost host_, address multisig, IHostProxyFactory factory_) internal {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
@@ -242,7 +246,7 @@ library HostUtilsLib {
         );
     }
 
-    function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) public {
+    function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) internal {
         IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
@@ -257,7 +261,7 @@ library HostUtilsLib {
         accessManager.grantRole(MINTER_ROLE, address(os), 0);
     }
 
-    function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) public {
+    function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) internal {
         IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
@@ -282,7 +286,7 @@ library HostUtilsLib {
         uint duration,
         uint minRaise,
         uint maxRaise
-    ) public view returns (ITokenomics.Funding memory) {
+    ) internal view returns (ITokenomics.Funding memory) {
         return ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.SEED_0,
             start: uint64(block.timestamp + delaySec),
@@ -294,7 +298,7 @@ library HostUtilsLib {
         });
     }
 
-    function generateTGEFunding() public view returns (ITokenomics.Funding memory) {
+    function generateTGEFunding() internal view returns (ITokenomics.Funding memory) {
         uint64 _after = 30 * 6 days;
         uint64 duration = 7 days;
         uint minRaise = 100_000e18; // exchange asset
@@ -314,13 +318,13 @@ library HostUtilsLib {
     function generateDaoParams(
         uint32 vePeriod_,
         uint16 pvpFee_
-    ) public pure returns (ITokenomics.DaoParameters memory) {
+    ) internal pure returns (ITokenomics.DaoParameters memory) {
         return ITokenomics.DaoParameters({
             vePeriod: vePeriod_, pvpFee: pvpFee_, minPower: 0, ttBribe: 0, recoveryShare: 0, proposalThreshold: 0
         });
     }
 
-    function generateVesting(string memory name, uint tgeEnd) public pure returns (ITokenomics.Vesting memory) {
+    function generateVesting(string memory name, uint tgeEnd) internal pure returns (ITokenomics.Vesting memory) {
         uint64 cliff = 180 days;
         uint64 duration = 365 days;
         uint64 allocation = 100;
@@ -333,7 +337,7 @@ library HostUtilsLib {
         });
     }
 
-    function createTestDaoData() public pure returns (IDAOData.DaoDataInput memory data) {
+    function createTestDaoData() internal pure returns (IDAOData.DaoDataInput memory data) {
         // ---------------- base fields
         data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
         data.symbol = "testdao";
@@ -488,7 +492,7 @@ library HostUtilsLib {
     //endregion ----------------------------- Funding, DaoParams, Vesting
 
     //region ----------------------------- Print
-    function printDaoData(IDAOData.DaoData memory data) public pure {
+    function printDaoData(IDAOData.DaoData memory data) internal pure {
         console.log("DAO Symbol:", data.symbol);
         console.log("DAO Name:", data.name);
         console.log("Deployer:", data.deployer);
@@ -540,7 +544,7 @@ library HostUtilsLib {
     function getFundingIndex(
         IDAOData.DaoData memory data,
         ITokenomics.FundingType fType
-    ) public pure returns (uint index) {
+    ) internal pure returns (uint index) {
         for (uint i; i < data.funding.length; i++) {
             if (data.funding[i].fundingType == fType) {
                 return i;
@@ -549,15 +553,11 @@ library HostUtilsLib {
         return uint(type(uint).max);
     }
 
-    function getLastProposalId(IHost os, string memory daoSymbol) public view returns (bytes32) {
+    function getLastProposalId(IHost os, string memory daoSymbol) internal view returns (bytes32) {
         uint len = os.proposalsLength(daoSymbol);
         require(len != 0, "No proposals found");
         bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);
         return proposalIds[0];
-    }
-
-    function test() public {
-        // empty function to exclude the library from the coverage
     }
 
     //endregion ----------------------------- Utils

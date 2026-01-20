@@ -3,12 +3,17 @@ pragma solidity ^0.8.28;
 
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
 import {Proxy} from "../base/Proxy.sol";
+import {Ownable} from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {AccessControl} from "../../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
 
 /// @notice Minimal immutable factory contract to deploy ERC1967Proxy contracts using CREATE/CREATE2
 /// @dev Bytecode of ERC1967Proxy is never changed.
-/// @dev No events, no restrictions.
 /// @author omriss (https://github.com/omriss)
-contract ProxyFactory is IProxyFactory {
+contract ProxyFactory is IProxyFactory, AccessControl { // todo AccessControl, todo restrictions
+
+    constructor() { // Ownable(msg.sender)
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
 
     /// @inheritdoc IProxyFactory
     function getProxyInitCodeHash() external pure returns (bytes32) {
