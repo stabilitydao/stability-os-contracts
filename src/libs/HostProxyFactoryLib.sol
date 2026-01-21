@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {Hosted} from "../base/Hosted.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
 import {IProxy} from "../interfaces/IProxy.sol";
@@ -11,20 +10,15 @@ import {IHostAccessManager} from "../interfaces/IHostAccessManager.sol";
 library HostProxyFactoryLib {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    //region -------------------------------------- Constant
-    /// @inheritdoc IHosted
-    string public constant VERSION = "1.0.0";
-
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactoryLib")) - 1)) & ~bytes32(uint(0xff));
     bytes32 public constant HOST_PROXY_STORAGE_LOCATION = 0; // todo
 
-    //endregion -------------------------------------- Constants
-
     //region -------------------------------------- Data types
+    error LogicNotFound(uint kind);
+
     event NewContractImplementation(uint kind, address seedToken);
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
-    event LogicNotFound(uint kind);
 
     /// @custom:storage-location erc7201:stability.host-contracts.HostProxyFactoryLib
     struct HostProxyFactoryStorage {

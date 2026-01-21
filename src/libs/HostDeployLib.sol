@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {HostLib} from "./HostLib.sol";
 import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostProxyFactoryLib} from "./HostProxyFactoryLib.sol";
 
 /// @notice Library for deploying tokens via HostProxyFactory
@@ -19,7 +18,7 @@ library HostDeployLib {
         bytes32 seed = $.salt[
             HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid)
         ];
-        return HostProxyFactoryLib.deployContract(seed, IHost.ContractKinds.SEED_TOKEN_1, abi.encode(token_, symbol_), authority_);
+        return HostProxyFactoryLib.deployContract(seed, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode(token_, symbol_), authority_);
     }
 
     function deployTgeToken(
@@ -32,6 +31,6 @@ library HostDeployLib {
         bytes32 seed = $.salt[
             HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), block.chainid)
         ];
-        return HostProxyFactoryLib.deployContract(seed, IHost.ContractKinds.TGE_TOKEN_2, abi.encode(token_, symbol_), authority_);
+        return HostProxyFactoryLib.deployContract(seed, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode(token_, symbol_), authority_);
     }
 }

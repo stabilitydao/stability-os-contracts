@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
 import {Proxy} from "../base/Proxy.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
-import {Ownable} from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @notice Factory contract to create clones of the Proxy contract
 /// @dev Bytecode of Proxy is never changed.
@@ -65,7 +65,8 @@ contract ProxyFactory is IProxyFactory, Ownable {
     }
 
     /// @inheritdoc IProxyFactory
-    function createNewProxy() external onlyWhitelisted returns (address proxy) {
+    function createNewProxy() external returns (address proxy) {
+        // there are no restrictions on who can call this function
         return Clones.clone(address(MASTER_PROXY));
     }
 

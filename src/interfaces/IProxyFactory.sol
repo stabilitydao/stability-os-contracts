@@ -20,12 +20,14 @@ interface IProxyFactory {
     ) external pure returns (address);
 
     /// @notice Deploy new Proxy without logic initialization using CREATE2
+    /// @custom:restriction Whitelisted addresses only
     /// @dev This function must be called by other factory contracts that additionally initialize the proxy after deployment
     /// @param salt Salt to get CREATE2 deployment address
     /// @return proxy Address of deployed Proxy contract
     function create2NewProxy(bytes32 salt) external returns (address proxy);
 
     /// @notice Deploy new Proxy without logic initialization using CREATE
+    /// @custom:restriction No restrictions
     /// @dev This function must be called by other factory contracts that additionally initialize the proxy after deployment
     /// @return proxy Address of deployed Proxy contract
     function createNewProxy() external returns (address proxy);

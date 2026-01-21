@@ -279,7 +279,7 @@ interface IHost {
     /// @param logic Address of logic contract
     /// @param payload Initialization payload to pass to IHosted.initialize.
     /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
-    /// @return Address of deployed proxy contract
+    /// @return proxy Address of deployed proxy contract
     function deployProxy(bytes32 salt_, address logic, bytes memory payload) external returns (address proxy);
     //endregion ---------------------------------------- Write actions
 

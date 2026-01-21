@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HostDeployer} from "../../src/tools/HostDeployer.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHost, Host} from "../../src/Host.sol";
+import {HostAccessManager} from "../../src/HostAccessManager.sol";
 import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
@@ -31,34 +31,35 @@ library HostUtilsLib {
     }
 
     function deployHost(
+        Vm vm,
         address multisig,
         IHost.HostInitPayload memory hostPayload
     ) internal returns (IHostAccessManager, IHost) {
         // ------------------- deploy proxy factory
+        vm.prank(multisig);
         ProxyFactory proxyFactory = new ProxyFactory();
 
-
         // ------------------- deploy authority
-        // todo
+        address hostPredicted = proxyFactory.getCreate2Address(
+            "0x62436",
+            proxyFactory.getProxyInitCodeHash(),
+            address(proxyFactory)
+        );
+        HostAccessManager accessManager = new HostAccessManager(multisig, hostPredicted, address(proxyFactory));
 
+        vm.prank(multisig);
+        proxyFactory.setWhitelisted(address(accessManager), true);
+
+        vm.prank(multisig);
+        proxyFactory.setWhitelisted(hostPredicted, true);
 
         // ------------------- deploy host
+        address logic = address(new Host());
 
+        vm.prank(multisig);
+        address host = accessManager.deployHost("0x62436", logic, abi.encode(hostPayload));
 
-        proxyFactory.setWhitelisted(address(hostDeployer), true);
-
-        address hostProxyFactoryImplementation = address(new HostProxyFactory(address(proxyFactory)));
-        address hostImplementation = address(new Host());
-        (address accessManager, address hostProxyFactory, address host) = hostDeployer.deploy(
-            "0x99155227",
-            "0x22957322",
-            multisig,
-            abi.encode(hostPayload),
-            hostProxyFactoryImplementation,
-            hostImplementation
-        );
-
-        return (IHostAccessManager(accessManager), IHostProxyFactory(hostProxyFactory), IHost(host));
+        return (IHostAccessManager(accessManager), IHost(host));
     }
 
     //region ----------------------------- Create OS and DAO instances
@@ -72,12 +73,12 @@ library HostUtilsLib {
         address multisig,
         IHost.HostInitPayload memory init_
     ) internal returns (IHost) {
-        (IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) = deployHost(multisig, init_);
-        setupHostInstance(vm, multisig, accessManager, factory, host);
+        (IHostAccessManager accessManager, IHost host) = deployHost(vm, multisig, init_);
+        setupHostInstance(vm, multisig, accessManager, host);
         return IHost(address(host));
     }
 
-    function setupHostInstance(Vm vm, address multisig, IHostAccessManager accessManager, IHostProxyFactory factory, IHost host) internal {
+    function setupHostInstance(Vm vm, address multisig, IHostAccessManager accessManager, IHost host) internal {
         // ---------------------- set up multisig as operator for all restricted functions of host
         {
             bytes4[] memory selectors = new bytes4[](5);
@@ -98,36 +99,29 @@ library HostUtilsLib {
         {
             // ---------------------- set up access to the host factory
             bytes4[] memory selectors = new bytes4[](2);
-            selectors[0] = bytes4(IHostProxyFactory.setSeedTokenImplementation.selector);
-            selectors[1] = bytes4(IHostProxyFactory.setTgeTokenImplementation.selector);
+            selectors[0] = bytes4(IHost.setContractImplementation.selector);
+            selectors[1] = bytes4(IHost.deployProxy.selector);
 
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_ADMIN);
-
-            selectors = new bytes4[](2);
-            selectors[0] = bytes4(IHostProxyFactory.deploySeedToken.selector);
-            selectors[1] = bytes4(IHostProxyFactory.deployTgeToken.selector);
-
-            vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_ADMIN);
 
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
 
             vm.prank(multisig);
-            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(host), 0);
+            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, multisig, 0);
 
             // ---------------------- set implementations
             vm.startPrank(multisig);
-            factory.setSeedTokenImplementation(address(new SeedToken()));
-            factory.setTgeTokenImplementation(address(new TgeToken()));
+            host.setContractImplementation(uint(IHost.ContractKinds.SEED_TOKEN_1), address(new SeedToken()));
+            host.setContractImplementation(uint(IHost.ContractKinds.TGE_TOKEN_2), address(new TgeToken()));
             vm.stopPrank();
         }
 
         // ---------------------- set host settings
         setHostSettings(vm, host, multisig);
 
-        setChainSettings(vm, host, multisig, factory);
+        setChainSettings(vm, host, multisig);
     }
 
     function createDaoInstance(
@@ -239,7 +233,7 @@ library HostUtilsLib {
         );
     }
 
-    function setChainSettings(Vm vm, IHost host_, address multisig, IHostProxyFactory factory_) internal {
+    function setChainSettings(Vm vm, IHost host_, address multisig) internal {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
@@ -249,7 +243,8 @@ library HostUtilsLib {
         vm.prank(multisig);
         host_.setChainSettings(
             IHost.HostChainSettings({
-                exchangeAsset: address(usdc), hostBridge: address(bridge), hostFactory: address(factory_)
+                exchangeAsset: address(usdc),
+                hostBridge: address(bridge)
             })
         );
     }

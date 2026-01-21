@@ -65,7 +65,6 @@ contract HostBridgeTest is Test {
             vm,
             SonicConstantsLib.MULTISIG,
             IHostAccessManager(sonic.authority),
-            IHostProxyFactory(sonic.hostFactory),
             hostSonic
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostSonic, sonic, plasma, avalanche);
@@ -77,7 +76,6 @@ contract HostBridgeTest is Test {
             vm,
             AvalancheConstantsLib.MULTISIG,
             IHostAccessManager(avalanche.authority),
-            IHostProxyFactory(avalanche.hostFactory),
             hostAvax
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostAvax, avalanche, sonic, plasma);
@@ -89,7 +87,6 @@ contract HostBridgeTest is Test {
             vm,
             PlasmaConstantsLib.MULTISIG,
             IHostAccessManager(plasma.authority),
-            IHostProxyFactory(plasma.hostFactory),
             hostPlasma
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostPlasma, plasma, sonic, avalanche);

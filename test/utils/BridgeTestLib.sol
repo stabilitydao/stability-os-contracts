@@ -52,9 +52,7 @@ library BridgeTestLib {
         address delegator;
 
         address authority;
-
         address hostBridge;
-        address hostFactory;
 
         uint32 endpointId;
         address endpoint;
@@ -75,25 +73,21 @@ library BridgeTestLib {
 
         address multisig = SonicConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
         {
             bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = factory.deployProxy("0x6512222222", hostBridgeImpl, abi.encode(multisig, delegator));
-
-            console.log("createConfigSonic.hostBridge", hostBridge);
-            console.log("createConfigSonic.accessManager", address(accessManager));
-            console.log("createConfigSonic.factory", address(factory));
+            hostBridge = host.deployProxy("0x6512222222", hostBridgeImpl, abi.encode(multisig, delegator));
         }
 
         return BridgeTestLib.ChainConfig({
@@ -102,14 +96,11 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
-            hostFactory: address(factory),
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: endpoint,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: SonicConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
             executor: SonicConstantsLib.LAYER_ZERO_V2_EXECUTOR
-            //            xToken: address(0), // to be set later
-            //            xTokenBridge: address(0),
         });
     }
 
@@ -121,21 +112,21 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = AvalancheConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
         {
             bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = factory.deployProxy("0x65172300", hostBridgeImpl, abi.encode(multisig, delegator));
+            hostBridge = host.deployProxy("0x65172300", hostBridgeImpl, abi.encode(multisig, delegator));
         }
 
         return BridgeTestLib.ChainConfig({
@@ -144,14 +135,11 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
-            hostFactory: address(factory),
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: AvalancheConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: AvalancheConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
             executor: AvalancheConstantsLib.LAYER_ZERO_V2_EXECUTOR
-            //            xToken: address(0),
-            //            xTokenBridge: address(0),
         });
     }
 
@@ -163,21 +151,21 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = PlasmaConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHostProxyFactory factory, ) = HostUtilsLib.deployHost(multisig, emptyHostPayload);
+        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
         {
             bytes4[] memory selectors = new bytes4[](1);
-            selectors[0] = IHostProxyFactory.deployProxy.selector;
+            selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(factory), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = factory.deployProxy("0x65172399", hostBridgeImpl, abi.encode(multisig, delegator));
+            hostBridge = host.deployProxy("0x65172399", hostBridgeImpl, abi.encode(multisig, delegator));
         }
 
         return BridgeTestLib.ChainConfig({
@@ -186,14 +174,11 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
-            hostFactory: address(factory),
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: PlasmaConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: PlasmaConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
             executor: PlasmaConstantsLib.LAYER_ZERO_V2_EXECUTOR
-            //            xToken: address(0),
-            //            xTokenBridge: address(0),
         });
     }
 
@@ -695,7 +680,7 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         host.setChainSettings(
             IHost.HostChainSettings({
-                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, hostFactory: chain.hostFactory
+                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge
             })
         );
 

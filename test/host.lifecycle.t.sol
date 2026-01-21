@@ -6,12 +6,14 @@ import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
+import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {MockOsBridge} from "./mocks/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 // import {console} from "forge-std/console.sol";
 
 contract HostLifeCycleTest is Test {
@@ -879,13 +881,13 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ set SALT for seed token
         address predictedSeedAddress;
         {
-            IHostProxyFactory factory = IHostProxyFactory(host_.getChainSettings().hostFactory);
+            IProxyFactory proxyFactory = IProxyFactory(_getAuthority(host_).PROXY_FACTORY());
 
             bytes32[] memory salts = new bytes32[](1);
             salts[0] = "0x0101";
 
-            bytes32 proxyInitCodeHash = IProxyFactory(factory.PROXY_FACTORY()).getProxyInitCodeHash();
-            predictedSeedAddress = IProxyFactory(factory.PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory.PROXY_FACTORY()));
+            bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
+            predictedSeedAddress = IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
 
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
@@ -935,14 +937,14 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ set SALT for tge token through proposal
         address predictedTgeAddress;
         {
-            IHostProxyFactory factory = IHostProxyFactory(host_.getChainSettings().hostFactory);
+            IProxyFactory proxyFactory = IProxyFactory(_getAuthority(host_).PROXY_FACTORY());
 
             bytes32[] memory salts = new bytes32[](2);
             salts[0] = "0x0101";
             salts[1] = "0x0202";
 
-            bytes32 proxyInitCodeHash = IProxyFactory(factory.PROXY_FACTORY()).getProxyInitCodeHash();
-            predictedTgeAddress = IProxyFactory(factory.PROXY_FACTORY()).getCreate2Address(salts[0], proxyInitCodeHash, address(factory));
+            bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
+            predictedTgeAddress = IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
 
             uint16[] memory indices = new uint16[](2);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
@@ -1101,5 +1103,9 @@ contract HostLifeCycleTest is Test {
         uint amount = os_.getSettings().priceDao;
         deal(exchangeAsset, address(this), amount);
         IERC20(exchangeAsset).approve(address(os_), amount);
+    }
+
+    function _getAuthority(IHost host) internal view returns (IHostAccessManager) {
+        return IHostAccessManager(IAccessManaged(address(host)).authority());
     }
 }

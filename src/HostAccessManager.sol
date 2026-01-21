@@ -29,12 +29,12 @@ contract HostAccessManager is AccessManager, IHostAccessManager {
     /// @param salt_ Salt used to deploy the Host proxy contract. The given salt should produce HOST result address
     /// @param logic_ Address of Host implementation contract
     /// @return host Address of deployed Host proxy contract
-    function deployHost(bytes32 salt_, address logic_) external onlyAuthorized returns (address host) {
+    function deployHost(bytes32 salt_, address logic_, bytes memory hostPayload) external onlyAuthorized returns (address host) {
         host = IProxyFactory(PROXY_FACTORY).create2NewProxy(salt_);
         require(HOST == address(host), UnexpectedHostAddress());
 
         IProxy(host).initProxy(logic_);
-        IHosted(host).initialize(address(this), "");
+        IHosted(host).initialize(address(this), hostPayload);
 
         emit HostDeployed(host);
     }
