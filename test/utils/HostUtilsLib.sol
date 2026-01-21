@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
+import {IProxy} from "../../src/interfaces/IProxy.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHost, Host} from "../../src/Host.sol";
 import {Authority} from "../../src/Authority.sol";
@@ -45,10 +48,10 @@ library HostUtilsLib {
             proxyFactory.getProxyInitCodeHash(),
             address(proxyFactory)
         );
-        Authority accessManager = new Authority(multisig, hostPredicted, address(proxyFactory));
+        Authority authority = new Authority(multisig, hostPredicted, address(proxyFactory));
 
         vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(accessManager), true);
+        proxyFactory.setWhitelisted(address(authority), true);
 
         vm.prank(multisig);
         proxyFactory.setWhitelisted(hostPredicted, true);
@@ -56,10 +59,39 @@ library HostUtilsLib {
         // ------------------- deploy host
         address logic = address(new Host());
 
-        vm.prank(multisig);
-        address host = accessManager.deployHost("0x62436", logic, abi.encode(hostPayload));
+        bytes[] memory calls = new bytes[](3);
 
-        return (IAuthority(accessManager), IHost(host));
+        // 1. create2NewProxy
+        calls[0] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                address(proxyFactory),
+                abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436"))
+            )
+        );
+
+        // 2. initProxy
+        calls[1] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                hostPredicted,
+                abi.encodeCall(IProxy.initProxy, (logic))
+            )
+        );
+
+        // 3. initialize host
+        calls[2] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                hostPredicted,
+                abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload)))
+            )
+        );
+
+        vm.prank(multisig);
+        authority.multicall(calls);
+
+        return (IAuthority(authority), IHost(hostPredicted));
     }
 
     //region ----------------------------- Create OS and DAO instances
