@@ -25,7 +25,7 @@ contract HostProxyFactory is Hosted, IHostProxyFactory {
     //endregion -------------------------------------- Constants
 
     //region -------------------------------------- Initialization
-    /// @param proxyFactory_ Address of deployed ProxyFactory.sol. This factory is used to deploy all proxies.
+    /// @param proxyFactory_ Address of deployed ProxyFactoryNew.sol. This factory is used to deploy all proxies.
     constructor(address proxyFactory_) {
         PROXY_FACTORY = proxyFactory_;
     }

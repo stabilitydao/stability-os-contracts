@@ -27,7 +27,7 @@ interface IHostProxyFactory {
         EnumerableSet.AddressSet tgeTokens;
     }
 
-    /// @notice Address of deployed ProxyFactory.sol. It's used to deploy all proxies.
+    /// @notice Address of deployed ProxyFactoryNew.sol.sol. It's used to deploy all proxies.
     function PROXY_FACTORY() external view returns (address);
 
     //region -------------------- View deployed addresses

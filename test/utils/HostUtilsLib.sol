@@ -36,10 +36,12 @@ library HostUtilsLib {
         address multisig,
         IHost.HostInitPayload memory hostPayload
     ) internal returns (IHostAccessManager, IHostProxyFactory, IHost) {
-        ProxyFactory erc1967ProxyFactory = new ProxyFactory();
-        HostDeployer hostDeployer = new HostDeployer(address(erc1967ProxyFactory));
+        ProxyFactory proxyFactory = new ProxyFactory();
+        HostDeployer hostDeployer = new HostDeployer(address(proxyFactory));
 
-        address hostProxyFactoryImplementation = address(new HostProxyFactory(address(erc1967ProxyFactory)));
+        proxyFactory.setWhitelisted(address(hostDeployer), true);
+
+        address hostProxyFactoryImplementation = address(new HostProxyFactory(address(proxyFactory)));
         address hostImplementation = address(new Host());
         (address accessManager, address hostProxyFactory, address host) = hostDeployer.deploy(
             "0x99155227",

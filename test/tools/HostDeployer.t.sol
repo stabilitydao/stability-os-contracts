@@ -50,17 +50,17 @@ contract HostDeployerTest is Test {
     }
 
     function testUpgradeProxy() public {
-        ProxyFactory erc1967ProxyFactory = new ProxyFactory();
+        ProxyFactory proxyFactory = new ProxyFactory();
         HostAccessManager accessManager;
         HostProxyFactory hostProxyFactory;
         Host host;
 
         // ------------------------------ Deploy initial contracts: HostAccessManager, HostProxyFactory, Host
         {
-            HostDeployer deployer = new HostDeployer(address(erc1967ProxyFactory));
+            HostDeployer deployer = new HostDeployer(address(proxyFactory));
             assertEq(deployer.DEPLOYER(), address(this), "Deployer address");
 
-            address hostProxyFactoryImpl = address(new HostProxyFactory(address(erc1967ProxyFactory)));
+            address hostProxyFactoryImpl = address(new HostProxyFactory(address(proxyFactory)));
             address hostImpl = address(new Host());
             bytes memory payload =
                 abi.encode(IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "A", daoHostUid: 999}));
@@ -92,7 +92,7 @@ contract HostDeployerTest is Test {
 
         // ------------------------------ UPGRADER upgrades implementation of HostProxyFactory
         {
-            address newHostProxyFactoryImpl = address(new HostProxyFactory(address(erc1967ProxyFactory)));
+            address newHostProxyFactoryImpl = address(new HostProxyFactory(address(proxyFactory)));
 
             vm.expectRevert(); // AccessManagedUnauthorized
             hostProxyFactory.upgradeToAndCall(newHostProxyFactoryImpl, "");
