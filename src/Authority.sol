@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IAuthority} from "./interfaces/IAuthority.sol";
 
+/// @notice Authority contract holding addresses of core contracts and managing access to all contracts of Host platform
 contract Authority is AccessManager, IAuthority {
     /// @inheritdoc IAuthority
     address public immutable HOST;

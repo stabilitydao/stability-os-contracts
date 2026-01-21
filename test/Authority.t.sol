@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {ProxyFactory} from "../src/base/ProxyFactory.sol";
+import {Authority} from "../src/Authority.sol";
+import {Host} from "../src/Host.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
+import {IHost} from "../src/interfaces/IHost.sol";
+import {IProxy} from "../src/interfaces/IProxy.sol";
+import {IHosted} from "../src/interfaces/IHosted.sol";
+import {Test} from "forge-std/Test.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+// import {console} from "forge-std/console.sol";
+
+contract AuthorityTest is Test {
+    address internal constant MULTISIG = address(0xFFFFFFFF);
+
+    function testDeployHost() public {
+        string[] memory usedSymbols = new string[](1);
+        usedSymbols[0] = "B";
+
+        IHost.HostInitPayload memory hostPayload = IHost.HostInitPayload({
+            usedSymbols: usedSymbols,
+            daoHostSymbol: "A",
+            daoHostUid: 1
+        });
+
+        // ------------------- deploy proxy factory
+        vm.prank(MULTISIG);
+        ProxyFactory proxyFactory = new ProxyFactory();
+
+        // ------------------- deploy authority
+        address hostPredicted = proxyFactory.getCreate2Address(
+            "0x62436",
+            proxyFactory.getProxyInitCodeHash(),
+            address(proxyFactory)
+        );
+        Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
+
+        vm.prank(MULTISIG);
+        proxyFactory.setWhitelisted(address(authority), true);
+
+        vm.prank(MULTISIG);
+        proxyFactory.setWhitelisted(hostPredicted, true);
+
+        // ------------------- prepare to create host - set up the calls
+        address logic = address(new Host());
+
+        bytes[] memory calls = new bytes[](3);
+
+        // 1. create2NewProxy
+        calls[0] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                address(proxyFactory),
+                abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436"))
+            )
+        );
+
+        // 2. initProxy
+        calls[1] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                hostPredicted,
+                abi.encodeCall(IProxy.initProxy, (logic))
+            )
+        );
+
+        // 3. initialize host
+        calls[2] = abi.encodeCall(
+            AccessManager.execute,
+            (
+                hostPredicted,
+                abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload)))
+            )
+        );
+
+        // ------------------- create host via multicall
+        vm.expectRevert(); // AccessManagerUnauthorizedCall - only admin can call
+        vm.prank(address(this));
+        authority.multicall(calls);
+
+        vm.prank(MULTISIG);
+        authority.multicall(calls);
+
+        // ------------------- verify host
+        IHost host = IHost(hostPredicted);
+        assertEq(IAccessManaged(hostPredicted).authority(), address(authority), "host authority");
+        assertNotEq(host.getHostDaoUid(), 0, "host dao uid set");
+        assertEq(host.getHostDaoUid(), host.getDAO("A").uid, "host dao uid");
+        assertEq(host.isDaoSymbolInUse("B"), true, "host used symbol");
+
+        // -------------------- verify authority
+        assertEq(authority.HOST(), hostPredicted, "authority host");
+        assertEq(authority.PROXY_FACTORY(), address(proxyFactory), "authority proxy factory");
+    }
+}

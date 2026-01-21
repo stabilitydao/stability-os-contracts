@@ -13,9 +13,10 @@ abstract contract UpgradeableProxy {
     /// @dev Emitted when the implementation is upgraded.
     event Upgraded(address indexed implementation);
 
-    constructor() {
-        assert(_IMPLEMENTATION_SLOT == bytes32(uint(keccak256("eip1967.proxy.implementation")) - 1));
-    }
+// todo remove? constructor is NOT compatible with Clones
+//    constructor() {
+//        assert(_IMPLEMENTATION_SLOT == bytes32(uint(keccak256("eip1967.proxy.implementation")) - 1));
+//    }
 
     /// @dev Post deploy initialisation for compatability with EIP-1167 factory
     function _init(address logic) internal {
