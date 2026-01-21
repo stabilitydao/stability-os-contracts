@@ -8,7 +8,7 @@ import {Ownable} from "../../lib/openzeppelin-contracts/contracts/access/Ownable
 /// @notice Factory contract to deploy Proxy contract using CREATE/CREATE2
 /// @dev Bytecode of Proxy is never changed.
 /// @author omriss (https://github.com/omriss)
-contract ProxyFactoryNew is IProxyFactory, Ownable {
+contract ProxyFactoryCreate is IProxyFactory, Ownable {
 
     constructor() Ownable(msg.sender) {}
 
@@ -27,12 +27,12 @@ contract ProxyFactoryNew is IProxyFactory, Ownable {
     }
 
     /// @inheritdoc IProxyFactory
-    function createNewProxy() external returns (address proxy) {
+    function createNewProxy() external onlyOwner returns (address proxy) {
         proxy = address(new Proxy());
     }
 
     /// @inheritdoc IProxyFactory
-    function create2NewProxy(bytes32 salt) external returns (address proxy) {
+    function create2NewProxy(bytes32 salt) external onlyOwner returns (address proxy) {
         proxy = address(new Proxy{salt: salt}());
     }
 }

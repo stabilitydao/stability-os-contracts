@@ -25,7 +25,7 @@ library HostViewLib {
 
     /// @notice Change lifecycle phase of a DAO
     /// @param daoSymbol Symbol of the DAO
-    function changePhase(string calldata daoSymbol) external {
+    function changePhase(string calldata daoSymbol, address authority) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
@@ -49,7 +49,8 @@ library HostViewLib {
                 $,
                 daoUid,
                 getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.SEED_0)),
-                getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0))
+                getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0)),
+                authority
             );
 
             newPhase = ITokenomics.LifecyclePhase.SEED_1;
@@ -74,7 +75,8 @@ library HostViewLib {
                 $,
                 daoUid,
                 getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.TGE_1)),
-                getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1))
+                getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1)),
+                authority
             );
 
             newPhase = ITokenomics.LifecyclePhase.TGE_4;

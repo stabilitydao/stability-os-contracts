@@ -15,14 +15,14 @@ import {IProxy} from "../interfaces/IProxy.sol";
 contract HostDeployer {
     address public immutable DEPLOYER;
 
-    /// @notice Address of deployed ProxyFactoryNew.sol
+    /// @notice Address of deployed ProxyFactoryCreate.sol.sol
     IProxyFactory public immutable PROXY_FACTORY;
 
     error NotDeployer();
     error UnexpectedHostAddress();
     event DeployHost(address authorityInitialAdmin, address accessManager, address hostProxyFactory, address host);
 
-    /// @param erc1967ProxyFactory_ Address of deployed ProxyFactoryNew.sol. This factory is used to deploy all proxies.
+    /// @param erc1967ProxyFactory_ Address of deployed ProxyFactoryCreate.sol.sol. This factory is used to deploy all proxies.
     constructor(address erc1967ProxyFactory_) {
         PROXY_FACTORY = IProxyFactory(erc1967ProxyFactory_);
         DEPLOYER = msg.sender;

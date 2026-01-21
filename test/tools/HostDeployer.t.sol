@@ -7,7 +7,6 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
 import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
-import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 import {HostAccessManager} from "../../src/HostAccessManager.sol";
 import {Host} from "../../src/Host.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";

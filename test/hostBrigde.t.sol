@@ -6,7 +6,6 @@ import {Vm, Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";

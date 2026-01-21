@@ -6,4 +6,7 @@ import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessMana
 interface IHostAccessManager is IAccessManager {
     /// @notice Address of Host contract on the current chain
     function HOST() external view returns (address);
+
+    /// @notice Address of ProxyFactory used to deploy the proxy contracts
+    function PROXY_FACTORY() external view returns (address);
 }

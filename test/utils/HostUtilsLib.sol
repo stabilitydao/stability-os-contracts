@@ -4,12 +4,10 @@ pragma solidity ^0.8.28;
 import {HostDeployer} from "../../src/tools/HostDeployer.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
-import {HostProxyFactory} from "../../src/HostProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHost, Host} from "../../src/Host.sol";
 import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
-import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -35,9 +33,17 @@ library HostUtilsLib {
     function deployHost(
         address multisig,
         IHost.HostInitPayload memory hostPayload
-    ) internal returns (IHostAccessManager, IHostProxyFactory, IHost) {
+    ) internal returns (IHostAccessManager, IHost) {
+        // ------------------- deploy proxy factory
         ProxyFactory proxyFactory = new ProxyFactory();
-        HostDeployer hostDeployer = new HostDeployer(address(proxyFactory));
+
+
+        // ------------------- deploy authority
+        // todo
+
+
+        // ------------------- deploy host
+
 
         proxyFactory.setWhitelisted(address(hostDeployer), true);
 

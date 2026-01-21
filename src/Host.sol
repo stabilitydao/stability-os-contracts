@@ -11,6 +11,7 @@ import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
+import {HostProxyFactoryLib} from "./libs/HostProxyFactoryLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
@@ -23,7 +24,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public initializer {
-        __Controllable_init(authority_);
+        __Hosted_init(authority_);
 
         // register all symbols registered on other chains
         IHost.HostInitPayload memory initPayload = abi.decode(payload, (IHost.HostInitPayload));
@@ -95,6 +96,11 @@ contract Host is IHost, Hosted {
         return HostViewLib.salt(daoSymbol, contractIndex, chainId);
     }
 
+    /// @inheritdoc IHost
+    function contractImplementation(uint kind) external view returns (address) {
+        return HostProxyFactoryLib.contractImplementation(kind);
+    }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -129,7 +135,7 @@ contract Host is IHost, Hosted {
     function changePhase(string calldata daoSymbol) external {
         // no restrictions, anybody can call this
 
-        HostViewLib.changePhase(daoSymbol);
+        HostViewLib.changePhase(daoSymbol, authority());
     }
 
     /// @inheritdoc IHost
@@ -164,8 +170,19 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
+        // todo no restrictions?
         // todo not reentrant
         HostActionsLib.processUnitRevenue(daoSymbol, unitId, amount);
+    }
+
+    /// @inheritdoc IHost
+    function setContractImplementation(uint kind, address implementation) external restricted {
+        HostProxyFactoryLib.setContractImplementation(kind, implementation);
+    }
+
+    /// @inheritdoc IHost
+    function deployProxy(bytes32 salt_, address logic, bytes memory payload) external returns (address proxy) {
+        return HostProxyFactoryLib.deployProxy(salt_, logic, payload, authority());
     }
 
     //endregion -------------------------------------- Actions

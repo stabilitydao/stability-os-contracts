@@ -21,7 +21,7 @@ contract Token is IToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeable, ER
     function initialize(address authority_, bytes memory payload) public initializer {
         (string memory _name, string memory _symbol) = abi.decode(payload, (string, string));
 
-        __Controllable_init(authority_);
+        __Hosted_init(authority_);
         __ERC20_init(_name, _symbol);
         __ERC20Burnable_init();
         __ERC20Permit_init(_name);

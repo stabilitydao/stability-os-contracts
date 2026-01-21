@@ -4,14 +4,14 @@ pragma solidity ^0.8.28;
 import {console} from "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {ProxyFactoryNew} from "../../src/base/ProxyFactoryNew.sol";
+import {ProxyFactoryCreate} from "../../src/base/ProxyFactoryCreate.sol";
 import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract ProxyFactoryTest is Test {
 
     function testProxyFactoryNew() public {
-        IProxyFactory factory = IProxyFactory(address(new ProxyFactoryNew()));
+        IProxyFactory factory = IProxyFactory(address(new ProxyFactoryCreate()));
         bytes32 initCodeHash = factory.getProxyInitCodeHash();
         address predictedAddress = factory.getCreate2Address("0x1234", initCodeHash, address(factory));
         uint gas = gasleft();

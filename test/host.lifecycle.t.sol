@@ -7,7 +7,6 @@ import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {MockOsBridge} from "./mocks/MockOsBridge.sol";

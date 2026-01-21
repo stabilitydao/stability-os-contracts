@@ -52,6 +52,8 @@ library HostActionsLib {
             $.daoUids[initPayload.daoHostSymbol] = initPayload.daoHostUid;
             $.hostDaoUid = initPayload.daoHostUid;
         }
+
+        // todo event Host initialized
     }
 
     //endregion -------------------------------------- Restricted actions

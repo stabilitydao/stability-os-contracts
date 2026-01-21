@@ -33,7 +33,7 @@ abstract contract Hosted is Initializable, UUPSUpgradeable, AccessManagedUpgrade
     /// @dev Use it only once after first logic setup
     /// @param authority_ Access Manager address
     //slither-disable-next-line naming-convention
-    function __Controllable_init(address authority_) internal onlyInitializing {
+    function __Hosted_init(address authority_) internal onlyInitializing {
         require(authority_ != address(0), IncorrectZeroArgument());
         AccessManagedUpgradeable.__AccessManaged_init(authority_);
         __UUPSUpgradeable_init();

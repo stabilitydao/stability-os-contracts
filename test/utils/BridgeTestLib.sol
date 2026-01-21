@@ -5,7 +5,6 @@ import {console, Vm} from "forge-std/Test.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
-import {IHostProxyFactory} from "../../src/interfaces/IHostProxyFactory.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IOAppCore} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppCore.sol";

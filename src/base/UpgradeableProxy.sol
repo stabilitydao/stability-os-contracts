@@ -8,6 +8,8 @@ abstract contract UpgradeableProxy {
     /// @dev This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
     bytes32 private constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
+    error AlreadyInited();
+
     /// @dev Emitted when the implementation is upgraded.
     event Upgraded(address indexed implementation);
 
@@ -17,7 +19,7 @@ abstract contract UpgradeableProxy {
 
     /// @dev Post deploy initialisation for compatability with EIP-1167 factory
     function _init(address logic) internal {
-        require(_implementation() == address(0), "Already inited");
+        require(_implementation() == address(0), AlreadyInited());
         _setImplementation(logic);
     }
 

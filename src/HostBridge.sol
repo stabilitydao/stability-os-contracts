@@ -53,7 +53,7 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public initializer {
         (address _owner, address _delegate) = abi.decode(payload, (address, address));
-        __Controllable_init(authority_);
+        __Hosted_init(authority_);
         __OApp_init(_delegate == address(0) ? _owner : _delegate);
         __Ownable_init(_owner);
         console.log("Initialize HostBridge: authority_", authority_);

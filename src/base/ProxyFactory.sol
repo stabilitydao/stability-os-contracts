@@ -6,7 +6,7 @@ import {Proxy} from "../base/Proxy.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "../../lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-/// @notice Factory contract to clone Proxy contract
+/// @notice Factory contract to create clones of the Proxy contract
 /// @dev Bytecode of Proxy is never changed.
 /// @author omriss (https://github.com/omriss)
 contract ProxyFactory is IProxyFactory, Ownable {
@@ -14,7 +14,7 @@ contract ProxyFactory is IProxyFactory, Ownable {
     address public immutable MASTER_PROXY;
 
     /// @notice Keccak256 hash of the init code of the clone of the master Proxy contract
-    bytes32 public immutable MASTER_PROXY_CLONE_CODE_HASH;
+    bytes32 internal immutable MASTER_PROXY_CLONE_CODE_HASH;
 
     /// @notice Whitelisted addresses allowed to create new proxies
     mapping(address => bool) public whitelisted;
@@ -41,6 +41,7 @@ contract ProxyFactory is IProxyFactory, Ownable {
         ));
     }
 
+    /// @notice Set the whitelisted {status} of an {addr}
     function setWhitelisted(address addr, bool status) external onlyOwner {
         whitelisted[addr] = status;
         emit Whitelisted(addr, status);
@@ -65,15 +66,15 @@ contract ProxyFactory is IProxyFactory, Ownable {
 
     /// @inheritdoc IProxyFactory
     function createNewProxy() external onlyWhitelisted returns (address proxy) {
-        proxy = Clones.clone(address(MASTER_PROXY));
+        return Clones.clone(address(MASTER_PROXY));
     }
 
     /// @inheritdoc IProxyFactory
     function create2NewProxy(bytes32 salt) external onlyWhitelisted returns (address proxy) {
-        proxy = Clones.cloneDeterministic(address(MASTER_PROXY), salt);
+        return Clones.cloneDeterministic(address(MASTER_PROXY), salt);
     }
 
-    function _onlyWhitelisted() internal {
-        require(whitelisted[msg.sender] || msg.sender == owner(), NotWhitelisted());
+    function _onlyWhitelisted() internal view {
+        require(whitelisted[msg.sender], NotWhitelisted());
     }
 }
