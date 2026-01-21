@@ -6,8 +6,8 @@ import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHost, Host} from "../../src/Host.sol";
-import {HostAccessManager} from "../../src/HostAccessManager.sol";
-import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
+import {Authority} from "../../src/Authority.sol";
+import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -34,7 +34,7 @@ library HostUtilsLib {
         Vm vm,
         address multisig,
         IHost.HostInitPayload memory hostPayload
-    ) internal returns (IHostAccessManager, IHost) {
+    ) internal returns (IAuthority, IHost) {
         // ------------------- deploy proxy factory
         vm.prank(multisig);
         ProxyFactory proxyFactory = new ProxyFactory();
@@ -45,7 +45,7 @@ library HostUtilsLib {
             proxyFactory.getProxyInitCodeHash(),
             address(proxyFactory)
         );
-        HostAccessManager accessManager = new HostAccessManager(multisig, hostPredicted, address(proxyFactory));
+        Authority accessManager = new Authority(multisig, hostPredicted, address(proxyFactory));
 
         vm.prank(multisig);
         proxyFactory.setWhitelisted(address(accessManager), true);
@@ -59,7 +59,7 @@ library HostUtilsLib {
         vm.prank(multisig);
         address host = accessManager.deployHost("0x62436", logic, abi.encode(hostPayload));
 
-        return (IHostAccessManager(accessManager), IHost(host));
+        return (IAuthority(accessManager), IHost(host));
     }
 
     //region ----------------------------- Create OS and DAO instances
@@ -73,12 +73,12 @@ library HostUtilsLib {
         address multisig,
         IHost.HostInitPayload memory init_
     ) internal returns (IHost) {
-        (IHostAccessManager accessManager, IHost host) = deployHost(vm, multisig, init_);
+        (IAuthority accessManager, IHost host) = deployHost(vm, multisig, init_);
         setupHostInstance(vm, multisig, accessManager, host);
         return IHost(address(host));
     }
 
-    function setupHostInstance(Vm vm, address multisig, IHostAccessManager accessManager, IHost host) internal {
+    function setupHostInstance(Vm vm, address multisig, IAuthority accessManager, IHost host) internal {
         // ---------------------- set up multisig as operator for all restricted functions of host
         {
             bytes4[] memory selectors = new bytes4[](5);
@@ -250,7 +250,7 @@ library HostUtilsLib {
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) internal {
-        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
+        IAuthority accessManager = IAuthority(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);
@@ -265,7 +265,7 @@ library HostUtilsLib {
     }
 
     function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) internal {
-        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(os)).authority());
+        IAuthority accessManager = IAuthority(IHosted(address(os)).authority());
 
         // set up OS as operator for all restricted functions
         bytes4[] memory selectors = new bytes4[](2);

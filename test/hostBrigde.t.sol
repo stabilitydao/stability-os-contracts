@@ -6,7 +6,7 @@ import {Vm, Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
+import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {PlasmaConstantsLib} from "../chains/PlasmaConstantsLib.sol";
@@ -60,33 +60,33 @@ contract HostBridgeTest is Test {
 
         // ----------------------------- set up sonic
         vm.selectFork(sonic.fork);
-        IHost hostSonic = IHost(IHostAccessManager(sonic.authority).HOST());
+        IHost hostSonic = IHost(IAuthority(sonic.authority).HOST());
         HostUtilsLib.setupHostInstance(
             vm,
             SonicConstantsLib.MULTISIG,
-            IHostAccessManager(sonic.authority),
+            IAuthority(sonic.authority),
             hostSonic
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostSonic, sonic, plasma, avalanche);
 
         // ----------------------------- set up avalanche
         vm.selectFork(avalanche.fork);
-        IHost hostAvax = IHost(IHostAccessManager(avalanche.authority).HOST());
+        IHost hostAvax = IHost(IAuthority(avalanche.authority).HOST());
         HostUtilsLib.setupHostInstance(
             vm,
             AvalancheConstantsLib.MULTISIG,
-            IHostAccessManager(avalanche.authority),
+            IAuthority(avalanche.authority),
             hostAvax
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostAvax, avalanche, sonic, plasma);
 
         // ----------------------------- set up plasma
         vm.selectFork(plasma.fork);
-        IHost hostPlasma = IHost(IHostAccessManager(plasma.authority).HOST());
+        IHost hostPlasma = IHost(IAuthority(plasma.authority).HOST());
         HostUtilsLib.setupHostInstance(
             vm,
             PlasmaConstantsLib.MULTISIG,
-            IHostAccessManager(plasma.authority),
+            IAuthority(plasma.authority),
             hostPlasma
         );
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostPlasma, plasma, sonic, avalanche);

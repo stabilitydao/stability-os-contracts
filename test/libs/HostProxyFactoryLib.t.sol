@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 //import {Host} from "../src/Host.sol";
 //import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
 //import {IHost} from "../src/interfaces/IHost.sol";
-//import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
+//import {IAuthority} from "../src/interfaces/IAuthority.sol";
 //import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 //import {IHostProxyFactory} from "../src/interfaces/IHostProxyFactory.sol";
 //import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
@@ -16,7 +16,7 @@ pragma solidity ^0.8.28;
 //
 //contract HostProxyFactoryTest is Test {
 //    IProxyFactory internal proxyFactory;
-//    IHostAccessManager internal accessManager;
+//    IAuthority internal accessManager;
 //    address internal multisig;
 //    IHostProxyFactory internal factory;
 //

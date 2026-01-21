@@ -5,7 +5,7 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
 import {IProxy} from "../interfaces/IProxy.sol";
-import {IHostAccessManager} from "../interfaces/IHostAccessManager.sol";
+import {IAuthority} from "../interfaces/IAuthority.sol";
 
 library HostProxyFactoryLib {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -70,7 +70,7 @@ library HostProxyFactoryLib {
         bytes memory payload,
         address authority
     ) internal returns (address proxy) {
-        proxy = _createNewProxy(salt, IHostAccessManager(authority).PROXY_FACTORY());
+        proxy = _createNewProxy(salt, IAuthority(authority).PROXY_FACTORY());
         IProxy(proxy).initProxy(logic);
         IHosted(proxy).initialize(authority, payload);
         return proxy;

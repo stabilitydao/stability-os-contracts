@@ -5,14 +5,13 @@ import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManage
 import {IProxyFactory} from "./interfaces/IProxyFactory.sol";
 import {IProxy} from "./interfaces/IProxy.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
-import {IHostAccessManager} from "./interfaces/IHostAccessManager.sol";
+import {IAuthority} from "./interfaces/IAuthority.sol";
 
-// todo rename to Authority
-contract HostAccessManager is AccessManager, IHostAccessManager {
-    /// @inheritdoc IHostAccessManager
+contract Authority is AccessManager, IAuthority {
+    /// @inheritdoc IAuthority
     address public immutable HOST;
 
-    /// @inheritdoc IHostAccessManager
+    /// @inheritdoc IAuthority
     address public immutable PROXY_FACTORY;
 
     event HostDeployed(address host);
@@ -25,7 +24,7 @@ contract HostAccessManager is AccessManager, IHostAccessManager {
 
     // todo replace by multicall
     /// @notice Deploy Host contract proxy and initialize it in the single tx
-    /// @dev This function is located inside HostAccessManager to reduce total number of deployed contracts
+    /// @dev This function is located inside Authority to reduce total number of deployed contracts
     /// @param salt_ Salt used to deploy the Host proxy contract. The given salt should produce HOST result address
     /// @param logic_ Address of Host implementation contract
     /// @return host Address of deployed Host proxy contract

@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import {console, Vm} from "forge-std/Test.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {IHostAccessManager} from "../../src/interfaces/IHostAccessManager.sol";
+import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
@@ -73,7 +73,7 @@ library BridgeTestLib {
 
         address multisig = SonicConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -112,7 +112,7 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = AvalancheConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -151,7 +151,7 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = PlasmaConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IHostAccessManager accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -695,7 +695,7 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).addEndpoint(endpoints);
 
-        IHostAccessManager accessManager = IHostAccessManager(IHosted(address(host)).authority());
+        IAuthority accessManager = IAuthority(IHosted(address(host)).authority());
 
         // ----------------------------- Allow HOST to call OSBridge.sendMessageToAllChains
         {

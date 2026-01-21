@@ -6,7 +6,7 @@ import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
-import {IHostAccessManager} from "../src/interfaces/IHostAccessManager.sol";
+import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
@@ -1105,7 +1105,7 @@ contract HostLifeCycleTest is Test {
         IERC20(exchangeAsset).approve(address(os_), amount);
     }
 
-    function _getAuthority(IHost host) internal view returns (IHostAccessManager) {
-        return IHostAccessManager(IAccessManaged(address(host)).authority());
+    function _getAuthority(IHost host) internal view returns (IAuthority) {
+        return IAuthority(IAccessManaged(address(host)).authority());
     }
 }

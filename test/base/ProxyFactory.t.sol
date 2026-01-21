@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ProxyFactoryCreate} from "../../src/base/ProxyFactoryCreate.sol";
