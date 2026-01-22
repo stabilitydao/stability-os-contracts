@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.28; // We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
+pragma solidity ^0.8.28;
 
-import {IProxy} from "../interfaces/IProxy.sol";
+import {IProxy} from "./interfaces/IProxy.sol";
 import {Proxy as OpenZeppelinProxy} from "@openzeppelin/contracts/proxy/Proxy.sol";
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
@@ -21,7 +21,6 @@ contract Proxy is OpenZeppelinProxy, IProxy {
     /// - If `data` is empty, `msg.value` must be zero.
     function initProxy(address implementation_, bytes memory data_) external payable {
         require(_implementation() == address(0), ProxyAlreadyInitialized());
-        if (implementation_.code.length == 0) revert ImplementationIsNotContract();
 
         ERC1967Utils.upgradeToAndCall(implementation_, data_);
     }
@@ -43,7 +42,7 @@ contract Proxy is OpenZeppelinProxy, IProxy {
     /// @dev Fallback function that delegates calls to the address returned by `_implementation()`. Will run if call data
     /// is empty.
     //slither-disable-next-line locked-ether
-    receive() external payable virtual {
+    receive() external payable {
         _fallback();
     }
 }

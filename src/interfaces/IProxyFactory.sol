@@ -5,6 +5,11 @@ pragma solidity ^0.8.28;
 /// @dev Bytecode of Proxy is never changed.
 /// @author omriss (https://github.com/omriss)
 interface IProxyFactory {
+    event Whitelisted(address indexed addr, bool status);
+    event ProxyCreated(address indexed proxy);
+
+    error NotWhitelisted();
+
     /// @notice Check if the addr is allowed to create new proxies
     function whitelisted(address addr) external view returns (bool);
 
@@ -14,12 +19,10 @@ interface IProxyFactory {
     /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
     function getProxyInitCodeHash() external view returns (bytes32);
 
-    /// @notice Get address of Proxy deployed using CREATE2 with given salt and implementation
+    /// @notice Get address of Proxy deployed using CREATE2 with given salt
     /// @param salt Salt to get CREATE2 deployment address
-    /// @param initCodeHash keccak256 hash of the init code of the contract to be deployed. Normally it's getProxyInitCodeHash()
-    /// @param thisAddress Address of proxy deployer contract. Normally this is address of this factory.
     /// @return Future deployment address
-    function getCreate2Address(bytes32 salt, bytes32 initCodeHash, address thisAddress) external pure returns (address);
+    function getCreate2Address(bytes32 salt) external view returns (address);
 
     /// @notice Deploy new Proxy without logic initialization using CREATE2
     /// @custom:restriction Whitelisted addresses only

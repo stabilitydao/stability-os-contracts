@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 // import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
+import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
@@ -42,8 +42,7 @@ library HostUtilsLib {
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted =
-            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
+        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
         Authority authority = new Authority(multisig, hostPredicted, address(proxyFactory));
 
         vm.prank(multisig);
@@ -76,8 +75,6 @@ library HostUtilsLib {
         //        );
         //        vm.prank(multisig);
         //        authority.multicall(calls);
-
-        bytes[] memory calls = new bytes[](1);
 
         vm.prank(multisig);
         authority.execute(

@@ -2,10 +2,11 @@
 pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
-import {Host} from "../../src/Host.sol";
+import {Host} from "../src/Host.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
+import {ProxyFactory} from "../src/ProxyFactory.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {Vm, Test} from "forge-std/Test.sol";
 
 contract ProxyFactoryTest is Test {
@@ -27,7 +28,7 @@ contract ProxyFactoryTest is Test {
         factory.setWhitelisted(address(this), true);
 
         vm.prank(address(2));
-        vm.expectRevert(ProxyFactory.NotWhitelisted.selector);
+        vm.expectRevert(IProxyFactory.NotWhitelisted.selector);
         factory.create2NewProxy("0x1234", logic, "");
 
         factory.setWhitelisted(address(this), true);
@@ -48,7 +49,7 @@ contract ProxyFactoryTest is Test {
 
         factory.setWhitelisted(address(this), false);
 
-        vm.expectRevert(ProxyFactory.NotWhitelisted.selector);
+        vm.expectRevert(IProxyFactory.NotWhitelisted.selector);
         factory.create2NewProxy("0x1236", logic, "");
 
         assertFalse(factory.whitelisted(address(this)), "this is NOT whitelisted now");
@@ -60,8 +61,7 @@ contract ProxyFactoryTest is Test {
         ProxyFactory factory = new ProxyFactory();
         factory.setWhitelisted(address(this), true);
 
-        bytes32 initCodeHash = factory.getProxyInitCodeHash();
-        address predictedAddress = factory.getCreate2Address("0x1234", initCodeHash, address(factory));
+        address predictedAddress = factory.getCreate2Address("0x1234");
         uint gas = gasleft();
         address deployed = factory.create2NewProxy("0x1234", logic, "");
         uint gasUsed = gas - gasleft();
@@ -73,8 +73,7 @@ contract ProxyFactoryTest is Test {
     function testGetCreate2Address() public {
         ProxyFactory factory = new ProxyFactory();
 
-        bytes32 initCodeHash = factory.getProxyInitCodeHash();
-        address predicted1 = factory.getCreate2Address("0x1234", initCodeHash, address(factory));
+        address predicted1 = factory.getCreate2Address("0x1234");
         address predicted2 = _predictDeterministicAddress(address(factory), "0x1234");
         assertEq(predicted1, predicted2, "getCreate2Address works in the same way as _predictDeterministicAddress");
     }
@@ -89,8 +88,7 @@ contract ProxyFactoryTest is Test {
         ProxyFactory factory = new ProxyFactory();
         factory.setWhitelisted(address(this), true);
 
-        bytes32 initCodeHash = factory.getProxyInitCodeHash();
-        address predictedAddress = factory.getCreate2Address("0x1234", initCodeHash, address(factory));
+        address predictedAddress = factory.getCreate2Address("0x1234");
 
         vm.recordLogs();
         address deployed = factory.create2NewProxy("0x1234", logic, "");

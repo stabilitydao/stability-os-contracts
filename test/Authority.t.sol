@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {ProxyFactory} from "../src/base/ProxyFactory.sol";
+import {ProxyFactory} from "../src/ProxyFactory.sol";
 import {Authority} from "../src/Authority.sol";
 import {Host} from "../src/Host.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
@@ -27,8 +27,7 @@ contract AuthorityTest is Test {
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted =
-            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
+        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
         Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
 
         vm.prank(MULTISIG);
@@ -85,8 +84,7 @@ contract AuthorityTest is Test {
         console.log("Gas used for ProxyFactory deployment:", gas - gasleft());
 
         // ------------------- deploy authority
-        address hostPredicted =
-            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
+        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
         gas = gasleft();
         Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
         console.log("Gas used for Authority deployment:", gas - gasleft());

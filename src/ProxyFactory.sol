@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
-import {IProxy} from "../interfaces/IProxy.sol";
-import {Proxy} from "../base/Proxy.sol";
+import {IProxyFactory} from "./interfaces/IProxyFactory.sol";
+import {IProxy} from "./interfaces/IProxy.sol";
+import {Proxy} from "./Proxy.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -20,11 +20,6 @@ contract ProxyFactory is IProxyFactory, Ownable {
     /// @notice Whitelisted addresses allowed to create new proxies
     mapping(address => bool) public whitelisted;
 
-    event Whitelisted(address indexed addr, bool status);
-    error NotWhitelisted();
-
-    event ProxyCreated(address indexed proxy);
-
     modifier onlyWhitelisted() {
         _onlyWhitelisted();
         _;
@@ -33,6 +28,7 @@ contract ProxyFactory is IProxyFactory, Ownable {
     constructor() Ownable(msg.sender) {
         // Deploy proxy only once. All other proxy instances will be clones of this one.
         MASTER_PROXY = address(new Proxy());
+        // do we need to call initProxy for Master proxy?
 
         /// EIP-1167 minimal proxy bytecode
         /// 3d602d80600a3d3981f3363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3
@@ -56,13 +52,8 @@ contract ProxyFactory is IProxyFactory, Ownable {
     }
 
     /// @inheritdoc IProxyFactory
-    function getCreate2Address(
-        bytes32 salt,
-        bytes32 initCodeHash,
-        address thisAddress
-    ) external pure returns (address) {
-        /// @dev The result is same to Clones.predictDeterministicAddress(MASTER_PROXY, salt, address(this)), see tests
-        return address(uint160(uint(keccak256(abi.encodePacked(bytes1(0xff), thisAddress, salt, initCodeHash)))));
+    function getCreate2Address(bytes32 salt) external view returns (address) {
+        return Clones.predictDeterministicAddress(MASTER_PROXY, salt, address(this));
     }
 
     /// @inheritdoc IProxyFactory

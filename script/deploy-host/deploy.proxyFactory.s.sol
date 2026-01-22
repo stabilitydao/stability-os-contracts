@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Variable, LibVariable} from "forge-std/LibVariable.sol";
 import {Script} from "forge-std/Script.sol";
-import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
+import {ProxyFactory} from "../../src/ProxyFactory.sol";
 
 /// @notice Deploy ProxyFactory
 contract DeployProxyFactory is Script {

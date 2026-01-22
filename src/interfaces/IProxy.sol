@@ -6,7 +6,6 @@ pragma solidity 0.8.28; // We need to fix version of compilator because changing
 /// @dev Proxy will redirect the call to the implementation - UUPSUpgradeable.upgradeToAndCall()
 interface IProxy {
     error ProxyAlreadyInitialized();
-    error ImplementationIsNotContract();
 
     /// @notice Set first implementation address
     /// @dev Separate function is used instead of constructor here to be able to use CREATE2 addresses.

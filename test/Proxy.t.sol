@@ -2,17 +2,18 @@
 pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
-import {IHosted} from "../../src/interfaces/IHosted.sol";
-import {IHost} from "../../src/interfaces/IHost.sol";
-import {IProxy} from "../../src/interfaces/IProxy.sol";
-import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {Authority} from "../../src/Authority.sol";
-import {Host} from "../../src/Host.sol";
-import {HostBridge} from "../../src/HostBridge.sol";
-import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
+import {IHosted} from "../src/interfaces/IHosted.sol";
+import {IHost} from "../src/interfaces/IHost.sol";
+import {IProxy} from "../src/interfaces/IProxy.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
+import {Authority} from "../src/Authority.sol";
+import {Host} from "../src/Host.sol";
+import {HostBridge} from "../src/HostBridge.sol";
+import {AccessRolesLib} from "../src/libs/AccessRolesLib.sol";
+import {ProxyFactory} from "../src/ProxyFactory.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 
 contract ProxyTest is Test {
     address internal constant MULTISIG = address(0xFFFFFFFF);
@@ -40,8 +41,7 @@ contract ProxyTest is Test {
         proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted =
-            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
+        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
         authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
 
         vm.prank(MULTISIG);
@@ -154,7 +154,7 @@ contract ProxyTest is Test {
     }
 
     function testTryToInitializeProxyWithEmptyImplementation() public {
-        vm.expectRevert(IProxy.ImplementationIsNotContract.selector);
+        vm.expectRevert(abi.encodeWithSelector(ERC1967Utils.ERC1967InvalidImplementation.selector, address(0)));
         vm.prank(MULTISIG);
         authority.execute(
             address(proxyFactory),
