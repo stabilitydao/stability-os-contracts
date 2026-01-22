@@ -44,7 +44,7 @@ contract ProxyFactory is IProxyFactory, Ownable {
         );
     }
 
-    /// @notice Set the whitelisted {status} of an {addr}
+    /// @inheritdoc IProxyFactory
     function setWhitelisted(address addr, bool status) external onlyOwner {
         whitelisted[addr] = status;
         emit Whitelisted(addr, status);

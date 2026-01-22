@@ -5,6 +5,12 @@ pragma solidity ^0.8.28;
 /// @dev Bytecode of Proxy is never changed.
 /// @author omriss (https://github.com/omriss)
 interface IProxyFactory {
+    /// @notice Check if the addr is allowed to create new proxies
+    function whitelisted(address addr) external view returns (bool);
+
+    /// @notice Set the whitelisted {status} of an {addr}
+    function setWhitelisted(address addr, bool status) external;
+
     /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
     function getProxyInitCodeHash() external view returns (bytes32);
 

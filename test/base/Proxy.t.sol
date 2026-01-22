@@ -6,7 +6,6 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {Authority} from "../../src/Authority.sol";
 import {Host} from "../../src/Host.sol";
 import {HostBridge} from "../../src/HostBridge.sol";

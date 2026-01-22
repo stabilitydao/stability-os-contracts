@@ -10,7 +10,7 @@ import {IHost} from "../src/interfaces/IHost.sol";
 import {IHosted} from "../src/interfaces/IHosted.sol";
 import {Test} from "forge-std/Test.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 
 contract AuthorityTest is Test {
     address internal constant MULTISIG = address(0xFFFFFFFF);
@@ -72,5 +72,43 @@ contract AuthorityTest is Test {
         // -------------------- verify authority
         assertEq(authority.HOST(), hostPredicted, "authority host");
         assertEq(authority.PROXY_FACTORY(), address(proxyFactory), "authority proxy factory");
+    }
+
+    function testDeployAuthorityGasEstimation() public {
+        IHost.HostInitPayload memory hostPayload =
+            IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0});
+
+        // ------------------- deploy proxy factory
+        uint gas = gasleft();
+        vm.prank(MULTISIG);
+        ProxyFactory proxyFactory = new ProxyFactory();
+        console.log("Gas used for ProxyFactory deployment:", gas - gasleft());
+
+        // ------------------- deploy authority
+        address hostPredicted =
+            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
+        gas = gasleft();
+        Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
+        console.log("Gas used for Authority deployment:", gas - gasleft());
+
+        vm.prank(MULTISIG);
+        proxyFactory.setWhitelisted(address(authority), true);
+
+        vm.prank(MULTISIG);
+        proxyFactory.setWhitelisted(hostPredicted, true);
+
+        // ------------------- prepare to create host - set up the calls
+        gas = gasleft();
+        address logic = address(new Host());
+
+        vm.prank(MULTISIG);
+        authority.execute(
+            address(proxyFactory),
+            abi.encodeCall(
+                IProxyFactory.create2NewProxy,
+                ("0x62436", logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload))))
+            )
+        );
+        console.log("Gas used for Host deployment:", gas - gasleft());
     }
 }
