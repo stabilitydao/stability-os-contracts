@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
-import {IProxy} from "../interfaces/IProxy.sol";
 import {IAuthority} from "../interfaces/IAuthority.sol";
 
 library HostProxyFactoryLib {
@@ -52,7 +51,12 @@ library HostProxyFactoryLib {
 
     /// @notice Deploy proxy-contract of the given kind, initialize the proxy and its logic
     /// @param kind See IHost.ContractKinds
-    function deployContract(bytes32 salt, uint kind, bytes memory payload, address authority) external returns (address proxy) {
+    function deployContract(
+        bytes32 salt,
+        uint kind,
+        bytes memory payload,
+        address authority
+    ) external returns (address proxy) {
         HostProxyFactoryStorage storage $ = getHostProxyFactoryStorage();
 
         address logic = $.implementations[kind];
@@ -61,6 +65,7 @@ library HostProxyFactoryLib {
         proxy = _deployAndInitProxy(salt, logic, payload, authority);
         emit ContractDeployed(proxy, kind, payload);
     }
+
     //endregion -------------------------------------- Deploy actions
 
     //region -------------------------------------- Internal utils
@@ -70,8 +75,7 @@ library HostProxyFactoryLib {
         bytes memory payload,
         address authority
     ) internal returns (address proxy) {
-        proxy = _createNewProxy(salt, IAuthority(authority).PROXY_FACTORY());
-        IProxy(proxy).initProxy(logic);
+        proxy = _createNewProxy(salt, IAuthority(authority).PROXY_FACTORY(), logic);
         IHosted(proxy).initialize(authority, payload);
         return proxy;
     }
@@ -83,10 +87,10 @@ library HostProxyFactoryLib {
         }
     }
 
-    function _createNewProxy(bytes32 salt, address proxyFactory_) internal returns (address proxy) {
+    function _createNewProxy(bytes32 salt, address proxyFactory_, address logic) internal returns (address proxy) {
         proxy = salt == 0
-            ? IProxyFactory(proxyFactory_).createNewProxy()
-            : IProxyFactory(proxyFactory_).create2NewProxy(salt);
+            ? IProxyFactory(proxyFactory_).createNewProxy(logic, "")
+            : IProxyFactory(proxyFactory_).create2NewProxy(salt, logic, "");
     }
     //endregion -------------------------------------- Internal utils
 }

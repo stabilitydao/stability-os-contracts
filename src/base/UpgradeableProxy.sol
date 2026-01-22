@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28; // We need to fix version of compilator because changing of compilator will change getProxyInitCodeHash results
 
+/// todo delete
 /// @title Simple ERC-1967 upgradeable proxy implementation
 abstract contract UpgradeableProxy {
     error ImplementationIsNotContract();
@@ -13,10 +14,10 @@ abstract contract UpgradeableProxy {
     /// @dev Emitted when the implementation is upgraded.
     event Upgraded(address indexed implementation);
 
-// todo remove? constructor is NOT compatible with Clones
-//    constructor() {
-//        assert(_IMPLEMENTATION_SLOT == bytes32(uint(keccak256("eip1967.proxy.implementation")) - 1));
-//    }
+    // todo remove? constructor is NOT compatible with Clones
+    //    constructor() {
+    //        assert(_IMPLEMENTATION_SLOT == bytes32(uint(keccak256("eip1967.proxy.implementation")) - 1));
+    //    }
 
     /// @dev Post deploy initialisation for compatability with EIP-1167 factory
     function _init(address logic) internal {

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+// import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {ProxyFactory} from "../../src/base/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {IProxy} from "../../src/interfaces/IProxy.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHost, Host} from "../../src/Host.sol";
 import {Authority} from "../../src/Authority.sol";
@@ -43,11 +42,8 @@ library HostUtilsLib {
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address(
-            "0x62436",
-            proxyFactory.getProxyInitCodeHash(),
-            address(proxyFactory)
-        );
+        address hostPredicted =
+            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
         Authority authority = new Authority(multisig, hostPredicted, address(proxyFactory));
 
         vm.prank(multisig);
@@ -59,37 +55,38 @@ library HostUtilsLib {
         // ------------------- deploy host
         address logic = address(new Host());
 
-        bytes[] memory calls = new bytes[](3);
+        //        bytes[] memory calls = new bytes[](2);
+        //
+        //        // 1. create2NewProxy
+        //        calls[0] = abi.encodeCall(
+        //            AccessManager.execute,
+        //            (
+        //                address(proxyFactory),
+        //                abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436", logic, ""))
+        //            )
+        //        );
+        //
+        //        // 2. initialize host
+        //        calls[1] = abi.encodeCall(
+        //            AccessManager.execute,
+        //            (
+        //                hostPredicted,
+        //                abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload)))
+        //            )
+        //        );
+        //        vm.prank(multisig);
+        //        authority.multicall(calls);
 
-        // 1. create2NewProxy
-        calls[0] = abi.encodeCall(
-            AccessManager.execute,
-            (
-                address(proxyFactory),
-                abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436"))
-            )
-        );
-
-        // 2. initProxy
-        calls[1] = abi.encodeCall(
-            AccessManager.execute,
-            (
-                hostPredicted,
-                abi.encodeCall(IProxy.initProxy, (logic))
-            )
-        );
-
-        // 3. initialize host
-        calls[2] = abi.encodeCall(
-            AccessManager.execute,
-            (
-                hostPredicted,
-                abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload)))
-            )
-        );
+        bytes[] memory calls = new bytes[](1);
 
         vm.prank(multisig);
-        authority.multicall(calls);
+        authority.execute(
+            address(proxyFactory),
+            abi.encodeCall(
+                IProxyFactory.create2NewProxy,
+                ("0x62436", logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload))))
+            )
+        );
 
         return (IAuthority(authority), IHost(hostPredicted));
     }
@@ -100,11 +97,7 @@ library HostUtilsLib {
         return createHostInstance(vm, multisig, init);
     }
 
-    function createHostInstance(
-        Vm vm,
-        address multisig,
-        IHost.HostInitPayload memory init_
-    ) internal returns (IHost) {
+    function createHostInstance(Vm vm, address multisig, IHost.HostInitPayload memory init_) internal returns (IHost) {
         (IAuthority accessManager, IHost host) = deployHost(vm, multisig, init_);
         setupHostInstance(vm, multisig, accessManager, host);
         return IHost(address(host));
@@ -192,9 +185,7 @@ library HostUtilsLib {
 
     function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = generateSeedFunding(
-            7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
-        );
+        funding[0] = generateSeedFunding(7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE);
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
@@ -206,9 +197,7 @@ library HostUtilsLib {
 
     function createDaoMachines(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
-        funding[0] = generateSeedFunding(
-            7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
-        );
+        funding[0] = generateSeedFunding(7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE);
         funding[1] = generateTGEFunding();
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -273,12 +262,7 @@ library HostUtilsLib {
 
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
-        host_.setChainSettings(
-            IHost.HostChainSettings({
-                exchangeAsset: address(usdc),
-                hostBridge: address(bridge)
-            })
-        );
+        host_.setChainSettings(IHost.HostChainSettings({exchangeAsset: address(usdc), hostBridge: address(bridge)}));
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) internal {

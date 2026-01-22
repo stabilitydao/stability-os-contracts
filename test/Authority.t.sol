@@ -7,7 +7,6 @@ import {Authority} from "../src/Authority.sol";
 import {Host} from "../src/Host.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {IProxy} from "../src/interfaces/IProxy.sol";
 import {IHosted} from "../src/interfaces/IHosted.sol";
 import {Test} from "forge-std/Test.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
@@ -20,22 +19,16 @@ contract AuthorityTest is Test {
         string[] memory usedSymbols = new string[](1);
         usedSymbols[0] = "B";
 
-        IHost.HostInitPayload memory hostPayload = IHost.HostInitPayload({
-            usedSymbols: usedSymbols,
-            daoHostSymbol: "A",
-            daoHostUid: 1
-        });
+        IHost.HostInitPayload memory hostPayload =
+            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1});
 
         // ------------------- deploy proxy factory
         vm.prank(MULTISIG);
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address(
-            "0x62436",
-            proxyFactory.getProxyInitCodeHash(),
-            address(proxyFactory)
-        );
+        address hostPredicted =
+            proxyFactory.getCreate2Address("0x62436", proxyFactory.getProxyInitCodeHash(), address(proxyFactory));
         Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
 
         vm.prank(MULTISIG);
@@ -47,33 +40,18 @@ contract AuthorityTest is Test {
         // ------------------- prepare to create host - set up the calls
         address logic = address(new Host());
 
-        bytes[] memory calls = new bytes[](3);
+        bytes[] memory calls = new bytes[](2);
 
         // 1. create2NewProxy
         calls[0] = abi.encodeCall(
             AccessManager.execute,
-            (
-                address(proxyFactory),
-                abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436"))
-            )
+            (address(proxyFactory), abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436", logic, "")))
         );
 
-        // 2. initProxy
+        // 2. initialize host
         calls[1] = abi.encodeCall(
             AccessManager.execute,
-            (
-                hostPredicted,
-                abi.encodeCall(IProxy.initProxy, (logic))
-            )
-        );
-
-        // 3. initialize host
-        calls[2] = abi.encodeCall(
-            AccessManager.execute,
-            (
-                hostPredicted,
-                abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload)))
-            )
+            (hostPredicted, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(hostPayload))))
         );
 
         // ------------------- create host via multicall

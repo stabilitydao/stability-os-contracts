@@ -33,7 +33,10 @@ contract HostTest is Test {
         // -------------------- Prepare test data
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY,
+            HostUtilsLib.DEFAULT_SEED_DURATION,
+            HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
+            HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -157,7 +160,10 @@ contract HostTest is Test {
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY,
+            HostUtilsLib.DEFAULT_SEED_DURATION,
+            HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
+            HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
@@ -230,7 +236,10 @@ contract HostTest is Test {
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = HostUtilsLib.generateSeedFunding(
-            HostUtilsLib.DEFAULT_SEED_DELAY, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
+            HostUtilsLib.DEFAULT_SEED_DELAY,
+            HostUtilsLib.DEFAULT_SEED_DURATION,
+            HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
+            HostUtilsLib.DEFAULT_SEED_MAX_RAISE
         );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);

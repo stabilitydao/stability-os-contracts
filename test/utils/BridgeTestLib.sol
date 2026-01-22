@@ -663,7 +663,6 @@ library BridgeTestLib {
 
     //endregion ------------------------------------- Layer zero utils
 
-
     function setupHostBridgeAndHostFactory(
         Vm vm,
         IHost host,
@@ -679,9 +678,7 @@ library BridgeTestLib {
 
         vm.prank(chain.multisig);
         host.setChainSettings(
-            IHost.HostChainSettings({
-                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge
-            })
+            IHost.HostChainSettings({exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge})
         );
 
         // -------------------- set os and endpoints inside osBridge
@@ -730,7 +727,6 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
     }
-
 
     /// @notice Empty function to exclude this test from coverage
     function test() public {}

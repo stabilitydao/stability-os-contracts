@@ -548,7 +548,10 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
-                7 days, HostUtilsLib.DEFAULT_SEED_DURATION, HostUtilsLib.DEFAULT_SEED_MIN_RAISE, HostUtilsLib.DEFAULT_SEED_MAX_RAISE
+                7 days,
+                HostUtilsLib.DEFAULT_SEED_DURATION,
+                HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
+                HostUtilsLib.DEFAULT_SEED_MAX_RAISE
             );
             host_.updateFunding(daoData.symbol, funding);
         }
@@ -887,7 +890,8 @@ contract HostLifeCycleTest is Test {
             salts[0] = "0x0101";
 
             bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
-            predictedSeedAddress = IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
+            predictedSeedAddress =
+                IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
 
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
@@ -944,7 +948,8 @@ contract HostLifeCycleTest is Test {
             salts[1] = "0x0202";
 
             bytes32 proxyInitCodeHash = IProxyFactory(proxyFactory).getProxyInitCodeHash();
-            predictedTgeAddress = IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
+            predictedTgeAddress =
+                IProxyFactory(proxyFactory).getCreate2Address(salts[0], proxyInitCodeHash, address(proxyFactory));
 
             uint16[] memory indices = new uint16[](2);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
