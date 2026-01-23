@@ -1,3 +1,6 @@
+[mainnet.address]
+PROXY_FACTORY = "0x2A485dCc0E9a78EAbc0A8f12233dB25E73191E59"
+
 [sonic.address]
 
 [9745.address]

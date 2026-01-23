@@ -42,7 +42,7 @@ library HostUtilsLib {
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
+        address hostPredicted = proxyFactory.predictAddress("0x62436");
         Authority authority = new Authority(multisig, hostPredicted, address(proxyFactory));
 
         vm.prank(multisig);

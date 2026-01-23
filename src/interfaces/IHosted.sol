@@ -14,7 +14,7 @@ interface IHosted is IAccessManaged {
     /// @notice Initialize contract with authority and payload
     /// @param authority_ Address of authority contract (Access manager)
     /// @param payload Additional initialization payload (encoded set of initialization params)
-    function initialize(address authority_, bytes memory payload) external;
+    function initialize(address authority_, bytes memory payload) external payable;
 
     /// @notice Version of contract implementation
     /// @dev SemVer scheme MAJOR.MINOR.PATCH

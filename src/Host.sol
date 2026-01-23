@@ -23,7 +23,7 @@ contract Host is IHost, Hosted {
     uint internal constant MAX_COUNT_TASKS = 25;
 
     /// @inheritdoc IHosted
-    function initialize(address authority_, bytes memory payload) public initializer {
+    function initialize(address authority_, bytes memory payload) public payable initializer {
         __Hosted_init(authority_);
 
         // register all symbols registered on other chains

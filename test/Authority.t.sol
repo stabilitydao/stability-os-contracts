@@ -27,7 +27,7 @@ contract AuthorityTest is Test {
         ProxyFactory proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
+        address hostPredicted = proxyFactory.predictAddress("0x62436");
         Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
 
         vm.prank(MULTISIG);
@@ -84,7 +84,7 @@ contract AuthorityTest is Test {
         console.log("Gas used for ProxyFactory deployment:", gas - gasleft());
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
+        address hostPredicted = proxyFactory.predictAddress("0x62436");
         gas = gasleft();
         Authority authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
         console.log("Gas used for Authority deployment:", gas - gasleft());
