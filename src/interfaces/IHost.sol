@@ -37,6 +37,7 @@ interface IHost {
     error SaltAlreadyUsed(bytes32 salt);
     error UnitAlreadyRegistered();
     error IncorrectProposalPayload();
+    error InstantExecuteNotAllowed();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -161,6 +162,26 @@ interface IHost {
         SEED_TOKEN_1,
         /// @notice TGE token
         TGE_TOKEN_2
+    }
+
+    /// @notice Actions that can be performed on the bridged DAO on another chain (with pre-voting)
+    enum BridgedActions {
+        UNKNOWN_0,
+
+        /// @notice Deploy bridged version of the DAO on another chain
+        DAO_BRIDGED_1,
+
+        /// @notice Add bridged version of the unit to another chain
+        SET_BRIDGED_UNIT_2,
+
+        /// @notice Remove bridged version of the unit from another chain
+        REMOVE_BRIDGED_UNIT_3,
+
+        /// @notice Update DAO parameters on another chain
+        SET_DAO_PARAMS_4,
+
+        /// @notice Set salt values for bridged contracts on another chain
+        SET_SALTS_5
     }
 
     //region ---------------------------------------- Read
@@ -335,6 +356,18 @@ interface IHost {
         uint16[] memory contractIndices,
         bytes32[] memory salt_,
         uint chainId
+    ) external;
+
+    /// @notice Create proposal to update bridged DAO version of the DAO on other chain
+    /// @param daoSymbol DAO symbol
+    /// @param targetChainId Target chain ID where the bridged DAO is located
+    /// @param actionKind Kind of action to perform on the bridged DAO, see BridgedActions enum
+    /// @param actionPayload Payload of the action to perform on the bridged DAO
+    function updateBridgedDao(
+        string calldata daoSymbol,
+        uint targetChainId,
+        uint16 actionKind,
+        bytes calldata actionPayload
     ) external;
 
     //endregion ---------------------------------------- Update actions

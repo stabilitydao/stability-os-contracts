@@ -249,5 +249,15 @@ contract Host is IHost, Hosted {
         HostProposalsLib.updateSalts(daoSymbol, contractIndices, salt_, chainId);
     }
 
+    /// @inheritdoc IHost
+    function updateBridgedDao(
+        string calldata daoSymbol,
+        uint targetChainId, // todo array of chains
+        uint16 actionKind,
+        bytes calldata actionPayload
+    ) external {
+        // restrictions are checked below
+        HostProposalsLib.updateBridgedDao(daoSymbol, targetChainId, actionKind, actionPayload);
+    }
     //endregion -------------------------------------- Update actions
 }

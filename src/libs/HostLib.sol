@@ -150,6 +150,16 @@ library HostLib {
         /// @notice Balance belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
         mapping(bytes32 hashUnit => uint) unitBalances;
 
+        /// @notice Salt configured for DAO contracts.
+        /// @dev Key is generated as hash of (daoUid, ContractIndex, chainId)
+        /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
+        mapping(bytes32 key => bytes32 salt) salt;
+
+        /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
+        /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
+        /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
+        mapping(uint chain => mapping(bytes32 salt => uint daoHash)) daoUidBySalt;
+
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment2;
 
@@ -184,17 +194,6 @@ library HostLib {
 
         /// @notice List of ids of all proposals for each DAO in order
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;
-
-        // -------------------------------------- SALT
-        /// @notice Salt configured for DAO contracts.
-        /// @dev Key is generated as hash of (daoUid, ContractIndex, chainId)
-        /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
-        mapping(bytes32 key => bytes32 salt) salt;
-
-        /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
-        /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
-        /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
-        mapping(uint chain => mapping(bytes32 salt => uint daoHash)) daoUidBySalt;
     }
 
     //endregion -------------------------------------- Data types

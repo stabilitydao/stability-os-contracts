@@ -192,6 +192,29 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
+
+    function encodeBridgedAction(
+        uint16 actionKind,
+        bytes calldata actionPayload,
+        uint16 version
+    ) internal pure returns (bytes memory) {
+        if (version == 1) {
+            return abi.encode(version, actionKind, actionPayload);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeBridgedAction(bytes memory payload) internal pure returns (uint16 actionKind, bytes calldata actionPayload) {
+        (uint16 version) = abi.decode(payload, (uint16));
+
+        if (version == 1) {
+            (, actionKind, actionPayload) = abi.decode(payload, (uint16, uint16, bytes));
+            return (actionKind, actionPayload);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
     //endregion ----------------------- Decode / Encode structs with versions
 
     //region ----------------------- Decode / Encode data without versions

@@ -200,5 +200,21 @@ library HostProposalsLib {
         }
     }
 
+    /// @notice Create proposal to update bridged DAO version of the DAO on other chain
+    function updateBridgedDao(
+        string calldata daoSymbol,
+        uint targetChainId,
+        uint16 actionKind,
+        bytes calldata actionPayload
+    ) external {
+        (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
+
+        require(!instantExecute, IHost.InstantExecuteNotAllowed());
+
+        bytes memory payload = HostEncodingLib.encodeBridgedAction(actionKind, actionPayload, HostEncodingLib.PAYLOAD_API_VERSION);
+        HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8, payload);
+
+    }
+
     //endregion -------------------------------------- Update instantly or through proposals
 }
