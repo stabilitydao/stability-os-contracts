@@ -200,13 +200,15 @@ contract HostLifeCycleTest is Test {
             socials[1] = "https://b.bb/b2";
             socials[2] = "https://c.cc/c3";
 
+            vm.recordLogs();
             host_.updateSocials(daoData.symbol, socials);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
             assertEq(proposalIds.length, 1, "one proposal should be created");
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true);
+            host_.receiveVotingResults(proposalIds[0], true, payload);
 
             IDAOData.DaoData memory daoAfter = host_.getDAO("ALIENS");
             assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
@@ -217,11 +219,11 @@ contract HostLifeCycleTest is Test {
 
             vm.expectRevert(IHost.AlreadyReceived.selector);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true);
+            host_.receiveVotingResults(proposalIds[0], true, payload);
 
             vm.expectRevert(IHost.IncorrectProposal.selector);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true);
+            host_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true, payload);
         }
 
         // ------------------------------ Second seeder
@@ -278,12 +280,14 @@ contract HostLifeCycleTest is Test {
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
+            vm.recordLogs();
             host_.updateFunding(daoData.symbol, funding);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             daoData = host_.getDAO(daoData.symbol);
             assertEq(
@@ -309,7 +313,11 @@ contract HostLifeCycleTest is Test {
             });
             units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
 
+
+            vm.recordLogs();
             host_.updateUnits(daoData.symbol, units, metas);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             // put some amount on unit balance - it means that the unit is "live"
@@ -319,7 +327,7 @@ contract HostLifeCycleTest is Test {
             host_.processUnitRevenue(daoData.symbol, daoData.units[0].unitId, 1000e18);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
         }
 
         // ------------------------------ fix images
@@ -331,11 +339,13 @@ contract HostLifeCycleTest is Test {
                 xToken: "/xALIENS.png",
                 daoToken: "/ALIENS_DAO.png"
             });
+            vm.recordLogs();
             host_.updateImages(daoData.symbol, images);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
         }
 
         // ------------------------------ add vesting
@@ -346,11 +356,13 @@ contract HostLifeCycleTest is Test {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
+            vm.recordLogs();
             host_.updateVesting(daoData.symbol, vesting);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
         }
 
         // ------------------------------ owner of DAO is seed token
@@ -774,12 +786,14 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a11";
             socials[1] = "https://b.bb/b22";
 
+            vm.recordLogs();
             host_.updateSocials(daoData.symbol, socials);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, false);
+            host_.receiveVotingResults(proposalId, false, payload);
         }
 
         // ------------------------------ First seeker refunds (tge) funds
@@ -951,13 +965,15 @@ contract HostLifeCycleTest is Test {
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
             indices[1] = uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2);
 
+            vm.recordLogs();
             host_.updateSalts(daoData.symbol, indices, salts, block.chainid);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
             assertEq(proposalIds.length, 1, "one proposal should be created");
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true);
+            host_.receiveVotingResults(proposalIds[0], true, payload);
 
             assertEq(
                 host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid),
@@ -1019,12 +1035,14 @@ contract HostLifeCycleTest is Test {
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
+            vm.recordLogs();
             host_.updateFunding(daoData.symbol, funding);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             daoData = host_.getDAO(daoData.symbol);
             assertEq(
@@ -1050,11 +1068,15 @@ contract HostLifeCycleTest is Test {
                 api: unitMetadata0.api
             });
             units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+
+            vm.recordLogs();
             host_.updateUnits(daoData.symbol, units, metas);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             // put some amount on unit balance - it means that the unit is "live"
             address exchangeAsset = host_.getChainSettings().exchangeAsset;
@@ -1071,11 +1093,13 @@ contract HostLifeCycleTest is Test {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
+            vm.recordLogs();
             host_.updateVesting(daoData.symbol, vesting);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true);
+            host_.receiveVotingResults(proposalId, true, payload);
         }
 
         // ------------------------------ TGE phase started (DEVELOPMENT done), refresh daoData

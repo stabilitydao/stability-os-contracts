@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import {EfficientHashLib} from "../../lib/solady/src/utils/EfficientHashLib.sol";
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 
 /// @notice Basic data types and constants for Host system. This library shouldn't depend on any other libraries.
 library HostLib {
@@ -92,8 +92,12 @@ library HostLib {
         bytes32 id;
         uint daoUid;
 
-        /// @notice Proposal data as bytes. Actual data depends on {action}
-        bytes payload;
+// payload is NOT stored on chain, we store only hash and emit event with payload
+//        /// @notice Proposal data as bytes. Actual data depends on {action}
+//        bytes payload;
+
+        /// @notice Hash of proposal payload
+        bytes32 payloadHash;
     }
 
     /// @notice Unit data stored in the storage

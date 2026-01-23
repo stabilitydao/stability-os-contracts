@@ -12,7 +12,11 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 /// @notice Library with proposal related functions
 library HostProposalsLib {
     /// @notice Receive voting results from voting module and execute proposal if approved
-    function receiveVotingResults(bytes32 proposalId, bool succeed) external {
+    /// @param proposalId Proposal unique id
+    /// @param succeed True if proposal is approved
+    /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
+    /// Can be 0 if proposal was rejected.
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
@@ -22,24 +26,28 @@ library HostProposalsLib {
 
         p.status = succeed ? ITokenomics.VotingStatus.APPROVED_1 : ITokenomics.VotingStatus.REJECTED_2;
 
-        ITokenomics.DAOAction action = p.action;
         if (succeed) {
+            ITokenomics.DAOAction action = p.action;
+
+            /// @dev Ensure that provided payload is equal to the original one
+            require(p.payloadHash == HostUpdateLib.getPayloadHash(payload), IHost.IncorrectProposalPayload());
+
             if (action == ITokenomics.DAOAction.UPDATE_IMAGES_0) {
-                HostUpdateLib.updateImages(p.daoUid, p.payload);
+                HostUpdateLib.updateImages(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_SOCIALS_1) {
-                HostUpdateLib.updateSocials(p.daoUid, p.payload);
+                HostUpdateLib.updateSocials(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_UNITS_3) {
-                HostUpdateLib.updateUnitsForProposal(p.daoUid, p.payload, proposalId);
+                HostUpdateLib.updateUnitsForProposal(p.daoUid, payload, proposalId);
             } else if (action == ITokenomics.DAOAction.UPDATE_FUNDING_4) {
-                HostUpdateLib.updateFunding(p.daoUid, p.payload);
+                HostUpdateLib.updateFunding(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_VESTING_5) {
-                HostUpdateLib.updateVesting(p.daoUid, p.payload);
+                HostUpdateLib.updateVesting(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_NAMING_2) {
-                HostUpdateLib.updateNaming(p.daoUid, p.payload);
+                HostUpdateLib.updateNaming(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6) {
-                HostUpdateLib.updateDaoParameters(p.daoUid, p.payload);
+                HostUpdateLib.updateDaoParameters(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
-                HostUpdateLib.updateSalt(p.daoUid, p.payload);
+                HostUpdateLib.updateSalt(p.daoUid, payload);
             } else {
                 // todo other actions
                 revert IHost.NotImplemented();

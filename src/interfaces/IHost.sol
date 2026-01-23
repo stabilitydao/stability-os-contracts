@@ -36,6 +36,7 @@ interface IHost {
     error TooHighContractIndex(uint16 index);
     error SaltAlreadyUsed(bytes32 salt);
     error UnitAlreadyRegistered();
+    error IncorrectProposalPayload();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -43,6 +44,14 @@ interface IHost {
     event OsChainSettingsUpdated(IHost.HostChainSettings st);
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
+
+    event Proposal(
+        uint daoUid,
+        ITokenomics.DAOAction action,
+        bytes32 proposalId,
+        bytes32 payloadHash,
+        bytes payload
+    );
 
     /// @notice Units are updated via proposal or instantly
     event ProposalToUpdateDaoUnits(
@@ -248,7 +257,11 @@ interface IHost {
 
     /// @notice Process voting results from governance
     /// @custom:restricted Restricted through access manager
-    function receiveVotingResults(bytes32 proposalId, bool succeed) external;
+    /// @param proposalId Proposal unique id
+    /// @param succeed True if proposal is approved
+    /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
+    /// Can be 0 if proposal was rejected.
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external;
 
     /// @notice Refund funding to the SEED/TGE token holders if funding round failed
     function refund(string calldata daoSymbol) external;

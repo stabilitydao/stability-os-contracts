@@ -250,7 +250,7 @@ library HostViewLib {
             daoSymbol: $.segment2[local.daoUid].daoSymbol,
             created: local.created,
             status: local.status,
-            payload: local.payload
+            payloadHash: local.payloadHash
         });
     }
 

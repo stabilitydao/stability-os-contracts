@@ -147,8 +147,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function receiveVotingResults(bytes32 proposalId, bool succeed) external restricted {
-        HostProposalsLib.receiveVotingResults(proposalId, succeed);
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external restricted {
+        HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
     }
 
     /// @inheritdoc IHost

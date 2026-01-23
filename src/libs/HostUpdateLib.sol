@@ -11,6 +11,7 @@ import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 
 /// @notice Basic data types and constants for OS system.
 library HostUpdateLib {
@@ -153,7 +154,7 @@ library HostUpdateLib {
     /// @notice Create new proposal
     /// @param daoUid Unique id of the DAO
     /// @param action Action type of the proposal
-    /// @param payload Encoded proposal data
+    /// @param payload Encoded proposal data.
     /// @return proposalId Id of the created proposal. It is unique across all DAOs
     function proposeAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
@@ -163,27 +164,46 @@ library HostUpdateLib {
         // todo check proposalThreshold
         // todo validate payload
 
-        bytes32 proposalId = _createProposalId(daoUid, action, payload);
+        /// @dev Hash of the payload
+        bytes32 payloadHash = getPayloadHash(payload);
+
+        /// @dev Unique proposal id
+        bytes32 proposalId = _createProposalId(daoUid, action, payloadHash);
 
         HostLib.ProposalLocal storage proposal = $.proposals[proposalId];
         proposal.daoUid = daoUid;
         proposal.action = action;
         proposal.created = uint64(block.timestamp);
-        proposal.status = ITokenomics.VotingStatus.VOTING_0;
+        proposal.status = ITokenomics.VotingStatus.VOTING_0; // todo we don't need to assign 0
         proposal.id = proposalId;
-        proposal.payload = payload;
+        proposal.payloadHash = EfficientHashLib.hash(payload);
 
         $.daoProposals[daoUid].push(proposalId);
+
+        /// @dev Emit payload, don't store it on chain
+        emit IHost.Proposal(daoUid, action, proposalId, payloadHash, payload);
 
         return proposalId;
     }
 
+    /// @notice Create unique proposal id
+    /// @param daoUid Unique id of the DAO
+    /// @param action Action type of the proposal
+    /// @param payloadHash Hash of the proposal payload
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
     function _createProposalId(
         uint daoUid,
         ITokenomics.DAOAction action,
-        bytes memory payload
+        bytes32 payloadHash
     ) internal view returns (bytes32) {
-        return keccak256(abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payload));
+        return EfficientHashLib.hash(abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payloadHash));
+    }
+
+    /// @notice Calculate hash of the proposal payload
+    /// @param payload Encoded proposal data
+    /// @return Hash of the payload
+    function getPayloadHash(bytes memory payload) internal pure returns (bytes32) {
+        return EfficientHashLib.hash(payload);
     }
 
     //endregion -------------------------------------- Proposal logic

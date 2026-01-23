@@ -28,10 +28,6 @@ library HostUtilsLib {
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
 
-    function setup() internal {
-        // todo
-    }
-
     function deployHost(
         Vm vm,
         address multisig,
@@ -574,6 +570,22 @@ library HostUtilsLib {
         require(len != 0, "No proposals found");
         bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);
         return proposalIds[0];
+    }
+
+    function extractProposalPayload(Vm.Log[] memory logs) internal pure returns (bytes memory payload) {
+        bytes32 sig = keccak256("Proposal(uint256,uint8,bytes32,bytes32,bytes)");
+
+        for (uint i; i < logs.length; ++i) {
+            if (logs[i].topics[0] == sig) {
+                (, , , , payload) = abi.decode(
+                    logs[i].data,
+                    (uint256, uint8, bytes32, bytes32, bytes)
+                );
+                break;
+            }
+        }
+
+        return payload;
     }
 
     //endregion ----------------------------- Utils
