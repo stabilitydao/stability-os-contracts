@@ -78,7 +78,7 @@ library HostProposalsLib {
         if (instantExecute) {
             HostUpdateLib.updateImages(daoUid, images);
         } else {
-            bytes memory payload = HostEncodingLib.encodeDaoImages(images, HostEncodingLib.DAO_IMAGES_STRUCT_VERSION);
+            bytes memory payload = HostEncodingLib.encodeDaoImages(images, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_IMAGES_0, payload);
         }
     }
@@ -110,7 +110,7 @@ library HostProposalsLib {
         if (instantExecute) {
             HostUpdateLib.updateUnits(daoUid, units, 0, metadata); // 0 - instant update
         } else {
-            bytes memory payload = HostEncodingLib.encodeUnits(units, HostEncodingLib.UNIT_STRUCT_VERSION);
+            bytes memory payload = HostEncodingLib.encodeUnits(units, HostEncodingLib.PAYLOAD_API_VERSION);
             proposalId = HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_UNITS_3, payload);
 
             emit IHost.ProposalToUpdateDaoUnits(proposalId, daoUid, units, metadata);
@@ -126,7 +126,7 @@ library HostProposalsLib {
         if (instantExecute) {
             HostUpdateLib.updateFunding(daoUid, funding);
         } else {
-            bytes memory payload = HostEncodingLib.encodeFunding(funding, HostEncodingLib.FUNDING_STRUCT_VERSION);
+            bytes memory payload = HostEncodingLib.encodeFunding(funding, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_FUNDING_4, payload);
         }
     }
@@ -140,7 +140,7 @@ library HostProposalsLib {
         if (instantExecute) {
             HostUpdateLib.updateVesting(daoUid, vesting);
         } else {
-            bytes memory payload = HostEncodingLib.encodeVesting(vesting, HostEncodingLib.VESTING_STRUCT_VERSION);
+            bytes memory payload = HostEncodingLib.encodeVesting(vesting, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_VESTING_5, payload);
         }
     }
@@ -175,7 +175,7 @@ library HostProposalsLib {
             HostUpdateLib.updateDaoParameters(daoUid, daoParameters_);
         } else {
             bytes memory payload =
-                HostEncodingLib.encodeDaoParameters(daoParameters_, HostEncodingLib.DAO_PARAMETERS_STRUCT_VERSION);
+                HostEncodingLib.encodeDaoParameters(daoParameters_, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, payload);
         }
     }
@@ -195,7 +195,7 @@ library HostProposalsLib {
             HostUpdateLib.updateSalt(daoUid, contractIndices, salt_, chainId);
         } else {
             bytes memory payload =
-                HostEncodingLib.encodeSalt(contractIndices, salt_, chainId, HostEncodingLib.SALT_VERSION);
+                HostEncodingLib.encodeSalt(contractIndices, salt_, chainId, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SALT_7, payload);
         }
     }
