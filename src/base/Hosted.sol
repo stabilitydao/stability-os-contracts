@@ -2,19 +2,19 @@
 pragma solidity ^0.8.28;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {UUPSUpgradeable, IERC1822Proxiable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {SlotsLib} from "../libs/SlotsLib.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {
-    AccessManagedUpgradeable
+    AccessManagedUpgradeable,
+    IAccessManaged
 } from "@openzeppelin/contracts-upgradeable/access/manager/AccessManagedUpgradeable.sol";
 
 /// @dev Base core contract.
 ///      It store an immutable platform proxy address in the storage and provides access control to inherited contracts.
-/// @author Alien Deployer (https://github.com/a17)
-/// @author 0xhokugava (https://github.com/0xhokugava)
+/// @author omriss (https://github.com/omriss)
 abstract contract Hosted is Initializable, UUPSUpgradeable, AccessManagedUpgradeable, IHosted, ERC165 {
     using SlotsLib for bytes32;
 
@@ -48,7 +48,8 @@ abstract contract Hosted is Initializable, UUPSUpgradeable, AccessManagedUpgrade
 
     /// @inheritdoc IERC165
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IHosted).interfaceId || super.supportsInterface(interfaceId);
+        return interfaceId == type(IHosted).interfaceId || interfaceId == type(IAccessManaged).interfaceId
+            || interfaceId == type(IERC1822Proxiable).interfaceId || super.supportsInterface(interfaceId);
     }
 
     /// @notice Authorize upgrade function through authority

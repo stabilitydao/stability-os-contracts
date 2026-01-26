@@ -22,7 +22,7 @@ contract SeedToken is ISeedToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgrade
     string public constant VERSION = "1.0.0";
 
     /// @inheritdoc IHosted
-    function initialize(address authority_, bytes memory payload) public initializer {
+    function initialize(address authority_, bytes memory payload) public payable initializer {
         (string memory _name, string memory _symbol) = abi.decode(payload, (string, string));
 
         __Hosted_init(authority_);

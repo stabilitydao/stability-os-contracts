@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IProxyFactory} from "./interfaces/IProxyFactory.sol";
-import {IProxy} from "./interfaces/IProxy.sol";
-import {Proxy} from "./Proxy.sol";
 import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Proxy} from "./Proxy.sol";
+import {IProxyFactory} from "./interfaces/IProxyFactory.sol";
+import {IProxy} from "./interfaces/IProxy.sol";
 
-/// @notice Factory contract to create clones of the Proxy contract
+/// @notice Factory contract to create clones of the Proxy contract with deterministic addresses
 /// @dev Bytecode of Proxy is never changed.
 /// @author omriss (https://github.com/omriss)
 contract ProxyFactory is IProxyFactory, Ownable {
     /// @notice Address of the master Proxy contract to be cloned
     address public immutable MASTER_PROXY;
 
-    /// @notice Keccak256 hash of the init code of the clone of the master Proxy contract
+    /// @dev Keccak256 hash of the init code of the clone of the master Proxy contract
     bytes32 internal immutable MASTER_PROXY_CLONE_CODE_HASH;
 
     /// @notice Whitelisted addresses allowed to create new proxies
@@ -27,12 +27,13 @@ contract ProxyFactory is IProxyFactory, Ownable {
 
     constructor() Ownable(msg.sender) {
         // Deploy proxy only once. All other proxy instances will be clones of this one.
+        // Master proxy is never initialized - it serves only as a bytecode template.
+        // Each clone has independent storage and is initialized separately via _initProxy.
         MASTER_PROXY = address(new Proxy());
-        // do we need to call initProxy for Master proxy?
 
-        /// EIP-1167 minimal proxy bytecode
-        /// 3d602d80600a3d3981f3363d3d373d3d3d363d73bebebebebebebebebebebebebebebebebebebebe5af43d82803e903d91602b57fd5bf3
-        /// bebebebe... is replaced by {implementation}
+        /// @dev EIP-1167 minimal proxy bytecode format:
+        /// 3d602d80600a3d3981f3363d3d373d3d3d363d73{implementation}5af43d82803e903d91602b57fd5bf3
+        /// where {implementation} is the 20-byte address of MASTER_PROXY
         MASTER_PROXY_CLONE_CODE_HASH = keccak256(
             abi.encodePacked(
                 hex"3d602d80600a3d3981f3363d3d373d3d3d363d73", MASTER_PROXY, hex"5af43d82803e903d91602b57fd5bf3"
@@ -52,12 +53,12 @@ contract ProxyFactory is IProxyFactory, Ownable {
     }
 
     /// @inheritdoc IProxyFactory
-    function getCreate2Address(bytes32 salt) external view returns (address) {
+    function predictAddress(bytes32 salt) external view returns (address) {
         return Clones.predictDeterministicAddress(MASTER_PROXY, salt, address(this));
     }
 
     /// @inheritdoc IProxyFactory
-    function createNewProxy(address implementation, bytes memory data_) external returns (address proxy) {
+    function createNewProxy(address implementation, bytes memory data_) external payable returns (address proxy) {
         // there are no restrictions on who can call this function
         proxy = Clones.clone(address(MASTER_PROXY));
         _initProxy(proxy, implementation, data_);
@@ -68,13 +69,13 @@ contract ProxyFactory is IProxyFactory, Ownable {
         bytes32 salt,
         address implementation,
         bytes memory data_
-    ) external onlyWhitelisted returns (address proxy) {
+    ) external payable onlyWhitelisted returns (address proxy) {
         proxy = Clones.cloneDeterministic(address(MASTER_PROXY), salt);
         _initProxy(proxy, implementation, data_);
     }
 
     function _initProxy(address proxy, address implementation, bytes memory data_) internal {
-        IProxy(proxy).initProxy(implementation, data_);
+        IProxy(proxy).initProxy{value: msg.value}(implementation, data_);
         emit ProxyCreated(proxy);
     }
 

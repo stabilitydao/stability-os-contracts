@@ -41,7 +41,7 @@ contract ProxyTest is Test {
         proxyFactory = new ProxyFactory();
 
         // ------------------- deploy authority
-        address hostPredicted = proxyFactory.getCreate2Address("0x62436");
+        address hostPredicted = proxyFactory.predictAddress("0x62436");
         authority = new Authority(MULTISIG, hostPredicted, address(proxyFactory));
 
         vm.prank(MULTISIG);
@@ -92,6 +92,68 @@ contract ProxyTest is Test {
         IHosted(host).initialize(address(authority), abi.encode(notEmptyHostPayload));
     }
 
+    function testInitializeProxyAndLogicPayable() public {
+        deal(MULTISIG, 3 ether);
+
+        vm.prank(MULTISIG);
+        authority.execute{value: 1 ether}(
+            address(proxyFactory),
+            abi.encodeCall(
+                IProxyFactory.create2NewProxy,
+                (
+                    "0x62436",
+                    logic,
+                    abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(notEmptyHostPayload)))
+                )
+            )
+        );
+
+        address host = authority.HOST();
+        assertEq(host.balance, 1 ether, "1 ether was sent to host");
+
+        assertEq(IProxy(host).implementation(), logic, "logic is set");
+        assertEq(IAccessManaged(host).authority(), address(authority), "authority is set");
+        assertNotEq(IHost(host).getHostDaoUid(), 0, "host dao uid is set");
+
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        IHosted(host).initialize(address(authority), abi.encode(emptyHostPayload));
+
+        assertEq(MULTISIG.balance, 2 ether, "multisig has 2 ether left");
+    }
+
+    function testInitializeProxyWithoutLogicInitializationPayable() public {
+        deal(MULTISIG, 1 ether);
+
+        // ------------------- try to create proxy without initialization data and pass 1 ether
+        vm.expectRevert(ERC1967Utils.ERC1967NonPayable.selector);
+        vm.prank(MULTISIG);
+        authority.execute{value: 1 ether}(
+            address(proxyFactory), abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436", logic, ""))
+        );
+
+        // ------------------- create proxy without initialization data without sending ether
+        vm.prank(MULTISIG);
+        authority.execute(address(proxyFactory), abi.encodeCall(IProxyFactory.create2NewProxy, ("0x62436", logic, "")));
+
+        // ------------------- not multisig initializes logic and sends 1 ether
+        address host = authority.HOST();
+
+        assertEq(IProxy(host).implementation(), logic, "logic is set");
+        assertEq(IAccessManaged(host).authority(), address(0), "logic is not initialized");
+
+        uint balanceBefore = address(this).balance;
+        assertEq(host.balance, 0, "zero balance");
+        IHosted(host).initialize{value: 1 ether}(address(authority), abi.encode(notEmptyHostPayload));
+        assertEq(host.balance, 1 ether, "1 ether is sent to host");
+        assertEq(address(this).balance, balanceBefore - 1 ether, "balance decreased");
+        assertEq(MULTISIG.balance, 1 ether, "multisig still has 1 ether");
+
+        assertEq(IAccessManaged(host).authority(), address(authority), "authority is set");
+
+        vm.expectRevert(Initializable.InvalidInitialization.selector);
+        IHosted(host).initialize(address(authority), abi.encode(notEmptyHostPayload));
+    }
+
     function testUpgradeProxy() public {
         // ------------------- create host
         vm.prank(MULTISIG);
@@ -131,6 +193,7 @@ contract ProxyTest is Test {
             // pretend here that "HostBridge" is a "new implementation" of Host contract
             address hostNewImpl = address(new HostBridge(makeAddr("endpoint")));
 
+            // not-upgrader is NOT allowed to upgrade the proxy
             vm.expectRevert(); // AccessManagedUnauthorized
             host.upgradeToAndCall(hostNewImpl, "");
 
@@ -189,6 +252,18 @@ contract ProxyTest is Test {
 
         vm.expectRevert(IProxy.ProxyAlreadyInitialized.selector);
         IProxy(host).initProxy(logic, "");
+    }
+
+    function testInitWithZeroAuthority() public {
+        vm.expectRevert(IHosted.IncorrectZeroArgument.selector);
+        vm.prank(MULTISIG);
+        authority.execute(
+            address(proxyFactory),
+            abi.encodeCall(
+                IProxyFactory.create2NewProxy,
+                ("0x62436", logic, abi.encodeCall(IHosted.initialize, (address(0), abi.encode(emptyHostPayload))))
+            )
+        );
     }
 }
 
