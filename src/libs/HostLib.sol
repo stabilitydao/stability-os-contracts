@@ -24,6 +24,13 @@ library HostLib {
     uint internal constant DAO_UID_STUB_SYMBOL_REGISTERED = 1;
 
     //region -------------------------------------- Data types
+    /// @notice Status of proposal validation by Host DAO
+    enum ValidationStatus {
+        NONE_0,
+        APPROVED_1,
+        REJECTED_2
+    }
+
     /// @notice Supply distribution and fundraising events.
     struct TokenomicsLocal {
         /// @notice Fundraising. Only funding types.
@@ -83,6 +90,14 @@ library HostLib {
     /// @notice It refers to daoUid instead of daoSymbol
     struct ProposalLocal {
         ITokenomics.DAOAction action;
+
+        /// @notice True if proposal requires validation by Host DAO before voting
+        /// Typical rejection case: proposal contains invalid data that have collisions with exist data on other chains
+        /// I.e. proposed salt is already used on the target chain
+        bool validationRequired;
+
+        /// @notice
+        ValidationStatus validationStatus;
 
         /// @notice Proposal creation timestamp
         uint64 created;

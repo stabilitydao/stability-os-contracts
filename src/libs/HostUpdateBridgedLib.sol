@@ -9,7 +9,8 @@ import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 
 /// @notice Bridged DAO updating logic
 library HostUpdateBridgedLib {
-    function updateBridgedDAO(
+    /// @notice Proposal to update bridged DAO on other chains is accepted => send payload hashes to bridged DAO hosts
+    function sendBridgedAction(
         uint daoUid,
         uint16 actionKind,
         uint32[] memory dstEids,
@@ -29,28 +30,33 @@ library HostUpdateBridgedLib {
         }
     }
 
-    function quoteUpdateBridgedDAO(
+    /// @notice Quote fee for sending payload hashes to bridged DAO hosts
+    function quoteSendBridgedAction(
         uint daoUid,
         uint16 actionKind,
         uint32[] memory dstEids,
         bytes[] memory payloads
-    ) external view returns (uint gas) {
+    ) external view returns (uint fee) {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
 
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
             bytes32 hash = EfficientHashLib.hash(payloads[i]);
             bytes memory payload = abi.encode(uint16(actionKind), daoUid, hash);
-            gas += bridge == address(0)
+            fee += bridge == address(0)
                 ? 0
                 : IHostBridge(bridge)
                     .quoteSendMessage(dstEids[i], uint(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), payload);
         }
 
-        return gas;
+        return fee;
     }
 
-    function applyUpdateAction(string calldata daoSymbol, bytes calldata actionPayload) external {
-        // todo
+    /// @notice Apply bridged action on this chain
+    /// @param actionPayload Payload with action details.
+    /// Its hash should be already registered on this chain
+    function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external {
+        // todo: ensure that hash of actionPayload is registered on this chain
+        // todo: decode actionPayload and apply changes to bridged DAO
     }
 }

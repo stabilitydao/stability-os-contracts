@@ -38,6 +38,9 @@ interface IHost {
     error UnitAlreadyRegistered();
     error IncorrectProposalPayload();
     error InstantExecuteNotAllowed();
+    error ProposalNotValidated();
+    error ValidationNotRequired();
+    error AlreadyValidated();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -226,8 +229,6 @@ interface IHost {
         bytes memory payload
     ) external view returns (uint);
 
-    // todo approveProposal
-
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -277,6 +278,11 @@ interface IHost {
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if proposal was rejected.
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external;
+
+    /// @notice Approve/reject proposal. This function is called by backed only for proposals that require validation.
+    /// @param proposalId Proposal unique id
+    /// @param valid True if proposal is approved, false if the proposal is rejected
+    function validateProposal(bytes32 proposalId, bool valid) external;
 
     /// @notice Refund funding to the SEED/TGE token holders if funding round failed
     function refund(string calldata daoSymbol) external;
@@ -357,15 +363,18 @@ interface IHost {
     /// @param actionKind Kind of action to perform on the bridged DAO, see BridgedActions enum
     /// @param dstEids LayerZero endpoint IDs of the chains with bridged DAO
     /// @param actionPayloads Payload of the action to perform on the bridged DAO on proper {chain}
-    function updateBridgedDao(
+    function createBridgedAction(
         string calldata daoSymbol,
         uint16 actionKind,
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads
     ) external;
 
-    /// @notice Apply update action received from another chain
-    function applyUpdateAction(string calldata daoSymbol, bytes calldata actionPayload) external;
+    /// @notice Apply bridged action on the current chain
+    /// @param daoSymbol DAO symbol
+    /// @param actionPayload Payload with action details.
+    /// Its hash should be already registered on this chain through cross-chain message.
+    function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external;
 
     //endregion ---------------------------------------- Update actions
 }

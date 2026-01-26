@@ -161,6 +161,11 @@ contract Host is IHost, Hosted {
         HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
     }
 
+    function validateProposal(bytes32 proposalId, bool valid) external {
+        HostProposalsLib.validateProposal(proposalId, valid);
+    }
+
+
     /// @inheritdoc IHost
     function refund(string calldata daoSymbol) external {
         // todo not reentrant
@@ -260,7 +265,7 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function updateBridgedDao(
+    function createBridgedAction(
         string calldata daoSymbol,
         uint16 actionKind,
         uint32[] calldata dstEids,
@@ -271,8 +276,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function applyUpdateAction(string calldata daoSymbol, bytes calldata actionPayload) external {
-        HostUpdateBridgedLib.applyUpdateAction(daoSymbol, actionPayload);
+    function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external {
+        HostUpdateBridgedLib.applyBridgedAction(daoSymbol, actionPayload);
     }
     //endregion -------------------------------------- Update actions
 }

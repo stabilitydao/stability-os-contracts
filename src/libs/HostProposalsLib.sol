@@ -23,6 +23,7 @@ library HostProposalsLib {
 
         require(p.daoUid != 0, IHost.IncorrectProposal());
         require(p.status == ITokenomics.VotingStatus.VOTING_0, IHost.AlreadyReceived());
+        require(!p.validationRequired || p.validationStatus == HostLib.ValidationStatus.APPROVED_1, IHost.ProposalNotValidated());
 
         p.status = succeed ? ITokenomics.VotingStatus.APPROVED_1 : ITokenomics.VotingStatus.REJECTED_2;
 
@@ -51,7 +52,7 @@ library HostProposalsLib {
             } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
-                HostUpdateBridgedLib.updateBridgedDAO(p.daoUid, actionKind, dstEids, actionPayloads);
+                HostUpdateBridgedLib.sendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
                 // todo other actions
                 revert IHost.NotImplemented();
@@ -77,13 +78,29 @@ library HostProposalsLib {
             if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
-                HostUpdateBridgedLib.quoteUpdateBridgedDAO(p.daoUid, actionKind, dstEids, actionPayloads);
+                HostUpdateBridgedLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
                 // todo other actions with cross-chain messages
             }
         }
 
         return gas;
+    }
+
+    function validateProposal(bytes32 proposalId, bool valid) external {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        HostLib.ProposalLocal storage p = $.proposals[proposalId];
+
+        require(p.daoUid != 0, IHost.IncorrectProposal());
+        require(p.validationRequired, IHost.ValidationNotRequired());
+        require(p.validationStatus == HostLib.ValidationStatus.NONE_0, IHost.AlreadyValidated());
+
+        p.validationStatus = valid ? HostLib.ValidationStatus.APPROVED_1 : HostLib.ValidationStatus.REJECTED_2;
+        if (!valid) {
+            p.status = ITokenomics.VotingStatus.REJECTED_2;
+        }
+
+        // todo emit
     }
 
     //region -------------------------------------- Update instantly or through proposals
