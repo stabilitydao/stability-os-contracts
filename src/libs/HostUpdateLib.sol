@@ -120,13 +120,8 @@ library HostUpdateLib {
         }
     }
 
-    /// @notice Validate salts
-    function _validateSalt(
-        uint daoUid,
-        uint16[] memory contractIndices,
-        bytes32[] memory salt_,
-        uint chainId
-    ) internal view {
+    /// @notice Validate salts: salts is not used OR used by the given DAO
+    function _validateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint len = contractIndices.length;
@@ -137,13 +132,11 @@ library HostUpdateLib {
                 contractIndices[i] < uint16(ITokenomicsAddons.ContractIndices.COUNT_CONTRACT_INDICES),
                 IHost.TooHighContractIndex(contractIndices[i])
             );
-            uint daoHash = $.daoUidBySalt[chainId][salt_[i]];
-            require(
-                // assume that users don't try to set same salt for different contracts
-                // otherwise they will have error on creation (and will be able to fix it)
-                daoHash == 0 || daoHash == HostLib.getDaoHash(daoUid, HostLib.KIND_SALT_USED),
-                IHost.SaltAlreadyUsed(salt_[i])
-            );
+
+            // assume that users don't try to set same salt for different contracts
+            // otherwise they will have error on creation (and will be able to fix it)
+            uint saltDaoUid = $.daoUidBySalt[salt_[i]];
+            require(saltDaoUid == 0 || saltDaoUid == daoUid, IHost.SaltAlreadyUsed(salt_[i]));
         }
     }
 
@@ -172,9 +165,14 @@ library HostUpdateLib {
 
         HostLib.ProposalLocal storage proposal = $.proposals[proposalId];
         proposal.daoUid = daoUid;
-        proposal.action = action;
-        proposal.created = uint64(block.timestamp);
-        proposal.status = ITokenomics.VotingStatus.VOTING_0; // todo we don't need to assign 0
+
+        HostLib.ProposalHeader memory proposalHeader;
+        proposalHeader.action = action;
+        proposalHeader.created = uint64(block.timestamp);
+        proposalHeader.status = ITokenomics.VotingStatus.VOTING_0;
+        proposalHeader.validationRequired = false; // todo
+        proposal.proposalHeader = HostLib.packProposalHeader(proposalHeader);
+
         proposal.id = proposalId;
         proposal.payloadHash = EfficientHashLib.hash(payload);
 
@@ -421,22 +419,20 @@ library HostUpdateLib {
     }
 
     function updateSalt(uint daoUid, bytes memory payload) internal {
-        (uint16[] memory contractIndices, bytes32[] memory salt, uint chainId) = HostEncodingLib.decodeSalt(payload);
-        updateSalt(daoUid, contractIndices, salt, chainId);
+        (uint16[] memory contractIndices, bytes32[] memory salt) = HostEncodingLib.decodeSalt(payload);
+        updateSalt(daoUid, contractIndices, salt);
     }
 
-    function updateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_, uint chain_) internal {
-        uint chainId = chain_ == 0 ? block.chainid : chain_;
-
+    function updateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint len = contractIndices.length;
         for (uint i; i < len; ++i) {
-            bytes32 key = HostLib.getKey(daoUid, contractIndices[i], chainId);
+            bytes32 key = HostLib.getKey(daoUid, contractIndices[i]);
             $.salt[key] = salt_[i];
-            $.daoUidBySalt[chainId][salt_[i]] = HostLib.getDaoHash(daoUid, HostLib.KIND_SALT_USED);
+            $.daoUidBySalt[salt_[i]] = daoUid;
         }
 
-        emit IHost.SaltUpdated($.segment2[daoUid].daoSymbol, contractIndices, salt_, chainId);
+        emit IHost.SaltUpdated($.segment2[daoUid].daoSymbol, contractIndices, salt_);
     }
 
     //endregion -------------------------------------- Update logic

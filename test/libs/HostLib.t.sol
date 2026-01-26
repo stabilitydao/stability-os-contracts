@@ -3,7 +3,8 @@ pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
-// import {console} from "forge-std/console.sol";
+import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+//import {console} from "forge-std/console.sol";
 
 contract HostLibTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -174,5 +175,53 @@ contract HostLibTest is Test {
         assertNotEq(uid2, uid3, "uid2 != uid3");
         assertNotEq(uid2, uid4, "uid2 != uid4");
         assertNotEq(uid3, uid4, "uid3 != uid4");
+    }
+
+    function testPackProposalHeader() public view {
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6,
+                validationRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.REJECTED_2,
+                status: ITokenomics.VotingStatus.APPROVED_1,
+                created: type(uint64).max - 1
+            });
+
+            uint gas = gasleft();
+            uint packed = HostLib.packProposalHeader(header);
+            uint gasUsed = gas - gasleft();
+            //console.log("gas used", gasUsed);
+            assertLt(gasUsed, 300, "packProposalHeader uses less than 300 gas");
+
+            HostLib.ProposalHeader memory unpacked = HostLib.unpackProposalHeader(packed);
+            assertEq(uint8(unpacked.action), uint8(header.action), "action");
+            assertEq(unpacked.validationRequired, header.validationRequired, "validationRequired");
+            assertEq(uint8(unpacked.validationStatus), uint8(header.validationStatus), "validationStatus");
+            assertEq(uint8(unpacked.status), uint8(header.status), "status");
+            assertEq(unpacked.created, header.created, "created");
+        }
+
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_SOCIALS_1,
+                validationRequired: false,
+                validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
+                status: ITokenomics.VotingStatus.VOTING_0,
+                created: 1
+            });
+
+            uint gas = gasleft();
+            uint packed = HostLib.packProposalHeader(header);
+            uint gasUsed = gas - gasleft();
+            //console.log("gas used", gasUsed);
+            assertLt(gasUsed, 300, "packProposalHeader uses less than 300 gas");
+
+            HostLib.ProposalHeader memory unpacked = HostLib.unpackProposalHeader(packed);
+            assertEq(uint8(unpacked.action), uint8(header.action), "action");
+            assertEq(unpacked.validationRequired, header.validationRequired, "validationRequired");
+            assertEq(uint8(unpacked.validationStatus), uint8(header.validationStatus), "validationStatus");
+            assertEq(uint8(unpacked.status), uint8(header.status), "status");
+            assertEq(unpacked.created, header.created, "created");
+        }
     }
 }

@@ -6,6 +6,7 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
+import {HostLib} from "./HostLib.sol";
 
 /// @notice Bridged DAO updating logic
 library HostUpdateBridgedLib {
@@ -56,7 +57,33 @@ library HostUpdateBridgedLib {
     /// @param actionPayload Payload with action details.
     /// Its hash should be already registered on this chain
     function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external {
-        // todo: ensure that hash of actionPayload is registered on this chain
-        // todo: decode actionPayload and apply changes to bridged DAO
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        uint daoUid = $.daoUids[daoSymbol];
+
+        HostLib.BridgedActionLocal memory action = $.bridgedActionHashes[EfficientHashLib.hash(actionPayload)];
+        require(action.actionKind != 0, IHost.UnknownBridgedActionHash());
+
+        if (action.actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
+            // todo: may be the DAO is NOT registered yet at this point, we need to check daoSymbol
+
+            // todo register and bridge the DAO
+
+            // ensure that created DAO has expected symbol
+            require(action.daoUid == $.daoUids[daoSymbol], IHost.IncorrectDao());
+        } else {
+            require(action.daoUid == daoUid, IHost.IncorrectDao());
+
+            if (action.actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
+                // todo
+            } else if (action.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
+                // todo
+            } else if (action.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
+                // todo
+            } else if (action.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
+                // todo
+            } else {
+                revert IHost.UnknownBridgedActionKind();
+            }
+        }
     }
 }

@@ -13,9 +13,6 @@ library HostLib {
     /// @notice Predefined UID of the unit of host DAO. This unit is used to collect dao-creation fees
     string public constant HOST_UNIT = "host-unit";
 
-    /// @notice Kind value for used salt in daoUidBySalt mapping
-    uint public constant KIND_SALT_USED = 0;
-
     /// @notice Values in range [0..99) are reserved for internal use (so we can use some values as stubs)
     uint private constant MIN_DAO_UID = 100;
 
@@ -24,13 +21,6 @@ library HostLib {
     uint internal constant DAO_UID_STUB_SYMBOL_REGISTERED = 1;
 
     //region -------------------------------------- Data types
-    /// @notice Status of proposal validation by Host DAO
-    enum ValidationStatus {
-        NONE_0,
-        APPROVED_1,
-        REJECTED_2
-    }
-
     /// @notice Supply distribution and fundraising events.
     struct TokenomicsLocal {
         /// @notice Fundraising. Only funding types.
@@ -87,24 +77,35 @@ library HostLib {
         string daoMetaDataLocation;
     }
 
-    /// @notice It refers to daoUid instead of daoSymbol
-    struct ProposalLocal {
+    /// @notice All "small" fields of the proposal. We store them packed as a single slot.
+    struct ProposalHeader {
+        /// @dev Action to update DAO data
         ITokenomics.DAOAction action;
 
-        /// @notice True if proposal requires validation by Host DAO before voting
+        /// @dev True if proposal requires validation by Host DAO before voting
         /// Typical rejection case: proposal contains invalid data that have collisions with exist data on other chains
         /// I.e. proposed salt is already used on the target chain
         bool validationRequired;
 
-        /// @notice
-        ValidationStatus validationStatus;
+        /// @dev Status of proposal validation by admin
+        ITokenomics.ValidationStatus validationStatus;
+
+        /// @dev Current voting status
+        ITokenomics.VotingStatus status;
 
         /// @notice Proposal creation timestamp
         uint64 created;
-        ITokenomics.VotingStatus status;
+    }
+
+    /// @notice It refers to daoUid instead of daoSymbol
+    struct ProposalLocal {
+        /// @notice ProposalHeader packed to single slot
+        uint proposalHeader;
 
         /// @notice Unique proposal id
         bytes32 id;
+
+        /// @notice DAO UID
         uint daoUid;
 
         // payload is NOT stored on chain, we store only hash and emit event with payload
@@ -129,6 +130,12 @@ library HostLib {
         EnumerableSet.UintSet chainIds;
     }
 
+    struct BridgedActionLocal {
+        uint daoUid;
+        uint16 actionKind;
+        bool applied;
+    }
+
     /// @custom:storage-location erc7201:stability.host-contracts.Host
     struct HostStorage {
         /// @notice Internal counter of created DAOs. It's used to generate unique immutable id for each DAO.
@@ -148,6 +155,9 @@ library HostLib {
         ///    daoSymbol => daoUid (segment 2: actual uid of the dao with the given symbol is stored)
         mapping(string daoSymbol => uint daoUid) daoUids;
 
+        /// @notice All bridged actions received from other chains. Key is hash of action payload.
+        mapping(bytes32 actionHash => BridgedActionLocal) bridgedActionHashes;
+
         // -------------------------------------- SEGMENT 2: All chains where DAO is bridged
 
         /// @notice Data of each DAO deployed or bridged to the current chain
@@ -166,14 +176,12 @@ library HostLib {
         mapping(bytes32 hashUnit => uint) unitBalances;
 
         /// @notice Salt configured for DAO contracts.
-        /// @dev Key is generated as hash of (daoUid, ContractIndex, chainId)
+        /// @dev Key is generated as hash of (daoUid, ContractIndex)
         /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
         mapping(bytes32 key => bytes32 salt) salt;
 
         /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
-        /// @dev daoHash is generated as hash(daoUid, kind), where kind = 0 if salt is used, kind = 1 if salt is reserved
-        /// @dev kind = 1 uses case: user pais fee to reserve a salt, create a proposal to use new salt, update {salt} after voting
-        mapping(uint chain => mapping(bytes32 salt => uint daoHash)) daoUidBySalt;
+        mapping(bytes32 salt => uint daoUid) daoUidBySalt;
 
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment2;
@@ -272,6 +280,24 @@ library HostLib {
     function generateDaoUid(uint count_, uint chain_) internal pure returns (uint) {
         //return uint(keccak256(abi.encodePacked(count_, chain_)));
         return uint(EfficientHashLib.hash(count_, chain_));
+    }
+
+    /// @notice Pack ProposalHeader into single uint
+    function packProposalHeader(ProposalHeader memory header) internal pure returns (uint h) {
+        h = uint(uint8(header.action)) | (header.validationRequired ? (1 << 8) : 0)
+            | (uint(uint8(header.validationStatus)) << 9) | (uint(uint8(header.status)) << 17)
+            | (uint(header.created) << 25);
+    }
+
+    /// @notice Unpack ProposalHeader from single uint
+    function unpackProposalHeader(uint h) internal pure returns (ProposalHeader memory header) {
+        return ProposalHeader({
+            action: ITokenomics.DAOAction(uint8(h)),
+            validationRequired: ((h >> 8) & 1) != 0,
+            validationStatus: ITokenomics.ValidationStatus(uint8(h >> 9)),
+            status: ITokenomics.VotingStatus(uint8(h >> 17)),
+            created: uint64(h >> 25)
+        });
     }
     //endregion -------------------------------------- Internal utils
 }

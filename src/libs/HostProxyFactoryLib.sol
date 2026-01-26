@@ -10,7 +10,8 @@ library HostProxyFactoryLib {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactoryLib")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 public constant HOST_PROXY_STORAGE_LOCATION = 0; // todo
+    bytes32 public constant HOST_PROXY_STORAGE_LOCATION =
+        0x6b7f6659c2a8c813be33e62cbb19e4a59a44438d88930011a1c786a2d87a6300;
 
     //region -------------------------------------- Data types
     error LogicNotFound(uint kind);

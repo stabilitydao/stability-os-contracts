@@ -180,6 +180,14 @@ interface ITokenomics {
     struct Proposal {
         DAOAction action;
 
+        /// @dev True if proposal requires validation by Host DAO before voting
+        /// Typical rejection case: proposal contains invalid data that have collisions with exist data on other chains
+        /// I.e. proposed salt is already used on the target chain
+        bool validationRequired;
+
+        /// @dev Status of proposal validation by admin
+        ITokenomics.ValidationStatus validationStatus;
+
         bytes32 id; // todo do we really need string id?
         string daoSymbol; // todo rename back to symbol
         /// @notice Proposal creation timestamp
@@ -218,6 +226,13 @@ interface ITokenomics {
 
         /// @notice DAO UID of Unit Developer (Pool tasks solver)
         string developerUid;
+    }
+
+    /// @notice Status of proposal validation by Host DAO
+    enum ValidationStatus {
+        NONE_0,
+        APPROVED_1,
+        REJECTED_2
     }
 }
 

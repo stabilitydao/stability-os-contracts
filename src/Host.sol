@@ -93,8 +93,8 @@ contract Host is IHost, Hosted {
         return HostViewLib.unitBalance(daoSymbol, unitId);
     }
 
-    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32) {
-        return HostViewLib.salt(daoSymbol, contractIndex, chainId);
+    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32) {
+        return HostViewLib.salt(daoSymbol, contractIndex);
     }
 
     /// @inheritdoc IHost
@@ -115,16 +115,6 @@ contract Host is IHost, Hosted {
 
     //region -------------------------------------- Actions
     /// @inheritdoc IHost
-    function setSettings(IHost.HostSettings memory newSettings) external restricted {
-        HostActionsLib.setSettings(newSettings);
-    }
-
-    /// @inheritdoc IHost
-    function setChainSettings(IHost.HostChainSettings memory newSettings) external restricted {
-        HostActionsLib.setChainSettings(newSettings);
-    }
-
-    /// @inheritdoc IHost
     function createDAO(
         string calldata name,
         string calldata daoSymbol,
@@ -134,11 +124,6 @@ contract Host is IHost, Hosted {
     ) external payable {
         // no restrictions, anybody can create a DAO
         HostActionsLib.createDAO(name, daoSymbol, activity, params, funding);
-    }
-
-    /// @inheritdoc IHost
-    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external restricted {
-        HostActionsLib.addLiveDAO(dao);
     }
 
     /// @inheritdoc IHost
@@ -157,30 +142,9 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external restricted {
-        HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
-    }
-
-    function validateProposal(bytes32 proposalId, bool valid) external {
-        HostProposalsLib.validateProposal(proposalId, valid);
-    }
-
-
-    /// @inheritdoc IHost
     function refund(string calldata daoSymbol) external {
         // todo not reentrant
         HostFundingLib.refund(daoSymbol);
-    }
-
-    /// @inheritdoc IHost
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external restricted {
-        // todo not reentrant
-        HostFundingLib.refundFor(daoSymbol, receivers);
-    }
-
-    /// @inheritdoc IHost
-    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
-        HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
     }
 
     /// @inheritdoc IHost
@@ -190,17 +154,59 @@ contract Host is IHost, Hosted {
         HostActionsLib.processUnitRevenue(daoSymbol, unitId, amount);
     }
 
+    //endregion -------------------------------------- Actions
+
+    //region -------------------------------------- Restricted actions
+    /// @inheritdoc IHost
+    function setSettings(IHost.HostSettings memory newSettings) external restricted {
+        HostActionsLib.setSettings(newSettings);
+    }
+
+    /// @inheritdoc IHost
+    function setChainSettings(IHost.HostChainSettings memory newSettings) external restricted {
+        HostActionsLib.setChainSettings(newSettings);
+    }
+
+    /// @inheritdoc IHost
+    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external restricted {
+        HostActionsLib.addLiveDAO(dao);
+    }
+
+    /// @inheritdoc IHost
+    function refundFor(string calldata daoSymbol, address[] memory receivers) external restricted {
+        HostFundingLib.refundFor(daoSymbol, receivers);
+    }
+
+    /// @inheritdoc IHost
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
+        HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
+    }
+
+    /// @inheritdoc IHost
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external restricted {
+        HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
+    }
+
+    /// @inheritdoc IHost
+    function validateProposal(bytes32 proposalId, bool valid) external restricted {
+        HostProposalsLib.validateProposal(proposalId, valid);
+    }
+
     /// @inheritdoc IHost
     function setContractImplementation(uint kind, address implementation) external restricted {
         HostProxyFactoryLib.setContractImplementation(kind, implementation);
     }
 
     /// @inheritdoc IHost
-    function deployProxy(bytes32 salt_, address logic, bytes memory payload) external returns (address proxy) {
+    function deployProxy(
+        bytes32 salt_,
+        address logic,
+        bytes memory payload
+    ) external restricted returns (address proxy) {
         return HostProxyFactoryLib.deployProxy(salt_, logic, payload, authority());
     }
 
-    //endregion -------------------------------------- Actions
+    //endregion -------------------------------------- Restricted actions
 
     //region -------------------------------------- Update actions
 
@@ -254,14 +260,9 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function updateSalts(
-        string calldata daoSymbol,
-        uint16[] memory contractIndices,
-        bytes32[] memory salt_,
-        uint chainId // todo remove
-    ) external {
+    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, bytes32[] memory salt_) external {
         // restrictions are checked below
-        HostProposalsLib.updateSalts(daoSymbol, contractIndices, salt_, chainId);
+        HostProposalsLib.updateSalts(daoSymbol, contractIndices, salt_);
     }
 
     /// @inheritdoc IHost

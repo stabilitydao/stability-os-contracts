@@ -907,7 +907,7 @@ contract HostLifeCycleTest is Test {
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
 
-            host_.updateSalts(daoData.symbol, indices, salts, 0);
+            host_.updateSalts(daoData.symbol, indices, salts);
         }
 
         // ------------------------------ change phase to seed
@@ -925,7 +925,7 @@ contract HostLifeCycleTest is Test {
             assertEq(daoData.deployments.seedToken, predictedSeedAddress, "seed token address matches predicted");
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid),
+                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
@@ -965,7 +965,7 @@ contract HostLifeCycleTest is Test {
             indices[1] = uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2);
 
             vm.recordLogs();
-            host_.updateSalts(daoData.symbol, indices, salts, block.chainid);
+            host_.updateSalts(daoData.symbol, indices, salts);
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
@@ -975,12 +975,12 @@ contract HostLifeCycleTest is Test {
             host_.receiveVotingResults(proposalIds[0], true, payload);
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid),
+                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), block.chainid),
+                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2)),
                 "0x0202",
                 "TGE salt should be updated after proposal"
             );

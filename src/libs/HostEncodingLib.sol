@@ -168,11 +168,10 @@ library HostEncodingLib {
     function encodeSalt(
         uint16[] memory contractIndices,
         bytes32[] memory salt,
-        uint chainId,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
-            return abi.encode(version, chainId, contractIndices, salt);
+            return abi.encode(version, contractIndices, salt);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
@@ -181,13 +180,13 @@ library HostEncodingLib {
     function decodeSalt(bytes memory payload)
         internal
         pure
-        returns (uint16[] memory contractIndices, bytes32[] memory salt, uint chainId)
+        returns (uint16[] memory contractIndices, bytes32[] memory salt)
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
-            (, chainId, contractIndices, salt) = abi.decode(payload, (uint16, uint, uint16[], bytes32[]));
-            return (contractIndices, salt, chainId);
+            (, contractIndices, salt) = abi.decode(payload, (uint16, uint16[], bytes32[]));
+            return (contractIndices, salt);
         } else {
             revert IHost.UnsupportedStructVersion();
         }

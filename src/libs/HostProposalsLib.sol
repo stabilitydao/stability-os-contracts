@@ -20,15 +20,20 @@ library HostProposalsLib {
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
+        HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
 
         require(p.daoUid != 0, IHost.IncorrectProposal());
-        require(p.status == ITokenomics.VotingStatus.VOTING_0, IHost.AlreadyReceived());
-        require(!p.validationRequired || p.validationStatus == HostLib.ValidationStatus.APPROVED_1, IHost.ProposalNotValidated());
+        require(header.status == ITokenomics.VotingStatus.VOTING_0, IHost.AlreadyReceived());
+        require(
+            !header.validationRequired || header.validationStatus == ITokenomics.ValidationStatus.APPROVED_1,
+            IHost.ProposalNotValidated()
+        );
 
-        p.status = succeed ? ITokenomics.VotingStatus.APPROVED_1 : ITokenomics.VotingStatus.REJECTED_2;
+        header.status = succeed ? ITokenomics.VotingStatus.APPROVED_1 : ITokenomics.VotingStatus.REJECTED_2;
+        p.proposalHeader = HostLib.packProposalHeader(header);
 
         if (succeed) {
-            ITokenomics.DAOAction action = p.action;
+            ITokenomics.DAOAction action = header.action;
 
             /// @dev Ensure that provided payload is equal to the original one
             require(p.payloadHash == HostUpdateLib.getPayloadHash(payload), IHost.IncorrectProposalPayload());
@@ -74,33 +79,43 @@ library HostProposalsLib {
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
 
         if (succeed) {
-            ITokenomics.DAOAction action = p.action;
+            HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
+            ITokenomics.DAOAction action = header.action;
             if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
                 HostUpdateBridgedLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
-                // todo other actions with cross-chain messages
+                // todo not-bridged actions with cross-chain messages
             }
         }
 
         return gas;
     }
 
+    /// @notice Approve or reject given proposal.
     function validateProposal(bytes32 proposalId, bool valid) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
+        HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
 
         require(p.daoUid != 0, IHost.IncorrectProposal());
-        require(p.validationRequired, IHost.ValidationNotRequired());
-        require(p.validationStatus == HostLib.ValidationStatus.NONE_0, IHost.AlreadyValidated());
 
-        p.validationStatus = valid ? HostLib.ValidationStatus.APPROVED_1 : HostLib.ValidationStatus.REJECTED_2;
+        /// @dev Only proposals that require a validation can be validated.
+        require(header.validationRequired, IHost.ValidationNotRequired());
+
+        /// @dev Any proposal can be validated only once. Re-validation is not allowed to simplify uses cases
+        require(header.validationStatus == ITokenomics.ValidationStatus.NONE_0, IHost.AlreadyValidated());
+
+        /// @dev Rejected proposals are automatically get rejected-status, no voting is allowed
+        header.validationStatus =
+            valid ? ITokenomics.ValidationStatus.APPROVED_1 : ITokenomics.ValidationStatus.REJECTED_2;
         if (!valid) {
-            p.status = ITokenomics.VotingStatus.REJECTED_2;
+            header.status = ITokenomics.VotingStatus.REJECTED_2;
+            p.proposalHeader = HostLib.packProposalHeader(header);
         }
 
-        // todo emit
+        emit IHost.ProposalValidated(proposalId, valid);
     }
 
     //region -------------------------------------- Update instantly or through proposals
@@ -229,21 +244,16 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update salts
-    function updateSalts(
-        string memory daoSymbol,
-        uint16[] memory contractIndices,
-        bytes32[] memory salt_,
-        uint chainId
-    ) external {
+    function updateSalts(string memory daoSymbol, uint16[] memory contractIndices, bytes32[] memory salt_) external {
         (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
-        HostUpdateLib._validateSalt(daoUid, contractIndices, salt_, chainId);
+        HostUpdateLib._validateSalt(daoUid, contractIndices, salt_);
 
         if (instantExecute) {
-            HostUpdateLib.updateSalt(daoUid, contractIndices, salt_, chainId);
+            HostUpdateLib.updateSalt(daoUid, contractIndices, salt_);
         } else {
             bytes memory payload =
-                HostEncodingLib.encodeSalt(contractIndices, salt_, chainId, HostEncodingLib.PAYLOAD_API_VERSION);
+                HostEncodingLib.encodeSalt(contractIndices, salt_, HostEncodingLib.PAYLOAD_API_VERSION);
             HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_SALT_7, payload);
         }
     }

@@ -244,13 +244,16 @@ library HostViewLib {
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalLocal memory local = $.proposals[proposalId];
+        HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(local.proposalHeader);
         return ITokenomics.Proposal({
-            action: local.action,
+            action: header.action,
             id: proposalId,
             daoSymbol: $.segment2[local.daoUid].daoSymbol,
-            created: local.created,
-            status: local.status,
-            payloadHash: local.payloadHash
+            created: header.created,
+            status: header.status,
+            payloadHash: local.payloadHash,
+            validationRequired: header.validationRequired,
+            validationStatus: header.validationStatus
         });
     }
 
@@ -326,10 +329,10 @@ library HostViewLib {
         return $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
     }
 
-    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32) {
+    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
-        return $.salt[HostLib.getKey(daoUid, contractIndex, chainId == 0 ? block.chainid : chainId)];
+        return $.salt[HostLib.getKey(daoUid, contractIndex)];
     }
     //endregion -------------------------------------- View
 

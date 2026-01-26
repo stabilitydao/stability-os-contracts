@@ -41,6 +41,8 @@ interface IHost {
     error ProposalNotValidated();
     error ValidationNotRequired();
     error AlreadyValidated();
+    error UnknownBridgedActionHash();
+    error UnknownBridgedActionKind();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -66,6 +68,8 @@ interface IHost {
     /// @param proposalUid Zero if updated instantly
     event DaoUnitDeleted(uint daoUid, string unitId, bytes32 proposalUid);
 
+    // todo replace daoSymbol by uid in events
+
     event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
     event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
     event DaoNamingUpdated(string daoSymbol, ITokenomics.DaoNames daoNames);
@@ -75,10 +79,12 @@ interface IHost {
     event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
-    event SaltUpdated(string daoSymbol, uint16[] contractIndices, bytes32[] saltValues, uint chain_);
+    event SaltUpdated(string daoSymbol, uint16[] contractIndices, bytes32[] saltValues);
     event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
+    event OnBridgedDaoAction(bytes32 actionHash, uint16 actionKind, uint32 srcEid, bytes32 guid_);
 
     error NotEnoughNativeProvided(uint requiredValue);
+    event ProposalValidated(bytes32 proposalId, bool valid);
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {
@@ -210,9 +216,8 @@ interface IHost {
     /// @notice Get salt to create contract with given index
     /// @param daoSymbol DAO symbol
     /// @param contractIndex Contract index, for exact values see ITokenomicsAddons.ContractIndices
-    /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
     /// @return Salt value used in CREATE2
-    function salt(string calldata daoSymbol, uint16 contractIndex, uint chainId) external view returns (bytes32);
+    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32);
 
     /// @notice Get implementation address for the given contract kind
     /// @param kind See IHost.ContractKinds
@@ -350,13 +355,7 @@ interface IHost {
     /// @notice Set salt to create contracts with given indices
     /// @param contractIndices Contract indices, for exact values see ITokenomicsAddons.ContractIndices
     /// @param salt_ Salt values for the corresponded contracts. The salt is used in CREATE2
-    /// @param chainId Chain ID where the contract will be deployed. Use 0 for current chain
-    function updateSalts(
-        string calldata daoSymbol,
-        uint16[] memory contractIndices,
-        bytes32[] memory salt_,
-        uint chainId // todo remove
-    ) external;
+    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, bytes32[] memory salt_) external;
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param daoSymbol DAO symbol

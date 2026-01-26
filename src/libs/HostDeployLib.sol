@@ -15,9 +15,7 @@ library HostDeployLib {
         string memory symbol_,
         address authority_
     ) internal returns (address) {
-        bytes32 seed = $.salt[
-            HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), block.chainid)
-        ];
+        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1))];
         return HostProxyFactoryLib.deployContract(
             seed, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode(token_, symbol_), authority_
         );
@@ -30,9 +28,7 @@ library HostDeployLib {
         string memory symbol_,
         address authority_
     ) internal returns (address) {
-        bytes32 seed = $.salt[
-            HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), block.chainid)
-        ];
+        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2))];
         return HostProxyFactoryLib.deployContract(
             seed, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode(token_, symbol_), authority_
         );
