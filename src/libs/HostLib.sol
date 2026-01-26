@@ -92,9 +92,9 @@ library HostLib {
         bytes32 id;
         uint daoUid;
 
-// payload is NOT stored on chain, we store only hash and emit event with payload
-//        /// @notice Proposal data as bytes. Actual data depends on {action}
-//        bytes payload;
+        // payload is NOT stored on chain, we store only hash and emit event with payload
+        //        /// @notice Proposal data as bytes. Actual data depends on {action}
+        //        bytes payload;
 
         /// @notice Hash of proposal payload
         bytes32 payloadHash;

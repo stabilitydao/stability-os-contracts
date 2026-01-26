@@ -12,7 +12,7 @@ import {IHost} from "../interfaces/IHost.sol";
 /// The library allows to decode structs of any version (old or current) correctly at any time.
 library HostEncodingLib {
     //region ----------------------- Versions of the structs
-    
+
     /// @notice Version of payload encoding API. Each payload contain version that were used to encode it.
     /// Payloads are emitted and can be used at the moment when current version of API is updated.
     /// Decode functions must support all previous versions of the structs.
@@ -195,22 +195,27 @@ library HostEncodingLib {
 
     function encodeBridgedAction(
         uint16 actionKind,
-        bytes calldata actionPayload,
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
-            return abi.encode(version, actionKind, actionPayload);
+            return abi.encode(version, actionKind, dstEids, actionPayloads);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
     }
 
-    function decodeBridgedAction(bytes memory payload) internal pure returns (uint16 actionKind, bytes calldata actionPayload) {
+    function decodeBridgedAction(bytes memory payload)
+        internal
+        pure
+        returns (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads)
+    {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
-            (, actionKind, actionPayload) = abi.decode(payload, (uint16, uint16, bytes));
-            return (actionKind, actionPayload);
+            (, actionKind, dstEids, actionPayloads) = abi.decode(payload, (uint16, uint16, uint32[], bytes[]));
+            return (actionKind, dstEids, actionPayloads);
         } else {
             revert IHost.UnsupportedStructVersion();
         }

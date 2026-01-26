@@ -46,13 +46,7 @@ interface IHost {
     event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string daoSymbol, string[] socials);
 
-    event Proposal(
-        uint daoUid,
-        ITokenomics.DAOAction action,
-        bytes32 proposalId,
-        bytes32 payloadHash,
-        bytes payload
-    );
+    event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
 
     /// @notice Units are updated via proposal or instantly
     event ProposalToUpdateDaoUnits(
@@ -139,20 +133,8 @@ interface IHost {
         /// @notice DAO symbol was changed
         DAO_RENAME_SYMBOL_1,
 
-        /// @notice DAO is bridged to another chain
-        DAO_BRIDGED_2,
-
-        /// @notice todo Unit is bridged to another chain
-        UNIT_BRIDGED_3,
-
-        /// @notice todo Life phase of the bridged DAO is changed to LIFE_CLIFF
-        SET_LIVE_CLIFF_4,
-
-        /// @notice todo DAO parameters are updated
-        UPDATE_SEGMENT2_5,
-
-        /// @notice todo DAO chains settings are updated
-        UPDATE_SALTS_6
+        /// @notice Send action hash to another chain
+        DAO_BRIDGED_ACTION_HASH_2
     }
 
     /// @notice All contracts deployed through HostProxyFactoryLib.deployContract
@@ -185,8 +167,6 @@ interface IHost {
     }
 
     //region ---------------------------------------- Read
-
-    // todo isSaltReserved
 
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory);
@@ -234,6 +214,20 @@ interface IHost {
     /// @notice Get implementation address for the given contract kind
     /// @param kind See IHost.ContractKinds
     function contractImplementation(uint kind) external view returns (address);
+
+    /// @notice Quote gas cost to process voting results from governance
+    /// @param proposalId Proposal unique id
+    /// @param succeed True if proposal is approved
+    /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
+    /// Can be 0 if proposal was rejected.
+    function quoteReceiveVotingResults(
+        bytes32 proposalId,
+        bool succeed,
+        bytes memory payload
+    ) external view returns (uint);
+
+    // todo approveProposal
+
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -355,20 +349,23 @@ interface IHost {
         string calldata daoSymbol,
         uint16[] memory contractIndices,
         bytes32[] memory salt_,
-        uint chainId
+        uint chainId // todo remove
     ) external;
 
-    /// @notice Create proposal to update bridged DAO version of the DAO on other chain
+    /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param daoSymbol DAO symbol
-    /// @param targetChainId Target chain ID where the bridged DAO is located
     /// @param actionKind Kind of action to perform on the bridged DAO, see BridgedActions enum
-    /// @param actionPayload Payload of the action to perform on the bridged DAO
+    /// @param dstEids LayerZero endpoint IDs of the chains with bridged DAO
+    /// @param actionPayloads Payload of the action to perform on the bridged DAO on proper {chain}
     function updateBridgedDao(
         string calldata daoSymbol,
-        uint targetChainId,
         uint16 actionKind,
-        bytes calldata actionPayload
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads
     ) external;
+
+    /// @notice Apply update action received from another chain
+    function applyUpdateAction(string calldata daoSymbol, bytes calldata actionPayload) external;
 
     //endregion ---------------------------------------- Update actions
 }

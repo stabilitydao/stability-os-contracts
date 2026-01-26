@@ -47,7 +47,8 @@ library HostCrossChainLib {
     /// @notice Send cross-chain notification about new DAO symbol registration.
     function sendMessageNewSymbol(string memory daoSymbol) internal {
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
-        _sendCrossChainMessage(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, payload);
+        address bridge = HostConfigLib.getHostChainSettings().hostBridge;
+        _sendCrossChainMessage(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, payload, bridge);
     }
 
     /// @notice Quote cost to register new DAO symbol
@@ -64,18 +65,22 @@ library HostCrossChainLib {
     /// @notice Send cross-chain notification about updating DAO symbol.
     function sendMessageUpdateSymbol(string memory oldSymbol, string memory newSymbol) internal {
         bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), oldSymbol, newSymbol);
-        _sendCrossChainMessage(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1, payload);
+        address bridge = HostConfigLib.getHostChainSettings().hostBridge;
+        _sendCrossChainMessage(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1, payload, bridge);
     }
 
     /// @notice Send cross-chain message about DAO event
-    function _sendCrossChainMessage(IHost.CrossChainMessages messageKind, bytes memory payload) internal {
-        address bridge = HostConfigLib.getHostChainSettings().hostBridge;
-        if (bridge != address(0)) {
-            uint totalFee = IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), payload);
+    function _sendCrossChainMessage(
+        IHost.CrossChainMessages messageKind,
+        bytes memory payload,
+        address bridge_
+    ) internal {
+        if (bridge_ != address(0)) {
+            uint totalFee = IHostBridge(bridge_).quoteSendMessageToAllChains(uint(messageKind), payload);
             require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));
-            console.log("_sendCrossChainMessage.bridge", bridge);
+            console.log("_sendCrossChainMessage.bridge", bridge_);
             console.log("_sendCrossChainMessage.host", address(this));
-            IHostBridge(bridge).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
+            IHostBridge(bridge_).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
         }
     }
 }

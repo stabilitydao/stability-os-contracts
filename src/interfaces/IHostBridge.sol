@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {MessagingFee} from "@layerzerolabs/oapp-evm-upgradeable/contracts/oapp/OAppUpgradeable.sol";
-
 interface IHostBridge {
     error UnsupportedMessageKind(uint messageKind);
     error ZeroGasLimit(uint messageKind);
@@ -13,32 +11,23 @@ interface IHostBridge {
     event RemoveEndpoint(uint32 endpointId);
     event SetGasLimit(uint messageKind, uint128 gasLimit);
 
-    /// @notice Quote the gas needed to pay for sending price message to the given destination chain endpoint ID.
-    /// @param dstEid_ Destination chain endpoint ID, see https://docs.layerzero.network/v2/concepts/glossary#endpoint-id
-    /// @param options_ Additional options for the message. Use OptionsBuilder.addExecutorLzReceiveOption()
+    /// @notice Quote total fee for sending message to the given chain
+    /// @param dstEid_ LayerZero endpoint ID of the destination chain
+    /// @param messageKind See IHost.CrossChainMessages
     /// @param message_ The message (encoded to bytes) to send to destination OS
-    /// @return fee A `MessagingFee` struct containing the calculated gas fee in either the native token or ZRO token.
-    function quoteSendMessage(
-        uint32 dstEid_,
-        bytes memory options_,
-        bytes memory message_
-    ) external view returns (MessagingFee memory fee);
+    /// @return fee Fee in native token for sending the message to the given chain
+    function quoteSendMessage(uint32 dstEid_, uint messageKind, bytes memory message_) external view returns (uint fee);
 
-    /// @notice Send message to a remote OSBridge on another chain.
-    /// @custom:restricted Only OS contracts can call this function
-    /// @param dstEid_ Destination chain endpoint ID, see https://docs.layerzero.network/v2/concepts/glossary#endpoint-id
-    /// @param options_ Additional options for the message. Use OptionsBuilder.addExecutorLzReceiveOption()
+    /// @notice Send message to a remote HostBridge on another chain.
+    /// @custom:restricted Only HOST contracts can call this function
+    /// @param dstEid_ LayerZero endpoint ID of the destination chain
+    /// @param messageKind See IHost.CrossChainMessages
     /// @param message_ The message (encoded to bytes) to send to destination OS
-    /// @param fee_ A `MessagingFee` struct containing the gas
-    function sendMessage(
-        uint32 dstEid_,
-        bytes memory options_,
-        bytes memory message_,
-        MessagingFee memory fee_
-    ) external;
+    /// @param fee Fee in native token for sending the message to the given chain
+    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external;
 
     /// @notice Quote total fee for sending message to all registered chains
-    /// @param messageKind See IOS.CrossChainMessages
+    /// @param messageKind See IHost.CrossChainMessages
     /// @param message_ The message (encoded to bytes) to send to destination OS
     /// @return totalFee Total fee in native token for sending the message to all registered chains
     function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external view returns (uint totalFee);

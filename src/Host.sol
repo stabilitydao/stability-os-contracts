@@ -12,6 +12,7 @@ import {HostViewLib} from "./libs/HostViewLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {HostProxyFactoryLib} from "./libs/HostProxyFactoryLib.sol";
+import {HostUpdateBridgedLib} from "./libs/HostUpdateBridgedLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
@@ -99,6 +100,15 @@ contract Host is IHost, Hosted {
     /// @inheritdoc IHost
     function contractImplementation(uint kind) external view returns (address) {
         return HostProxyFactoryLib.contractImplementation(kind);
+    }
+
+    /// @inheritdoc IHost
+    function quoteReceiveVotingResults(
+        bytes32 proposalId,
+        bool succeed,
+        bytes memory payload
+    ) external view returns (uint) {
+        return HostProposalsLib.quoteReceiveVotingResults(proposalId, succeed, payload);
     }
 
     //endregion -------------------------------------- View
@@ -243,7 +253,7 @@ contract Host is IHost, Hosted {
         string calldata daoSymbol,
         uint16[] memory contractIndices,
         bytes32[] memory salt_,
-        uint chainId
+        uint chainId // todo remove
     ) external {
         // restrictions are checked below
         HostProposalsLib.updateSalts(daoSymbol, contractIndices, salt_, chainId);
@@ -252,12 +262,17 @@ contract Host is IHost, Hosted {
     /// @inheritdoc IHost
     function updateBridgedDao(
         string calldata daoSymbol,
-        uint targetChainId, // todo array of chains
         uint16 actionKind,
-        bytes calldata actionPayload
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads
     ) external {
         // restrictions are checked below
-        HostProposalsLib.updateBridgedDao(daoSymbol, targetChainId, actionKind, actionPayload);
+        HostProposalsLib.updateBridgedDao(daoSymbol, actionKind, dstEids, actionPayloads);
+    }
+
+    /// @inheritdoc IHost
+    function applyUpdateAction(string calldata daoSymbol, bytes calldata actionPayload) external {
+        HostUpdateBridgedLib.applyUpdateAction(daoSymbol, actionPayload);
     }
     //endregion -------------------------------------- Update actions
 }

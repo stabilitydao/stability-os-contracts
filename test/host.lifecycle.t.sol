@@ -313,7 +313,6 @@ contract HostLifeCycleTest is Test {
             });
             units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
 
-
             vm.recordLogs();
             host_.updateUnits(daoData.symbol, units, metas);
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());

@@ -13,7 +13,7 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 
-/// @notice Basic data types and constants for OS system.
+/// @notice Data validation, proposal processing logic, updating logic
 library HostUpdateLib {
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -196,7 +196,9 @@ library HostUpdateLib {
         ITokenomics.DAOAction action,
         bytes32 payloadHash
     ) internal view returns (bytes32) {
-        return EfficientHashLib.hash(abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payloadHash));
+        return EfficientHashLib.hash(
+            abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payloadHash)
+        );
     }
 
     /// @notice Calculate hash of the proposal payload

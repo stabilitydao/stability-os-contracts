@@ -134,23 +134,26 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     /// @inheritdoc IHostBridge
     function quoteSendMessage(
         uint32 dstEid_,
-        bytes memory options_,
+        uint messageKind,
         bytes memory message_
-    ) external view returns (MessagingFee memory fee) {
-        return _quote(dstEid_, message_, options_, false);
+    ) external view returns (uint fee) {
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
+
+        uint128 _gasLimit = $.gasLimits[messageKind];
+        bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
+
+        return _quote(dstEid_, message_, options, false).nativeFee;
     }
 
     /// @inheritdoc IHostBridge
-    function sendMessage(
-        uint32 dstEid_,
-        bytes memory options_,
-        bytes memory message_,
-        MessagingFee memory fee_
-    ) external restricted {
-        // this function is restricted to be called by OS only
-        // the restriction is checked by AccessManager
+    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external restricted {
+        HostBridgeStorage storage $ = _getHostBridgeStorage();
 
-        _lzSend(dstEid_, message_, options_, fee_, payable(msg.sender));
+        uint128 _gasLimit = $.gasLimits[messageKind];
+        bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), _gasLimit, 0);
+        MessagingFee memory _fee = MessagingFee({nativeFee: fee, lzTokenFee: 0});
+
+        _lzSend(dstEid_, message_, options, _fee, payable(msg.sender));
 
         emit SendMessage(dstEid_, message_);
     }

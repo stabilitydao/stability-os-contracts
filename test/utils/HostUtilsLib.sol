@@ -577,10 +577,7 @@ library HostUtilsLib {
 
         for (uint i; i < logs.length; ++i) {
             if (logs[i].topics[0] == sig) {
-                (, , , , payload) = abi.decode(
-                    logs[i].data,
-                    (uint256, uint8, bytes32, bytes32, bytes)
-                );
+                (,,,, payload) = abi.decode(logs[i].data, (uint, uint8, bytes32, bytes32, bytes));
                 break;
             }
         }

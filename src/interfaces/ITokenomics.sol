@@ -186,10 +186,10 @@ interface ITokenomics {
         uint64 created;
         VotingStatus status;
 
-// We don't store proposal payload on chain, we just emit it. Hash is stored instead
-//        /// @notice Proposal data as bytes
-//        /// @dev Actual data depends on {action}
-//        bytes payload;
+        // We don't store proposal payload on chain, we just emit it. Hash is stored instead
+        //        /// @notice Proposal data as bytes
+        //        /// @dev Actual data depends on {action}
+        //        bytes payload;
 
         /// @notice Hash of proposal payload
         bytes32 payloadHash;

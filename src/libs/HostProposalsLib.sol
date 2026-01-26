@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {HostUpdateBridgedLib} from "./HostUpdateBridgedLib.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
+import {HostEncodingLib} from "./HostEncodingLib.sol";
+import {HostLib} from "./HostLib.sol";
+import {HostUpdateLib} from "./HostUpdateLib.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {IDAOData} from "../interfaces/IDAOData.sol";
-import {HostLib} from "./HostLib.sol";
-import {HostEncodingLib} from "./HostEncodingLib.sol";
-import {HostUpdateLib} from "./HostUpdateLib.sol";
-import {HostConfigLib} from "./HostConfigLib.sol";
 
 /// @notice Library with proposal related functions
 library HostProposalsLib {
@@ -18,7 +19,6 @@ library HostProposalsLib {
     /// Can be 0 if proposal was rejected.
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
 
         require(p.daoUid != 0, IHost.IncorrectProposal());
@@ -48,11 +48,42 @@ library HostProposalsLib {
                 HostUpdateLib.updateDaoParameters(p.daoUid, payload);
             } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
                 HostUpdateLib.updateSalt(p.daoUid, payload);
+            } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
+                (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
+                    HostEncodingLib.decodeBridgedAction(payload);
+                HostUpdateBridgedLib.updateBridgedDAO(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
                 // todo other actions
                 revert IHost.NotImplemented();
             }
         }
+    }
+
+    /// @notice Quote gas cost to process voting results from governance
+    /// @param proposalId Proposal unique id
+    /// @param succeed True if proposal is approved
+    /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
+    /// Can be 0 if proposal was rejected.
+    function quoteReceiveVotingResults(
+        bytes32 proposalId,
+        bool succeed,
+        bytes memory payload
+    ) external view returns (uint gas) {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        HostLib.ProposalLocal storage p = $.proposals[proposalId];
+
+        if (succeed) {
+            ITokenomics.DAOAction action = p.action;
+            if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
+                (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
+                    HostEncodingLib.decodeBridgedAction(payload);
+                HostUpdateBridgedLib.quoteUpdateBridgedDAO(p.daoUid, actionKind, dstEids, actionPayloads);
+            } else {
+                // todo other actions with cross-chain messages
+            }
+        }
+
+        return gas;
     }
 
     //region -------------------------------------- Update instantly or through proposals
@@ -200,20 +231,21 @@ library HostProposalsLib {
         }
     }
 
-    /// @notice Create proposal to update bridged DAO version of the DAO on other chain
+    /// @notice Create proposal to update bridged DAO version of the DAO on other chain(s)
     function updateBridgedDao(
         string calldata daoSymbol,
-        uint targetChainId,
         uint16 actionKind,
-        bytes calldata actionPayload
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads
     ) external {
         (, uint daoUid, bool instantExecute,) = _beforeUpdate(daoSymbol);
 
         require(!instantExecute, IHost.InstantExecuteNotAllowed());
 
-        bytes memory payload = HostEncodingLib.encodeBridgedAction(actionKind, actionPayload, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgedAction(
+            actionKind, dstEids, actionPayloads, HostEncodingLib.PAYLOAD_API_VERSION
+        );
         HostUpdateLib.proposeAction(daoUid, ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8, payload);
-
     }
 
     //endregion -------------------------------------- Update instantly or through proposals
