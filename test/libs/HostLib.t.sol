@@ -182,6 +182,7 @@ contract HostLibTest is Test {
             HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
                 action: ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6,
                 validationRequired: true,
+                votingRequired: false,
                 validationStatus: ITokenomics.ValidationStatus.REJECTED_2,
                 status: ITokenomics.VotingStatus.APPROVED_1,
                 created: type(uint64).max - 1
@@ -191,11 +192,12 @@ contract HostLibTest is Test {
             uint packed = HostLib.packProposalHeader(header);
             uint gasUsed = gas - gasleft();
             //console.log("gas used", gasUsed);
-            assertLt(gasUsed, 300, "packProposalHeader uses less than 300 gas");
+            assertLt(gasUsed, 350, "packProposalHeader uses less than 350 gas");
 
             HostLib.ProposalHeader memory unpacked = HostLib.unpackProposalHeader(packed);
             assertEq(uint8(unpacked.action), uint8(header.action), "action");
             assertEq(unpacked.validationRequired, header.validationRequired, "validationRequired");
+            assertEq(unpacked.votingRequired, header.votingRequired, "votingRequired");
             assertEq(uint8(unpacked.validationStatus), uint8(header.validationStatus), "validationStatus");
             assertEq(uint8(unpacked.status), uint8(header.status), "status");
             assertEq(unpacked.created, header.created, "created");
@@ -205,6 +207,7 @@ contract HostLibTest is Test {
             HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
                 action: ITokenomics.DAOAction.UPDATE_SOCIALS_1,
                 validationRequired: false,
+                votingRequired: true,
                 validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
                 status: ITokenomics.VotingStatus.VOTING_0,
                 created: 1
@@ -214,11 +217,12 @@ contract HostLibTest is Test {
             uint packed = HostLib.packProposalHeader(header);
             uint gasUsed = gas - gasleft();
             //console.log("gas used", gasUsed);
-            assertLt(gasUsed, 300, "packProposalHeader uses less than 300 gas");
+            assertLt(gasUsed, 350, "packProposalHeader uses less than 350 gas");
 
             HostLib.ProposalHeader memory unpacked = HostLib.unpackProposalHeader(packed);
             assertEq(uint8(unpacked.action), uint8(header.action), "action");
             assertEq(unpacked.validationRequired, header.validationRequired, "validationRequired");
+            assertEq(unpacked.votingRequired, header.votingRequired, "votingRequired");
             assertEq(uint8(unpacked.validationStatus), uint8(header.validationStatus), "validationStatus");
             assertEq(uint8(unpacked.status), uint8(header.status), "status");
             assertEq(unpacked.created, header.created, "created");

@@ -17,6 +17,15 @@ import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 library HostUpdateLib {
     using EnumerableSet for EnumerableSet.UintSet;
 
+    struct ActionParams {
+        /// @param action Action type of the proposal
+        ITokenomics.DAOAction action;
+        /// @param validationRequired True if proposal requires validation by admins before voting
+        bool validationRequired;
+        /// @param votingRequired True if proposal requires voting by DAO members
+        bool votingRequired;
+    }
+
     //region -------------------------------------- Actions
     function validate(
         HostLib.DaoDataSegment2 memory daoData2,
@@ -144,12 +153,37 @@ library HostUpdateLib {
 
     //region -------------------------------------- Proposal logic
 
+    /// @dev Trivial function to generate ActionParams struct.
+    /// All logic of values detection should be implemented on the caller side.
+    function getActionParams(
+        ITokenomics.DAOAction action_,
+        bool instantExecution,
+        bool validationRequired
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_, validationRequired: validationRequired, votingRequired: !instantExecution
+        });
+    }
+
+    /// @dev Generate ActionParams for bridged actions.
+    /// Logic of values detection is here.
+    function getBridgedActionParams(
+        ITokenomics.DAOAction action_,
+        uint16 bridgedActionKind_
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_,
+            validationRequired: bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5),
+            votingRequired: true
+        });
+    }
+
     /// @notice Create new proposal
     /// @param daoUid Unique id of the DAO
-    /// @param action Action type of the proposal
     /// @param payload Encoded proposal data.
+    /// @param params_ Parameters of the proposal action
     /// @return proposalId Id of the created proposal. It is unique across all DAOs
-    function proposeAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload) internal returns (bytes32) {
+    function proposeAction(uint daoUid, bytes memory payload, ActionParams memory params_) internal returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo check for initial chain
@@ -161,16 +195,17 @@ library HostUpdateLib {
         bytes32 payloadHash = getPayloadHash(payload);
 
         /// @dev Unique proposal id
-        bytes32 proposalId = _createProposalId(daoUid, action, payloadHash);
+        bytes32 proposalId = _createProposalId(daoUid, params_.action, payloadHash);
 
         HostLib.ProposalLocal storage proposal = $.proposals[proposalId];
         proposal.daoUid = daoUid;
 
         HostLib.ProposalHeader memory proposalHeader;
-        proposalHeader.action = action;
+        proposalHeader.action = params_.action;
         proposalHeader.created = uint64(block.timestamp);
         proposalHeader.status = ITokenomics.VotingStatus.VOTING_0;
-        proposalHeader.validationRequired = false; // todo
+        proposalHeader.validationRequired = params_.validationRequired;
+        proposalHeader.votingRequired = params_.votingRequired;
         proposal.proposalHeader = HostLib.packProposalHeader(proposalHeader);
 
         proposal.id = proposalId;
@@ -179,7 +214,7 @@ library HostUpdateLib {
         $.daoProposals[daoUid].push(proposalId);
 
         /// @dev Emit payload, don't store it on chain
-        emit IHost.Proposal(daoUid, action, proposalId, payloadHash, payload);
+        emit IHost.Proposal(daoUid, params_.action, proposalId, payloadHash, payload);
 
         return proposalId;
     }

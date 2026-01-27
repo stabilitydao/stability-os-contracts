@@ -9,6 +9,7 @@ import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostDeployLib} from "./HostDeployLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+// import {console} from "forge-std/console.sol";
 
 library HostViewLib {
     using SafeERC20 for IERC20;
@@ -253,6 +254,7 @@ library HostViewLib {
             status: header.status,
             payloadHash: local.payloadHash,
             validationRequired: header.validationRequired,
+            votingRequired: header.votingRequired,
             validationStatus: header.validationStatus
         });
     }

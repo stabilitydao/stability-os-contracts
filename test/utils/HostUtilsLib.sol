@@ -7,10 +7,11 @@ import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
-import {IHost, Host} from "../../src/Host.sol";
+import {Host} from "../../src/Host.sol";
 import {Authority} from "../../src/Authority.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockOsBridge} from "../mocks/MockOsBridge.sol";
@@ -84,7 +85,7 @@ library HostUtilsLib {
         return (IAuthority(authority), IHost(hostPredicted));
     }
 
-    //region ----------------------------- Create OS and DAO instances
+    //region ----------------------------- Create HOST and DAO instances
     function createHostInstance(Vm vm, address multisig) internal returns (IHost) {
         IHost.HostInitPayload memory init;
         return createHostInstance(vm, multisig, init);
@@ -583,6 +584,22 @@ library HostUtilsLib {
         }
 
         return payload;
+    }
+
+    function updateSocialsWithValidation(
+        Vm vm,
+        address multisig,
+        IHost host_,
+        string memory daoSymbol,
+        string[] memory socials
+    ) internal returns (bytes32 proposalId, bytes memory payload) {
+        vm.recordLogs();
+        host_.updateSocials(daoSymbol, socials);
+        payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        proposalId = HostUtilsLib.getLastProposalId(host_, daoSymbol);
+
+        vm.prank(multisig);
+        host_.validateProposal(proposalId, true, payload);
     }
 
     //endregion ----------------------------- Utils

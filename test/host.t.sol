@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
-import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -119,26 +120,26 @@ contract HostTest is Test {
     }
 
     function testAddLiveDaoBadPaths() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
 
         // -------------------- success - check balances
         {
-            address exchangeAsset = os.getChainSettings().exchangeAsset;
-            uint amount = os.getSettings().priceDao;
+            address exchangeAsset = host.getChainSettings().exchangeAsset;
+            uint amount = host.getSettings().priceDao;
 
             deal(exchangeAsset, MULTISIG, amount * 3);
 
             // user doesn't pay for creation DAO - ERC20InsufficientAllowance
             vm.expectRevert();
             vm.prank(MULTISIG);
-            os.addLiveDAO(daoOrigin);
+            host.addLiveDAO(daoOrigin);
 
             vm.prank(MULTISIG);
-            IERC20(exchangeAsset).approve(address(os), amount * 3);
+            IERC20(exchangeAsset).approve(address(host), amount * 3);
 
             vm.prank(MULTISIG);
-            os.addLiveDAO(daoOrigin);
+            host.addLiveDAO(daoOrigin);
 
             assertEq(IERC20(exchangeAsset).balanceOf(MULTISIG), amount * 2, "balance after 1st dao");
         }
@@ -146,11 +147,11 @@ contract HostTest is Test {
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "testdao"));
         vm.prank(MULTISIG);
-        os.addLiveDAO(daoOrigin);
+        host.addLiveDAO(daoOrigin);
 
         // -------------------- only verifier (restricted)
         vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this)));
-        os.addLiveDAO(daoOrigin);
+        host.addLiveDAO(daoOrigin);
 
         // -------------------- todo validation
     }
@@ -343,35 +344,220 @@ contract HostTest is Test {
     //endregion ----------------------------------- Update dao images
 
     //region ----------------------------------- Update socials
-    function testUpdateDaoSocialsInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        _dealAndApprove(os);
-        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+    function testUpdateDaoSocialsWithoutVoting() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
-            string[] memory socials = new string[](3);
-            socials[0] = "1";
+            string[] memory socials = new string[](4);
+            socials[0] = "updated-1";
             socials[1] = "2";
             socials[2] = "3";
-            os.updateSocials(dao.symbol, socials);
+            socials[3] = "4";
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.socials.length, 3, "socials length");
-            assertEq(daoAfter.socials[0], "1", "socials[0] updated");
+            vm.recordLogs();
+            host.updateSocials(dao.symbol, socials);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertTrue(p.validationRequired, "validation required for socials update");
+            assertFalse(p.votingRequired, "voting not required for socials update");
+            assertEq(uint(p.status), uint(ITokenomics.VotingStatus.VOTING_0), "no voting results");
+
+            IDAOData.DaoData memory daoBefore = host.getDAO(dao.symbol);
+            assertEq(daoBefore.socials.length, dao.socials.length, "proposal is not applied without validation");
+
+            vm.prank(MULTISIG);
+            host.validateProposal(proposalId, true, payload);
+
+            ITokenomics.Proposal memory pAfter = host.proposal(proposalId);
+            assertTrue(pAfter.validationStatus == ITokenomics.ValidationStatus.APPROVED_1, "proposal is approved");
+            assertEq(
+                uint(pAfter.status),
+                uint(ITokenomics.VotingStatus.VOTING_0),
+                "still no voting results (voting is NOT required)"
+            );
+
+            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            assertEq(daoAfter.socials.length, 4, "socials length");
+            assertEq(daoAfter.socials[0], "updated-1", "socials[0] updated");
             assertEq(daoAfter.socials[1], "2", "socials[1] updated");
             assertEq(daoAfter.socials[2], "3", "socials[2] updated");
+            assertEq(daoAfter.socials[3], "4", "socials[3] updated");
         }
 
         {
             string[] memory socials = new string[](2);
             socials[0] = "1111";
             socials[1] = ""; // (!) empty
-            os.updateSocials(dao.symbol, socials);
+            host.updateSocials(dao.symbol, socials);
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
-            assertEq(daoAfter.socials.length, 2, "socials length");
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertTrue(p.validationRequired, "validation required for socials update");
+            assertFalse(p.votingRequired, "voting not required for socials update");
+
+            vm.prank(MULTISIG);
+            host.validateProposal(proposalId, true, payload);
+
+            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            assertEq(daoAfter.socials.length, 2, "socials length 2");
             assertEq(daoAfter.socials[0], "1111", "socials[0] updated");
             assertEq(daoAfter.socials[1], "", "socials[1] updated");
+        }
+    }
+
+    function testUpdateDaoSocialsWithoutVotingBadPaths() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
+
+        // ------------------------------ Create proposal to update socials
+        string[] memory socials = new string[](1);
+        socials[0] = "1";
+
+        vm.recordLogs();
+        host.updateSocials(dao.symbol, socials);
+
+        bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
+
+        {
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertTrue(p.validationStatus == ITokenomics.ValidationStatus.NONE_0, "proposal is not validated yet");
+            assertEq(
+                uint(p.status), uint(ITokenomics.VotingStatus.VOTING_0), "no voting results yet (no voting is required)"
+            );
+        }
+
+        // ------------------------------ Reverts
+        /// @dev Voting not required and not allowed
+        vm.expectRevert(IHost.VotingNotRequired.selector);
+        vm.prank(MULTISIG);
+        host.receiveVotingResults(proposalId, true, payload);
+
+        /// @dev User not authorized to validate proposal
+        vm.expectRevert();
+        vm.prank(address(this));
+        host.validateProposal(proposalId, true, payload);
+
+        /// @dev Payload content cannot be changed
+        vm.expectRevert(IHost.IncorrectProposalPayload.selector);
+        vm.prank(MULTISIG);
+        host.validateProposal(proposalId, true, _modifyPayloadByte(payload, payload.length - 2, 0xFF));
+
+        // ------------------------------ Admin rejects proposal
+        vm.prank(MULTISIG);
+        host.validateProposal(proposalId, false, ""); // payload content is not required if rejected
+
+        IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+        assertEq(daoAfter.socials.length, dao.socials.length, "socials unchanged after rejection");
+
+        {
+            ITokenomics.Proposal memory pAfter = host.proposal(proposalId);
+            assertTrue(pAfter.validationStatus == ITokenomics.ValidationStatus.REJECTED_2, "proposal is rejected");
+            assertEq(
+                uint(pAfter.status),
+                uint(ITokenomics.VotingStatus.VOTING_0),
+                "no voting results yet (no voting is required)"
+            );
+        }
+    }
+
+    function testUpdateDaoSocialsWithVoting() public {
+        // ------------------------------ Create HOST
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
+
+        // ------------------------------ Create DAO
+        _dealAndApprove(host);
+        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host);
+
+        // ------------------------------ Move to seed phase to enable voting
+        _moveDaoToSeedPhase(host, daoData.symbol);
+        daoData = host.getDAO(daoData.symbol);
+
+        // ------------------------------ Update socials with proposal
+        string[] memory socials = new string[](3);
+        socials[0] = "https://a.aa/a1";
+        socials[1] = "https://b.bb/b2";
+        socials[2] = "https://c.cc/c3";
+
+        vm.recordLogs();
+        host.updateSocials(daoData.symbol, socials);
+
+        bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        bytes32 proposalId = HostUtilsLib.getLastProposalId(host, daoData.symbol);
+
+        // ------------------------------ Check proposal status before validation and voting
+        {
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertTrue(p.validationRequired, "validation required for socials update");
+            assertTrue(p.votingRequired, "voting required for socials update");
+            assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.NONE_0), "no validation yet");
+            assertEq(uint(p.status), uint(ITokenomics.VotingStatus.VOTING_0), "no voting yet");
+        }
+
+        // ------------------------------ Voting before validation not allowed
+        vm.expectRevert(IHost.ProposalNotValidated.selector);
+        vm.prank(MULTISIG);
+        host.receiveVotingResults(proposalId, true, payload);
+
+        // ------------------------------ Admin validates proposal
+        vm.prank(MULTISIG);
+        host.validateProposal(proposalId, true, payload);
+
+        // ------------------------------ Approved by voting
+        {
+            uint snapshot = vm.snapshotState();
+
+            /// @dev receiveVotingResults is restricted
+            vm.expectRevert();
+            vm.prank(address(this));
+            host.receiveVotingResults(proposalId, true, payload);
+
+            /// @dev Payload content cannot be changed
+            vm.expectRevert(IHost.IncorrectProposalPayload.selector);
+            vm.prank(MULTISIG);
+            host.receiveVotingResults(proposalId, true, _modifyPayloadByte(payload, payload.length - 1, 0xFF));
+
+            vm.prank(MULTISIG);
+            host.receiveVotingResults(proposalId, true, payload);
+
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.APPROVED_1), "validated");
+            assertEq(uint(p.status), uint(ITokenomics.VotingStatus.APPROVED_1), "approved in voting");
+
+            IDAOData.DaoData memory daoAfter = host.getDAO(daoData.symbol);
+            assertEq(daoAfter.socials.length, 3, "socials length");
+            assertEq(daoAfter.socials[0], "https://a.aa/a1", "socials[0] updated");
+            assertEq(daoAfter.socials[1], "https://b.bb/b2", "socials[1] updated");
+            assertEq(daoAfter.socials[2], "https://c.cc/c3", "socials[2] updated");
+
+            vm.revertToState(snapshot);
+        }
+
+        // ------------------------------ Rejected by voting
+        {
+            uint snapshot = vm.snapshotState();
+
+            vm.prank(MULTISIG);
+            host.receiveVotingResults(proposalId, false, payload);
+
+            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.APPROVED_1), "validated");
+            assertEq(uint(p.status), uint(ITokenomics.VotingStatus.REJECTED_2), "rejected in voting");
+
+            IDAOData.DaoData memory daoAfter = host.getDAO(daoData.symbol);
+
+            assertEq(daoAfter.socials.length, daoData.socials.length, "socials unchanged after rejection");
+
+            vm.revertToState(snapshot);
         }
     }
 
@@ -753,5 +939,111 @@ contract HostTest is Test {
         _dealAndApprove(os_, address(this));
     }
 
+    function _setupAccessManager(IHost host) internal {
+        address authority = IAccessManaged(address(host)).authority();
+
+        // --------------------------------- For simplicity use same role 5555 for ALL restricted functions in this set of tests
+        bytes4[] memory selectors = new bytes4[](9);
+        selectors[0] = bytes4(IHost.setSettings.selector);
+        selectors[1] = bytes4(IHost.setChainSettings.selector);
+        selectors[2] = bytes4(IHost.addLiveDAO.selector);
+        selectors[3] = bytes4(IHost.refundFor.selector);
+        selectors[4] = bytes4(IHost.onReceiveCrossChainMessage.selector);
+        selectors[5] = bytes4(IHost.receiveVotingResults.selector);
+        selectors[6] = bytes4(IHost.validateProposal.selector);
+        selectors[7] = bytes4(IHost.setContractImplementation.selector);
+        selectors[8] = bytes4(IHost.deployProxy.selector);
+
+        vm.prank(MULTISIG);
+        IAccessManager(address(authority)).setTargetFunctionRole(address(host), selectors, 5555);
+
+        vm.prank(MULTISIG);
+        IAccessManager(address(authority)).grantRole(5555, MULTISIG, 0);
+    }
+
+    function _moveDaoToSeedPhase(IHost host_, string memory daoSymbol) internal {
+        address asset = host_.getChainSettings().exchangeAsset;
+
+        IDAOData.DaoData memory daoData = host_.getDAO(daoSymbol);
+        skip(7 days);
+
+        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
+            name: "DAO Factory",
+            status: IDAOMetadata.UnitStatus.BUILDING_1,
+            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+            revenueShare: 100,
+            ui: new IDAOMetadata.UnitUiLink[](0),
+            emoji: "",
+            api: new string[](0)
+        });
+
+        {
+            IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
+            assertGe(tasks.length, 2, "at least 2 unsolved tasks");
+            //HostUtilsLib.printTasks(tasks);
+
+            // deployer drew token logotypes
+            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+                seedToken: "/seedAliens.png", tgeToken: "", token: "/aliens.png", xToken: "", daoToken: ""
+            });
+            host_.updateImages(daoData.symbol, images);
+
+            // units project
+            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            metas[0] = unitMetadata0;
+            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            host_.updateUnits(daoData.symbol, units, metas);
+
+            // registered socials
+            string[] memory socials = new string[](2);
+            socials[0] = "https://a.aa/a";
+            socials[1] = "https://b.bb/b";
+
+            vm.recordLogs();
+            host_.updateSocials(daoData.symbol, socials);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+
+            vm.prank(MULTISIG);
+            host_.validateProposal(proposalId, true, payload);
+        }
+
+        // ------------------------------ fix funding
+        {
+            ITokenomics.Funding memory funding = ITokenomics.Funding({
+                fundingType: daoData.funding[0].fundingType,
+                start: daoData.funding[0].start,
+                end: daoData.funding[0].end,
+                minRaise: daoData.funding[0].minRaise,
+                maxRaise: 90_000e18,
+                raised: daoData.funding[0].raised,
+                claim: daoData.funding[0].claim
+            });
+            host_.updateFunding(daoData.symbol, funding);
+        }
+
+        skip(24 days);
+
+        // ------------------------------ change phase to seed
+        host_.changePhase(daoData.symbol);
+
+        // ------------------------------ setup seed token, refresh daoData
+        {
+            daoData = host_.getDAO(daoData.symbol);
+            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
+        }
+        console.log("_moveDaoToSeedPhase.2");
+    }
+
+    /// @dev A function to modify i-th byte in payload for test purpose
+    function _modifyPayloadByte(bytes memory payload, uint index, bytes1 value) internal pure returns (bytes memory) {
+        bytes memory out = new bytes(payload.length);
+        for (uint i; i < payload.length; i++) {
+            out[i] = payload[i];
+        }
+        out[index] = value;
+        return out;
+    }
     //endregion ----------------------------------- Internal logic
 }

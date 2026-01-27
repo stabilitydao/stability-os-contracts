@@ -188,8 +188,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function validateProposal(bytes32 proposalId, bool valid) external restricted {
-        HostProposalsLib.validateProposal(proposalId, valid);
+    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external restricted {
+        HostProposalsLib.validateProposal(proposalId, valid, payload);
     }
 
     /// @inheritdoc IHost

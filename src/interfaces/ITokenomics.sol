@@ -185,6 +185,10 @@ interface ITokenomics {
         /// I.e. proposed salt is already used on the target chain
         bool validationRequired;
 
+        /// @dev True if proposal requires voting by DAO members = instant update.
+        /// Some proposals cannot be applied instantly because they require validation by admin
+        bool votingRequired;
+
         /// @dev Status of proposal validation by admin
         ITokenomics.ValidationStatus validationStatus;
 

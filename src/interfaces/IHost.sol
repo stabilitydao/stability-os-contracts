@@ -43,6 +43,7 @@ interface IHost {
     error AlreadyValidated();
     error UnknownBridgedActionHash();
     error UnknownBridgedActionKind();
+    error VotingNotRequired();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -287,7 +288,9 @@ interface IHost {
     /// @notice Approve/reject proposal. This function is called by backed only for proposals that require validation.
     /// @param proposalId Proposal unique id
     /// @param valid True if proposal is approved, false if the proposal is rejected
-    function validateProposal(bytes32 proposalId, bool valid) external;
+    /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
+    /// Can be 0 if the proposal requires voting or is rejected.
+    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external;
 
     /// @notice Refund funding to the SEED/TGE token holders if funding round failed
     function refund(string calldata daoSymbol) external;

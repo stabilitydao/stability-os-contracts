@@ -14,7 +14,7 @@ import {MockOsBridge} from "./mocks/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 
 contract HostLifeCycleTest is Test {
     address internal immutable MULTISIG;
@@ -124,7 +124,7 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            host_.updateSocials(daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
 
             {
                 IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
@@ -200,15 +200,11 @@ contract HostLifeCycleTest is Test {
             socials[1] = "https://b.bb/b2";
             socials[2] = "https://c.cc/c3";
 
-            vm.recordLogs();
-            host_.updateSocials(daoData.symbol, socials);
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
-
-            bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
-            assertEq(proposalIds.length, 1, "one proposal should be created");
+            (bytes32 proposalId, bytes memory payload) =
+                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true, payload);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             IDAOData.DaoData memory daoAfter = host_.getDAO("ALIENS");
             assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
@@ -219,11 +215,11 @@ contract HostLifeCycleTest is Test {
 
             vm.expectRevert(IHost.AlreadyReceived.selector);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true, payload);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             vm.expectRevert(IHost.IncorrectProposal.selector);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(bytes32(uint(proposalIds[0]) + 1), true, payload);
+            host_.receiveVotingResults(bytes32(uint(proposalId) + 1), true, payload);
         }
 
         // ------------------------------ Second seeder
@@ -543,7 +539,8 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            host_.updateSocials(daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+
             uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
@@ -676,7 +673,8 @@ contract HostLifeCycleTest is Test {
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
-            host_.updateSocials(daoData.symbol, socials);
+
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
 
             uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
@@ -785,11 +783,8 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a11";
             socials[1] = "https://b.bb/b22";
 
-            vm.recordLogs();
-            host_.updateSocials(daoData.symbol, socials);
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
-
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+            (bytes32 proposalId, bytes memory payload) =
+                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
 
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, false, payload);
@@ -880,7 +875,7 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            host_.updateSocials(daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
 
             ITokenomics.Funding memory funding = ITokenomics.Funding({
                 fundingType: daoData.funding[0].fundingType,
@@ -968,11 +963,10 @@ contract HostLifeCycleTest is Test {
             host_.updateSalts(daoData.symbol, indices, salts);
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
-            bytes32[] memory proposalIds = host_.proposalIds(daoData.symbol, 0, 1);
-            assertEq(proposalIds.length, 1, "one proposal should be created");
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalIds[0], true, payload);
+            host_.receiveVotingResults(proposalId, true, payload);
 
             assertEq(
                 host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
@@ -1131,5 +1125,9 @@ contract HostLifeCycleTest is Test {
 
     function _getAuthority(IHost host) internal view returns (IAuthority) {
         return IAuthority(IAccessManaged(address(host)).authority());
+    }
+
+    function _keepConsoleInImport() internal pure {
+        console.log("hide warning about removing console from imports");
     }
 }

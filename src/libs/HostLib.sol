@@ -87,6 +87,9 @@ library HostLib {
         /// I.e. proposed salt is already used on the target chain
         bool validationRequired;
 
+        /// @dev True if proposal requires voting. Some kind of proposals cannot be instant because they require validation
+        bool votingRequired;
+
         /// @dev Status of proposal validation by admin
         ITokenomics.ValidationStatus validationStatus;
 
@@ -285,8 +288,8 @@ library HostLib {
     /// @notice Pack ProposalHeader into single uint
     function packProposalHeader(ProposalHeader memory header) internal pure returns (uint h) {
         h = uint(uint8(header.action)) | (header.validationRequired ? (1 << 8) : 0)
-            | (uint(uint8(header.validationStatus)) << 9) | (uint(uint8(header.status)) << 17)
-            | (uint(header.created) << 25);
+            | (header.votingRequired ? (1 << 9) : 0) | (uint(uint8(header.validationStatus)) << 10)
+            | (uint(uint8(header.status)) << 18) | (uint(header.created) << 26);
     }
 
     /// @notice Unpack ProposalHeader from single uint
@@ -294,10 +297,12 @@ library HostLib {
         return ProposalHeader({
             action: ITokenomics.DAOAction(uint8(h)),
             validationRequired: ((h >> 8) & 1) != 0,
-            validationStatus: ITokenomics.ValidationStatus(uint8(h >> 9)),
-            status: ITokenomics.VotingStatus(uint8(h >> 17)),
-            created: uint64(h >> 25)
+            votingRequired: ((h >> 9) & 1) != 0,
+            validationStatus: ITokenomics.ValidationStatus(uint8(h >> 10)),
+            status: ITokenomics.VotingStatus(uint8(h >> 18)),
+            created: uint64(h >> 26)
         });
     }
+
     //endregion -------------------------------------- Internal utils
 }

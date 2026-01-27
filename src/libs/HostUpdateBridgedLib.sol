@@ -80,7 +80,7 @@ library HostUpdateBridgedLib {
             } else if (action.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
                 // todo
             } else if (action.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
-                // todo
+                // todo _updateSalts()
             } else {
                 revert IHost.UnknownBridgedActionKind();
             }
