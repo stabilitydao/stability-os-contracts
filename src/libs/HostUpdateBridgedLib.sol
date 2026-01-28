@@ -76,7 +76,7 @@ library HostUpdateBridgedLib {
         require(header.actionKind != 0, IHost.UnknownBridgedActionHash());
         require(!header.applied, IHost.BridgedActionAlreadyApplied());
 
-        if (header.actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
+        if (header.actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
             // todo: may be the DAO is NOT registered yet at this point, we need to check daoSymbol
 
             // todo register and bridge the DAO
@@ -113,8 +113,8 @@ library HostUpdateBridgedLib {
 
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
-            if (actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
-                // todo
+            if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
+                // todo: ensure that at least 1 unit exist revert otherwise
             } else if (actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
                 // todo
             } else if (actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
@@ -123,6 +123,12 @@ library HostUpdateBridgedLib {
                 HostEncodingLib.decodeDaoParameters(listPayloads[i]);
             } else if (actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
                 HostEncodingLib.decodeSalt(listPayloads[i]);
+            } else if (actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
+                // todo
+            } else if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
+                // todo
+            } else if (actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
+                // todo
             } else {
                 revert IHost.UnknownBridgedActionKind();
             }

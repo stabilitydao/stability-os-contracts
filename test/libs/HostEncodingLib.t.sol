@@ -86,11 +86,7 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.encodeSalt(contractIndices, salt, version);
     }
 
-    function _decodeSalt(bytes memory payload)
-        public
-        pure
-        returns (uint16[] memory contractIndices, bytes32[] memory salt)
-    {
+    function _decodeSalt(bytes memory payload) public pure returns (uint16[] memory contractIndices, bytes32[] memory salt) {
         return HostEncodingLib.decodeSalt(payload);
     }
 
@@ -103,11 +99,7 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.encodeBridgedAction(actionKind, dstEids, actionPayloads, version);
     }
 
-    function _decodeBridgedAction(bytes memory payload)
-        public
-        pure
-        returns (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads)
-    {
+    function _decodeBridgedAction(bytes memory payload) public pure returns (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) {
         return HostEncodingLib.decodeBridgedAction(payload);
     }
     //endregion -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
@@ -412,6 +404,8 @@ contract HostEncodingLibTest is Test {
         assertEq(retContractIndices[1], contractIndices[1], "contractIndices[1]");
         assertEq(retSalt[0], salt[0], "salt[0]");
         assertEq(retSalt[1], salt[1], "salt[1]");
+
+
     }
 
     function testEncodeBridgedAction() public view {
@@ -434,15 +428,13 @@ contract HostEncodingLibTest is Test {
             payloads[1] = this._encodeDaoParametersWrapper(a, HostEncodingLib.PAYLOAD_API_VERSION); // some other payload
         }
 
-        bytes memory encA = this._encodeBridgedAction(
-            uint16(IHost.BridgedActions.DAO_BRIDGED_1), dstEids, payloads, HostEncodingLib.PAYLOAD_API_VERSION
-        );
+        bytes memory encA = this._encodeBridgedAction(uint16(IHost.BridgedActions.BRIDGE_DAO_1), dstEids, payloads, HostEncodingLib.PAYLOAD_API_VERSION);
 
         (uint16 actionKind, uint32[] memory eids, bytes[] memory actionPayloads) = this._decodeBridgedAction(encA);
 
         assertEq(eids.length, 2, "eids length");
         assertEq(actionPayloads.length, 2, "payloads length");
-        assertEq(actionKind, uint16(IHost.BridgedActions.DAO_BRIDGED_1), "actionKind");
+        assertEq(actionKind, uint16(IHost.BridgedActions.BRIDGE_DAO_1), "actionKind");
         assertEq(eids[0], dstEids[0], "eid0");
         assertEq(eids[1], dstEids[1], "eid1");
         assertEq(keccak256(actionPayloads[0]), keccak256(payloads[0]), "payload0");

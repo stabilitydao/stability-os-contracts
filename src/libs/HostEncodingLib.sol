@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
+import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// Tokenomic uses some structs.
@@ -20,7 +21,7 @@ library HostEncodingLib {
 
     //endregion ----------------------- Versions of the structs
 
-    //region ----------------------- Decode / Encode structs with versions
+    //region ----------------------- Decode / Encode update-actions structs with versions
 
     /// @notice Encode DaoImages struct of the given version. Version is supported explicitly to simplify testing
     function encodeDaoImages(ITokenomics.DaoImages memory data, uint16 version) internal pure returns (bytes memory) {
@@ -219,8 +220,31 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
-    //endregion ----------------------- Decode / Encode structs with versions
+    //endregion ----------------------- Decode / Encode update-actions structs with versions
 
+    //region ----------------------- Decode / Encode bridged-actions structs with versions
+
+    //endregion ----------------------- Decode / Encode bridged-actions structs with versions
+    /// @notice Encode BridgeDaoParams struct of the given version. Version is supported explicitly to simplify testing
+    function encodeBridgeDaoParams(IBridgedActions.BridgeDaoParams memory data, uint16 version) internal pure returns (bytes memory) {
+        if (version == 1) {
+            return abi.encode(version, data.name, data.unitIds, data.daoParameters, data.chainSettings, data.saltContractIndices, data.salts);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeBridgeDaoParams(bytes memory payload) internal pure returns (IBridgedActions.BridgeDaoParams memory dest) {
+        (uint16 version) = abi.decode(payload, (uint16));
+        if (version == 1) {
+// todo
+//            (, dest.seedToken, dest.tgeToken, dest.token, dest.xToken, dest.daoToken) =
+//            abi.decode(payload, (uint16, string, string, string, string, string));
+            return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
     //region ----------------------- Decode / Encode data without versions
 
     function decodeSocials(bytes memory payload) internal pure returns (string[] memory) {

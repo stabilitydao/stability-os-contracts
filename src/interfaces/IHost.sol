@@ -162,8 +162,8 @@ interface IHost {
     enum BridgedActions {
         UNKNOWN_0,
 
-        /// @notice Deploy bridged version of the DAO on another chain
-        DAO_BRIDGED_1,
+        /// @notice Deploy bridged version of the DAO on another chain without deployments (stage before LIVE)
+        BRIDGE_DAO_1,
 
         /// @notice Add bridged version of the unit to another chain
         SET_BRIDGED_UNIT_2,
@@ -175,7 +175,16 @@ interface IHost {
         SET_DAO_PARAMS_4,
 
         /// @notice Set salt values for bridged contracts on another chain
-        SET_SALTS_5
+        SET_SALTS_5,
+
+        /// @notice Update DAO chain-related params on another chain
+        UPDATE_CHAIN_SETTINGS_6,
+
+        /// @notice Deploy bridged version of the DAO on another chain with deployments (stage = LIVE)
+        BRIDGE_DAO_WITH_DEPLOYMENTS_7,
+
+        /// @notice Deploy bridged version of token (DAO was bridged before)
+        DEPLOYMENTS_8
     }
 
     //region ---------------------------------------- Read
