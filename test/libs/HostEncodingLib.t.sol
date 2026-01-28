@@ -13,7 +13,7 @@ contract HostEncodingLibTest is Test {
     //region -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
     function _encodeDaoImagesWrapper(
         ITokenomics.DaoImages memory data,
-        uint8 version
+        uint16 version
     ) public pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoImages(data, version);
     }
@@ -24,7 +24,7 @@ contract HostEncodingLibTest is Test {
 
     function _encodeUnitsWrapper(
         IDAOData.UnitDataInput[] memory data,
-        uint8 version
+        uint16 version
     ) public pure returns (bytes memory) {
         return HostEncodingLib.encodeUnits(data, version);
     }
@@ -33,7 +33,7 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.decodeUnits(payload);
     }
 
-    function _encodeFundingWrapper(ITokenomics.Funding memory data, uint8 version) public pure returns (bytes memory) {
+    function _encodeFundingWrapper(ITokenomics.Funding memory data, uint16 version) public pure returns (bytes memory) {
         return HostEncodingLib.encodeFunding(data, version);
     }
 
@@ -43,7 +43,7 @@ contract HostEncodingLibTest is Test {
 
     function _encodeVestingWrapper(
         ITokenomics.Vesting[] memory data,
-        uint8 version
+        uint16 version
     ) public pure returns (bytes memory) {
         return HostEncodingLib.encodeVesting(data, version);
     }
@@ -54,7 +54,7 @@ contract HostEncodingLibTest is Test {
 
     function _encodeDaoParametersWrapper(
         ITokenomics.DaoParameters memory data,
-        uint8 version
+        uint16 version
     ) public pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoParameters(data, version);
     }
@@ -69,13 +69,46 @@ contract HostEncodingLibTest is Test {
 
     function _encodeDaoNamesWrapper(
         ITokenomics.DaoNames memory data,
-        uint8 version
+        uint16 version
     ) public pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoNames(data, version);
     }
 
     function _decodeDaoNamesWrapper(bytes memory payload) public pure returns (ITokenomics.DaoNames memory data) {
         return HostEncodingLib.decodeDaoNames(payload);
+    }
+
+    function _encodeSalt(
+        uint16[] memory contractIndices,
+        bytes32[] memory salt,
+        uint16 version
+    ) public pure returns (bytes memory) {
+        return HostEncodingLib.encodeSalt(contractIndices, salt, version);
+    }
+
+    function _decodeSalt(bytes memory payload)
+        public
+        pure
+        returns (uint16[] memory contractIndices, bytes32[] memory salt)
+    {
+        return HostEncodingLib.decodeSalt(payload);
+    }
+
+    function _encodeBridgedAction(
+        uint16 actionKind,
+        uint32[] memory dstEids,
+        bytes[] memory actionPayloads,
+        uint16 version
+    ) public pure returns (bytes memory) {
+        return HostEncodingLib.encodeBridgedAction(actionKind, dstEids, actionPayloads, version);
+    }
+
+    function _decodeBridgedAction(bytes memory payload)
+        public
+        pure
+        returns (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads)
+    {
+        return HostEncodingLib.decodeBridgedAction(payload);
     }
     //endregion -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
 
@@ -358,5 +391,61 @@ contract HostEncodingLibTest is Test {
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         this._decodeDaoNamesWrapper(encWrongVersionPayload);
+    }
+
+    function testEncodeSalt() public view {
+        uint16[] memory contractIndices = new uint16[](2);
+        contractIndices[0] = 1;
+        contractIndices[1] = 2;
+
+        bytes32[] memory salt = new bytes32[](2);
+        salt[0] = "0x111";
+        salt[1] = "0x222";
+
+        bytes memory encA = this._encodeSalt(contractIndices, salt, HostEncodingLib.PAYLOAD_API_VERSION);
+
+        (uint16[] memory retContractIndices, bytes32[] memory retSalt) = this._decodeSalt(encA);
+
+        assertEq(retContractIndices.length, 2, "contractIndices length");
+        assertEq(retSalt.length, 2, "salt length");
+        assertEq(retContractIndices[0], contractIndices[0], "contractIndices[0]");
+        assertEq(retContractIndices[1], contractIndices[1], "contractIndices[1]");
+        assertEq(retSalt[0], salt[0], "salt[0]");
+        assertEq(retSalt[1], salt[1], "salt[1]");
+    }
+
+    function testEncodeBridgedAction() public view {
+        uint32[] memory dstEids = new uint32[](2);
+        dstEids[0] = 3000;
+        dstEids[1] = 5000;
+
+        bytes[] memory payloads = new bytes[](2);
+        {
+            ITokenomics.DaoParameters memory a;
+            a.vePeriod = 100;
+            a.pvpFee = 10;
+            a.minPower = 1000;
+            a.ttBribe = 1;
+            a.recoveryShare = 2;
+            a.proposalThreshold = 50;
+            ITokenomics.DaoNames memory b = ITokenomics.DaoNames({symbol: "NA", name: "NameA"});
+
+            payloads[0] = this._encodeDaoNamesWrapper(b, HostEncodingLib.PAYLOAD_API_VERSION); //some payload
+            payloads[1] = this._encodeDaoParametersWrapper(a, HostEncodingLib.PAYLOAD_API_VERSION); // some other payload
+        }
+
+        bytes memory encA = this._encodeBridgedAction(
+            uint16(IHost.BridgedActions.DAO_BRIDGED_1), dstEids, payloads, HostEncodingLib.PAYLOAD_API_VERSION
+        );
+
+        (uint16 actionKind, uint32[] memory eids, bytes[] memory actionPayloads) = this._decodeBridgedAction(encA);
+
+        assertEq(eids.length, 2, "eids length");
+        assertEq(actionPayloads.length, 2, "payloads length");
+        assertEq(actionKind, uint16(IHost.BridgedActions.DAO_BRIDGED_1), "actionKind");
+        assertEq(eids[0], dstEids[0], "eid0");
+        assertEq(eids[1], dstEids[1], "eid1");
+        assertEq(keccak256(actionPayloads[0]), keccak256(payloads[0]), "payload0");
+        assertEq(keccak256(actionPayloads[1]), keccak256(payloads[1]), "payload1");
     }
 }

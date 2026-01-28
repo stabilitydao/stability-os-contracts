@@ -143,7 +143,7 @@ library HostViewLib {
 
         $.segment2[daoUid].phase = newPhase;
 
-        emit IHost.DaoPhaseChanged(daoSymbol, newPhase);
+        emit IHost.DaoPhaseChanged(daoUid, newPhase);
     }
 
     //region -------------------------------------- View

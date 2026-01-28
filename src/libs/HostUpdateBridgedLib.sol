@@ -5,29 +5,37 @@ import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
 import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostLib} from "./HostLib.sol";
+import {HostEncodingLib} from "./HostEncodingLib.sol";
 
 /// @notice Bridged DAO updating logic
 library HostUpdateBridgedLib {
-    /// @notice Proposal to update bridged DAO on other chains is accepted => send payload hashes to bridged DAO hosts
+    //region ----------------------------------------- Public
+    /// @dev Proposal to update bridged DAO on other chains is accepted => send payload hashes to bridged DAO hosts
+    /// @param daoUid UID of the DAO to update
+    /// @param actionKind Kind of the action to perform on bridged DAO hosts
+    /// @param dstEids List of destination endpoint IDs to send the action to
+    /// @param listPayloads List of payloads for the action to perform on dstEids-chains
     function sendBridgedAction(
         uint daoUid,
         uint16 actionKind,
         uint32[] memory dstEids,
-        bytes[] memory payloads
+        bytes[] memory listPayloads
     ) external {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
 
+        // --------------------- send payload-hashes to each bridged DAO host
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
-            bytes32 hash = EfficientHashLib.hash(payloads[i]);
+            bytes32 hash = EfficientHashLib.hash(listPayloads[i]);
             bytes memory payload = abi.encode(uint16(actionKind), daoUid, hash);
             HostCrossChainLib._sendCrossChainMessage(
                 IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2, payload, bridge
             );
 
-            // todo emit
+            emit IHost.BridgedActionSent(daoUid, actionKind, dstEids[i], hash);
         }
     }
 
@@ -78,12 +86,69 @@ library HostUpdateBridgedLib {
             } else if (action.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
                 // todo
             } else if (action.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
-                // todo
+                _updateDaoParams(daoUid, actionPayload);
             } else if (action.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
-                // todo _updateSalts()
+                _updateSalts(daoUid, actionPayload);
             } else {
                 revert IHost.UnknownBridgedActionKind();
             }
         }
     }
+
+    /// @notice Ensure that all payloads can be decoded correctly for the given action kind
+    function verify(uint16 actionKind, uint32[] memory dstEids, bytes[] memory listPayloads) internal view {
+        require(dstEids.length == listPayloads.length, IHost.IncorrectArrayLengths());
+
+        uint len = dstEids.length;
+        for (uint i; i < len; i++) {
+            if (actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
+                // todo
+            } else if (actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
+                // todo
+            } else if (actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
+                // todo
+            } else if (actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
+                HostEncodingLib.decodeDaoParameters(listPayloads[i]);
+            } else if (actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
+                HostEncodingLib.decodeSalt(listPayloads[i]);
+            } else {
+                revert IHost.UnknownBridgedActionKind();
+            }
+        }
+    }
+
+    //endregion ----------------------------------------- Public
+
+    //region ----------------------------------------- Internal logic
+
+    /// @dev Update DAO parameters according to action payload registered on initial chain
+    function _updateDaoParams(uint daoUid, bytes calldata actionPayload) internal {
+        ITokenomics.DaoParameters memory daoParameters = HostEncodingLib.decodeDaoParameters(actionPayload);
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoParameters[daoUid] = daoParameters;
+
+        emit IHost.DaoParametersUpdated(daoUid, daoParameters);
+    }
+
+    /// @dev Update salts for bridged DAO contracts according to action payload registered on initial chain
+    function _updateSalts(uint daoUid, bytes calldata actionPayload) internal {
+        (uint16[] memory contractIndices, bytes32[] memory salt) = HostEncodingLib.decodeSalt(actionPayload);
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        uint len = salt.length;
+        for (uint i; i < len; i++) {
+            uint daoUidBySalt = $.daoUidBySalt[salt[i]];
+
+            /// @dev Collision should be prevented by verification salt values.
+            /// Assume here that new salt value is checked on all chains before applying
+            /// New value can be applied only if it is not used yet AND it's not registered in any already validated proposals
+            require(daoUidBySalt == 0 || daoUidBySalt == daoUid, IHost.SaltAlreadyUsed(salt[i]));
+
+            $.salt[HostLib.getKey(daoUid, contractIndices[i])] = salt[i];
+        }
+
+        emit IHost.SaltUpdated(daoUid, contractIndices, salt);
+    }
+
+    //endregion ----------------------------------------- Internal logic
 }

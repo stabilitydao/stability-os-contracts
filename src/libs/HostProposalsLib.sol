@@ -104,6 +104,7 @@ library HostProposalsLib {
         }
 
         if (valid && !header.votingRequired) {
+            /// @dev Execute instantly approved proposals that do not require voting
             _doAction(p.daoUid, header.action, payload, proposalId);
         }
 
@@ -294,6 +295,8 @@ library HostProposalsLib {
         (, uint daoUid, bool instant,) = _beforeUpdate(daoSymbol);
 
         require(!instant, IHost.InstantExecuteNotAllowed());
+
+        HostUpdateBridgedLib.verify(actionKind, dstEids, actionPayloads);
 
         HostUpdateLib.ActionParams memory p =
             HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8, actionKind);

@@ -962,8 +962,6 @@ contract HostTest is Test {
     }
 
     function _moveDaoToSeedPhase(IHost host_, string memory daoSymbol) internal {
-        address asset = host_.getChainSettings().exchangeAsset;
-
         IDAOData.DaoData memory daoData = host_.getDAO(daoSymbol);
         skip(7 days);
 

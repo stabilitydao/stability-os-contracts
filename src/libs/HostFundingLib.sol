@@ -37,7 +37,7 @@ library HostFundingLib {
             // mint seedToken to user
             IMintedERC20(seedToken).mint(msg.sender, amount);
 
-            emit IHost.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
+            emit IHost.DaoFunded(daoUid, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
             ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
@@ -52,7 +52,7 @@ library HostFundingLib {
             // record msg.sender as funder with amount
             IMintedERC20(tgeToken).mint(msg.sender, amount);
 
-            emit IHost.DaoFunded(daoSymbol, msg.sender, amount, uint8(ITokenomics.FundingType.TGE_1));
+            emit IHost.DaoFunded(daoUid, msg.sender, amount, uint8(ITokenomics.FundingType.TGE_1));
         } else {
             revert IHost.NotFundingPhase();
         }
@@ -120,11 +120,12 @@ library HostFundingLib {
 
             IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 
-            ITokenomics.Funding storage funding = $.funding[HostLib.getKey($.daoUids[daoSymbol], uint(fundingType_))];
+            uint daoUid = $.daoUids[daoSymbol];
+            ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(fundingType_))];
             uint raised = funding.raised;
             funding.raised = raised > balance ? raised - balance : 0;
 
-            emit IHost.DaoRefunded(daoSymbol, receiver, exchangeAsset, balance, uint8(fundingType_));
+            emit IHost.DaoRefunded(daoUid, receiver, exchangeAsset, balance, uint8(fundingType_));
         }
     }
 }

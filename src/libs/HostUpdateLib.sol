@@ -388,7 +388,7 @@ library HostUpdateLib {
         bytes32 fundingId = HostLib.getKey(daoUid, uint(newFunding.fundingType));
         $.funding[fundingId] = newFunding;
 
-        emit IHost.DaoFundingUpdated($.segment2[daoUid].daoSymbol, newFunding);
+        emit IHost.DaoFundingUpdated(daoUid, newFunding);
     }
 
     /// @notice Update vesting allocations of the DAO
@@ -410,7 +410,7 @@ library HostUpdateLib {
             $.vesting[key] = vesting[i];
         }
 
-        emit IHost.DaoVestingUpdated($.segment2[daoUid].daoSymbol, vesting);
+        emit IHost.DaoVestingUpdated(daoUid, vesting);
     }
 
     /// @notice Update DAO naming (name and symbol)
@@ -437,7 +437,7 @@ library HostUpdateLib {
         $.segment2[daoUid].name = daoNames_.name;
         $.daoUids[daoNames_.symbol] = daoUid;
 
-        emit IHost.DaoNamingUpdated(oldSymbol, daoNames_);
+        emit IHost.DaoNamingUpdated(daoUid, daoNames_);
 
         HostCrossChainLib.sendMessageUpdateSymbol(oldSymbol, daoNames_.symbol);
     }
@@ -450,7 +450,7 @@ library HostUpdateLib {
     function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoParameters[daoUid] = daoParameters_;
-        emit IHost.DaoParametersUpdated($.segment2[daoUid].daoSymbol, daoParameters_);
+        emit IHost.DaoParametersUpdated(daoUid, daoParameters_);
     }
 
     function updateSalt(uint daoUid, bytes memory payload) internal {
@@ -467,7 +467,7 @@ library HostUpdateLib {
             $.daoUidBySalt[salt_[i]] = daoUid;
         }
 
-        emit IHost.SaltUpdated($.segment2[daoUid].daoSymbol, contractIndices, salt_);
+        emit IHost.SaltUpdated(daoUid, contractIndices, salt_);
     }
 
     //endregion -------------------------------------- Update logic

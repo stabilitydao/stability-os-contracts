@@ -71,21 +71,22 @@ interface IHost {
 
     // todo replace daoSymbol by uid in events
 
-    event DaoFundingUpdated(string daoSymbol, ITokenomics.Funding funding);
-    event DaoVestingUpdated(string daoSymbol, ITokenomics.Vesting[] vestings);
-    event DaoNamingUpdated(string daoSymbol, ITokenomics.DaoNames daoNames);
-    event DaoParametersUpdated(string daoSymbol, ITokenomics.DaoParameters daoParameters);
-    event DaoPhaseChanged(string daoSymbol, ITokenomics.LifecyclePhase newPhase);
-    event DaoFunded(string daoSymbol, address funder, uint amount, uint8 fundingType);
-    event DaoRefunded(string daoSymbol, address funder, address asset, uint amount, uint8 fundingType);
+    event DaoFundingUpdated(uint daoUid, ITokenomics.Funding funding);
+    event DaoVestingUpdated(uint daoUid, ITokenomics.Vesting[] vestings);
+    event DaoNamingUpdated(uint daoUid, ITokenomics.DaoNames daoNames);
+    event DaoParametersUpdated(uint daoUid, ITokenomics.DaoParameters daoParameters);
+    event DaoPhaseChanged(uint daoUid, ITokenomics.LifecyclePhase newPhase);
+    event DaoFunded(uint daoUid, address funder, uint amount, uint8 fundingType);
+    event DaoRefunded(uint daoUid, address funder, address asset, uint amount, uint8 fundingType);
     event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
-    event SaltUpdated(string daoSymbol, uint16[] contractIndices, bytes32[] saltValues);
+    event SaltUpdated(uint daoUid, uint16[] contractIndices, bytes32[] saltValues);
     event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
     event OnBridgedDaoAction(bytes32 actionHash, uint16 actionKind, uint32 srcEid, bytes32 guid_);
 
     error NotEnoughNativeProvided(uint requiredValue);
     event ProposalValidated(bytes32 proposalId, bool valid);
+    event BridgedActionSent(uint daoUid, uint16 actionKind, uint32 dstEid, bytes32 hash);
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {
