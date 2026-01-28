@@ -17,6 +17,8 @@ import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/Send
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
 import {HostBridge} from "../../src/HostBridge.sol";
 import {HostUtilsLib} from "./HostUtilsLib.sol";
+import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
+import {HostCodec} from "../../src/HostCodec.sol";
 
 /// @notice Auxiliary data types and utils to test STBL-bridge related functionality
 library BridgeTestLib {
@@ -53,6 +55,7 @@ library BridgeTestLib {
 
         address authority;
         address hostBridge;
+        address hostCodec;
 
         uint32 endpointId;
         address endpoint;
@@ -96,6 +99,7 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
+            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: endpoint,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -135,6 +139,7 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
+            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: AvalancheConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -174,6 +179,7 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
+            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: PlasmaConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -667,8 +673,31 @@ library BridgeTestLib {
         Vm vm,
         IHost host,
         BridgeTestLib.ChainConfig memory chain,
+        BridgeTestLib.ChainConfig memory otherChain
+    ) public {
+        uint32[] memory endpoints = new uint32[](1);
+        endpoints[0] = otherChain.endpointId;
+        _setupHostBridgeAndHostFactory(vm, host, chain, endpoints);
+    }
+
+    function setupHostBridgeAndHostFactory(
+        Vm vm,
+        IHost host,
+        BridgeTestLib.ChainConfig memory chain,
         BridgeTestLib.ChainConfig memory otherChain1,
         BridgeTestLib.ChainConfig memory otherChain2
+    ) public {
+        uint32[] memory endpoints = new uint32[](2);
+        endpoints[0] = otherChain1.endpointId;
+        endpoints[1] = otherChain2.endpointId;
+        _setupHostBridgeAndHostFactory(vm, host, chain, endpoints);
+    }
+
+    function _setupHostBridgeAndHostFactory(
+        Vm vm,
+        IHost host,
+        BridgeTestLib.ChainConfig memory chain,
+        uint32[] memory endpoints
     ) public {
         // -------------------- put some ether on OS contract to send cross-chain messages
         vm.deal(address(host), INITIAL_OS_ETHER_BALANCE);
@@ -681,13 +710,9 @@ library BridgeTestLib {
             IHost.HostChainSettings({exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge})
         );
 
-        // -------------------- set os and endpoints inside osBridge
+        // -------------------- set Host and endpoints inside HostBridge
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).setHost(address(host));
-
-        uint32[] memory endpoints = new uint32[](2);
-        endpoints[0] = otherChain1.endpointId;
-        endpoints[1] = otherChain2.endpointId;
 
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).addEndpoint(endpoints);

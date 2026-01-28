@@ -173,7 +173,11 @@ library HostUpdateLib {
     ) internal pure returns (ActionParams memory) {
         return ActionParams({
             action: action_,
-            validationRequired: bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5),
+            validationRequired:
+                /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+                bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
+                /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+                || bridgedActionKind_ != uint16(IHost.BridgedActions.BRIDGE_DAO_1),
             votingRequired: true
         });
     }

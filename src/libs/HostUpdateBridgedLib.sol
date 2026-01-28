@@ -6,6 +6,7 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
@@ -94,6 +95,12 @@ library HostUpdateBridgedLib {
                 _updateDaoParams(daoUid, actionPayload);
             } else if (header.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
                 _updateSalts(daoUid, actionPayload);
+            } else if (header.actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
+                _updateDaoChainSettings(daoUid, actionPayload);
+            } else if (header.actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
+                // todo
+            } else if (header.actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
+                // todo
             } else {
                 revert IHost.UnknownBridgedActionKind();
             }
@@ -108,13 +115,19 @@ library HostUpdateBridgedLib {
     }
 
     /// @notice Ensure that all payloads can be decoded correctly for the given action kind
-    function verify(uint16 actionKind, uint32[] memory dstEids, bytes[] memory listPayloads) internal pure {
+    function verify(uint daoUid, uint16 actionKind, uint32[] memory dstEids, bytes[] memory listPayloads) external view {
         require(dstEids.length == listPayloads.length, IHost.IncorrectArrayLengths());
 
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
             if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
-                // todo: ensure that at least 1 unit exist revert otherwise
+                IBridgedActions.BridgeDaoParams memory p = HostEncodingLib.decodeBridgeDaoParams(listPayloads[i]);
+                /// @dev Assume here that it's useless to bridge DAO without any units
+                require(p.unitIds.length != 0, IHost.UnitsRequired());
+
+                HostLib.HostStorage storage $ = HostLib.getHostStorage();
+                /// @dev Action bridgeDao is intended for drafts only. Live phase requires to use BRIDGE_DAO_WITH_DEPLOYMENTS_7
+                require($.segment2[daoUid].phase < ITokenomics.LifecyclePhase.LIVE_CLIFF_5, IHost.WrongAction());
             } else if (actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
                 // todo
             } else if (actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
@@ -124,7 +137,7 @@ library HostUpdateBridgedLib {
             } else if (actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
                 HostEncodingLib.decodeSalt(listPayloads[i]);
             } else if (actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
-                // todo
+                HostEncodingLib.decodeDaoChainSettings(listPayloads[i]);
             } else if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
                 // todo
             } else if (actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
@@ -138,11 +151,58 @@ library HostUpdateBridgedLib {
     //endregion ----------------------------------------- Public
 
     //region ----------------------------------------- Internal logic
+    /// @dev Bridge DAO to another chain according to action payload registered on initial chain
+    /// @dev No deployment here - this version of DAO bridging is used in the case of phase-before-LIVE only
+    function bridgeDao(uint daoUid, bytes calldata actionPayload) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        IBridgedActions.BridgeDaoParams memory p = HostEncodingLib.decodeBridgeDaoParams(actionPayload);
+
+        bytes32[] memory hashUnitIds = new bytes32[](p.unitIds.length);
+        for (uint i; i < p.unitIds.length; i++) {
+            hashUnitIds[i] = HostLib.getUnitKey(daoUid, p.unitIds[i]);
+        }
+
+        $.daoUids[p.symbol] = daoUid;
+        $.segment2[daoUid] = HostLib.DaoDataSegment2({
+            daoSymbol: p.symbol,
+            name: p.name,
+            phase: ITokenomics.LifecyclePhase.DRAFT_0,
+            hashUnitIds: hashUnitIds
+        });
+
+        $.daoParameters[daoUid] = p.daoParameters;
+        $.chainSettings[daoUid] = p.chainSettings;
+
+        uint len = p.saltContractIndices.length;
+        if (len != 0) {
+            for (uint i; i < len; i++) {
+                uint daoUidBySalt = $.daoUidBySalt[p.salts[i]];
+
+                /// @dev Collision should be prevented by verification salt values.
+                /// Assume here that new salt value is checked on all chains before applying
+                /// New value can be applied only if it is not used yet AND it's not registered in any already validated proposals
+                require(daoUidBySalt == 0, IHost.SaltAlreadyUsed(p.salts[i]));
+
+                $.salt[HostLib.getKey(daoUid, p.saltContractIndices[i])] = p.salts[i];
+            }
+        }
+
+        emit IHost.BridgeDao(daoUid, p, hashUnitIds);
+    }
+
+    /// @dev Update DAO chain-related settings according to action payload registered on initial chain
+    function _updateDaoChainSettings(uint daoUid, bytes calldata actionPayload) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.DaoChainSettings memory p = HostEncodingLib.decodeDaoChainSettings(actionPayload);
+        $.chainSettings[daoUid] = p;
+
+        emit IHost.DaoChainSettingsUpdated(daoUid, p);
+    }
 
     /// @dev Update DAO parameters according to action payload registered on initial chain
     function _updateDaoParams(uint daoUid, bytes calldata actionPayload) internal {
-        ITokenomics.DaoParameters memory daoParameters = HostEncodingLib.decodeDaoParameters(actionPayload);
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.DaoParameters memory daoParameters = HostEncodingLib.decodeDaoParameters(actionPayload);
         $.daoParameters[daoUid] = daoParameters;
 
         emit IHost.DaoParametersUpdated(daoUid, daoParameters);
@@ -150,9 +210,9 @@ library HostUpdateBridgedLib {
 
     /// @dev Update salts for bridged DAO contracts according to action payload registered on initial chain
     function _updateSalts(uint daoUid, bytes calldata actionPayload) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         (uint16[] memory contractIndices, bytes32[] memory salt) = HostEncodingLib.decodeSalt(actionPayload);
 
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint len = salt.length;
         for (uint i; i < len; i++) {
             uint daoUidBySalt = $.daoUidBySalt[salt[i]];

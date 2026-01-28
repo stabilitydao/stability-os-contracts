@@ -8,8 +8,11 @@ interface IBridgedActions {
 
     /// @notice Input data for IHost.BridgedActions.BRIDGE_DAO_1 action. DAO must be in not-live phase.
     struct BridgeDaoParams {
+        /// @notice Symbol of the DAO token
+        string symbol;
+
         /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name; // todo can names be different on different chains?
+        string name;
 
         /// @notice IDs of he units. At least one unit must be provided.
         string[] unitIds;

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "./IDAOData.sol";
+import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 interface IHost {
@@ -45,6 +46,8 @@ interface IHost {
     error UnknownBridgedActionKind();
     error VotingNotRequired();
     error BridgedActionAlreadyApplied();
+    error UnitsRequired();
+    error WrongAction();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -76,6 +79,7 @@ interface IHost {
     event DaoVestingUpdated(uint daoUid, ITokenomics.Vesting[] vestings);
     event DaoNamingUpdated(uint daoUid, ITokenomics.DaoNames daoNames);
     event DaoParametersUpdated(uint daoUid, ITokenomics.DaoParameters daoParameters);
+    event DaoChainSettingsUpdated(uint daoUid, ITokenomics.DaoChainSettings chainSettings);
     event DaoPhaseChanged(uint daoUid, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(uint daoUid, address funder, uint amount, uint8 fundingType);
     event DaoRefunded(uint daoUid, address funder, address asset, uint amount, uint8 fundingType);
@@ -88,6 +92,8 @@ interface IHost {
     error NotEnoughNativeProvided(uint requiredValue);
     event ProposalValidated(bytes32 proposalId, bool valid);
     event BridgedActionSent(uint daoUid, uint16 actionKind, uint32 dstEid, bytes32 hash);
+
+    event BridgeDao(uint daoUid, IBridgedActions.BridgeDaoParams params, bytes32[] hashUnitIds);
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {

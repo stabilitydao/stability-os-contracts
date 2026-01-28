@@ -292,11 +292,9 @@ library HostProposalsLib {
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads
     ) external {
-        (, uint daoUid, bool instant,) = _beforeUpdate(daoSymbol);
+        (, uint daoUid, ,) = _beforeUpdate(daoSymbol);
 
-        require(!instant, IHost.InstantExecuteNotAllowed());
-
-        HostUpdateBridgedLib.verify(actionKind, dstEids, actionPayloads);
+        HostUpdateBridgedLib.verify(daoUid, actionKind, dstEids, actionPayloads);
 
         HostUpdateLib.ActionParams memory p =
             HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8, actionKind);
