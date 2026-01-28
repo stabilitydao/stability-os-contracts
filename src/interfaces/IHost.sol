@@ -44,6 +44,7 @@ interface IHost {
     error UnknownBridgedActionHash();
     error UnknownBridgedActionKind();
     error VotingNotRequired();
+    error BridgedActionAlreadyApplied();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 

@@ -68,35 +68,47 @@ library HostUpdateBridgedLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = $.daoUids[daoSymbol];
 
-        HostLib.BridgedActionLocal memory action = $.bridgedActionHashes[EfficientHashLib.hash(actionPayload)];
-        require(action.actionKind != 0, IHost.UnknownBridgedActionHash());
+        bytes32 payloadHash = EfficientHashLib.hash(actionPayload);
+        HostLib.BridgedActionLocal storage action = $.bridgedActionHashes[payloadHash];
+        HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(action.bridgedActionHeader);
+        uint storedDaoUid = action.daoUid;
 
-        if (action.actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
+        require(header.actionKind != 0, IHost.UnknownBridgedActionHash());
+        require(!header.applied, IHost.BridgedActionAlreadyApplied());
+
+        if (header.actionKind == uint16(IHost.BridgedActions.DAO_BRIDGED_1)) {
             // todo: may be the DAO is NOT registered yet at this point, we need to check daoSymbol
 
             // todo register and bridge the DAO
 
             // ensure that created DAO has expected symbol
-            require(action.daoUid == $.daoUids[daoSymbol], IHost.IncorrectDao());
+            require(storedDaoUid == $.daoUids[daoSymbol], IHost.IncorrectDao());
         } else {
-            require(action.daoUid == daoUid, IHost.IncorrectDao());
+            require(storedDaoUid == daoUid, IHost.IncorrectDao());
 
-            if (action.actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
+            if (header.actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
                 // todo
-            } else if (action.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
+            } else if (header.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
                 // todo
-            } else if (action.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
+            } else if (header.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
                 _updateDaoParams(daoUid, actionPayload);
-            } else if (action.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
+            } else if (header.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
                 _updateSalts(daoUid, actionPayload);
             } else {
                 revert IHost.UnknownBridgedActionKind();
             }
         }
+
+        $.bridgedActionHashes[payloadHash].bridgedActionHeader = HostLib.packBridgedActionHeader(
+            HostLib.BridgedActionHeader({
+                actionKind: header.actionKind,
+                applied: true // mark the bridged action as applied
+            })
+        );
     }
 
     /// @notice Ensure that all payloads can be decoded correctly for the given action kind
-    function verify(uint16 actionKind, uint32[] memory dstEids, bytes[] memory listPayloads) internal view {
+    function verify(uint16 actionKind, uint32[] memory dstEids, bytes[] memory listPayloads) internal pure {
         require(dstEids.length == listPayloads.length, IHost.IncorrectArrayLengths());
 
         uint len = dstEids.length;

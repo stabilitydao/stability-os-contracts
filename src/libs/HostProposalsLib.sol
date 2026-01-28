@@ -9,7 +9,6 @@ import {HostUpdateLib} from "./HostUpdateLib.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {console} from "forge-std/console.sol";
 
 /// @notice Library with proposal related functions
 library HostProposalsLib {
@@ -51,11 +50,12 @@ library HostProposalsLib {
     /// @param succeed True if proposal is approved
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if proposal was rejected.
+    /// @return fee Estimated fee (in native token) to process the voting results
     function quoteReceiveVotingResults(
         bytes32 proposalId,
         bool succeed,
         bytes memory payload
-    ) external view returns (uint gas) {
+    ) external view returns (uint fee) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalLocal storage p = $.proposals[proposalId];
 
@@ -71,7 +71,7 @@ library HostProposalsLib {
             }
         }
 
-        return gas;
+        return fee;
     }
 
     /// @notice Approve or reject given proposal.

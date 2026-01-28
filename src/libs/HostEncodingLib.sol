@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {console} from "forge-std/console.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// Tokenomic uses some structs.

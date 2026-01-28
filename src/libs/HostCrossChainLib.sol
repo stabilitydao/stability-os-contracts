@@ -42,8 +42,12 @@ library HostCrossChainLib {
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2)) {
             (uint16 actionKind, uint daoUid, bytes32 actionHash) = abi.decode(message_, (uint16, uint, bytes32));
 
-            $.bridgedActionHashes[actionHash] =
-                HostLib.BridgedActionLocal({daoUid: daoUid, actionKind: actionKind, applied: false});
+            $.bridgedActionHashes[actionHash] = HostLib.BridgedActionLocal({
+                daoUid: daoUid,
+                bridgedActionHeader: HostLib.packBridgedActionHeader(
+                    HostLib.BridgedActionHeader({actionKind: actionKind, applied: false})
+                )
+            });
 
             emit IHost.OnBridgedDaoAction(actionHash, actionKind, srcEid, guid_);
         } else {

@@ -133,10 +133,16 @@ library HostLib {
         EnumerableSet.UintSet chainIds;
     }
 
-    struct BridgedActionLocal {
-        uint daoUid;
+    struct BridgedActionHeader {
         uint16 actionKind;
         bool applied;
+    }
+
+    /// @dev Bridged action registered on the initial chain and transferred to other chains via cross-chain messages
+    struct BridgedActionLocal {
+        /// @dev Packed bridged action data
+        uint bridgedActionHeader;
+        uint daoUid;
     }
 
     /// @custom:storage-location erc7201:stability.host-contracts.Host
@@ -285,6 +291,9 @@ library HostLib {
         return uint(EfficientHashLib.hash(count_, chain_));
     }
 
+    //endregion -------------------------------------- Internal utils
+
+    //region -------------------------------------- Pack/unpack
     /// @notice Pack ProposalHeader into single uint
     function packProposalHeader(ProposalHeader memory header) internal pure returns (uint h) {
         h = uint(uint8(header.action)) | (header.validationRequired ? (1 << 8) : 0)
@@ -304,5 +313,14 @@ library HostLib {
         });
     }
 
-    //endregion -------------------------------------- Internal utils
+    function packBridgedActionHeader(BridgedActionHeader memory header) internal pure returns (uint h) {
+        h = uint(uint16(header.actionKind)) | (header.applied ? (1 << 16) : 0);
+    }
+
+    function unpackBridgedActionHeader(uint h) internal pure returns (BridgedActionHeader memory header) {
+        header.actionKind = uint16(h & 0xFFFF);
+        header.applied = ((h >> 16) & 1) != 0;
+    }
+
+    //endregion -------------------------------------- Pack/unpack
 }
