@@ -14,9 +14,6 @@ contract ProxyFactory is IProxyFactory, Ownable {
     /// @notice Address of the master Proxy contract to be cloned
     address public immutable MASTER_PROXY;
 
-    /// @dev Keccak256 hash of the init code of the clone of the master Proxy contract
-    bytes32 internal immutable MASTER_PROXY_CLONE_CODE_HASH;
-
     /// @notice Whitelisted addresses allowed to create new proxies
     mapping(address => bool) public whitelisted;
 
@@ -30,15 +27,6 @@ contract ProxyFactory is IProxyFactory, Ownable {
         // Master proxy is never initialized - it serves only as a bytecode template.
         // Each clone has independent storage and is initialized separately via _initProxy.
         MASTER_PROXY = address(new Proxy());
-
-        /// @dev EIP-1167 minimal proxy bytecode format:
-        /// 3d602d80600a3d3981f3363d3d373d3d3d363d73{implementation}5af43d82803e903d91602b57fd5bf3
-        /// where {implementation} is the 20-byte address of MASTER_PROXY
-        MASTER_PROXY_CLONE_CODE_HASH = keccak256(
-            abi.encodePacked(
-                hex"3d602d80600a3d3981f3363d3d373d3d3d363d73", MASTER_PROXY, hex"5af43d82803e903d91602b57fd5bf3"
-            )
-        );
     }
 
     /// @inheritdoc IProxyFactory
@@ -48,8 +36,13 @@ contract ProxyFactory is IProxyFactory, Ownable {
     }
 
     /// @inheritdoc IProxyFactory
-    function getProxyInitCodeHash() external view returns (bytes32) {
-        return MASTER_PROXY_CLONE_CODE_HASH;
+    function getProxyInitCode() external view returns (bytes memory) {
+        /// @dev EIP-1167 minimal proxy bytecode format:
+        /// 3d602d80600a3d3981f3363d3d373d3d3d363d73{implementation}5af43d82803e903d91602b57fd5bf3
+        /// where {implementation} is the 20-byte address of MASTER_PROXY
+        return abi.encodePacked(
+            hex"3d602d80600a3d3981f3363d3d373d3d3d363d73", MASTER_PROXY, hex"5af43d82803e903d91602b57fd5bf3"
+        );
     }
 
     /// @inheritdoc IProxyFactory

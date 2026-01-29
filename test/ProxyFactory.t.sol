@@ -154,7 +154,7 @@ contract ProxyFactoryTest is Test {
         ProxyFactory factory = new ProxyFactory();
 
         address predicted1 = factory.predictAddress("0x1234");
-        address predicted2 = _getCreate2Address("0x1234", factory.getProxyInitCodeHash(), address(factory));
+        address predicted2 = _getCreate2Address("0x1234", keccak256(factory.getProxyInitCode()), address(factory));
         assertEq(predicted1, predicted2, "getCreate2Address works in the same way as predictAddress");
     }
 

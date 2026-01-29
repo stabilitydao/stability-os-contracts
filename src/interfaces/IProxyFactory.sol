@@ -39,8 +39,8 @@ interface IProxyFactory {
     /// @notice Check if the addr is allowed to create new proxies
     function whitelisted(address addr) external view returns (bool);
 
-    /// @notice Get keccak256 hash of Proxy creationCode for CREATE2
-    function getProxyInitCodeHash() external view returns (bytes32);
+    /// @notice Get master proxy init code for CREATE2
+    function getProxyInitCode() external view returns (bytes memory);
 
     /// @notice Get address of Proxy deployed using CREATE2 with given salt
     /// @param salt Salt to get CREATE2 deployment address
