@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {SlotsLib} from "../libs/SlotsLib.sol";
+import {SlotsLib} from "../../libs/SlotsLib.sol";
 import {IControllable} from "../interfaces/IControllable.sol";
 import {IPlatform} from "../interfaces/IPlatform.sol";
 

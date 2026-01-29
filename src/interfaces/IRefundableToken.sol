@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
+import {IMintedERC20} from "./IMintedERC20.sol";
 
 interface IRefundableToken is IERC20, IMintedERC20 {
     /// @notice Burn tokens from specific address by Authority and refund underlying asset back to the user

@@ -8,9 +8,9 @@ import {
 import {
     ERC20PermitUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
-import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
-import {Hosted} from "../base/Hosted.sol";
-import {IHosted} from "../interfaces/IHosted.sol";
+import {IMintedERC20} from "../../interfaces/IMintedERC20.sol";
+import {Hosted} from "../../base/Hosted.sol";
+import {IHosted} from "../../interfaces/IHosted.sol";
 import {IToken} from "../interfaces/IToken.sol";
 
 contract Token is IToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeable, ERC20PermitUpgradeable, IMintedERC20 {

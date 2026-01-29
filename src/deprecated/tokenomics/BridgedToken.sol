@@ -2,7 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {OFTUpgradeable} from "@layerzerolabs/oft-evm-upgradeable/contracts/oft/OFTUpgradeable.sol";
-import {IControllable, Controllable} from "../base/Controllable.sol";
+import {IControllable, Controllable} from "../../deprecated/base/Controllable.sol";
 import {IPlatform} from "../interfaces/IPlatform.sol";
 import {IBridgedToken} from "../interfaces/IBridgedToken.sol";
 import {IOFTPausable} from "../interfaces/IOFTPausable.sol";

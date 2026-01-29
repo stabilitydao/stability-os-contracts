@@ -2,7 +2,8 @@
 pragma solidity ^0.8.22;
 
 import {OFTAdapterUpgradeable} from "@layerzerolabs/oft-evm-upgradeable/contracts/oft/OFTAdapterUpgradeable.sol";
-import {IControllable, Controllable} from "../base/Controllable.sol";
+import {Controllable} from "../base/Controllable.sol";
+import {IControllable} from "../interfaces/IControllable.sol";
 import {IPlatform} from "../interfaces/IPlatform.sol";
 import {ITokenOFTAdapter} from "../interfaces/ITokenOFTAdapter.sol";
 import {IOFTPausable} from "../interfaces/IOFTPausable.sol";

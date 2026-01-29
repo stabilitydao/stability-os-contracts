@@ -17,7 +17,7 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
 import {HostProxyFactoryLib} from "../../src/libs/HostProxyFactoryLib.sol";
-import {IOwnable} from "../../src/interfaces/IOwnable.sol";
+import {IOwnable} from "../../src/deprecated/interfaces/IOwnable.sol";
 
 contract HostProxyFactoryLibTest is Test {
     address internal multisig;

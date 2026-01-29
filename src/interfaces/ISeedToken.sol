@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {IRefundableToken} from "./IRefundableToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
+import {IMintedERC20} from "./IMintedERC20.sol";
 
 interface ISeedToken is IERC20, IMintedERC20, IRefundableToken {
     error NonTransferable();
