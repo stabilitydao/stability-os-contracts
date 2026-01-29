@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
+import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {Vm, Test} from "forge-std/Test.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
-import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
-import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
+import {console} from "forge-std/console.sol";
 
 contract HostBridgedActionsTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -55,7 +59,7 @@ contract HostBridgedActionsTest is Test {
     /// @dev Bridge DAO in draft phase to another chain
     function testBridgeDao() public {
         // ------------------------ create dao on Sonic
-        IDAOData.DaoData memory dao = _createtDao();
+        IDAOData.DaoData memory dao = _createtDao("ALIENS");
 
         vm.selectFork(sonic.fork);
         IHost hostSonic = _getHostSonic();
@@ -77,9 +81,12 @@ contract HostBridgedActionsTest is Test {
             metas[0] = unitMetadata0;
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
             hostSonic.updateUnits(dao.symbol, units, metas);
+
+            dao = hostSonic.getDAO(dao.symbol);
         }
 
         // ------------------------ bridge dao
+        bytes memory proposalPayload;
         {
             uint32[] memory dstEids = new uint32[](1);
             dstEids[0] = avalanche.endpointId;
@@ -91,33 +98,94 @@ contract HostBridgedActionsTest is Test {
                 unitIds[i] = dao.units[i].unitId;
             }
 
+            uint16[] memory saltContractIndices = new uint16[](1);
+            saltContractIndices[0] = uint16(ITokenomicsAddons.ContractIndices.TOKEN_3);
+
+            bytes32[] memory salts = new bytes32[](1);
+            salts[0] = "0x70859983";
+
             IHostCodec codec = IHostCodec(sonic.hostCodec);
             actionPayloads[0] = codec.encode(
                 IBridgedActions.BridgeDaoParams({
                     symbol: dao.symbol,
-                    name: "Aliens",
-                    unitIds: new string[](1),
+                    name: dao.name,
+                    unitIds: unitIds,
                     chainSettings: dao.chainSettings,
                     daoParameters: dao.params,
-                    saltContractIndices: new uint16[](0),
-                    salts: new bytes32[](0)
+                    saltContractIndices: saltContractIndices,
+                    salts: salts
                 }),
                 codec.PAYLOAD_API_VERSION()
             );
 
+            vm.recordLogs();
             hostSonic.createBridgedAction(
-                dao.symbol,
-                uint16(IHost.BridgedActions.BRIDGE_DAO_1),
-                dstEids,
-                actionPayloads
+                dao.symbol, uint16(IHost.BridgedActions.BRIDGE_DAO_1), dstEids, actionPayloads
             );
 
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
-            ITokenomics.Proposal memory proposal = hostSonic.proposal(proposalId);
-            assertFalse(proposal.validationRequired, "proposal should NOT require validation");
-            assertTrue(proposal.votingRequired, "proposal should require voting");
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+            bytes32 payloadHash;
+            (proposalPayload, payloadHash) = BridgeTestLib.extractProposalPayload(logs);
+            assertEq(payloadHash, EfficientHashLib.hash(proposalPayload), "payload hash");
         }
 
+        // ------------------------ Process proposal
+        {
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
+            ITokenomics.Proposal memory proposal = hostSonic.proposal(proposalId);
+            assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
+            assertTrue(proposal.votingRequired, "proposal should require voting");
+
+            vm.prank(sonic.multisig);
+            hostSonic.validateProposal(proposalId, true, proposalPayload);
+
+            uint fee = hostSonic.quoteReceiveVotingResults(proposalId, true, proposalPayload);
+
+            deal(sonic.multisig, fee);
+
+            vm.recordLogs();
+
+            vm.prank(sonic.multisig);
+            hostSonic.receiveVotingResults{value: fee}(proposalId, true, proposalPayload);
+
+            _processCrossChainMessages(vm.getRecordedLogs(), sonic, avalanche);
+        }
+
+        // ------------------------ Process bridged action on Avalanche
+        {
+            vm.selectFork(avalanche.fork);
+
+            IHost hostAvalanche = _getHostAvalanche();
+
+            assertTrue(hostAvalanche.isDaoSymbolInUse(dao.symbol), "dao symbol should be in use on Avalanche");
+            // assertEq(hostAvalanche.getDAO(dao.symbol).uid, 0, "dao is not bridged");
+            console.log("uid", hostAvalanche.getDAO(dao.symbol).uid, dao.uid);
+
+            // get bridged action for Avalanche
+            (, , bytes[] memory actionPayloads) = HostEncodingLib.decodeBridgedAction(proposalPayload);
+
+            {
+                (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.getBridgedAction(EfficientHashLib.hash(actionPayloads[0]));
+                assertEq(daoUid, dao.uid, "expected dao uid");
+                assertFalse(applied, "not applied");
+                assertEq(actionKind, uint16(IHost.BridgedActions.BRIDGE_DAO_1), "action kind");
+            }
+
+            hostAvalanche.applyBridgedAction(actionPayloads[0]);
+
+            { // ----------------------- bad paths
+                vm.expectRevert(IHost.BridgedActionAlreadyApplied.selector);
+                hostAvalanche.applyBridgedAction(actionPayloads[0]);
+            }
+
+            {
+                (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.getBridgedAction(EfficientHashLib.hash(actionPayloads[0]));
+                assertEq(daoUid, dao.uid, "expected dao uid");
+                assertTrue(applied, "applied now");
+                assertEq(actionKind, uint16(IHost.BridgedActions.BRIDGE_DAO_1), "action kind");
+            }
+
+        }
     }
 
     //endregion ----------------------------------------- Tests
@@ -127,13 +195,17 @@ contract HostBridgedActionsTest is Test {
         return IHost(IAuthority(sonic.authority).HOST());
     }
 
-    function _createtDao() internal returns (IDAOData.DaoData memory dao) {
+    function _getHostAvalanche() internal view returns (IHost) {
+        return IHost(IAuthority(avalanche.authority).HOST());
+    }
+
+    function _createtDao(string memory symbol_) internal returns (IDAOData.DaoData memory dao) {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
         vm.recordLogs();
         IHost host = _getHostSonic();
         _dealAndApprove(host);
-        dao = HostUtilsLib.createAliensDao(vm, host);
+        dao = HostUtilsLib.createAliensDao(vm, host, symbol_);
 
         // ------------------------- process cross chain events: Sonic -> Avalanche, Plasma
         Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -153,17 +225,17 @@ contract HostBridgedActionsTest is Test {
         vm.selectFork(to.fork);
         (bytes memory message,) = BridgeTestLib._extractSendMessage(logs);
         Origin memory origin =
-                        Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
+            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
 
         vm.prank(to.endpoint);
         IOAppReceiver(to.hostBridge)
-        .lzReceive(
-            origin,
-            bytes32(0), // guid: actual value doesn't matter
-            message,
-            address(0), // executor
-            "" // extraData
-        );
+            .lzReceive(
+                origin,
+                bytes32(0), // guid: actual value doesn't matter
+                message,
+                address(0), // executor
+                "" // extraData
+            );
     }
 
     /// @notice user should pay for DAO-creation
@@ -172,6 +244,10 @@ contract HostBridgedActionsTest is Test {
         uint amount = os_.getSettings().priceDao;
         deal(exchangeAsset, address(this), amount);
         IERC20(exchangeAsset).approve(address(os_), amount);
+    }
+
+    function _keepConsole() internal pure {
+        console.log("keep console in imports");
     }
     //endregion ----------------------------------------- Internal utils
 }

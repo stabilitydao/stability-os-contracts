@@ -24,7 +24,7 @@ interface IHostBridge {
     /// @param messageKind See IHost.CrossChainMessages
     /// @param message_ The message (encoded to bytes) to send to destination OS
     /// @param fee Fee in native token for sending the message to the given chain
-    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external;
+    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external payable;
 
     /// @notice Quote total fee for sending message to all registered chains
     /// @param messageKind See IHost.CrossChainMessages

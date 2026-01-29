@@ -69,7 +69,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Create DAO
         _dealAndApprove(host_);
-        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_);
+        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_, "ALIENS");
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
@@ -841,7 +841,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Create DAO
         _dealAndApprove(host_);
-        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_);
+        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_, "ALIENS");
 
         // ------------------------------ solve required tasks
         IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({

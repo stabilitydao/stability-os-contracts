@@ -291,6 +291,12 @@ library HostLib {
         return uint(EfficientHashLib.hash(count_, chain_));
     }
 
+    /// @notice Get value of dao uid. Returns 0 for stub values
+    function getDaoUid(HostLib.HostStorage storage $, string memory daoSymbol) internal view returns (uint daoUid) {
+        daoUid = $.daoUids[daoSymbol];
+        return daoUid == getDaoUidStub() ? 0 : daoUid;
+    }
+
     //endregion -------------------------------------- Internal utils
 
     //region -------------------------------------- Pack/unpack

@@ -162,7 +162,7 @@ library HostUtilsLib {
         return os.getDAO(daoSymbol);
     }
 
-    function createAliensDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
+    function createAliensDao(Vm vm, IHost os_, string memory symbol) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
@@ -174,7 +174,7 @@ library HostUtilsLib {
 
         ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
 
-        return _createDao(vm, os_, "Aliens Community", "ALIENS", funding, activity, params);
+        return _createDao(vm, os_, "Aliens Community", symbol, funding, activity, params);
     }
 
     function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {

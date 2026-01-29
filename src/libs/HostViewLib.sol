@@ -28,7 +28,7 @@ library HostViewLib {
     /// @param daoSymbol Symbol of the DAO
     function changePhase(string calldata daoSymbol, address authority) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
         require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
@@ -151,7 +151,7 @@ library HostViewLib {
     function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        dest.uid = $.daoUids[daoSymbol];
+        dest.uid = HostLib.getDaoUid($, daoSymbol);
 
         HostLib.DaoDataSegment2 memory segment2 = $.segment2[dest.uid];
         HostLib.DaoDataSegment3 memory segment3 = $.segment3[dest.uid];
@@ -219,7 +219,7 @@ library HostViewLib {
     /// @notice Get owner of the DAO depending on its lifecycle phase
     function getDAOOwner(string calldata daoSymbol) external view returns (address) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
         require(daoUid != 0, IHost.IncorrectDao());
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
@@ -261,7 +261,7 @@ library HostViewLib {
 
     function proposalsLength(string calldata daoSymbol) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return $.daoProposals[$.daoUids[daoSymbol]].length;
+        return $.daoProposals[HostLib.getDaoUid($, daoSymbol)].length;
     }
 
     function proposalIds(
@@ -270,8 +270,8 @@ library HostViewLib {
         uint count
     ) external view returns (bytes32[] memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
-        uint len = $.daoProposals[$.daoUids[daoSymbol]].length;
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint len = $.daoProposals[HostLib.getDaoUid($, daoSymbol)].length;
         uint size = index + count > len ? index > len ? 0 : len - index : count;
         dest = new bytes32[](size);
         for (uint i = 0; i < size; i++) {
@@ -285,7 +285,7 @@ library HostViewLib {
     /// @return __tasks List of tasks. The list is limited by {limit} value
     function tasks(string calldata daoSymbol, uint limit) external view returns (IHost.Task[] memory __tasks) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return _tasks(uint16(limit), $.daoUids[daoSymbol]);
+        return _tasks(uint16(limit), HostLib.getDaoUid($, daoSymbol));
     }
 
     /// @notice Generate token name in same way as getTokensNaming()
@@ -327,13 +327,13 @@ library HostViewLib {
     /// @notice Get balance of the given unit for the given DAO
     function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
         return $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
     }
 
     function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
         return $.salt[HostLib.getKey(daoUid, contractIndex)];
     }
     //endregion -------------------------------------- View
@@ -424,5 +424,11 @@ library HostViewLib {
         }
 
         return dest;
+    }
+
+    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid) {
+        HostLib.BridgedActionLocal storage local = HostLib.getHostStorage().bridgedActionHashes[actionHash];
+        HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(local.bridgedActionHeader);
+        return (header.applied, header.actionKind, local.daoUid);
     }
 }

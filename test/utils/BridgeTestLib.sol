@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import {console, Vm} from "forge-std/Test.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
+// import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
@@ -17,7 +18,7 @@ import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/Send
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
 import {HostBridge} from "../../src/HostBridge.sol";
 import {HostUtilsLib} from "./HostUtilsLib.sol";
-import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
+// import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
 
 /// @notice Auxiliary data types and utils to test STBL-bridge related functionality
@@ -721,8 +722,9 @@ library BridgeTestLib {
 
         // ----------------------------- Allow HOST to call OSBridge.sendMessageToAllChains
         {
-            bytes4[] memory selectors = new bytes4[](1);
+            bytes4[] memory selectors = new bytes4[](2);
             selectors[0] = bytes4(IHostBridge.sendMessageToAllChains.selector);
+            selectors[1] = bytes4(IHostBridge.sendMessage.selector);
 
             vm.prank(chain.multisig);
             accessManager.setTargetFunctionRole(chain.hostBridge, selectors, AccessRolesLib.HOST_BRIDGE_USER);
@@ -751,6 +753,23 @@ library BridgeTestLib {
 
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);
+
+        vm.prank(chain.multisig);
+        IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), 100_000);
+    }
+
+    function extractProposalPayload(Vm.Log[] memory logs) internal pure returns (bytes memory payload, bytes32 payloadHash) {
+        // extract event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
+        bytes32 sig = keccak256("Proposal(uint256,uint8,bytes32,bytes32,bytes)");
+
+        for (uint i; i < logs.length; ++i) {
+            if (logs[i].topics[0] == sig) {
+                (,,,payloadHash, payload) = abi.decode(logs[i].data, (uint, uint8, bytes32, bytes32, bytes));
+                break;
+            }
+        }
+
+        return (payload, payloadHash);
     }
 
     /// @notice Empty function to exclude this test from coverage

@@ -86,7 +86,10 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function quoteCreateDAO(string calldata daoSymbol) external view returns (uint) {
-        return HostCrossChainLib.quoteSendMessageNewSymbol(daoSymbol);
+        return HostCrossChainLib.quoteMessageToAllChains(
+            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0,
+            HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
+        );
     }
 
     function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
@@ -111,6 +114,10 @@ contract Host is IHost, Hosted {
         return HostProposalsLib.quoteReceiveVotingResults(proposalId, succeed, payload);
     }
 
+    /// @inheritdoc IHost
+    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid) {
+        return HostViewLib.getBridgedAction(actionHash);
+    }
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -183,7 +190,7 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external restricted {
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external payable restricted {
         HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
     }
 
@@ -277,8 +284,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external {
-        HostUpdateBridgedLib.applyBridgedAction(daoSymbol, actionPayload);
+    function applyBridgedAction(bytes calldata actionPayload) external {
+        HostUpdateBridgedLib.applyBridgedAction(actionPayload);
     }
     //endregion -------------------------------------- Update actions
 }

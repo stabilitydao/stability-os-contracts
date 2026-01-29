@@ -476,7 +476,7 @@ contract HostTest is Test {
 
         // ------------------------------ Create DAO
         _dealAndApprove(host);
-        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host);
+        IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host, "ALIENS");
 
         // ------------------------------ Move to seed phase to enable voting
         _moveDaoToSeedPhase(host, daoData.symbol);

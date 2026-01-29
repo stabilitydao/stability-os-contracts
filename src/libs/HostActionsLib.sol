@@ -186,7 +186,7 @@ library HostActionsLib {
     /// @notice Process revenue for the given unit of the DAO
     function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
         require(_isUnitExist($, daoUid, unitId), IHost.UnitNotFound());
@@ -224,7 +224,10 @@ library HostActionsLib {
 
         emit IHost.DaoCreated(daoName, daoSymbol, daoUid);
 
-        HostCrossChainLib.sendMessageNewSymbol(daoSymbol);
+        HostCrossChainLib.sendMessageToAllChains(
+            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0,
+            HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
+        );
     }
 
     /// @notice Check if the given dao has a unit with the given {unitId}

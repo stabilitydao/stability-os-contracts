@@ -65,7 +65,7 @@ library HostProposalsLib {
             if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
-                HostUpdateBridgedLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
+                fee = HostUpdateBridgedLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
                 // todo not-bridged actions with cross-chain messages
             }
@@ -129,6 +129,8 @@ library HostProposalsLib {
             HostUpdateLib.updateDaoParameters(daoUid, payload);
         } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
             HostUpdateLib.updateSalt(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
+            HostUpdateBridgedLib.sendBridgedAction(daoUid, payload);
         } else {
             // todo other actions
             revert IHost.NotImplemented();
@@ -141,7 +143,7 @@ library HostProposalsLib {
         returns (HostLib.HostStorage storage $, uint daoUid, bool instant, ITokenomics.LifecyclePhase phase)
     {
         $ = HostLib.getHostStorage();
-        daoUid = $.daoUids[daoSymbol];
+        daoUid = HostLib.getDaoUid($, daoSymbol);
         phase = $.segment2[daoUid].phase;
         require(daoUid != 0, IHost.IncorrectDao());
         instant = phase == ITokenomics.LifecyclePhase.DRAFT_0;
@@ -235,6 +237,8 @@ library HostProposalsLib {
     function updateNaming(string memory daoSymbol, ITokenomics.DaoNames memory daoNames_) external {
         (, uint daoUid, bool instant,) = _beforeUpdate(daoSymbol);
 
+        // todo validation is required
+
         HostUpdateLib._validateNaming(daoNames_.name, daoNames_.symbol, HostConfigLib.getHostGlobalSettings());
 
         if (instant) {
@@ -292,7 +296,7 @@ library HostProposalsLib {
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads
     ) external {
-        (, uint daoUid, ,) = _beforeUpdate(daoSymbol);
+        (, uint daoUid,,) = _beforeUpdate(daoSymbol);
 
         HostUpdateBridgedLib.verify(daoUid, actionKind, dstEids, actionPayloads);
 

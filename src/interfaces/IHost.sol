@@ -48,6 +48,8 @@ interface IHost {
     error BridgedActionAlreadyApplied();
     error UnitsRequired();
     error WrongAction();
+    error AlreadyBridged();
+    error IncorrectInputData();
 
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
@@ -252,6 +254,12 @@ interface IHost {
         bytes memory payload
     ) external view returns (uint);
 
+    /// @notice Get bridged action status by its hash
+    /// @param actionHash Hash of the action payload. This hash is registered through cross-chain message.
+    /// @return applied True if the action was already applied on this chain
+    /// @return actionKind Kind of the action, see IHost.BridgedActions
+    /// @return daoUid UID of the DAO the action is applied to
+    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -300,7 +308,7 @@ interface IHost {
     /// @param succeed True if proposal is approved
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if proposal was rejected.
-    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external;
+    function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external payable;
 
     /// @notice Approve/reject proposal. This function is called by backed only for proposals that require validation.
     /// @param proposalId Proposal unique id
@@ -390,10 +398,9 @@ interface IHost {
     ) external;
 
     /// @notice Apply bridged action on the current chain
-    /// @param daoSymbol DAO symbol
     /// @param actionPayload Payload with action details.
     /// Its hash should be already registered on this chain through cross-chain message.
-    function applyBridgedAction(string calldata daoSymbol, bytes calldata actionPayload) external;
+    function applyBridgedAction(bytes calldata actionPayload) external;
 
     //endregion ---------------------------------------- Update actions
 }

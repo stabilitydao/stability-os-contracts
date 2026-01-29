@@ -5,7 +5,6 @@ import {ITokenomics} from "./ITokenomics.sol";
 
 /// @notice All data types related to bridged actions
 interface IBridgedActions {
-
     /// @notice Input data for IHost.BridgedActions.BRIDGE_DAO_1 action. DAO must be in not-live phase.
     struct BridgeDaoParams {
         /// @notice Symbol of the DAO token
@@ -29,5 +28,4 @@ interface IBridgedActions {
         /// @notice Salts for deploying DAO contracts on bridged chain. Array should be sync with {saltContractIndices}
         bytes32[] salts;
     }
-
 }

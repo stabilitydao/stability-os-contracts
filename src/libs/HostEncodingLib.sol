@@ -159,7 +159,11 @@ library HostEncodingLib {
         }
     }
 
-    function decodeDaoChainSettings(bytes memory payload) internal pure returns (ITokenomics.DaoChainSettings memory dest) {
+    function decodeDaoChainSettings(bytes memory payload)
+        internal
+        pure
+        returns (ITokenomics.DaoChainSettings memory dest)
+    {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
@@ -169,7 +173,6 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
-
 
     function encodeDaoNames(ITokenomics.DaoNames memory data, uint16 version) internal pure returns (bytes memory) {
         if (version == 1) {
@@ -244,29 +247,54 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
+
     //endregion ----------------------- Decode / Encode update-actions structs with versions
 
     //region ----------------------- Decode / Encode bridged-actions structs with versions
 
     //endregion ----------------------- Decode / Encode bridged-actions structs with versions
     /// @notice Encode BridgeDaoParams struct of the given version. Version is supported explicitly to simplify testing
-    function encodeBridgeDaoParams(IBridgedActions.BridgeDaoParams memory data, uint16 version) internal pure returns (bytes memory) {
+    function encodeBridgeDaoParams(
+        IBridgedActions.BridgeDaoParams memory data,
+        uint16 version
+    ) internal pure returns (bytes memory) {
         if (version == 1) {
             bytes memory daoParameters = encodeDaoParameters(data.daoParameters, version);
             bytes memory chainSettings = encodeDaoChainSettings(data.chainSettings, version);
-            return abi.encode(version, data.symbol, data.name, data.unitIds, daoParameters, chainSettings, data.saltContractIndices, data.salts);
+            return abi.encode(
+                version,
+                data.symbol,
+                data.name,
+                data.unitIds,
+                daoParameters,
+                chainSettings,
+                data.saltContractIndices,
+                data.salts
+            );
         } else {
             revert IHost.UnsupportedStructVersion();
         }
     }
 
-    function decodeBridgeDaoParams(bytes memory payload) internal pure returns (IBridgedActions.BridgeDaoParams memory data) {
+    function decodeBridgeDaoParams(bytes memory payload)
+        internal
+        pure
+        returns (IBridgedActions.BridgeDaoParams memory data)
+    {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
             bytes memory daoParameters;
             bytes memory chainSettings;
-            (version, data.symbol, data.name, data.unitIds, daoParameters, chainSettings, data.saltContractIndices, data.salts) =
-            abi.decode(payload, (uint16, string, string, string[], bytes, bytes, uint16[], bytes32[]));
+            (
+                version,
+                data.symbol,
+                data.name,
+                data.unitIds,
+                daoParameters,
+                chainSettings,
+                data.saltContractIndices,
+                data.salts
+            ) = abi.decode(payload, (uint16, string, string, string[], bytes, bytes, uint16[], bytes32[]));
             data.daoParameters = decodeDaoParameters(daoParameters);
             data.chainSettings = decodeDaoChainSettings(chainSettings);
             return data;

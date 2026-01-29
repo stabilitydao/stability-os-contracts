@@ -62,7 +62,7 @@ library HostUpdateLib {
             uint len = bytes(symbol).length;
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
 
-            require($.daoUids[symbol] == 0, IHost.SymbolNotUnique(symbol));
+            require(HostLib.getDaoUid($, symbol) == 0, IHost.SymbolNotUnique(symbol));
         }
     }
 
@@ -173,9 +173,9 @@ library HostUpdateLib {
     ) internal pure returns (ActionParams memory) {
         return ActionParams({
             action: action_,
-            validationRequired:
-                /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
-                bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
+            validationRequired: 
+            /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+            bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
                 /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
                 || bridgedActionKind_ != uint16(IHost.BridgedActions.BRIDGE_DAO_1),
             votingRequired: true
@@ -443,7 +443,10 @@ library HostUpdateLib {
 
         emit IHost.DaoNamingUpdated(daoUid, daoNames_);
 
-        HostCrossChainLib.sendMessageUpdateSymbol(oldSymbol, daoNames_.symbol);
+        HostCrossChainLib.sendMessageToAllChains(
+            IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1,
+            HostCrossChainLib.packMessageRenameSymbol(oldSymbol, daoNames_.symbol)
+        );
     }
 
     function updateDaoParameters(uint daoUid, bytes memory payload) internal {

@@ -79,7 +79,7 @@ contract HostBridgeTest is Test {
         // ----------------------------- create DAO on Sonic
         vm.selectFork(sonic.fork);
         _dealAndApprove(hostSonic);
-        IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, hostSonic);
+        IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, hostSonic, "ALIENS");
         console.log("done createAliensDao");
 
         { // ------------------------- process cross chain events: Sonic -> Avalanche, Plasma

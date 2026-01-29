@@ -25,22 +25,25 @@ library HostCrossChainLib {
         require(message_.length >= 32, TooShortCrossChainMessage());
 
         uint16 messageKind = abi.decode(message_, (uint16));
+        console.log("onReceiveCrossChainMessage message kind", messageKind);
 
         if (messageKind == uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)) {
-            (, string memory daoSymbol) = abi.decode(message_, (uint16, string));
+            string memory daoSymbol = unpackMessageNewDaoSymbol(message_);
 
             $.daoUids[daoSymbol] = HostLib.getDaoUidStub();
 
             emit IHost.OnRegisterDaoSymbol(daoSymbol, srcEid, guid_);
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1)) {
-            (, string memory oldSymbol, string memory newSymbol) = abi.decode(message_, (uint16, string, string));
+            (string memory oldSymbol, string memory newSymbol) = unpackMessageRenameSymbol(message_);
 
+            uint daoUid = $.daoUids[oldSymbol];
             delete $.daoUids[oldSymbol];
-            $.daoUids[newSymbol] = HostLib.getDaoUidStub();
+            $.daoUids[newSymbol] = daoUid;
 
             emit IHost.OnRenameDaoSymbol(oldSymbol, newSymbol, srcEid, guid_);
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2)) {
-            (uint16 actionKind, uint daoUid, bytes32 actionHash) = abi.decode(message_, (uint16, uint, bytes32));
+            (uint16 actionKind, uint daoUid, bytes32 actionHash) = unpackMessageBridgedActionHash(message_);
+            console.log("actionKind, daoUid, actionHash", actionKind, daoUid, uint(actionHash));
 
             $.bridgedActionHashes[actionHash] = HostLib.BridgedActionLocal({
                 daoUid: daoUid,
@@ -55,43 +58,90 @@ library HostCrossChainLib {
         }
     }
 
+    //region ----------------------------------------- Pack/Unpack cross-chain messages
+    function packMessageNewDaoSymbol(string memory daoSymbol) internal pure returns (bytes memory message) {
+        return abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
+    }
+
+    function unpackMessageNewDaoSymbol(bytes memory message) internal pure returns (string memory daoSymbol) {
+        (, string memory symbol) = abi.decode(message, (uint16, string));
+        return symbol;
+    }
+
+    function packMessageRenameSymbol(string memory oldSymbol, string memory newSymbol) internal pure returns (bytes memory message) {
+        return abi.encode(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), oldSymbol, newSymbol);
+    }
+
+    function unpackMessageRenameSymbol(bytes memory message) internal pure returns (string memory oldSymbol, string memory newSymbol) {
+        (, oldSymbol, newSymbol) = abi.decode(message, (uint16, string, string));
+    }
+
+    function packMessageBridgedActionHash(
+        uint16 actionKind,
+        uint daoUid,
+        bytes32 actionHash
+    ) internal pure returns (bytes memory message) {
+        return abi.encode(uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), actionKind, daoUid, actionHash);
+    }
+
+    function unpackMessageBridgedActionHash(bytes memory message) internal pure returns (uint16 actionKind, uint daoUid, bytes32 actionHash) {
+        (, actionKind, daoUid, actionHash) = abi.decode(message, (uint16, uint16, uint, bytes32));
+    }
+
+    //endregion ----------------------------------------- Pack/Unpack cross-chain messages
+
+    //region ----------------------------------------- Quote and send cross-chain messages
     /// @notice Send cross-chain notification about new DAO symbol registration.
-    function sendMessageNewSymbol(string memory daoSymbol) internal {
-        bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
+    function sendMessageToAllChains(IHost.CrossChainMessages messageKind, bytes memory message) internal {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
-        _sendCrossChainMessage(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, payload, bridge);
+        _sendCrossChainMessageToAllChains(messageKind, message, bridge);
     }
 
-    /// @notice Quote cost to register new DAO symbol
-    /// @param daoSymbol Symbol of new DAO
-    /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
-    function quoteSendMessageNewSymbol(string calldata daoSymbol) external view returns (uint) {
-        bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
+    /// @notice Send cross-chain notification about new DAO symbol registration.
+    function sendMessage(uint32 dstEid, IHost.CrossChainMessages messageKind, bytes memory message) internal {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
-        return bridge == address(0)
-            ? 0
-            : IHostBridge(bridge).quoteSendMessageToAllChains(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), payload);
+        _sendCrossChainMessage(dstEid, messageKind, message, bridge);
     }
 
-    /// @notice Send cross-chain notification about updating DAO symbol.
-    function sendMessageUpdateSymbol(string memory oldSymbol, string memory newSymbol) internal {
-        bytes memory payload = abi.encode(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), oldSymbol, newSymbol);
+    function quoteMessageToAllChains(IHost.CrossChainMessages messageKind, bytes memory message) internal view returns (uint) {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
-        _sendCrossChainMessage(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1, payload, bridge);
+        return IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), message);
     }
 
+    function quoteMessage(uint32 dstEid, IHost.CrossChainMessages messageKind, bytes memory message) internal view returns (uint) {
+        return _quoteMessage(dstEid, messageKind, message, HostConfigLib.getHostChainSettings().hostBridge);
+    }
+    //endregion ----------------------------------------- Quote and send cross-chain messages
+
+    //region ----------------------------------------- Internal utils
     /// @notice Send cross-chain message about DAO event
-    function _sendCrossChainMessage(
+    function _sendCrossChainMessageToAllChains(
         IHost.CrossChainMessages messageKind,
         bytes memory payload,
         address bridge_
     ) internal {
-        if (bridge_ != address(0)) {
-            uint totalFee = IHostBridge(bridge_).quoteSendMessageToAllChains(uint(messageKind), payload);
-            require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));
-            console.log("_sendCrossChainMessage.bridge", bridge_);
-            console.log("_sendCrossChainMessage.host", address(this));
-            IHostBridge(bridge_).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
-        }
+        uint totalFee = IHostBridge(bridge_).quoteSendMessageToAllChains(uint(messageKind), payload);
+        require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));
+        IHostBridge(bridge_).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
     }
+
+    /// @notice Send cross-chain message about DAO event
+    function _sendCrossChainMessage(
+        uint32 dstEid,
+        IHost.CrossChainMessages messageKind,
+        bytes memory payload,
+        address bridge_
+    ) internal {
+        console.log("_sendCrossChainMessage.message kind", uint(messageKind), dstEid);
+
+        uint fee = IHostBridge(bridge_).quoteSendMessage(dstEid, uint(messageKind), payload);
+        require(msg.value >= fee, IHost.NotEnoughNativeProvided(fee));
+        IHostBridge(bridge_).sendMessage{value: fee}(dstEid, uint(messageKind), payload, fee);
+    }
+
+    function _quoteMessage(uint32 dstEid, IHost.CrossChainMessages messageKind, bytes memory message, address bridge) internal view returns (uint) {
+        return IHostBridge(bridge).quoteSendMessage(dstEid, uint(messageKind), message);
+    }
+
+    //endregion ----------------------------------------- Internal utils
 }

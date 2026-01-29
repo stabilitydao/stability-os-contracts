@@ -19,7 +19,7 @@ library HostFundingLib {
         require(amount != 0, IHosted.ZeroAmount()); // todo settings.minFunding
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
@@ -64,7 +64,7 @@ library HostFundingLib {
     /// TGE token can be returned only on DEVELOPMENT phase
     function refund(string calldata daoSymbol) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
@@ -85,7 +85,7 @@ library HostFundingLib {
     /// TGE token can be returned only on DEVELOPMENT phase
     function refundFor(string calldata daoSymbol, address[] memory receivers) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = $.daoUids[daoSymbol];
+        uint daoUid = HostLib.getDaoUid($, daoSymbol);
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
@@ -120,7 +120,7 @@ library HostFundingLib {
 
             IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 
-            uint daoUid = $.daoUids[daoSymbol];
+            uint daoUid = HostLib.getDaoUid($, daoSymbol);
             ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(fundingType_))];
             uint raised = funding.raised;
             funding.raised = raised > balance ? raised - balance : 0;

@@ -146,7 +146,7 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     }
 
     /// @inheritdoc IHostBridge
-    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external restricted {
+    function sendMessage(uint32 dstEid_, uint messageKind, bytes memory message_, uint fee) external payable restricted {
         HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         uint128 _gasLimit = $.gasLimits[messageKind];
