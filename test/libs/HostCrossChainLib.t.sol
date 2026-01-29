@@ -22,7 +22,11 @@ contract HostCrossChainLibCaller {
         return HostCrossChainLib.unpackMessageRenameSymbol(message);
     }
 
-    function packBridgedActionHash(uint16 actionKind, uint daoUid, bytes32 actionHash) external pure returns (bytes memory) {
+    function packBridgedActionHash(
+        uint16 actionKind,
+        uint daoUid,
+        bytes32 actionHash
+    ) external pure returns (bytes memory) {
         return HostCrossChainLib.packMessageBridgedActionHash(actionKind, daoUid, actionHash);
     }
 
@@ -46,7 +50,7 @@ contract HostCrossChainLibTest is Test {
         assertEq(decoded, sym);
 
         (uint16 tag,) = abi.decode(msgData, (uint16, string));
-        assertEq(uint256(tag), uint256(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)));
+        assertEq(uint(tag), uint(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)));
     }
 
     function testPackUnpackRenameSymbol() public view {
@@ -58,8 +62,8 @@ contract HostCrossChainLibTest is Test {
         assertEq(dOld, oldSym);
         assertEq(dNew, newSym);
 
-        (uint16 tag, ,) = abi.decode(msgData, (uint16, string, string));
-        assertEq(uint256(tag), uint256(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1)));
+        (uint16 tag,,) = abi.decode(msgData, (uint16, string, string));
+        assertEq(uint(tag), uint(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1)));
     }
 
     function testPackUnpackBridgedActionHash() public view {
@@ -70,11 +74,11 @@ contract HostCrossChainLibTest is Test {
         bytes memory msgData = caller.packBridgedActionHash(actionKind, daoUid, actionHash);
 
         (uint16 dKind, uint dUid, bytes32 dHash) = caller.unpackBridgedActionHash(msgData);
-        assertEq(uint256(dKind), uint256(actionKind));
+        assertEq(uint(dKind), uint(actionKind));
         assertEq(dUid, daoUid);
         assertEq(dHash, actionHash);
 
         (uint16 tag,) = abi.decode(msgData, (uint16, uint16));
-        assertEq(uint256(tag), uint256(uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2)));
+        assertEq(uint(tag), uint(uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2)));
     }
 }

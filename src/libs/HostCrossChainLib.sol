@@ -68,11 +68,18 @@ library HostCrossChainLib {
         return symbol;
     }
 
-    function packMessageRenameSymbol(string memory oldSymbol, string memory newSymbol) internal pure returns (bytes memory message) {
+    function packMessageRenameSymbol(
+        string memory oldSymbol,
+        string memory newSymbol
+    ) internal pure returns (bytes memory message) {
         return abi.encode(uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), oldSymbol, newSymbol);
     }
 
-    function unpackMessageRenameSymbol(bytes memory message) internal pure returns (string memory oldSymbol, string memory newSymbol) {
+    function unpackMessageRenameSymbol(bytes memory message)
+        internal
+        pure
+        returns (string memory oldSymbol, string memory newSymbol)
+    {
         (, oldSymbol, newSymbol) = abi.decode(message, (uint16, string, string));
     }
 
@@ -84,7 +91,11 @@ library HostCrossChainLib {
         return abi.encode(uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), actionKind, daoUid, actionHash);
     }
 
-    function unpackMessageBridgedActionHash(bytes memory message) internal pure returns (uint16 actionKind, uint daoUid, bytes32 actionHash) {
+    function unpackMessageBridgedActionHash(bytes memory message)
+        internal
+        pure
+        returns (uint16 actionKind, uint daoUid, bytes32 actionHash)
+    {
         (, actionKind, daoUid, actionHash) = abi.decode(message, (uint16, uint16, uint, bytes32));
     }
 
@@ -103,14 +114,22 @@ library HostCrossChainLib {
         _sendCrossChainMessage(dstEid, messageKind, message, bridge);
     }
 
-    function quoteMessageToAllChains(IHost.CrossChainMessages messageKind, bytes memory message) internal view returns (uint) {
+    function quoteMessageToAllChains(
+        IHost.CrossChainMessages messageKind,
+        bytes memory message
+    ) internal view returns (uint) {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         return IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), message);
     }
 
-    function quoteMessage(uint32 dstEid, IHost.CrossChainMessages messageKind, bytes memory message) internal view returns (uint) {
+    function quoteMessage(
+        uint32 dstEid,
+        IHost.CrossChainMessages messageKind,
+        bytes memory message
+    ) internal view returns (uint) {
         return _quoteMessage(dstEid, messageKind, message, HostConfigLib.getHostChainSettings().hostBridge);
     }
+
     //endregion ----------------------------------------- Quote and send cross-chain messages
 
     //region ----------------------------------------- Internal utils
@@ -139,7 +158,12 @@ library HostCrossChainLib {
         IHostBridge(bridge_).sendMessage{value: fee}(dstEid, uint(messageKind), payload, fee);
     }
 
-    function _quoteMessage(uint32 dstEid, IHost.CrossChainMessages messageKind, bytes memory message, address bridge) internal view returns (uint) {
+    function _quoteMessage(
+        uint32 dstEid,
+        IHost.CrossChainMessages messageKind,
+        bytes memory message,
+        address bridge
+    ) internal view returns (uint) {
         return IHostBridge(bridge).quoteSendMessage(dstEid, uint(messageKind), message);
     }
 

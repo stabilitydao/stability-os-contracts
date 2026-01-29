@@ -130,8 +130,9 @@ contract HostBridgedActionsTest is Test {
         }
 
         // ------------------------ Process proposal
+        bytes32 proposalId;
         {
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
+            proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
             ITokenomics.Proposal memory proposal = hostSonic.proposal(proposalId);
             assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
             assertTrue(proposal.votingRequired, "proposal should require voting");
@@ -162,29 +163,31 @@ contract HostBridgedActionsTest is Test {
             console.log("uid", hostAvalanche.getDAO(dao.symbol).uid, dao.uid);
 
             // get bridged action for Avalanche
-            (, , bytes[] memory actionPayloads) = HostEncodingLib.decodeBridgedAction(proposalPayload);
+            (,, bytes[] memory actionPayloads) = HostEncodingLib.decodeBridgedAction(proposalPayload);
 
             {
-                (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.getBridgedAction(EfficientHashLib.hash(actionPayloads[0]));
+                (bool applied, uint16 actionKind, uint daoUid) =
+                    hostAvalanche.getBridgedAction(proposalId, actionPayloads[0]);
                 assertEq(daoUid, dao.uid, "expected dao uid");
                 assertFalse(applied, "not applied");
                 assertEq(actionKind, uint16(IHost.BridgedActions.BRIDGE_DAO_1), "action kind");
             }
 
-            hostAvalanche.applyBridgedAction(actionPayloads[0]);
+            vm.expectRevert(IHost.UnknownBridgedActionHash.selector);
+            hostAvalanche.applyBridgedAction(bytes32(uint(proposalId) + 1), actionPayloads[0]);
 
-            { // ----------------------- bad paths
-                vm.expectRevert(IHost.BridgedActionAlreadyApplied.selector);
-                hostAvalanche.applyBridgedAction(actionPayloads[0]);
-            }
+            hostAvalanche.applyBridgedAction(proposalId, actionPayloads[0]);
+
+            vm.expectRevert(IHost.BridgedActionAlreadyApplied.selector);
+            hostAvalanche.applyBridgedAction(proposalId, actionPayloads[0]);
 
             {
-                (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.getBridgedAction(EfficientHashLib.hash(actionPayloads[0]));
+                (bool applied, uint16 actionKind, uint daoUid) =
+                    hostAvalanche.getBridgedAction(proposalId, actionPayloads[0]);
                 assertEq(daoUid, dao.uid, "expected dao uid");
                 assertTrue(applied, "applied now");
                 assertEq(actionKind, uint16(IHost.BridgedActions.BRIDGE_DAO_1), "action kind");
             }
-
         }
     }
 

@@ -17,10 +17,10 @@ library HostUpdateBridgedLib {
     /// @dev Proposal to update bridged DAO on other chains is accepted => send payload hashes to bridged DAO hosts
     /// @param daoUid UID of the DAO to update
     /// @param payload Payload with action details.
-    function sendBridgedAction(uint daoUid, bytes memory payload) external {
+    function sendBridgedAction(uint daoUid, bytes memory payload, bytes32 proposalId) external {
         (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
             HostEncodingLib.decodeBridgedAction(payload);
-        _sendBridgedAction(daoUid, actionKind, dstEids, actionPayloads);
+        _sendBridgedAction(daoUid, actionKind, dstEids, actionPayloads, proposalId);
     }
 
     /// @notice Quote fee for sending payload hashes to bridged DAO hosts
@@ -50,10 +50,10 @@ library HostUpdateBridgedLib {
     /// @notice Apply bridged action on this chain
     /// @param actionPayload Payload with action details.
     /// Its hash should be already registered on this chain
-    function applyBridgedAction(bytes calldata actionPayload) external {
+    function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        bytes32 payloadHash = EfficientHashLib.hash(actionPayload);
+        bytes32 payloadHash = _getHashProposalAction(proposalId, actionPayload);
         HostLib.BridgedActionLocal storage action = $.bridgedActionHashes[payloadHash];
         HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(action.bridgedActionHeader);
         uint daoUid = action.daoUid;
@@ -116,10 +116,9 @@ library HostUpdateBridgedLib {
                 /// @dev Ensure that user set correct DAO symbol in payload
                 require(
                     keccak256(bytes(p.symbol)) == keccak256(bytes(segment2.daoSymbol))
-                    && keccak256(bytes(p.name)) == keccak256(bytes(segment2.name)),
+                        && keccak256(bytes(p.name)) == keccak256(bytes(segment2.name)),
                     IHost.IncorrectInputData()
                 );
-
             } else if (actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
                 // todo
             } else if (actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
@@ -140,6 +139,12 @@ library HostUpdateBridgedLib {
         }
     }
 
+    /// @notice Get hash of proposal action payload. This hash is passed through cross-chain messages
+    function _getHashProposalAction(bytes32 proposalId, bytes memory actionPayload) internal pure returns (bytes32) {
+        console.log("_getHashProposalAction", uint(proposalId));
+        return EfficientHashLib.hash(proposalId, EfficientHashLib.hash(actionPayload));
+    }
+
     //endregion ----------------------------------------- Public
 
     //region ----------------------------------------- Internal logic
@@ -152,14 +157,15 @@ library HostUpdateBridgedLib {
         uint daoUid,
         uint16 bridgedActionKind,
         uint32[] memory dstEids,
-        bytes[] memory listPayloads
+        bytes[] memory listPayloads,
+        bytes32 proposalId
     ) internal {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
 
         // --------------------- send payload-hashes to each bridged DAO host
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
-            bytes32 hash = EfficientHashLib.hash(listPayloads[i]);
+            bytes32 hash = _getHashProposalAction(proposalId, listPayloads[i]);
             console.log("_sendBridgedAction.hash", uint(hash));
             HostCrossChainLib._sendCrossChainMessage(
                 dstEids[i],
@@ -168,7 +174,9 @@ library HostUpdateBridgedLib {
                 bridge
             );
 
-            emit IHost.BridgedActionSent(daoUid, uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), dstEids[i], hash);
+            emit IHost.BridgedActionSent(
+                daoUid, uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), dstEids[i], hash
+            );
         }
     }
 

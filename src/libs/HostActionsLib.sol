@@ -225,8 +225,7 @@ library HostActionsLib {
         emit IHost.DaoCreated(daoName, daoSymbol, daoUid);
 
         HostCrossChainLib.sendMessageToAllChains(
-            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0,
-            HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
+            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
         );
     }
 

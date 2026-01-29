@@ -130,7 +130,7 @@ library HostProposalsLib {
         } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
             HostUpdateLib.updateSalt(daoUid, payload);
         } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_8) {
-            HostUpdateBridgedLib.sendBridgedAction(daoUid, payload);
+            HostUpdateBridgedLib.sendBridgedAction(daoUid, payload, proposalId);
         } else {
             // todo other actions
             revert IHost.NotImplemented();

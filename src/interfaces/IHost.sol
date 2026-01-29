@@ -255,11 +255,13 @@ interface IHost {
     ) external view returns (uint);
 
     /// @notice Get bridged action status by its hash
-    /// @param actionHash Hash of the action payload. This hash is registered through cross-chain message.
     /// @return applied True if the action was already applied on this chain
     /// @return actionKind Kind of the action, see IHost.BridgedActions
     /// @return daoUid UID of the DAO the action is applied to
-    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid);
+    function getBridgedAction(
+        bytes32 proposalId,
+        bytes memory payload
+    ) external view returns (bool applied, uint16 actionKind, uint daoUid);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -397,10 +399,11 @@ interface IHost {
         bytes[] calldata actionPayloads
     ) external;
 
-    /// @notice Apply bridged action on the current chain
+    /// @notice Apply bridged action on the current chain. The action is approved by {proposalId} on the initial chain.
+    /// @param proposalId Proposal unique id
     /// @param actionPayload Payload with action details.
     /// Its hash should be already registered on this chain through cross-chain message.
-    function applyBridgedAction(bytes calldata actionPayload) external;
+    function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external;
 
     //endregion ---------------------------------------- Update actions
 }
