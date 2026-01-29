@@ -63,24 +63,22 @@ library HostUpdateBridgedLib {
 
         if (header.actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
             bridgeDao(daoUid, actionPayload);
+        } else if (header.actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
+            // todo
+        } else if (header.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
+            // todo
+        } else if (header.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
+            _updateDaoParams(daoUid, actionPayload);
+        } else if (header.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
+            _updateSalts(daoUid, actionPayload);
+        } else if (header.actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
+            _updateDaoChainSettings(daoUid, actionPayload);
+        } else if (header.actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
+            // todo
+        } else if (header.actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
+            // todo
         } else {
-            if (header.actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
-                // todo
-            } else if (header.actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
-                // todo
-            } else if (header.actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
-                _updateDaoParams(daoUid, actionPayload);
-            } else if (header.actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
-                _updateSalts(daoUid, actionPayload);
-            } else if (header.actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
-                _updateDaoChainSettings(daoUid, actionPayload);
-            } else if (header.actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
-                // todo
-            } else if (header.actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
-                // todo
-            } else {
-                revert IHost.UnknownBridgedActionKind();
-            }
+            revert IHost.UnknownBridgedActionKind();
         }
 
         $.bridgedActionHashes[payloadHash].bridgedActionHeader = HostLib.packBridgedActionHeader(
