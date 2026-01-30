@@ -28,12 +28,16 @@ contract HostedTest is Test {
     address internal logic;
 
     constructor() {
-        emptyHostPayload = IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0});
+        emptyHostPayload = IHost.HostInitPayload({
+            usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "1.0.0"
+        });
         {
             string[] memory usedSymbols = new string[](1);
             usedSymbols[0] = "B";
 
-            notEmptyHostPayload = IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1});
+            notEmptyHostPayload = IHost.HostInitPayload({
+                usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1, hostVersion: "1.0.0"
+            });
         }
 
         logic = address(new Host());

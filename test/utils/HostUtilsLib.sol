@@ -88,6 +88,7 @@ library HostUtilsLib {
     //region ----------------------------- Create HOST and DAO instances
     function createHostInstance(Vm vm, address multisig) internal returns (IHost) {
         IHost.HostInitPayload memory init;
+        init.hostVersion = "1.0.0";
         return createHostInstance(vm, multisig, init);
     }
 
@@ -256,7 +257,9 @@ library HostUtilsLib {
 
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
-        host_.setChainSettings(IHost.HostChainSettings({exchangeAsset: address(usdc), hostBridge: address(bridge)}));
+        host_.setChainSettings(
+            IHost.HostChainSettings({exchangeAsset: address(usdc), hostBridge: address(bridge), timelock: 30 minutes})
+        );
     }
 
     function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) internal {

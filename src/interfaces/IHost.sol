@@ -141,6 +141,9 @@ interface IHost {
 
         /// @notice Address of the Host-bridge contract on the current chain
         address hostBridge;
+
+        /// @notice Timelock duration for host platform upgrades, sec
+        uint timelock;
     }
 
     struct Task {
@@ -157,6 +160,9 @@ interface IHost {
 
         /// @notice UID of host DAO. Zero if this is a first DAO on the first host
         uint daoHostUid;
+
+        /// @notice Initial version of host platform
+        string hostVersion;
     }
 
     /// @notice Kinds of cross-chain messages

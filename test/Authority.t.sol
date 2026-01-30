@@ -20,7 +20,7 @@ contract AuthorityTest is Test {
         usedSymbols[0] = "B";
 
         IHost.HostInitPayload memory hostPayload =
-            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1});
+            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1, hostVersion: "1.0.0"});
 
         // ------------------- deploy proxy factory
         vm.prank(MULTISIG);
@@ -67,6 +67,7 @@ contract AuthorityTest is Test {
         assertNotEq(host.getHostDaoUid(), 0, "host dao uid set");
         assertEq(host.getHostDaoUid(), host.getDAO("A").uid, "host dao uid");
         assertEq(host.isDaoSymbolInUse("B"), true, "host used symbol");
+        assertEq(keccak256(bytes(host.hostVersion())), keccak256(bytes("1.0.0")), "host version");
 
         // -------------------- verify authority
         assertEq(authority.HOST(), hostPredicted, "authority host");
@@ -74,8 +75,9 @@ contract AuthorityTest is Test {
     }
 
     function testDeployAuthorityGasEstimation() public {
-        IHost.HostInitPayload memory hostPayload =
-            IHost.HostInitPayload({usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0});
+        IHost.HostInitPayload memory hostPayload = IHost.HostInitPayload({
+            usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "1.0.0"
+        });
 
         // ------------------- deploy proxy factory
         uint gas = gasleft();

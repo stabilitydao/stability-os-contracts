@@ -14,6 +14,7 @@ import {IHost} from "./interfaces/IHost.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import {Hosted} from "./base/Hosted.sol";
+import {IAuthority} from "./interfaces/IAuthority.sol";
 
 contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -28,9 +29,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     //region --------------------------------- Data types
     /// @custom:storage-location erc7201:stability.host-contracts.HostBridge
     struct HostBridgeStorage {
-        /// @notice Address of the OS contract on the current chain
-        address host;
-
         /// @notice Set of LayerZero endpoint IDs to which this bridge can send messages
         EnumerableSet.UintSet endpoints;
 
@@ -63,12 +61,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
 
     //region --------------------------------- Views
     /// @inheritdoc IHostBridge
-    function getHost() external view returns (address) {
-        HostBridgeStorage storage $ = _getHostBridgeStorage();
-        return $.host;
-    }
-
-    /// @inheritdoc IHostBridge
     function endpoints() external view returns (uint32[] memory) {
         HostBridgeStorage storage $ = _getHostBridgeStorage();
         uint len = $.endpoints.length();
@@ -88,14 +80,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
     //endregion --------------------------------- Views
 
     //region --------------------------------- Actions
-    /// @inheritdoc IHostBridge
-    function setHost(address host_) external restricted {
-        HostBridgeStorage storage $ = _getHostBridgeStorage();
-        $.host = host_;
-
-        emit SetHost(host_);
-    }
-
     /// @inheritdoc IHostBridge
     function setGasLimit(uint messageKind, uint128 gasLimit_) external restricted {
         HostBridgeStorage storage $ = _getHostBridgeStorage();
@@ -241,8 +225,7 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
         // As soon as sendMessage is restricted to be called by OS only
         // nobody except OS can send messages to this contract.
 
-        HostBridgeStorage storage $ = _getHostBridgeStorage();
-        address receiver = $.host;
+        address receiver = IAuthority(authority()).HOST();
 
         if (receiver != address(0)) {
             IHost(receiver).onReceiveCrossChainMessage(origin_.srcEid, guid_, message_);

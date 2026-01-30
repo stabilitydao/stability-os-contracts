@@ -128,6 +128,10 @@ contract HostBridgeTest is Test {
         assertEq(hostPlasma.isDaoSymbolInUse(dao3.symbol), true, "Plasma: dao3 symbol");
     }
 
+    function testEndpoints() public {
+        // todo
+    }
+
     function _processCrossChainMessages(
         Vm.Log[] memory logs,
         BridgeTestLib.ChainConfig memory from,

@@ -36,20 +36,12 @@ interface IHostBridge {
     /// @custom:restricted Only OS contracts can call this function
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable;
 
-    /// @notice Get Host contract address on the current chain
-    function getHost() external view returns (address);
-
     /// @notice Get supported chains endpoint LayerZero IDs
     function endpoints() external view returns (uint32[] memory);
 
     /// @notice Get gas limit for a specific message kind
     /// @param messageKind See IOS.CrossChainMessages
     function gasLimit(uint messageKind) external view returns (uint128);
-
-    /// @notice Set Host contract address on the current chain
-    /// @param os_ Address of the OS contract
-    /// @custom:restricted Only admin
-    function setHost(address os_) external;
 
     /// @notice Add supported chains by their endpoint LayerZero IDs
     /// @param eids_ Array of chain endpoint LayerZero IDs to add

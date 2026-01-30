@@ -8,16 +8,26 @@ import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
-import {Vm, Test} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
 import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {HostUpgradeProxyLib} from "../../src/libs/HostUpgradeProxyLib.sol";
 
 contract HostUpgradeProxyLibTest is Test {
     address internal immutable MULTISIG;
 
     constructor() {
         MULTISIG = makeAddr("multisig");
+    }
+
+    function testStorageLocation() public pure {
+        assertEq(
+            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostUpgradeProxyLib")) - 1))
+                & ~bytes32(uint(0xff)),
+            HostUpgradeProxyLib.HOST_UPGRADE_STORAGE_LOCATION,
+            "HOST_UPGRADE_STORAGE_LOCATION"
+        );
     }
 
     function testUpgradeHost() public {
@@ -50,12 +60,12 @@ contract HostUpgradeProxyLibTest is Test {
             (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
                 host.pendingPlatformUpgrade();
             assertEq(keccak256(bytes(newVersion)), keccak256(bytes("1.1.0")), "new version announced");
-            assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(proxies)), "proxies announced");
             assertEq(
                 keccak256(abi.encode(newImplementations)),
                 keccak256(abi.encode(implementations)),
                 "implementations announced"
             );
+            assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(proxies)), "proxies announced");
         }
 
         // ------------------------- Wait timelock
@@ -77,11 +87,11 @@ contract HostUpgradeProxyLibTest is Test {
             (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
                 host.pendingPlatformUpgrade();
             assertEq(keccak256(bytes(newVersion)), keccak256(bytes("")), "no new version announced");
-            assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(proxies)), "proxies announced");
+            assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(new address[](0))), "no proxies announced");
             assertEq(
                 keccak256(abi.encode(newImplementations)),
-                keccak256(abi.encode(implementations)),
-                "implementations announced"
+                keccak256(abi.encode(new address[](0))),
+                "no implementations announced"
             );
         }
 
@@ -143,8 +153,8 @@ contract HostUpgradeProxyLibTest is Test {
             host.announceUpgrade("1.1.0", implementations2, proxies);
 
             implementations2 = new address[](2);
-            implementations[0] = address(new MinHostedNoReceive()); // upgrade
-            implementations[1] = address(new MinHostedNoReceiveV2()); // downgrade
+            implementations2[0] = address(new MinHostedNoReceive()); // upgrade
+            implementations2[1] = address(new MinHostedNoReceiveV2()); // downgrade
 
             vm.expectRevert(IHost.SameVersion.selector);
             vm.prank(MULTISIG);
@@ -152,7 +162,7 @@ contract HostUpgradeProxyLibTest is Test {
 
             vm.expectRevert(IHost.SameVersion.selector);
             vm.prank(MULTISIG);
-            host.announceUpgrade("", implementations, proxies);
+            host.announceUpgrade("1.0.0", implementations, proxies);
 
             vm.expectRevert(); // restricted
             vm.prank(address(0x1111));
@@ -171,6 +181,7 @@ contract HostUpgradeProxyLibTest is Test {
             host.announceUpgrade("1.2.0", proxies, implementations);
 
             // We cannot upgrade before timelock
+            vm.expectRevert(abi.encodeWithSelector(IHost.UpgradeTimerIsNotOver.selector, uint(1801)));
             vm.prank(MULTISIG);
             host.upgrade();
         }
@@ -189,6 +200,7 @@ contract HostUpgradeProxyLibTest is Test {
         // ------------------------- Bad paths
         {
             // nothing to cancel
+            vm.expectRevert(IHost.NoNewVersion.selector);
             vm.prank(MULTISIG);
             host.cancelUpgrade();
         }
@@ -220,6 +232,10 @@ contract HostUpgradeProxyLibTest is Test {
         vm.prank(MULTISIG);
         host.announceUpgrade("1.1.0", proxies, implementations);
 
+        console.log("Host version before upgrade:", host.hostVersion());
+
+        assertEq(keccak256(bytes(host.hostVersion())), keccak256(bytes("1.0.0")), "initial host version");
+
         assertEq(keccak256(bytes(IHosted(proxies[0]).VERSION())), keccak256(bytes("1.0.0")), "version not changed");
         assertEq(keccak256(bytes(IHosted(proxies[1]).VERSION())), keccak256(bytes("2.0.0")), "version not changed");
 
@@ -230,7 +246,20 @@ contract HostUpgradeProxyLibTest is Test {
         assertEq(keccak256(bytes(IHosted(proxies[0]).VERSION())), keccak256(bytes("1.0.0")), "version not changed");
         assertEq(keccak256(bytes(IHosted(proxies[1]).VERSION())), keccak256(bytes("2.0.0")), "version not changed");
 
-        assertEq(host.hostVersion(), "1.0.0", "host version is NOT updated");
+        assertEq(keccak256(bytes(host.hostVersion())), keccak256(bytes("1.0.0")), "host version is NOT updated");
+
+        // ------------------------- Ensure that pending update is cleared
+        {
+            (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
+                host.pendingPlatformUpgrade();
+            assertEq(keccak256(bytes(newVersion)), keccak256(bytes("")), "no new version announced");
+            assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(new address[](0))), "no proxies announced");
+            assertEq(
+                keccak256(abi.encode(newImplementations)),
+                keccak256(abi.encode(new address[](0))),
+                "no implementations announced"
+            );
+        }
     }
 
     //region ------------------------------------- Internal utils

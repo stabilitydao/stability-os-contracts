@@ -708,13 +708,12 @@ library BridgeTestLib {
 
         vm.prank(chain.multisig);
         host.setChainSettings(
-            IHost.HostChainSettings({exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge})
+            IHost.HostChainSettings({
+                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, timelock: 30 minutes
+            })
         );
 
-        // -------------------- set Host and endpoints inside HostBridge
-        vm.prank(chain.multisig);
-        IHostBridge(chain.hostBridge).setHost(address(host));
-
+        // -------------------- set endpoints inside HostBridge
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).addEndpoint(endpoints);
 

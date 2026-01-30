@@ -10,6 +10,7 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {HostUpdateLib} from "./HostUpdateLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {HostUpgradeProxyLib} from "./HostUpgradeProxyLib.sol";
 
 library HostActionsLib {
     using SafeERC20 for IERC20;
@@ -53,6 +54,7 @@ library HostActionsLib {
             $.hostDaoUid = initPayload.daoHostUid;
         }
 
+        HostUpgradeProxyLib.initialize(initPayload.hostVersion);
         // todo event Host initialized
     }
 

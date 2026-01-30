@@ -151,8 +151,9 @@ contract HostProxyFactoryLibTest is Test {
         usedSymbols[0] = "AAA";
         usedSymbols[1] = "BBB";
 
-        IHost.HostInitPayload memory init =
-            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "CCC", daoHostUid: 12345});
+        IHost.HostInitPayload memory init = IHost.HostInitPayload({
+            usedSymbols: usedSymbols, daoHostSymbol: "CCC", daoHostUid: 12345, hostVersion: "1.0.0"
+        });
 
         vm.expectRevert();
         vm.prank(address(2222));

@@ -117,7 +117,7 @@ library HostCrossChainLib {
     function quoteMessageToAllChains(
         IHost.CrossChainMessages messageKind,
         bytes memory message
-    ) internal view returns (uint) {
+    ) external view returns (uint) {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
         return IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), message);
     }
