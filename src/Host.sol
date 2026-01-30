@@ -13,6 +13,7 @@ import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {HostProxyFactoryLib} from "./libs/HostProxyFactoryLib.sol";
 import {HostUpdateBridgedLib} from "./libs/HostUpdateBridgedLib.sol";
+import {HostUpgradeProxyLib} from "./libs/HostUpgradeProxyLib.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
@@ -119,6 +120,20 @@ contract Host is IHost, Hosted {
         bytes memory payload
     ) external view returns (bool applied, uint16 actionKind, uint daoUid) {
         return HostViewLib.getBridgedAction(HostUpdateBridgedLib._getHashProposalAction(proposalId, payload));
+    }
+
+    /// @inheritdoc IHost
+    function hostVersion() external view returns (string memory) {
+        return HostUpgradeProxyLib.hostVersion();
+    }
+
+    /// @inheritdoc IHost
+    function pendingPlatformUpgrade()
+        external
+        view
+        returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations)
+    {
+        return HostUpgradeProxyLib.pendingPlatformUpgrade();
     }
 
     //endregion -------------------------------------- View
@@ -290,5 +305,28 @@ contract Host is IHost, Hosted {
     function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external {
         HostUpdateBridgedLib.applyBridgedAction(proposalId, actionPayload);
     }
+
     //endregion -------------------------------------- Update actions
+
+    //region ---------------------------------------- Update host platform
+    /// @inheritdoc IHost
+    function announceUpgrade(
+        string memory newVersion,
+        address[] memory proxies,
+        address[] memory newImplementations
+    ) external restricted {
+        HostUpgradeProxyLib.announceUpgrade(newVersion, proxies, newImplementations);
+    }
+
+    /// @inheritdoc IHost
+    function upgrade() external restricted {
+        HostUpgradeProxyLib.upgrade();
+    }
+
+    /// @inheritdoc IHost
+    function cancelUpgrade() external restricted {
+        HostUpgradeProxyLib.cancelUpgrade();
+    }
+
+    //endregion ---------------------------------------- Update host platform
 }

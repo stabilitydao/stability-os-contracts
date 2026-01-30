@@ -51,6 +51,11 @@ interface IHost {
     error AlreadyBridged();
     error IncorrectInputData();
 
+    error AlreadyAnnounced();
+    error SameVersion();
+    error NoNewVersion();
+    error UpgradeTimerIsNotOver(uint TimerTimestamp);
+
     event DaoCreated(string name, string daoSymbol, uint daoUid);
 
     event OsSettingsUpdated(IHost.HostSettings st);
@@ -96,6 +101,15 @@ interface IHost {
     event BridgedActionSent(uint daoUid, uint16 actionKind, uint32 dstEid, bytes32 hash);
 
     event BridgeDao(uint daoUid, IBridgedActions.BridgeDaoParams params, string[] unitIds);
+
+    event HostVersion(string version);
+    event UpgradeAnnounce(
+        string oldVersion, string newVersion, address[] proxies, address[] newImplementations, uint timelock
+    );
+    event CancelUpgrade(string oldVersion, string newVersion);
+    event ProxyUpgraded(
+        address indexed proxy, address implementation, string oldContractVersion, string newContractVersion
+    );
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {
@@ -262,6 +276,15 @@ interface IHost {
         bytes32 proposalId,
         bytes memory payload
     ) external view returns (bool applied, uint16 actionKind, uint daoUid);
+
+    /// @notice Host version in CalVer scheme: YY.MM.MINOR-tag. Updates on core contract upgrades.
+    function hostVersion() external view returns (string memory);
+
+    /// @notice Get pending platform upgrade data
+    function pendingPlatformUpgrade()
+        external
+        view
+        returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations);
     //endregion ---------------------------------------- Read
 
     //region ---------------------------------------- Write actions
@@ -404,6 +427,27 @@ interface IHost {
     /// @param actionPayload Payload with action details.
     /// Its hash should be already registered on this chain through cross-chain message.
     function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external;
-
     //endregion ---------------------------------------- Update actions
+
+    //region ---------------------------------------- Update host platform
+    /// @notice Announce upgrade of host proxies implementations
+    /// @custom:restricted Restricted through access manager (only governance or multisig)
+    /// @param newVersion New host version. Version must be changed when upgrading.
+    /// @param proxies Addresses of core contract proxies
+    /// @param newImplementations New implementation for proxy. Index of proxy same as in previous array.
+    function announceUpgrade(
+        string memory newVersion,
+        address[] memory proxies,
+        address[] memory newImplementations
+    ) external;
+
+    /// @notice Apply pending upgrade
+    /// @custom:restricted Restricted through access manager (only operator)
+    function upgrade() external;
+
+    /// @notice Cancel pending upgrade
+    /// @custom:restricted Restricted through access manager (only operator)
+    function cancelUpgrade() external;
+
+    //endregion ---------------------------------------- Update host platform
 }

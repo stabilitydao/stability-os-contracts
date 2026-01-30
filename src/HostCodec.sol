@@ -60,13 +60,20 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(uint16[] memory contractIndices, bytes32[] memory salt, uint16 version) external pure returns (bytes memory) {
+    function encode(
+        uint16[] memory contractIndices,
+        bytes32[] memory salt,
+        uint16 version
+    ) external pure returns (bytes memory) {
         return HostEncodingLib.encodeSalt(contractIndices, salt, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeSalt(bytes memory encoded) external pure returns (uint16[] memory contractIndices, bytes32[] memory salt) {
+    function decodeSalt(bytes memory encoded)
+        external
+        pure
+        returns (uint16[] memory contractIndices, bytes32[] memory salt)
+    {
         return HostEncodingLib.decodeSalt(encoded);
     }
-
 }

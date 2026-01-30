@@ -25,4 +25,7 @@ library AccessRolesLib {
 
     /// @notice Allow to deploy proxy using fabrics
     uint64 internal constant PROXY_DEPLOYER = 8;
+
+    /// @notice Allow to call upgrade-related functions on Host
+    uint64 internal constant HOST_UPGRADER = 9;
 }

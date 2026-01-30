@@ -835,7 +835,11 @@ contract HostLifeCycleTest is Test {
             host_.receiveVotingResults(proposalId, true, payload);
 
             daoData = host_.getDAO(daoData.symbol);
-            assertEq(keccak256(abi.encode(daoData.params)), keccak256(abi.encode(daoParameters)), "dao parameters should be updated after proposal");
+            assertEq(
+                keccak256(abi.encode(daoData.params)),
+                keccak256(abi.encode(daoParameters)),
+                "dao parameters should be updated after proposal"
+            );
         }
 
         // ------------------------------ New TGE started

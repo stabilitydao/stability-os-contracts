@@ -19,8 +19,14 @@ interface IHostCodec {
 
     function decodeDaoChainSettings(bytes memory encoded) external pure returns (ITokenomics.DaoChainSettings memory);
 
-    function encode(uint16[] memory contractIndices, bytes32[] memory salt, uint16 version) external pure returns (bytes memory);
+    function encode(
+        uint16[] memory contractIndices,
+        bytes32[] memory salt,
+        uint16 version
+    ) external pure returns (bytes memory);
 
-    function decodeSalt(bytes memory encoded) external pure returns (uint16[] memory contractIndices, bytes32[] memory salt);
-
+    function decodeSalt(bytes memory encoded)
+        external
+        pure
+        returns (uint16[] memory contractIndices, bytes32[] memory salt);
 }
