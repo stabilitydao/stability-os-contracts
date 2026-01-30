@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDAOAgent} from "./IDAOAgent.sol";
-import {IDAOUnit} from "./IDAOUnit.sol";
-
-interface ITokenomics is IDAOAgent, IDAOUnit {
+interface ITokenomics {
     enum LifecyclePhase {
         /// @notice Created (draft).
         DRAFT_0,
@@ -38,7 +35,10 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         UPDATE_UNITS_3,
         UPDATE_FUNDING_4,
         UPDATE_VESTING_5,
-        UPDATE_DAO_PARAMETERS_6
+        UPDATE_DAO_PARAMETERS_6,
+        UPDATE_SALT_7,
+        /// @notice Some action that should be approved as proposal and performed on another chain, see BridgedActions
+        UPDATE_BRIDGED_DAO_8
     }
 
     /// @notice Funding types.
@@ -139,13 +139,13 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
         /// @notice End timestamp (seconds since unix epoch).
         uint64 end;
 
-        /// @notice Minimum raise amount todo units
+        /// @notice Minimum raise amount, USD decimals 18
         uint minRaise;
 
-        /// @notice Maximum raise amount todo units
+        /// @notice Maximum raise amount, USD decimals 18
         uint maxRaise;
 
-        /// @notice Amount already raised todo units
+        /// @notice Amount already raised, USD decimals 18
         uint raised;
 
         /// @notice todo
@@ -180,68 +180,63 @@ interface ITokenomics is IDAOAgent, IDAOUnit {
     struct Proposal {
         DAOAction action;
 
+        /// @dev True if proposal requires validation by Host DAO before voting
+        /// Typical rejection case: proposal contains invalid data that have collisions with exist data on other chains
+        /// I.e. proposed salt is already used on the target chain
+        bool validationRequired;
+
+        /// @dev True if proposal requires voting by DAO members = instant update.
+        /// Some proposals cannot be applied instantly because they require validation by admin
+        bool votingRequired;
+
+        /// @dev Status of proposal validation by admin
+        ITokenomics.ValidationStatus validationStatus;
+
         bytes32 id; // todo do we really need string id?
         string daoSymbol; // todo rename back to symbol
         /// @notice Proposal creation timestamp
         uint64 created;
         VotingStatus status;
 
-        /// @notice Proposal data as bytes
-        /// @dev Actual data depends on {action}
-        bytes payload;
+        // We don't store proposal payload on chain, we just emit it. Hash is stored instead
+        //        /// @notice Proposal data as bytes
+        //        /// @dev Actual data depends on {action}
+        //        bytes payload;
+
+        /// @notice Hash of proposal payload
+        bytes32 payloadHash;
     }
 
-    /// @notice Tokenomics related grouped fields
-    struct Tokenomics {
-        /// @notice Fundraising rounds
-        Funding[] funding;
-
-        /// @notice Where initial deployment happened (chain id)
-        uint initialChain;
-
-        /// @notice Vesting allocations (optional)
-        Vesting[] vesting;
+    struct DaoChainSettings {
+        /// @notice Todo comment
+        uint bbRate;
     }
 
-    /// @notice Full DAO info
-    struct DaoData {
-        /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
-        LifecyclePhase phase;
+    struct GovernanceSettings {
+        /// @notice Minimal total voting power (self and delegated) need to create a proposal
+        uint proposalThreshold;
 
-        /// @notice Tradeable interchain ERC-20 token symbol. Lowercased used as slug - unique ID of DAO in OS.
-        /// While token symbol is SYM then additional DAO tokens symbols are:
-        /// seedSYM, saleSYM, xSYM, SYM_DAO
-        string symbol;
+        /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent  todo decimals?
+        uint ttBribe;
+    }
 
-        /// @notice Name of the DAO, used in token names. Without DAO word.
-        string name;
+    /// @notice On-chain data of the Unit.
+    struct UnitData {
+        /// @notice Unique unit string id. For DeFi protocol its defiOrg:protocolKey.
+        string unitId;
 
-        /// @notice Deployer of a DAO have power only at DRAFT phase.
-        address deployer;
+        /// @notice Blockchains where Unit deployed. Filled only for initial DAO chain Host instance.
+        uint[] chainIds;
 
-        /// @notice Community socials. Update by `OS.updateSocials`
-        string[] socials;
+        /// @notice DAO UID of Unit Developer (Pool tasks solver)
+        string developerUid;
+    }
 
-        /// @notice Activities of the organization.
-        Activity[] activity;
-
-        /// @notice Images of tokens. Absolute or relative from repo /os/ folder.
-        DaoImages images;
-
-        /// @notice Deployments of running DAO on blockchains.
-        DaoDeploymentInfo deployments;
-
-        /// @notice Registered revenue generating units owned by the organization.
-        UnitInfo[] units;
-
-        /// @notice Operating agents managed by the organization.
-        AgentInfo[] agents;
-
-        /// @notice On-chain DAO parameters for tokenomics, governance and revenue sharing
-        DaoParameters params;
-
-        /// @notice Supply distribution and fundraising events + vesting + initial chain
-        Tokenomics tokenomics;
+    /// @notice Status of proposal validation by Host DAO
+    enum ValidationStatus {
+        NONE_0,
+        APPROVED_1,
+        REJECTED_2
     }
 }
 

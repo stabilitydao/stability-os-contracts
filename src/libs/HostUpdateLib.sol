@@ -1,0 +1,492 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {HostEncodingLib} from "./HostEncodingLib.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
+import {HostCrossChainLib} from "./HostCrossChainLib.sol";
+import {HostLib} from "./HostLib.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
+
+/// @notice Data validation, proposal processing logic, updating logic
+library HostUpdateLib {
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    struct ActionParams {
+        /// @param action Action type of the proposal
+        ITokenomics.DAOAction action;
+        /// @param validationRequired True if proposal requires validation by admins before voting
+        bool validationRequired;
+        /// @param votingRequired True if proposal requires voting by DAO members
+        bool votingRequired;
+    }
+
+    //region -------------------------------------- Actions
+    function validate(
+        HostLib.DaoDataSegment2 memory daoData2,
+        ITokenomics.DaoParameters memory params,
+        ITokenomics.Funding[] memory funding
+    ) internal view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        _validateDaoData(daoData2, st);
+        _validateDaoParameters(params, st);
+        _validateFundingList(funding, st);
+    }
+
+    //endregion -------------------------------------- Actions
+
+    //region -------------------------------------- Validation logic
+
+    /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
+    function _validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
+        _validateNaming(dao.name, dao.daoSymbol, st);
+
+        // todo validate activity
+    }
+
+    function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        {
+            uint len = bytes(name).length;
+            require(len >= st.minNameLength && len <= st.maxNameLength, IHost.NameLength(len));
+        }
+
+        {
+            uint len = bytes(symbol).length;
+            require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
+
+            require(HostLib.getDaoUid($, symbol) == 0, IHost.SymbolNotUnique(symbol));
+        }
+    }
+
+    /// @notice Validate DAO params according to OS settings
+    function _validateDaoParameters(
+        ITokenomics.DaoParameters memory params,
+        IHost.HostSettings storage st
+    ) internal view {
+        require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IHost.PvPFee(params.pvpFee));
+        require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
+    }
+
+    /// @notice Ensure that funding is not empty
+    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal pure {
+        require(funding.length != 0, IHost.NeedFunding());
+
+        st; // todo
+
+        // todo: check funding array has unique funding types
+        // todo: check funding dates
+        // todo: check funding raise goals
+    }
+
+    function _validateFunding(
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.Funding memory funding,
+        IHost.HostSettings storage st
+    ) internal pure {
+        if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
+            require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IHost.TooLateToUpdateSuchFunding());
+        }
+
+        if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
+            require(
+                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.SEED_1
+                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+                IHost.TooLateToUpdateSuchFunding()
+            );
+        }
+
+        st; // todo
+        // todo check min round duration
+        // todo check max round duration
+        // todo check start date delay
+        // todo check min amount
+        // todo check max amount
+    }
+
+    function _validateVestingList(
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.Vesting[] memory vesting,
+        IHost.HostSettings storage st
+    ) internal pure {
+        require(
+            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
+                && phase != ITokenomics.LifecyclePhase.LIVE_7,
+            IHost.TooLateToUpdateVesting()
+        );
+
+        uint len = vesting.length;
+        for (uint i; i < len; ++i) {
+            // todo check vesting consistency
+            st;
+        }
+    }
+
+    /// @notice Validate salts: salts is not used OR used by the given DAO
+    function _validateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal view {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        uint len = contractIndices.length;
+        require(len != 0 && len == salt_.length, IHost.IncorrectArrayLengths());
+
+        for (uint i; i < len; ++i) {
+            require(
+                contractIndices[i] < uint16(ITokenomicsAddons.ContractIndices.COUNT_CONTRACT_INDICES),
+                IHost.TooHighContractIndex(contractIndices[i])
+            );
+
+            // assume that users don't try to set same salt for different contracts
+            // otherwise they will have error on creation (and will be able to fix it)
+            uint saltDaoUid = $.daoUidBySalt[salt_[i]];
+            require(saltDaoUid == 0 || saltDaoUid == daoUid, IHost.SaltAlreadyUsed(salt_[i]));
+        }
+    }
+
+    //endregion -------------------------------------- Validation logic
+
+    //region -------------------------------------- Proposal logic
+
+    /// @dev Trivial function to generate ActionParams struct.
+    /// All logic of values detection should be implemented on the caller side.
+    function getActionParams(
+        ITokenomics.DAOAction action_,
+        bool instantExecution,
+        bool validationRequired
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_, validationRequired: validationRequired, votingRequired: !instantExecution
+        });
+    }
+
+    /// @dev Generate ActionParams for bridged actions.
+    /// Logic of values detection is here.
+    function getBridgedActionParams(
+        ITokenomics.DAOAction action_,
+        uint16 bridgedActionKind_
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_,
+            validationRequired: 
+            /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+            bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
+                /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+                || bridgedActionKind_ != uint16(IHost.BridgedActions.BRIDGE_DAO_1),
+            votingRequired: true
+        });
+    }
+
+    /// @notice Create new proposal
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded proposal data.
+    /// @param params_ Parameters of the proposal action
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
+    function proposeAction(uint daoUid, bytes memory payload, ActionParams memory params_) internal returns (bytes32) {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        // todo check for initial chain
+        // todo get user power
+        // todo check proposalThreshold
+        // todo validate payload
+
+        /// @dev Hash of the payload
+        bytes32 payloadHash = getPayloadHash(payload);
+
+        /// @dev Unique proposal id
+        bytes32 proposalId = _createProposalId(daoUid, params_.action, payloadHash);
+
+        HostLib.ProposalLocal storage proposal = $.proposals[proposalId];
+        proposal.daoUid = daoUid;
+
+        HostLib.ProposalHeader memory proposalHeader;
+        proposalHeader.action = params_.action;
+        proposalHeader.created = uint64(block.timestamp);
+        proposalHeader.status = ITokenomics.VotingStatus.VOTING_0;
+        proposalHeader.validationRequired = params_.validationRequired;
+        proposalHeader.votingRequired = params_.votingRequired;
+        proposal.proposalHeader = HostLib.packProposalHeader(proposalHeader);
+
+        proposal.id = proposalId;
+        proposal.payloadHash = EfficientHashLib.hash(payload);
+
+        $.daoProposals[daoUid].push(proposalId);
+
+        /// @dev Emit payload, don't store it on chain
+        emit IHost.Proposal(daoUid, params_.action, proposalId, payloadHash, payload);
+
+        return proposalId;
+    }
+
+    /// @notice Create unique proposal id
+    /// @param daoUid Unique id of the DAO
+    /// @param action Action type of the proposal
+    /// @param payloadHash Hash of the proposal payload
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
+    function _createProposalId(
+        uint daoUid,
+        ITokenomics.DAOAction action,
+        bytes32 payloadHash
+    ) internal view returns (bytes32) {
+        return EfficientHashLib.hash(
+            abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payloadHash)
+        );
+    }
+
+    /// @notice Calculate hash of the proposal payload
+    /// @param payload Encoded proposal data
+    /// @return Hash of the payload
+    function getPayloadHash(bytes memory payload) internal pure returns (bytes32) {
+        return EfficientHashLib.hash(payload);
+    }
+
+    //endregion -------------------------------------- Proposal logic
+
+    //region -------------------------------------- Update logic
+
+    /// @notice Update images (logo/banner) of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.DaoImages struct
+    function updateImages(uint daoUid, bytes memory payload) internal {
+        ITokenomics.DaoImages memory images = HostEncodingLib.decodeDaoImages(payload);
+        updateImages(daoUid, images);
+    }
+
+    function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoImages[daoUid] = images;
+        emit IHost.DaoImagesUpdated($.segment2[daoUid].daoSymbol, images);
+    }
+
+    /// @notice Update socials of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded string[] array
+    function updateSocials(uint daoUid, bytes memory payload) internal {
+        string[] memory socials = HostEncodingLib.decodeSocials(payload);
+        updateSocials(daoUid, socials);
+    }
+
+    function updateSocials(uint daoUid, string[] memory socials) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.segment3[daoUid].socials = socials;
+        emit IHost.DaoSocialsUpdated($.segment2[daoUid].daoSymbol, socials);
+    }
+
+    /// @notice Update revenue generating units of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.UnitInfo[] array
+    /// @param proposalId Id of the proposal that triggered this update. Not zero here
+    function updateUnitsForProposal(uint daoUid, bytes memory payload, bytes32 proposalId) internal {
+        IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
+
+        /// @dev Empty array required by updateUnits. It's not used because proposalId is not zero here
+        IDAOData.UnitMetaData[] memory metadata;
+
+        updateUnits(daoUid, units, proposalId, metadata);
+    }
+
+    /// @param proposalId Id of the proposal that triggered this update. Zero for instant execution
+    /// @param metadata List of metadata - for instant updates only
+    function updateUnits(
+        uint daoUid,
+        IDAOData.UnitDataInput[] memory units,
+        bytes32 proposalId,
+        IDAOData.UnitMetaData[] memory metadata
+    ) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        // todo take prices for unit creation
+
+        /// @dev False - insert, true - update
+        bool[] memory updates = new bool[](units.length);
+
+        /// @dev Hashes for new units
+        bytes32[] memory newHashes = new bytes32[](units.length);
+
+        /// @dev Ids of new units
+        string[] memory newUnitIds = new string[](units.length);
+
+        {
+            // -------------------- detect units to update/insert and units to delete
+            /// @dev Ids of exist units
+            string[] memory existUnitIds = $.segment2[daoUid].unitIds;
+
+            /// @dev Hashes of exist units
+            bytes32[] memory existHashes = new bytes32[](existUnitIds.length);
+            for (uint i; i < existUnitIds.length; ++i) {
+                existHashes[i] = HostLib.getUnitKey(daoUid, existUnitIds[i]);
+            }
+
+            /// @dev Marks hashes that exist both in unitIdsExist and newUnitIds and so should be kept
+            bool[] memory notDelete = new bool[](existHashes.length);
+
+            for (uint i; i < newUnitIds.length; ++i) {
+                newUnitIds[i] = units[i].unitId;
+                newHashes[i] = HostLib.getUnitKey(daoUid, newUnitIds[i]);
+
+                for (uint j; j < existHashes.length; ++j) {
+                    if (existHashes[j] == newHashes[i]) {
+                        // new unit exist in list of exist units, don't delete it
+                        notDelete[j] = true;
+                        updates[i] = true;
+                        break;
+                    }
+                }
+            }
+
+            // -------------------- delete old units (the units that don't exist in {units} list anymore}
+            for (uint j; j < existHashes.length; ++j) {
+                if (!notDelete[j]) {
+                    emit IHost.DaoUnitDeleted(daoUid, existUnitIds[j], proposalId);
+                    // todo probably we shouldn't call delete to reduce gas costs (?)
+                    delete $.units[existHashes[j]];
+                }
+            }
+        }
+
+        // -------------------- insert and update new units
+
+        $.segment2[daoUid].unitIds = newUnitIds;
+
+        for (uint i; i < newHashes.length; i++) {
+            HostLib.UnitLocal storage unit = $.units[newHashes[i]];
+            if (updates[i]) {
+                // update existing unit
+                unit.developerUid = units[i].developerUid;
+            } else {
+                // todo move code below to a separate function
+                // insert new unit
+                unit.daoUid = daoUid;
+                unit.unitId = units[i].unitId;
+                unit.developerUid = units[i].developerUid;
+                unit.chainIds.add(block.chainid);
+            }
+
+            if (proposalId == 0) {
+                emit IHost.DaoUnitUpdatedInstantly(daoUid, units[i].unitId, metadata[i]);
+            } else {
+                emit IHost.DaoUnitUpdatedByProposal(daoUid, units[i].unitId, proposalId);
+            }
+        }
+    }
+
+    /// @notice Replace array of funding of the DAO by new one
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.Funding[] array
+    function updateFunding(uint daoUid, bytes memory payload) internal {
+        ITokenomics.Funding memory newFunding = HostEncodingLib.decodeFunding(payload);
+        updateFunding(daoUid, newFunding);
+    }
+
+    function updateFunding(uint daoUid, ITokenomics.Funding memory newFunding) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ITokenomics.FundingType[] memory listFunding = $.segment3[daoUid].funding;
+
+        // slither-disable-next-line uninitialized-local
+        bool updated;
+
+        for (uint i; i < listFunding.length; i++) {
+            if (listFunding[i] == newFunding.fundingType) {
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            $.segment3[daoUid].funding.push(newFunding.fundingType);
+        }
+
+        bytes32 fundingId = HostLib.getKey(daoUid, uint(newFunding.fundingType));
+        $.funding[fundingId] = newFunding;
+
+        emit IHost.DaoFundingUpdated(daoUid, newFunding);
+    }
+
+    /// @notice Update vesting allocations of the DAO
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.Vesting[] array
+    function updateVesting(uint daoUid, bytes memory payload) internal {
+        ITokenomics.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
+        updateVesting(daoUid, vesting);
+    }
+
+    function updateVesting(uint daoUid, ITokenomics.Vesting[] memory vesting) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        uint countVesting = vesting.length;
+        $.segment3[daoUid].countVesting = countVesting;
+
+        for (uint i = 0; i < countVesting; i++) {
+            bytes32 key = HostLib.getIndexKey(daoUid, i);
+            $.vesting[key] = vesting[i];
+        }
+
+        emit IHost.DaoVestingUpdated(daoUid, vesting);
+    }
+
+    /// @notice Update DAO naming (name and symbol)
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded ITokenomics.DaoNames struct
+    function updateNaming(uint daoUid, bytes memory payload) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
+
+        // todo we must validate if the new symbol is not used already
+        // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
+        require($.daoUids[_daoNames.symbol] == 0, IHost.SymbolNotUnique(_daoNames.symbol));
+
+        updateNaming(daoUid, _daoNames);
+    }
+
+    function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        string memory oldSymbol = $.segment2[daoUid].daoSymbol;
+        delete $.daoUids[oldSymbol];
+
+        $.segment2[daoUid].daoSymbol = daoNames_.symbol;
+        $.segment2[daoUid].name = daoNames_.name;
+        $.daoUids[daoNames_.symbol] = daoUid;
+
+        emit IHost.DaoNamingUpdated(daoUid, daoNames_);
+
+        HostCrossChainLib.sendMessageToAllChains(
+            IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1,
+            HostCrossChainLib.packMessageRenameSymbol(oldSymbol, daoNames_.symbol)
+        );
+    }
+
+    function updateDaoParameters(uint daoUid, bytes memory payload) internal {
+        ITokenomics.DaoParameters memory _daoParameters = HostEncodingLib.decodeDaoParameters(payload);
+        updateDaoParameters(daoUid, _daoParameters);
+    }
+
+    function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoParameters[daoUid] = daoParameters_;
+        emit IHost.DaoParametersUpdated(daoUid, daoParameters_);
+    }
+
+    function updateSalt(uint daoUid, bytes memory payload) internal {
+        (uint16[] memory contractIndices, bytes32[] memory salt) = HostEncodingLib.decodeSalt(payload);
+        updateSalt(daoUid, contractIndices, salt);
+    }
+
+    function updateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        uint len = contractIndices.length;
+        for (uint i; i < len; ++i) {
+            bytes32 key = HostLib.getKey(daoUid, contractIndices[i]);
+            $.salt[key] = salt_[i];
+            $.daoUidBySalt[salt_[i]] = daoUid;
+        }
+
+        emit IHost.SaltUpdated(daoUid, contractIndices, salt_);
+    }
+
+    //endregion -------------------------------------- Update logic
+}

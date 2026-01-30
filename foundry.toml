@@ -28,6 +28,7 @@ polygon = "${POLYGON_RPC_URL}"
 base = "${BASE_RPC_URL}"
 arbitrum = "${ARBITRUM_RPC_URL}"
 ethereum = "${ETHEREUM_RPC_URL}"
+mainnet = "${ETHEREUM_RPC_URL}"
 real = "${REAL_RPC_URL}"
 sonic = "${SONIC_RPC_URL}"
 146 = "${SONIC_RPC_URL}" # required for StdConfig
