@@ -47,8 +47,9 @@ library HostLib {
         /// @dev This value is updated on bridged chains only after passing LIVE_CLIFF_5
         ITokenomics.LifecyclePhase phase;
 
-        /// @notice Hashes of all units registered in the DAO. Hash = hash of (daoUid, unitUid)
-        bytes32[] hashUnitIds;
+        /// @notice Ids of all units registered in the DAO.
+        /// @dev Id can be not unique, but Hash = hash of (daoUid, unitUid) is unique.
+        string[] unitIds;
     }
 
     /// @notice ON-CHAIN on initial chain of DAO (some additional structs are stored in separate mappings)

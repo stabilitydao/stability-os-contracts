@@ -175,9 +175,10 @@ library HostViewLib {
         }
 
         // ------------------- units
-        dest.units = new IDAOData.UnitData[](segment2.hashUnitIds.length);
+        dest.unitIds = segment2.unitIds;
+        dest.units = new IDAOData.UnitData[](segment2.unitIds.length);
         for (uint i; i < dest.units.length; i++) {
-            HostLib.UnitLocal storage unit = $.units[segment2.hashUnitIds[i]];
+            HostLib.UnitLocal storage unit = $.units[HostLib.getUnitKey(dest.uid, segment2.unitIds[i])];
             dest.units[i].unitId = unit.unitId;
             dest.units[i].developerUid = unit.developerUid;
             dest.units[i].chainIds = unit.chainIds.values();
@@ -355,7 +356,7 @@ library HostViewLib {
             if (index < limit && $.segment3[daoUid].socials.length < 2) {
                 dest[index++] = IHost.Task("Need at least 2 socials");
             }
-            if (index < limit && $.segment2[daoUid].hashUnitIds.length == 0) {
+            if (index < limit && $.segment2[daoUid].unitIds.length == 0) {
                 dest[index++] = IHost.Task("Need at least 1 projected unit");
             }
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
@@ -381,15 +382,15 @@ library HostViewLib {
             if (index < limit && $.segment3[daoUid].countVesting == 0) {
                 dest[index++] = IHost.Task("Need vesting allocations");
             }
-            bytes32[] memory hashUnitIds = $.segment2[daoUid].hashUnitIds;
+            string[] memory unitIds = $.segment2[daoUid].unitIds;
 
             // slither-disable-next-line uninitialized-local
             bool foundLive;
 
             // assume that a unit is live if it has received not zero income
-            for (uint i; i < hashUnitIds.length; i++) {
+            for (uint i; i < unitIds.length; i++) {
                 // todo do we need to use a threshold here?
-                if ($.unitBalances[hashUnitIds[i]] != 0) {
+                if ($.unitBalances[HostLib.getUnitKey(daoUid, unitIds[i])] != 0) {
                     foundLive = true;
                     break;
                 }

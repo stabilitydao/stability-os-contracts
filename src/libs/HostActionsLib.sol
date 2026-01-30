@@ -122,7 +122,7 @@ library HostActionsLib {
         daoData2.name = dao.name;
         daoData2.daoSymbol = dao.symbol;
         daoData2.phase = dao.phase;
-        daoData2.hashUnitIds = new bytes32[](dao.units.length);
+        daoData2.unitIds = new string[](dao.units.length);
 
         HostUpdateLib.validate(daoData2, dao.params, dao.funding);
 
@@ -133,7 +133,7 @@ library HostActionsLib {
             bytes32 hashUnitId = HostLib.getUnitKey(daoUid, dao.units[i].unitId);
             HostLib.UnitLocal storage unit = $.units[hashUnitId];
 
-            daoData2.hashUnitIds[i] = hashUnitId;
+            daoData2.unitIds[i] = dao.units[i].unitId;
             require(unit.daoUid == 0, IHost.UnitAlreadyRegistered());
 
             unit.daoUid = daoUid;

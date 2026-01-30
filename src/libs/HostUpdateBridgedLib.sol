@@ -139,7 +139,6 @@ library HostUpdateBridgedLib {
 
     /// @notice Get hash of proposal action payload. This hash is passed through cross-chain messages
     function _getHashProposalAction(bytes32 proposalId, bytes memory actionPayload) internal pure returns (bytes32) {
-        console.log("_getHashProposalAction", uint(proposalId));
         return EfficientHashLib.hash(proposalId, EfficientHashLib.hash(actionPayload));
     }
 
@@ -192,14 +191,9 @@ library HostUpdateBridgedLib {
         /// @dev Bridging DAO is allowed only if it is not bridged yet
         require(chainDaoUid == 0 || chainDaoUid == HostLib.getDaoUidStub(), IHost.AlreadyBridged());
 
-        bytes32[] memory hashUnitIds = new bytes32[](p.unitIds.length);
-        for (uint i; i < p.unitIds.length; i++) {
-            hashUnitIds[i] = HostLib.getUnitKey(daoUid, p.unitIds[i]);
-        }
-
         $.daoUids[p.symbol] = daoUid;
         $.segment2[daoUid] = HostLib.DaoDataSegment2({
-            daoSymbol: p.symbol, name: p.name, phase: ITokenomics.LifecyclePhase.DRAFT_0, hashUnitIds: hashUnitIds
+            daoSymbol: p.symbol, name: p.name, phase: ITokenomics.LifecyclePhase.DRAFT_0, unitIds: p.unitIds
         });
 
         $.daoParameters[daoUid] = p.daoParameters;
@@ -219,7 +213,7 @@ library HostUpdateBridgedLib {
             }
         }
 
-        emit IHost.BridgeDao(daoUid, p, hashUnitIds);
+        emit IHost.BridgeDao(daoUid, p, p.unitIds);
     }
 
     /// @dev Update DAO chain-related settings according to action payload registered on initial chain

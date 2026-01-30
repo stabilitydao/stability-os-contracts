@@ -95,7 +95,7 @@ interface IHost {
     event ProposalValidated(bytes32 proposalId, bool valid);
     event BridgedActionSent(uint daoUid, uint16 actionKind, uint32 dstEid, bytes32 hash);
 
-    event BridgeDao(uint daoUid, IBridgedActions.BridgeDaoParams params, bytes32[] hashUnitIds);
+    event BridgeDao(uint daoUid, IBridgedActions.BridgeDaoParams params, string[] unitIds);
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {

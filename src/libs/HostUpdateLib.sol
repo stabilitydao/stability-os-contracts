@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
@@ -305,19 +304,33 @@ library HostUpdateLib {
         /// @dev False - insert, true - update
         bool[] memory updates = new bool[](units.length);
 
-        /// @dev hash (daoUid, unitUid) for all {units}
+        /// @dev Hashes for new units
         bytes32[] memory newHashes = new bytes32[](units.length);
+
+        /// @dev Ids of new units
+        string[] memory newUnitIds = new string[](units.length);
 
         {
             // -------------------- detect units to update/insert and units to delete
-            /// @dev Units to delete
-            bytes32[] memory hashes = $.segment2[daoUid].hashUnitIds;
-            bool[] memory notDelete = new bool[](hashes.length);
-            for (uint i; i < units.length; ++i) {
-                newHashes[i] = HostLib.getUnitKey(daoUid, units[i].unitId);
-                for (uint j; j < hashes.length; ++j) {
-                    if (hashes[j] == newHashes[i]) {
-                        // new unit exists
+            /// @dev Ids of exist units
+            string[] memory existUnitIds = $.segment2[daoUid].unitIds;
+
+            /// @dev Hashes of exist units
+            bytes32[] memory existHashes = new bytes32[](existUnitIds.length);
+            for (uint i; i < existUnitIds.length; ++i) {
+                existHashes[i] = HostLib.getUnitKey(daoUid, existUnitIds[i]);
+            }
+
+            /// @dev Marks hashes that exist both in unitIdsExist and newUnitIds and so should be kept
+            bool[] memory notDelete = new bool[](existHashes.length);
+
+            for (uint i; i < newUnitIds.length; ++i) {
+                newUnitIds[i] = units[i].unitId;
+                newHashes[i] = HostLib.getUnitKey(daoUid, newUnitIds[i]);
+
+                for (uint j; j < existHashes.length; ++j) {
+                    if (existHashes[j] == newHashes[i]) {
+                        // new unit exist in list of exist units, don't delete it
                         notDelete[j] = true;
                         updates[i] = true;
                         break;
@@ -326,20 +339,18 @@ library HostUpdateLib {
             }
 
             // -------------------- delete old units (the units that don't exist in {units} list anymore}
-            for (uint j; j < hashes.length; ++j) {
+            for (uint j; j < existHashes.length; ++j) {
                 if (!notDelete[j]) {
-                    emit IHost.DaoUnitDeleted(daoUid, $.units[hashes[j]].unitId, proposalId);
+                    emit IHost.DaoUnitDeleted(daoUid, existUnitIds[j], proposalId);
                     // todo probably we shouldn't call delete to reduce gas costs (?)
-                    console.log("delete");
-                    console.logBytes32(hashes[j]);
-                    delete $.units[hashes[j]];
+                    delete $.units[existHashes[j]];
                 }
             }
         }
 
         // -------------------- insert and update new units
 
-        $.segment2[daoUid].hashUnitIds = newHashes;
+        $.segment2[daoUid].unitIds = newUnitIds;
 
         for (uint i; i < newHashes.length; i++) {
             HostLib.UnitLocal storage unit = $.units[newHashes[i]];
