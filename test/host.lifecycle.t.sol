@@ -822,6 +822,22 @@ contract HostLifeCycleTest is Test {
             assertEq(IERC20(asset).balanceOf(FIRST_SEEDER), 1e18, "first seeder balance after refund");
         }
 
+        // ------------------------------ Update Dao Parameters
+        {
+            vm.recordLogs();
+            ITokenomics.DaoParameters memory daoParameters = HostUtilsLib.generateDaoParams(777, 40);
+            host_.updateDaoParameters(daoData.symbol, daoParameters);
+            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
+
+            vm.prank(MULTISIG);
+            host_.receiveVotingResults(proposalId, true, payload);
+
+            daoData = host_.getDAO(daoData.symbol);
+            assertEq(keccak256(abi.encode(daoData.params)), keccak256(abi.encode(daoParameters)), "dao parameters should be updated after proposal");
+        }
+
         // ------------------------------ New TGE started
         {
         // todo

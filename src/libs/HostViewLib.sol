@@ -172,6 +172,7 @@ library HostViewLib {
             dest.images = $.daoImages[dest.uid];
             dest.deployments = $.deployments[dest.uid];
             dest.params = $.daoParameters[dest.uid];
+            dest.chainSettings = $.chainSettings[dest.uid];
         }
 
         // ------------------- units

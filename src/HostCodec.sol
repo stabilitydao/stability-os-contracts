@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-//import {ITokenomics} from "./interfaces/ITokenomics.sol";
+import {ITokenomics} from "./interfaces/ITokenomics.sol";
 //import {IDAOData} from "./interfaces/IDAOData.sol";
 import {IHostCodec} from "./interfaces/IHostCodec.sol";
 import {IBridgedActions} from "./interfaces/IBridgedActions.sol";
@@ -38,4 +38,35 @@ contract HostCodec is IHostCodec, Hosted {
     {
         return HostEncodingLib.decodeBridgeDaoParams(encoded);
     }
+
+    /// @inheritdoc IHostCodec
+    function encode(ITokenomics.DaoParameters memory data, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeDaoParameters(data, version);
+    }
+
+    /// @inheritdoc IHostCodec
+    function decodeDaoParameters(bytes memory encoded) external pure returns (ITokenomics.DaoParameters memory) {
+        return HostEncodingLib.decodeDaoParameters(encoded);
+    }
+
+    /// @inheritdoc IHostCodec
+    function encode(ITokenomics.DaoChainSettings memory data, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeDaoChainSettings(data, version);
+    }
+
+    /// @inheritdoc IHostCodec
+    function decodeDaoChainSettings(bytes memory encoded) external pure returns (ITokenomics.DaoChainSettings memory) {
+        return HostEncodingLib.decodeDaoChainSettings(encoded);
+    }
+
+    /// @inheritdoc IHostCodec
+    function encode(uint16[] memory contractIndices, bytes32[] memory salt, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeSalt(contractIndices, salt, version);
+    }
+
+    /// @inheritdoc IHostCodec
+    function decodeSalt(bytes memory encoded) external pure returns (uint16[] memory contractIndices, bytes32[] memory salt) {
+        return HostEncodingLib.decodeSalt(encoded);
+    }
+
 }
