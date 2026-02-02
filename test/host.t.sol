@@ -103,26 +103,30 @@ contract HostTest is Test {
     }
 
     function testAddLiveDAO() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
 
         // todo only verifier
 
-        _dealAndApprove(os);
+        _dealAndApprove(host);
         IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
 
-        _dealAndApprove(os, MULTISIG);
+        _dealAndApprove(host, MULTISIG);
 
+        bytes memory payload = codec.encode(daoOrigin);
         vm.prank(MULTISIG);
-        os.addLiveDAO(daoOrigin);
+        host.addLiveDAO(payload);
 
-        IDAOData.DaoData memory readDao = os.getDAO(daoOrigin.symbol);
+        IDAOData.DaoData memory readDao = host.getDAO(daoOrigin.symbol);
 
         _assertDaoEqual(daoOrigin, readDao);
     }
 
     function testAddLiveDaoBadPaths() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
+        bytes memory payload = codec.encode(daoOrigin);
 
         // -------------------- success - check balances
         {
@@ -134,13 +138,13 @@ contract HostTest is Test {
             // user doesn't pay for creation DAO - ERC20InsufficientAllowance
             vm.expectRevert();
             vm.prank(MULTISIG);
-            host.addLiveDAO(daoOrigin);
+            host.addLiveDAO(payload);
 
             vm.prank(MULTISIG);
             IERC20(exchangeAsset).approve(address(host), amount * 3);
 
             vm.prank(MULTISIG);
-            host.addLiveDAO(daoOrigin);
+            host.addLiveDAO(payload);
 
             assertEq(IERC20(exchangeAsset).balanceOf(MULTISIG), amount * 2, "balance after 1st dao");
         }
@@ -148,11 +152,11 @@ contract HostTest is Test {
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "testdao"));
         vm.prank(MULTISIG);
-        host.addLiveDAO(daoOrigin);
+        host.addLiveDAO(payload);
 
         // -------------------- only verifier (restricted)
         vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this)));
-        host.addLiveDAO(daoOrigin);
+        host.addLiveDAO(payload);
 
         // -------------------- todo validation
     }

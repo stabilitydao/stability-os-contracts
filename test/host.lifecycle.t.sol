@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HostCodec} from "../src/HostCodec.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";

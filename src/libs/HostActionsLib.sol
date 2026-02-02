@@ -11,6 +11,7 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {HostUpdateLib} from "./HostUpdateLib.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostUpgradeProxyLib} from "./HostUpgradeProxyLib.sol";
+import {HostEncodingLib} from "./HostEncodingLib.sol";
 
 library HostActionsLib {
     using SafeERC20 for IERC20;
@@ -112,77 +113,10 @@ library HostActionsLib {
         _finalizeDaoCreation($, daoSymbol, name, daoUid);
     }
 
-    /// @notice Add live DAO verified off-chain into the system
-    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
-
-        (uint daoUid,) = HostLib.generateDaoUid($);
-
-        // ------------------------- Segment 2
-
-        HostLib.DaoDataSegment2 memory daoData2;
-        daoData2.name = dao.name;
-        daoData2.daoSymbol = dao.symbol;
-        daoData2.phase = dao.phase;
-        daoData2.unitIds = new string[](dao.units.length);
-
-        HostUpdateLib.validate(daoData2, dao.params, dao.funding);
-
-        // ------------------------- Prepare units data
-        require(dao.units.length == dao.unitsMetaData.length, IHost.IncorrectArrayLengths());
-
-        for (uint i; i < dao.units.length; i++) {
-            bytes32 hashUnitId = HostLib.getUnitKey(daoUid, dao.units[i].unitId);
-            HostLib.UnitLocal storage unit = $.units[hashUnitId];
-
-            daoData2.unitIds[i] = dao.units[i].unitId;
-            require(unit.daoUid == 0, IHost.UnitAlreadyRegistered());
-
-            unit.daoUid = daoUid;
-            unit.unitId = dao.units[i].unitId;
-            unit.developerUid = dao.units[i].developerUid;
-            unit.chainIds.add(block.chainid);
-
-            emit IHost.DaoUnitUpdatedInstantly(daoUid, dao.units[i].unitId, dao.unitsMetaData[i]);
-        }
-
-        $.segment2[daoUid] = daoData2;
-
-        // ------------------------- Segment 3
-        HostLib.DaoDataSegment3 storage segment3 = $.segment3[daoUid];
-        segment3.initialChain = block.chainid; // TODO: how to add exist bridged DAO?
-        segment3.deployer = dao.deployer;
-        segment3.activity = dao.activity;
-        { // segment3.socials = dao.socials;
-            uint len = dao.socials.length;
-            for (uint i; i < len; i++) {
-                segment3.socials.push(dao.socials[i]);
-            }
-        }
-
-        // todo validate other fields
-
-        $.daoImages[daoUid] = dao.images;
-        $.deployments[daoUid] = dao.deployments;
-        $.daoParameters[daoUid] = dao.params;
-
-        { // ------------------------- funding
-            for (uint i; i < dao.funding.length; i++) {
-                segment3.funding.push(dao.funding[i].fundingType);
-                $.funding[HostLib.getIndexKey(daoUid, i)] = dao.funding[i];
-            }
-        }
-
-        { // ------------------------- vesting
-            uint countVesting = uint32(dao.vesting.length);
-            segment3.countVesting = countVesting;
-
-            for (uint i; i < dao.vesting.length; i++) {
-                $.vesting[HostLib.getIndexKey(daoUid, i)] = dao.vesting[i];
-            }
-        }
-
-        _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
+    /// @dev Add exist DAO to Host
+    function addLiveDAO(bytes calldata payload) external {
+        IDAOData.DaoDataInput memory dao = HostEncodingLib.decodeDaoDataInput(payload);
+        _addLiveDAO(dao);
     }
 
     /// @notice Process revenue for the given unit of the DAO
@@ -259,6 +193,80 @@ library HostActionsLib {
             emit IHost.ProcessUnitRevenue(daoUid, daoSymbol, unitId, amount);
         }
     }
+
+    /// @notice Add live DAO verified off-chain into the system
+    function _addLiveDAO(IDAOData.DaoDataInput memory dao) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        (uint daoUid,) = HostLib.generateDaoUid($);
+
+        // ------------------------- Segment 2
+
+        HostLib.DaoDataSegment2 memory daoData2;
+        daoData2.name = dao.name;
+        daoData2.daoSymbol = dao.symbol;
+        daoData2.phase = dao.phase;
+        daoData2.unitIds = new string[](dao.units.length);
+
+        HostUpdateLib.validate(daoData2, dao.params, dao.funding);
+
+        // ------------------------- Prepare units data
+        require(dao.units.length == dao.unitsMetaData.length, IHost.IncorrectArrayLengths());
+
+        for (uint i; i < dao.units.length; i++) {
+            bytes32 hashUnitId = HostLib.getUnitKey(daoUid, dao.units[i].unitId);
+            HostLib.UnitLocal storage unit = $.units[hashUnitId];
+
+            daoData2.unitIds[i] = dao.units[i].unitId;
+            require(unit.daoUid == 0, IHost.UnitAlreadyRegistered());
+
+            unit.daoUid = daoUid;
+            unit.unitId = dao.units[i].unitId;
+            unit.developerUid = dao.units[i].developerUid;
+            unit.chainIds.add(block.chainid);
+
+            emit IHost.DaoUnitUpdatedInstantly(daoUid, dao.units[i].unitId, dao.unitsMetaData[i]);
+        }
+
+        $.segment2[daoUid] = daoData2;
+
+        // ------------------------- Segment 3
+        HostLib.DaoDataSegment3 storage segment3 = $.segment3[daoUid];
+        segment3.initialChain = block.chainid; // TODO: how to add exist bridged DAO?
+        segment3.deployer = dao.deployer;
+        segment3.activity = dao.activity;
+        { // segment3.socials = dao.socials;
+            uint len = dao.socials.length;
+            for (uint i; i < len; i++) {
+                segment3.socials.push(dao.socials[i]);
+            }
+        }
+
+        // todo validate other fields
+
+        $.daoImages[daoUid] = dao.images;
+        $.deployments[daoUid] = dao.deployments;
+        $.daoParameters[daoUid] = dao.params;
+
+        { // ------------------------- funding
+            for (uint i; i < dao.funding.length; i++) {
+                segment3.funding.push(dao.funding[i].fundingType);
+                $.funding[HostLib.getIndexKey(daoUid, i)] = dao.funding[i];
+            }
+        }
+
+        { // ------------------------- vesting
+            uint countVesting = uint32(dao.vesting.length);
+            segment3.countVesting = countVesting;
+
+            for (uint i; i < dao.vesting.length; i++) {
+                $.vesting[HostLib.getIndexKey(daoUid, i)] = dao.vesting[i];
+            }
+        }
+
+        _finalizeDaoCreation($, dao.symbol, dao.name, daoUid);
+    }
+
     //endregion -------------------------------------- Internal logic
 
     //region -------------------------------------- Internal utils

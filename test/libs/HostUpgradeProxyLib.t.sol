@@ -58,7 +58,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
 
         {
             (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
-                host.pendingPlatformUpgrade();
+                host.pendingUpgrade();
             assertEq(keccak256(bytes(newVersion)), keccak256(bytes("1.1.0")), "new version announced");
             assertEq(
                 keccak256(abi.encode(newImplementations)),
@@ -85,7 +85,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
 
         {
             (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
-                host.pendingPlatformUpgrade();
+                host.pendingUpgrade();
             assertEq(keccak256(bytes(newVersion)), keccak256(bytes("")), "no new version announced");
             assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(new address[](0))), "no proxies announced");
             assertEq(
@@ -251,7 +251,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         // ------------------------- Ensure that pending update is cleared
         {
             (string memory newVersion, address[] memory newProxies, address[] memory newImplementations) =
-                host.pendingPlatformUpgrade();
+                host.pendingUpgrade();
             assertEq(keccak256(bytes(newVersion)), keccak256(bytes("")), "no new version announced");
             assertEq(keccak256(abi.encode(newProxies)), keccak256(abi.encode(new address[](0))), "no proxies announced");
             assertEq(

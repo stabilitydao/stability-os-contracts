@@ -146,4 +146,13 @@ contract HostCodec is IHostCodec, Hosted {
     {
         return HostEncodingLib.decodeSalt(encoded);
     }
+
+    function encode(IDAOData.DaoDataInput calldata dao) external pure returns (bytes memory payload) {
+        return HostEncodingLib.encodeDaoDataInput(dao);
+    }
+
+    function decodeDaoDataInput(bytes memory payload) external pure returns (IDAOData.DaoDataInput memory dao) {
+        return HostEncodingLib.decodeDaoDataInput(payload);
+    }
+
 }

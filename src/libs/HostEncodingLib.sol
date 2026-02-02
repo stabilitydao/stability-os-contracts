@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
@@ -368,4 +369,147 @@ library HostEncodingLib {
     }
 
     //endregion ----------------------- Decode / Encode data without versions
+
+    //region ----------------------- DaoDataInput for addLiveDao
+    function encodeDaoDataInput(IDAOData.DaoDataInput calldata dao) internal pure returns (bytes memory dest) {
+        dest = abi.encode(
+            dao.symbol,
+            dao.name,
+            uint8(dao.phase),
+            dao.deployments
+        );
+        dest = abi.encode(dest,
+            dao.chainSettings,
+            dao.unitIds,
+            dao.params
+        );
+        dest = abi.encode(dest,
+            dao.socials,
+            dao.activity,
+            dao.images
+        );
+        dest = abi.encode(dest,
+            dao.units,
+            dao.funding,
+            dao.vesting,
+            dao.governanceSettings
+        );
+        dest = abi.encode(dest,
+            dao.deployer,
+            dao.daoMetaDataLocation
+        );
+        uint len = dao.unitsMetaData.length;
+        bytes[] memory unitsMetaData = new bytes[](len);
+        for (uint i; i < len; ++i) {
+            unitsMetaData[i] = encodeUnitsMetaData(dao.unitsMetaData[i]);
+        }
+        dest = abi.encode(dest, unitsMetaData);
+    }
+
+    function decodeDaoDataInput(
+        bytes memory payload
+    ) external pure returns (IDAOData.DaoDataInput memory dao) {
+        bytes memory rest = payload;
+
+        bytes[] memory unitsMetaDataEncoded;
+        (rest, unitsMetaDataEncoded) = abi.decode(rest, (bytes, bytes[]));
+
+        uint len = unitsMetaDataEncoded.length;
+        dao.unitsMetaData = new IDAOData.UnitMetaData[](len);
+        for (uint i; i < len; ++i) {
+            console.log(i);
+            dao.unitsMetaData[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
+        }
+
+        (rest, dao.deployer, dao.daoMetaDataLocation) =
+        abi.decode(rest, (bytes, address, string));
+
+        (
+            rest,
+            dao.units,
+            dao.funding,
+            dao.vesting,
+            dao.governanceSettings
+        ) = abi.decode(
+            rest,
+            (
+                bytes,
+                IDAOData.UnitDataInput[],
+                ITokenomics.Funding[],
+                ITokenomics.Vesting[],
+                ITokenomics.GovernanceSettings
+            )
+        );
+
+        (rest, dao.socials, dao.activity, dao.images) = abi.decode(
+            rest,
+            (bytes, string[], ITokenomics.Activity[], ITokenomics.DaoImages)
+        );
+
+        (rest, dao.chainSettings, dao.unitIds, dao.params) =
+        abi.decode(
+            rest,
+            (bytes, ITokenomics.DaoChainSettings, string[], ITokenomics.DaoParameters)
+        );
+
+        {
+            uint8 phase;
+            (
+                dao.symbol,
+                dao.name,
+                phase,
+                dao.deployments
+            ) = abi.decode(
+                rest,
+                (string, string, uint8, ITokenomics.DaoDeploymentInfo)
+            );
+            dao.phase = ITokenomics.LifecyclePhase(phase);
+        }
+
+        return dao;
+    }
+
+
+    function encodeUnitsMetaData(IDAOData.UnitMetaData calldata data) internal pure returns (bytes memory dest) {
+        dest = abi.encode(data.name, uint8(data.status), data.unitType, data.revenueShare, data.emoji);
+        uint len = data.ui.length;
+        bytes[] memory ui = new bytes[](len);
+        for (uint i; i < len; ++i) {
+            ui[i] = abi.encode(data.ui[i].href, data.ui[i].title);
+        }
+        dest = abi.encode(dest, ui, data.api);
+    }
+
+    function decodeUnitsMetaData(bytes memory payload) internal pure returns (IDAOData.UnitMetaData memory data) {
+        bytes memory rest = payload;
+
+        bytes[] memory uiEncoded;
+        (rest, uiEncoded, data.api) = abi.decode(rest, (bytes, bytes[], string[]));
+
+        uint len = uiEncoded.length;
+        data.ui = new IDAOMetadata.UnitUiLink[](len);
+        for (uint i; i < len; ++i) {
+            (data.ui[i].href, data.ui[i].title) =
+            abi.decode(uiEncoded[i], (string, string));
+        }
+
+        {
+            uint8 status;
+            (
+                data.name,
+                status,
+                data.unitType,
+                data.revenueShare,
+                data.emoji
+            ) = abi.decode(
+                rest,
+                (string, uint8, uint16, uint, string)
+            );
+            data.status = IDAOMetadata.UnitStatus(status);
+        }
+
+        return data;
+    }
+
+    //endregion ----------------------- DaoDataInput for addLiveDao
 }

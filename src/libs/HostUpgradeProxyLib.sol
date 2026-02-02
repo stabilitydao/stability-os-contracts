@@ -119,7 +119,7 @@ library HostUpgradeProxyLib {
     }
 
     /// @notice Get announced pending platform upgrade data
-    function pendingPlatformUpgrade()
+    function pendingUpgrade()
         external
         view
         returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations)

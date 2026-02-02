@@ -288,7 +288,7 @@ interface IHost {
     function hostVersion() external view returns (string memory);
 
     /// @notice Get pending platform upgrade data
-    function pendingPlatformUpgrade()
+    function pendingUpgrade()
         external
         view
         returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations);
@@ -325,7 +325,7 @@ interface IHost {
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)
-    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external;
+    function addLiveDAO(bytes memory payload) external;
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager
@@ -390,7 +390,7 @@ interface IHost {
     /// @param payload Data of the action. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external;
+    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param daoSymbol DAO symbol

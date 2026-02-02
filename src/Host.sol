@@ -128,12 +128,12 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function pendingPlatformUpgrade()
+    function pendingUpgrade()
         external
         view
         returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations)
     {
-        return HostUpgradeProxyLib.pendingPlatformUpgrade();
+        return HostUpgradeProxyLib.pendingUpgrade();
     }
 
     //endregion -------------------------------------- View
@@ -193,8 +193,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function addLiveDAO(IDAOData.DaoDataInput calldata dao) external restricted {
-        HostActionsLib.addLiveDAO(dao);
+    function addLiveDAO(bytes memory payload) external restricted {
+        HostActionsLib.addLiveDAO(payload);
     }
 
     /// @inheritdoc IHost
