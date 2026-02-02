@@ -5,10 +5,12 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
+import {IDAOMetadata} from "../interfaces/IDAOMetadata.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// Tokenomic uses some structs.
-/// The structs are stored as payload in proposals.
+/// The structs are stored as payload and emitted in events.
+/// After voting these payloads can be passed to update functions.
 /// New fields can be added to the structs in future versions at any moment.
 /// The library allows to decode structs of any version (old or current) correctly at any time.
 library HostEncodingLib {
@@ -67,6 +69,59 @@ library HostEncodingLib {
         } else {
             revert IHost.UnsupportedStructVersion();
         }
+    }
+
+    function encodeUnitsMetadata(
+        IDAOData.UnitMetaData[] memory unitsMetadata,
+        uint16 version
+    ) internal pure returns (bytes memory) {
+        if (version == 1) {
+            uint len = unitsMetadata.length;
+            bytes[] memory items = new bytes[](len);
+            for (uint i; i < len; ++i) {
+                items[i] = abi.encode(
+                    unitsMetadata[i].name,
+                    uint8(unitsMetadata[i].status),
+                    unitsMetadata[i].unitType,
+                    unitsMetadata[i].revenueShare,
+                    unitsMetadata[i].emoji,
+                    unitsMetadata[i].ui,
+                    unitsMetadata[i].api
+                );
+            }
+            return abi.encode(version, items);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeUnitsMetadata(bytes memory payload)
+        internal
+        pure
+        returns (IDAOData.UnitMetaData[] memory unitsMetadata)
+    {
+        {
+            (uint16 version) = abi.decode(payload, (uint16));
+            require(version == 1, IHost.UnsupportedStructVersion());
+        }
+
+        (, bytes[] memory item) = abi.decode(payload, (uint16, bytes[]));
+        unitsMetadata = new IDAOData.UnitMetaData[](item.length);
+        for (uint i; i < item.length; ++i) {
+            uint8 status;
+            (
+                unitsMetadata[i].name,
+                status,
+                unitsMetadata[i].unitType,
+                unitsMetadata[i].revenueShare,
+                unitsMetadata[i].emoji,
+                unitsMetadata[i].ui,
+                unitsMetadata[i].api
+            ) = abi.decode(item[i], (string, uint8, uint16, uint, string, IDAOMetadata.UnitUiLink[], string[]));
+
+            unitsMetadata[i].status = IDAOMetadata.UnitStatus(status);
+        }
+        return unitsMetadata;
     }
 
     /// @notice Encode Funding struct of the given version. Version is supported explicitly to simplify testing

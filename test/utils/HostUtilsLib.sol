@@ -2,19 +2,22 @@
 pragma solidity ^0.8.28;
 
 // import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {HostCodec} from "../../src/HostCodec.sol";
+import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
-import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
-import {Host} from "../../src/Host.sol";
 import {Authority} from "../../src/Authority.sol";
+import {Host} from "../../src/Host.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
+import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockOsBridge} from "../mocks/MockOsBridge.sol";
+import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {Vm} from "forge-std/Test.sol";
@@ -96,6 +99,29 @@ library HostUtilsLib {
         (IAuthority accessManager, IHost host) = deployHost(vm, multisig, init_);
         setupHostInstance(vm, multisig, accessManager, host);
         return IHost(address(host));
+    }
+
+    function createHostCodec(Vm vm, address multisig, IHost host) internal returns (IHostCodec) {
+        IAuthority accessManager = IAuthority(IAccessManaged(address(host)).authority());
+
+        {
+            // ---------------------- set up access to the host factory
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IHost.deployProxy.selector);
+
+            vm.prank(multisig);
+            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_ADMIN);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
+
+            vm.prank(multisig);
+            accessManager.grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, multisig, 0);
+        }
+
+        address logic = address(new HostCodec());
+        vm.prank(multisig);
+        return IHostCodec(address(host.deployProxy("0x1850878", logic, "")));
     }
 
     function setupHostInstance(Vm vm, address multisig, IAuthority accessManager, IHost host) internal {
@@ -593,11 +619,13 @@ library HostUtilsLib {
         Vm vm,
         address multisig,
         IHost host_,
+        IHostCodec codec_,
         string memory daoSymbol,
         string[] memory socials
-    ) internal returns (bytes32 proposalId, bytes memory payload) {
+    ) internal returns (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) {
         vm.recordLogs();
-        host_.updateSocials(daoSymbol, socials);
+        inputPayload = codec_.encode(socials);
+        host_.updateDAO(daoSymbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
         payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
         proposalId = HostUtilsLib.getLastProposalId(host_, daoSymbol);
 

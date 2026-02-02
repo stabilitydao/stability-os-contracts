@@ -50,6 +50,7 @@ interface IHost {
     error WrongAction();
     error AlreadyBridged();
     error IncorrectInputData();
+    error InvalidMetadataForAction();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -383,38 +384,13 @@ interface IHost {
 
     //region ---------------------------------------- Update actions
 
-    /// @notice Update/create proposal to update implementations of the DAO contracts
-    function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external;
-
-    /// @notice Update/create proposal to update list of socials of the DAO
-    function updateSocials(string calldata daoSymbol, string[] calldata socials) external;
-
-    /// @notice Update list of units/create a proposal to update list of units of the DAO
+    /// @notice Update/create proposal to update DAO values
     /// @param daoSymbol DAO symbol
-    /// @param units Units data to be stored on-chain
-    /// @param metadata Units metadata to be emitted and used off-chain only
-    function updateUnits(
-        string calldata daoSymbol,
-        IDAOData.UnitDataInput[] calldata units,
-        IDAOData.UnitMetaData[] calldata metadata
-    ) external;
-
-    /// @notice Update/create proposal to update funding rounds of the DAO
-    function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external;
-
-    /// @notice Update/create proposal to update vesting schedules of the DAO
-    function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external;
-
-    /// @notice Update/create proposal to update DAO naming (name and symbol)
-    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable;
-
-    /// @notice Update/create proposal to update on-chain DAO parameters
-    function updateDaoParameters(string calldata daoSymbol, ITokenomics.DaoParameters calldata daoParameters_) external;
-
-    /// @notice Set salt to create contracts with given indices
-    /// @param contractIndices Contract indices, for exact values see ITokenomicsAddons.ContractIndices
-    /// @param salt_ Salt values for the corresponded contracts. The salt is used in CREATE2
-    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, bytes32[] memory salt_) external;
+    /// @param action Action kind, see ITokenomics.DAOAction
+    /// @param payload Data of the action. Its format depend on the action kind.
+    /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
+    /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
+    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external;
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param daoSymbol DAO symbol

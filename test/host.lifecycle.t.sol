@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {HostCodec} from "../src/HostCodec.sol";
+import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
-import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
-import {IAuthority} from "../src/interfaces/IAuthority.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
+import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
-import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
+import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {MockOsBridge} from "./mocks/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
-import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {console} from "forge-std/console.sol";
 
 contract HostLifeCycleTest is Test {
@@ -34,8 +36,9 @@ contract HostLifeCycleTest is Test {
     function testLifeCycle56() public {
         // ------------------------------ First DAO is Aliens community
         IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = _createHostCodec(host56);
 
-        lifeCycleDaoAlien56(host56);
+        lifeCycleDaoAlien56(host56, codec);
 
         // ------------------------------ Ensure that first DAO becomes Host DAO
         {
@@ -50,21 +53,22 @@ contract HostLifeCycleTest is Test {
         // they do many errors
 
         // todo Second DAO should be created on chain 1 but currently it's created on chain 56
-        lifeCycleDaoApes1(host56);
+        lifeCycleDaoApes1(host56, codec);
 
         // ------------------------------ Third DAO
         // third DAO are Machines Cartel
         // todo Third DAO should be created on chain 10 but currently it's created on chain 56
-        lifeCycleDaoMachines10(host56);
+        lifeCycleDaoMachines10(host56, codec);
     }
 
     function testLifeCycleWithSalt() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        lifeCycleWithSalt(host);
+        IHostCodec codec = _createHostCodec(host);
+        lifeCycleWithSalt(host, codec);
     }
 
     //region ------------------------------ Life cycles logic
-    function lifeCycleDaoAlien56(IHost host_) internal {
+    function lifeCycleDaoAlien56(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
@@ -105,7 +109,12 @@ contract HostLifeCycleTest is Test {
             ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
                 seedToken: "/seedAliens.png", tgeToken: "", token: "/aliens.png", xToken: "", daoToken: ""
             });
-            host_.updateImages(daoData.symbol, images);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
 
             {
                 IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
@@ -117,14 +126,19 @@ contract HostLifeCycleTest is Test {
             IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
             metas[0] = unitMetadata0;
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
-            host_.updateUnits(daoData.symbol, units, metas);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+            );
 
             // registered socials
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             {
                 IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
@@ -143,7 +157,12 @@ contract HostLifeCycleTest is Test {
                 raised: daoData.funding[0].raised,
                 claim: daoData.funding[0].claim
             });
-            host_.updateFunding(daoData.symbol, funding);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         // ------------------------------ phase cant be changed right now
@@ -200,8 +219,9 @@ contract HostLifeCycleTest is Test {
             socials[1] = "https://b.bb/b2";
             socials[2] = "https://c.cc/c3";
 
-            (bytes32 proposalId, bytes memory payload) =
-                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) =
+                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            assertEq(keccak256(payload), keccak256(inputPayload), "Emitted payload is exact same to initial one");
 
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
@@ -277,7 +297,13 @@ contract HostLifeCycleTest is Test {
             ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             vm.recordLogs();
-            host_.updateFunding(daoData.symbol, funding);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -310,7 +336,13 @@ contract HostLifeCycleTest is Test {
             units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
 
             vm.recordLogs();
-            host_.updateUnits(daoData.symbol, units, metas);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -335,7 +367,13 @@ contract HostLifeCycleTest is Test {
                 daoToken: "/ALIENS_DAO.png"
             });
             vm.recordLogs();
-            host_.updateImages(daoData.symbol, images);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -352,7 +390,13 @@ contract HostLifeCycleTest is Test {
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             vm.recordLogs();
-            host_.updateVesting(daoData.symbol, vesting);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -487,19 +531,23 @@ contract HostLifeCycleTest is Test {
                     claim: daoData.funding[i].claim
                 });
 
+                bytes memory payload = codec_.encode(funding, codec_.PAYLOAD_API_VERSION());
                 vm.expectRevert(IHost.TooLateToUpdateSuchFunding.selector);
-                host_.updateFunding(daoData.symbol, funding);
+                host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4), payload, "");
             }
 
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", 1);
 
-            vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
-            host_.updateVesting(daoData.symbol, vesting);
+            {
+                bytes memory payload = codec_.encode(vesting, codec_.PAYLOAD_API_VERSION());
+                vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
+                host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_VESTING_5), payload, "");
+            }
         }
     }
 
-    function lifeCycleDaoApes1(IHost host_) internal {
+    function lifeCycleDaoApes1(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
@@ -519,7 +567,12 @@ contract HostLifeCycleTest is Test {
             ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
                 seedToken: "/seedApes.png", tgeToken: "", token: "/apes.png", xToken: "", daoToken: ""
             });
-            host_.updateImages(daoData.symbol, images);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
             IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
@@ -533,19 +586,29 @@ contract HostLifeCycleTest is Test {
                 api: new string[](0)
             });
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
-            host_.updateUnits(daoData.symbol, units, metas);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+            );
 
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
 
-            host_.updateVesting(daoData.symbol, vesting);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         // ------------------------------ apes forgot they created DRAFT
@@ -561,7 +624,12 @@ contract HostLifeCycleTest is Test {
                 HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
                 HostUtilsLib.DEFAULT_SEED_MAX_RAISE
             );
-            host_.updateFunding(daoData.symbol, funding);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         // ------------------------------ change phase to SEED, refresh daoData
@@ -622,7 +690,7 @@ contract HostLifeCycleTest is Test {
         }
     }
 
-    function lifeCycleDaoMachines10(IHost host_) internal {
+    function lifeCycleDaoMachines10(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
@@ -654,7 +722,12 @@ contract HostLifeCycleTest is Test {
                 xToken: "/xMACHINE.png",
                 daoToken: "/MACHINE_DAO.png"
             });
-            host_.updateImages(daoData.symbol, images);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
             IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
@@ -668,19 +741,29 @@ contract HostLifeCycleTest is Test {
                 api: new string[](0)
             });
             units[0] = IDAOData.UnitDataInput({unitId: "MACHINES:MEVBOT", developerUid: ""});
-            host_.updateUnits(daoData.symbol, units, metas);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+            );
 
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
 
-            host_.updateVesting(daoData.symbol, vesting);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         daoData = host_.getDAO(daoData.symbol);
@@ -783,8 +866,8 @@ contract HostLifeCycleTest is Test {
             socials[0] = "https://a.aa/a11";
             socials[1] = "https://b.bb/b22";
 
-            (bytes32 proposalId, bytes memory payload) =
-                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            (bytes32 proposalId, bytes memory payload,) =
+                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, false, payload);
@@ -826,7 +909,12 @@ contract HostLifeCycleTest is Test {
         {
             vm.recordLogs();
             ITokenomics.DaoParameters memory daoParameters = HostUtilsLib.generateDaoParams(777, 40);
-            host_.updateDaoParameters(daoData.symbol, daoParameters);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6),
+                codec_.encode(daoParameters, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -856,7 +944,7 @@ contract HostLifeCycleTest is Test {
     /**
      * Try to create DAO contracts with salt
      */
-    function lifeCycleWithSalt(IHost host_) internal {
+    function lifeCycleWithSalt(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
 
         // ------------------------------ Create DAO
@@ -881,21 +969,32 @@ contract HostLifeCycleTest is Test {
             ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
                 seedToken: "/seedAliens.png", tgeToken: "1", token: "/aliens.png", xToken: "2", daoToken: "3"
             });
-            host_.updateImages(daoData.symbol, images);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
 
             // units project
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
             IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
             metas[0] = unitMetadata0;
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
-            host_.updateUnits(daoData.symbol, units, metas);
+
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+            );
 
             // registered socials
             string[] memory socials = new string[](2);
             socials[0] = "https://a.aa/a";
             socials[1] = "https://b.bb/b";
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, daoData.symbol, socials);
+            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             ITokenomics.Funding memory funding = ITokenomics.Funding({
                 fundingType: daoData.funding[0].fundingType,
@@ -906,7 +1005,13 @@ contract HostLifeCycleTest is Test {
                 raised: daoData.funding[0].raised,
                 claim: daoData.funding[0].claim
             });
-            host_.updateFunding(daoData.symbol, funding);
+
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         // ------------------------------ set SALT for seed token
@@ -922,7 +1027,12 @@ contract HostLifeCycleTest is Test {
             uint16[] memory indices = new uint16[](1);
             indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
 
-            host_.updateSalts(daoData.symbol, indices, salts);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_SALT_7),
+                codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
         }
 
         // ------------------------------ change phase to seed
@@ -967,20 +1077,26 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ set SALT for tge token through proposal
         address predictedTgeAddress;
         {
-            IProxyFactory proxyFactory = IProxyFactory(_getAuthority(host_).PROXY_FACTORY());
+            bytes memory input;
+            {
+                IProxyFactory proxyFactory = IProxyFactory(_getAuthority(host_).PROXY_FACTORY());
 
-            bytes32[] memory salts = new bytes32[](2);
-            salts[0] = "0x0101";
-            salts[1] = "0x0202";
+                bytes32[] memory salts = new bytes32[](2);
+                salts[0] = "0x0101";
+                salts[1] = "0x0202";
 
-            predictedTgeAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
+                predictedTgeAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
-            uint16[] memory indices = new uint16[](2);
-            indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
-            indices[1] = uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2);
+                uint16[] memory indices = new uint16[](2);
+                indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
+                indices[1] = uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2);
+
+                input = codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION());
+            }
 
             vm.recordLogs();
-            host_.updateSalts(daoData.symbol, indices, salts);
+            host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_SALT_7), input, "");
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -1049,7 +1165,13 @@ contract HostLifeCycleTest is Test {
             ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             vm.recordLogs();
-            host_.updateFunding(daoData.symbol, funding);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -1065,25 +1187,34 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ fix units
         {
-            IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
-            ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
+            bytes memory input;
+            bytes memory metadata;
 
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            {
+                IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
+                ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
 
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: unitMetadata0.name,
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: unitMetadata0.unitType,
-                revenueShare: unitMetadata0.revenueShare,
-                ui: ui,
-                emoji: unitMetadata0.emoji,
-                api: unitMetadata0.api
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+                IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
+                IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+
+                metas[0] = IDAOMetadata.UnitMetaData({
+                    name: unitMetadata0.name,
+                    status: IDAOMetadata.UnitStatus.LIVE_2,
+                    unitType: unitMetadata0.unitType,
+                    revenueShare: unitMetadata0.revenueShare,
+                    ui: ui,
+                    emoji: unitMetadata0.emoji,
+                    api: unitMetadata0.api
+                });
+                units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+
+                input = codec_.encode(units, codec_.PAYLOAD_API_VERSION());
+                metadata = codec_.encode(metas, codec_.PAYLOAD_API_VERSION());
+            }
 
             vm.recordLogs();
-            host_.updateUnits(daoData.symbol, units, metas);
+            host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_UNITS_3), input, metadata);
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -1107,7 +1238,13 @@ contract HostLifeCycleTest is Test {
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             vm.recordLogs();
-            host_.updateVesting(daoData.symbol, vesting);
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
+
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
@@ -1149,5 +1286,9 @@ contract HostLifeCycleTest is Test {
 
     function _keepConsoleInImport() internal pure {
         console.log("hide warning about removing console from imports");
+    }
+
+    function _createHostCodec(IHost host) internal returns (IHostCodec) {
+        return HostUtilsLib.createHostCodec(vm, MULTISIG, host);
     }
 }

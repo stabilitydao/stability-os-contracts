@@ -103,7 +103,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ add units to dao
-        _addUnitsToDao(hostSonic, dao.symbol);
+        _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
         dao = hostSonic.getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
@@ -292,7 +292,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ add units to dao
-        _addUnitsToDao(hostSonic, dao.symbol);
+        _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
         dao = hostSonic.getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
@@ -332,7 +332,7 @@ contract HostBridgedActionsTest is Test {
         return dao;
     }
 
-    function _addUnitsToDao(IHost host, string memory daoSymbol) internal {
+    function _addUnitsToDao(IHost host, IHostCodec codec, string memory daoSymbol) internal {
         IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
             name: "DAO Factory",
             status: IDAOMetadata.UnitStatus.BUILDING_1,
@@ -347,7 +347,12 @@ contract HostBridgedActionsTest is Test {
         IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
         metas[0] = unitMetadata0;
         units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
-        host.updateUnits(daoSymbol, units, metas);
+        host.updateDAO(
+            daoSymbol,
+            uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+            codec.encode(units, codec.PAYLOAD_API_VERSION()),
+            codec.encode(metas, codec.PAYLOAD_API_VERSION())
+        );
     }
 
     function _processProposal(IHost host, bytes32 proposalId, bytes memory proposalPayload) internal {

@@ -488,5 +488,10 @@ library HostUpdateLib {
         emit IHost.SaltUpdated(daoUid, contractIndices, salt_);
     }
 
+    function updateDaoChainSettings(uint daoUid, ITokenomics.DaoChainSettings memory settings_) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.chainSettings[daoUid] = settings_;
+        emit IHost.DaoChainSettingsUpdated(daoUid, settings_);
+    }
     //endregion -------------------------------------- Update logic
 }

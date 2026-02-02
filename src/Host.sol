@@ -236,58 +236,8 @@ contract Host is IHost, Hosted {
     //region -------------------------------------- Update actions
 
     /// @inheritdoc IHost
-    function updateImages(string calldata daoSymbol, ITokenomics.DaoImages calldata images) external {
-        // restrictions are checked below
-        HostProposalsLib.updateImages(daoSymbol, images);
-    }
-
-    /// @inheritdoc IHost
-    function updateSocials(string calldata daoSymbol, string[] calldata socials) external {
-        // restrictions are checked below
-        HostProposalsLib.updateSocials(daoSymbol, socials);
-    }
-
-    /// @inheritdoc IHost
-    function updateUnits(
-        string calldata daoSymbol,
-        IDAOData.UnitDataInput[] calldata units,
-        IDAOData.UnitMetaData[] calldata metadata
-    ) external {
-        // restrictions are checked below
-        HostProposalsLib.updateUnits(daoSymbol, units, metadata);
-    }
-
-    /// @inheritdoc IHost
-    function updateFunding(string calldata daoSymbol, ITokenomics.Funding calldata funding) external {
-        // restrictions are checked below
-        HostProposalsLib.updateFunding(daoSymbol, funding);
-    }
-
-    /// @inheritdoc IHost
-    function updateVesting(string calldata daoSymbol, ITokenomics.Vesting[] calldata vestings) external {
-        // restrictions are checked below
-        HostProposalsLib.updateVesting(daoSymbol, vestings);
-    }
-
-    /// @inheritdoc IHost
-    function updateNaming(string calldata daoSymbol, ITokenomics.DaoNames calldata daoNames_) external payable {
-        // restrictions are checked below
-        HostProposalsLib.updateNaming(daoSymbol, daoNames_);
-    }
-
-    /// @inheritdoc IHost
-    function updateDaoParameters(
-        string calldata daoSymbol,
-        ITokenomics.DaoParameters calldata daoParameters_
-    ) external {
-        // restrictions are checked below
-        HostProposalsLib.updateDaoParameters(daoSymbol, daoParameters_);
-    }
-
-    /// @inheritdoc IHost
-    function updateSalts(string calldata daoSymbol, uint16[] memory contractIndices, bytes32[] memory salt_) external {
-        // restrictions are checked below
-        HostProposalsLib.updateSalts(daoSymbol, contractIndices, salt_);
+    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external {
+        HostProposalsLib.updateDAO(daoSymbol, action, payload, metadata);
     }
 
     /// @inheritdoc IHost

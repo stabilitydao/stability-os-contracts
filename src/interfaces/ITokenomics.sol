@@ -37,8 +37,9 @@ interface ITokenomics {
         UPDATE_VESTING_5,
         UPDATE_DAO_PARAMETERS_6,
         UPDATE_SALT_7,
+        UPDATE_DAO_CHAIN_SETTINGS_8,
         /// @notice Some action that should be approved as proposal and performed on another chain, see BridgedActions
-        UPDATE_BRIDGED_DAO_8
+        UPDATE_BRIDGED_DAO_9
     }
 
     /// @notice Funding types.

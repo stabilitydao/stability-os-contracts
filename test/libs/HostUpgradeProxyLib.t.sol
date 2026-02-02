@@ -14,7 +14,7 @@ import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {HostUpgradeProxyLib} from "../../src/libs/HostUpgradeProxyLib.sol";
 
-contract HostUpgradeProxyLibTest is Test {
+contract HostrgeUpgradeProxyLibTest is Test {
     address internal immutable MULTISIG;
 
     constructor() {
