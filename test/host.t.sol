@@ -13,6 +13,7 @@ import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
+import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
 
 contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -104,7 +105,6 @@ contract HostTest is Test {
 
     function testAddLiveDAO() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
 
         // todo only verifier
 
@@ -113,7 +113,7 @@ contract HostTest is Test {
 
         _dealAndApprove(host, MULTISIG);
 
-        bytes memory payload = codec.encode(daoOrigin);
+        bytes memory payload = _encode(daoOrigin);
         vm.prank(MULTISIG);
         host.addLiveDAO(payload);
 
@@ -124,9 +124,8 @@ contract HostTest is Test {
 
     function testAddLiveDaoBadPaths() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         IDAOData.DaoDataInput memory daoOrigin = HostUtilsLib.createTestDaoData();
-        bytes memory payload = codec.encode(daoOrigin);
+        bytes memory payload = _encode(daoOrigin);
 
         // -------------------- success - check balances
         {
@@ -1139,6 +1138,15 @@ contract HostTest is Test {
         }
         out[index] = value;
         return out;
+    }
+
+    /// @dev Extracted from HostCodec to reduce HostCodec size
+    function _encode(IDAOData.DaoDataInput memory dao) internal pure returns (bytes memory payload) {
+        return HostEncodingLib.encodeDaoDataInput(dao);
+    }
+
+    function _decodeDaoDataInput(bytes memory payload) internal pure returns (IDAOData.DaoDataInput memory dao) {
+        return HostEncodingLib.decodeDaoDataInput(payload);
     }
     //endregion ----------------------------------- Internal logic
 }

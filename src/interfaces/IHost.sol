@@ -216,7 +216,19 @@ interface IHost {
         DEPLOYMENTS_8
     }
 
+    enum DataReaderItem {
+        DAO_DATA_0,
+        PROPOSAL_1
+    }
+
     //region ---------------------------------------- Read
+
+    /// @notice Data rider gets all data through this function
+    /// @param itemIndex Index of the item to get
+    /// @param input Encoded input data for the item
+    /// @param version Required version of the output data
+    /// @return Encoded output data for the item
+    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint version) external view returns (bytes memory);
 
     /// @notice Local DAOs storage (in form of a mapping)
     function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory);
@@ -325,6 +337,7 @@ interface IHost {
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)
+    /// @param payload Encoded payload with DAO data. Use HostEncodingLib.encodeDaoDataInput to create it.
     function addLiveDAO(bytes memory payload) external;
 
     /// @notice Change lifecycle phase of a DAO
@@ -387,10 +400,10 @@ interface IHost {
     /// @notice Update/create proposal to update DAO values
     /// @param daoSymbol DAO symbol
     /// @param action Action kind, see ITokenomics.DAOAction
-    /// @param payload Data of the action. Its format depend on the action kind.
+    /// @param payload Data of the action. Use HostCodec.encode to create it. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata
+    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata(?)
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param daoSymbol DAO symbol

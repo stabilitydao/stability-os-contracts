@@ -59,7 +59,8 @@ interface IHostCodec {
         pure
         returns (uint16[] memory contractIndices, bytes32[] memory salt);
 
-    function encode(IDAOData.DaoDataInput calldata dao) external pure returns (bytes memory payload);
-
-    function decodeDaoDataInput(bytes memory payload) external pure returns (IDAOData.DaoDataInput memory dao);
+// removed from contract to reduce its size
+//    function encode(IDAOData.DaoDataInput calldata dao) external pure returns (bytes memory payload);
+//
+//    function decodeDaoDataInput(bytes memory payload) external pure returns (IDAOData.DaoDataInput memory dao);
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
@@ -371,7 +370,7 @@ library HostEncodingLib {
     //endregion ----------------------- Decode / Encode data without versions
 
     //region ----------------------- DaoDataInput for addLiveDao
-    function encodeDaoDataInput(IDAOData.DaoDataInput calldata dao) internal pure returns (bytes memory dest) {
+    function encodeDaoDataInput(IDAOData.DaoDataInput memory dao) internal pure returns (bytes memory dest) {
         dest = abi.encode(
             dao.symbol,
             dao.name,
@@ -417,7 +416,6 @@ library HostEncodingLib {
         uint len = unitsMetaDataEncoded.length;
         dao.unitsMetaData = new IDAOData.UnitMetaData[](len);
         for (uint i; i < len; ++i) {
-            console.log(i);
             dao.unitsMetaData[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
         }
 
@@ -470,7 +468,7 @@ library HostEncodingLib {
     }
 
 
-    function encodeUnitsMetaData(IDAOData.UnitMetaData calldata data) internal pure returns (bytes memory dest) {
+    function encodeUnitsMetaData(IDAOData.UnitMetaData memory data) internal pure returns (bytes memory dest) {
         dest = abi.encode(data.name, uint8(data.status), data.unitType, data.revenueShare, data.emoji);
         uint len = data.ui.length;
         bytes[] memory ui = new bytes[](len);

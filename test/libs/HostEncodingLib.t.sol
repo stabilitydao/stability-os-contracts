@@ -7,6 +7,8 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
+import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
 
 contract HostEncodingLibTest is Test {
     uint8 private constant INCORRECT_VERSION = 255;
@@ -141,6 +143,22 @@ contract HostEncodingLibTest is Test {
     {
         return HostEncodingLib.decodeBridgeDaoParams(payload);
     }
+
+    function _encodeUnitsMetaData(IDAOData.UnitMetaData memory data) public pure returns (bytes memory dest) {
+        dest = HostEncodingLib.encodeUnitsMetaData(data);
+    }
+
+    function _decodeUnitsMetaData(bytes memory payload) public pure returns (IDAOData.UnitMetaData memory data) {
+        data = HostEncodingLib.decodeUnitsMetaData(payload);
+    }
+
+    function _encodeDaoDataInput(IDAOData.DaoDataInput memory dao) public pure returns (bytes memory dest) {
+        dest = HostEncodingLib.encodeDaoDataInput(dao);
+    }
+
+    function _decodeDaoDataInput(bytes memory payload) public pure returns (IDAOData.DaoDataInput memory dao) {
+        dao = HostEncodingLib.decodeDaoDataInput(payload);
+    }
     //endregion -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
 
     function testEncodeDaoImages() public pure {
@@ -173,106 +191,6 @@ contract HostEncodingLibTest is Test {
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         this._decodeDaoImagesWrapper(payloadUnknownVersion);
     }
-
-    // todo
-    //    function testEncodeUnits() public view {
-    //        IDAOUnit.UnitInfo[] memory a = new IDAOUnit.UnitInfo[](1);
-    //        IDAOUnit.UnitInfo[] memory b = new IDAOUnit.UnitInfo[](2);
-    //        IDAOUnit.UnitInfo[] memory c = new IDAOUnit.UnitInfo[](0);
-    //
-    //        IDAOUnit.UnitUiLink[] memory emptyUi = new IDAOUnit.UnitUiLink[](0);
-    //        string[] memory emptyApi = new string[](0);
-    //
-    //        IDAOUnit.UnitUiLink[] memory notEmptyUi = new IDAOUnit.UnitUiLink[](2);
-    //        notEmptyUi[0] = IDAOUnit.UnitUiLink({title: "link1", href: "https://link1.com"});
-    //        notEmptyUi[1] = IDAOUnit.UnitUiLink({title: "link2", href: "https://link2.com"});
-    //
-    //        string[] memory notEmptyApi = new string[](3);
-    //        notEmptyApi[0] = "https://api1.com";
-    //        notEmptyApi[1] = "https://api2.com";
-    //        notEmptyApi[2] = "https://api3.com";
-    //
-    //        a[0].metaData = IDAOUnit.UnitMetaData({
-    //            name: "Unit A",
-    //            status: IDAOUnit.UnitStatus.LIVE_2,
-    //            unitType: uint16(1),
-    //            revenueShare: 1000,
-    //            emoji: "emoji1",
-    //            ui: emptyUi,
-    //            api: emptyApi
-    //        });
-    //        a[0].chainData = IDAOUnit.UnitChainData({
-    //            unitId: "unitA",
-    //            developerUid: ""
-    //        });
-    //
-    //        b[0].metaData = IDAOUnit.UnitMetaData({
-    //            name: "Unit B1",
-    //            status: IDAOUnit.UnitStatus.BUILDING_1,
-    //            unitType: uint16(2),
-    //            revenueShare: 2000,
-    //            emoji: "emoji2",
-    //            ui: notEmptyUi,
-    //            api: emptyApi
-    //        });
-    //        b[0].chainData = IDAOUnit.UnitChainData({
-    //            unitId: "unitB1",
-    //            developerUid: ""
-    //        });
-    //        b[1].metaData = IDAOUnit.UnitMetaData({
-    //            name: "Unit B2",
-    //            status: IDAOUnit.UnitStatus.RESEARCH_0,
-    //            unitType: uint16(3),
-    //            revenueShare: 3000,
-    //            emoji: "emoji3",
-    //            ui: notEmptyUi,
-    //            api: notEmptyApi
-    //        });
-    //        b[1].chainData = IDAOUnit.UnitChainData({
-    //            unitId: "unitB2",
-    //            developerUid: ""
-    //        });
-    //
-    //        // encode with supported version
-    //        bytes memory encA = this._encodeUnitsWrapper(a, 1);
-    //        bytes memory encB = this._encodeUnitsWrapper(b, 1);
-    //        bytes memory encC = this._encodeUnitsWrapper(c, 1);
-    //
-    //        IDAOUnit.UnitInfo[] memory decA = this._decodeUnitsWrapper(encA);
-    //        IDAOUnit.UnitInfo[] memory decB = this._decodeUnitsWrapper(encB);
-    //        IDAOUnit.UnitInfo[] memory decC = this._decodeUnitsWrapper(encC);
-    //
-    //        assertTrue(keccak256(abi.encode(decA)) == keccak256(abi.encode(a)));
-    //        assertTrue(keccak256(abi.encode(decB)) == keccak256(abi.encode(b)));
-    //        assertTrue(keccak256(abi.encode(decC)) == keccak256(abi.encode(c)));
-    //    }
-    //
-    //    function testEncodeUnitsBadPaths() public {
-    //        IDAOUnit.UnitInfo[] memory a = new IDAOUnit.UnitInfo[](1);
-    //
-    //        a[0].metaData = IDAOUnit.UnitMetaData({
-    //            name: "Unit A",
-    //            status: IDAOUnit.UnitStatus(uint8(0)),
-    //            unitType: uint16(1),
-    //            revenueShare: 1000,
-    //            emoji: "emoji",
-    //            ui: new IDAOUnit.UnitUiLink[](0),
-    //            api: new string[](0)
-    //        });
-    //        a[0].chainData = IDAOUnit.UnitChainData({
-    //            unitId: "unitA",
-    //            developerUid: ""
-    //        });
-    //        // encode with incorrect version should revert
-    //        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
-    //        this._encodeUnitsWrapper(a, INCORRECT_VERSION);
-    //
-    //        // craft payload with unsupported version and expect decode to revert
-    //        bytes memory payloadUnknownVersion = abi.encode(INCORRECT_VERSION, a);
-    //
-    //        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
-    //        this._decodeUnitsWrapper(payloadUnknownVersion);
-    //    }
 
     function testEncodeFunding() public view {
         ITokenomics.Funding memory a;
@@ -545,5 +463,39 @@ contract HostEncodingLibTest is Test {
         assertEq(b.saltContractIndices[1], a.saltContractIndices[1], "saltContractIndices[1]");
         assertEq(b.salts[0], a.salts[0], "salts[0]");
         assertEq(b.salts[1], a.salts[1], "salts[1]");
+    }
+
+    function testEncodeUnitsMetaData() public view {
+        string[] memory api = new string[](2);
+        api[0] = "https://api.dao.com/v1/";
+        api[1] = "https://api2.dao.com/v2/";
+
+        IDAOMetadata.UnitUiLink[] memory uiLinks = new IDAOMetadata.UnitUiLink[](2);
+        uiLinks[0] = IDAOMetadata.UnitUiLink({href: "", title: "bbbb"});
+        uiLinks[1] = IDAOMetadata.UnitUiLink({href: "IDAOMetadata.UnitUiLinkType.DOCS_1", title: "ccccccccccccc"});
+
+        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
+            name: "DAO Factory",
+            status: IDAOMetadata.UnitStatus.BUILDING_1,
+            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+            revenueShare: 100,
+            ui: uiLinks,
+            emoji: "aaaa",
+            api: api
+        });
+
+        bytes memory encA = this._encodeUnitsMetaData(unitMetadata0);
+        IDAOData.UnitMetaData memory restored = this._decodeUnitsMetaData(encA);
+
+        assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(unitMetadata0)), "unitMetadata");
+    }
+
+    function testEncodeDaoDataInput() public view {
+        IDAOData.DaoDataInput memory dao = HostUtilsLib.createTestDaoData();
+
+        bytes memory encA = this._encodeDaoDataInput(dao);
+        IDAOData.DaoDataInput memory restored = this._decodeDaoDataInput(encA);
+
+        assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(dao)), "DaoDataInput");
     }
 }

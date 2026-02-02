@@ -147,8 +147,21 @@ library HostViewLib {
     }
 
     //region -------------------------------------- View
+    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint /*version*/) external view returns (bytes memory) {
+        if (itemIndex == IHost.DataReaderItem.DAO_DATA_0) {
+            (string memory daoSymbol) = abi.decode(input, (string));
+            IDAOData.DaoData memory daoData = getDAO(daoSymbol);
+            return abi.encode(daoData); // todo version
+        } else if (itemIndex == IHost.DataReaderItem.PROPOSAL_1) {
+            (bytes32 proposalId) = abi.decode(input, (bytes32));
+            ITokenomics.Proposal memory proposalData = proposal(proposalId);
+            return abi.encode(proposalData); // todo version
+        }
+        return "";
+    }
+
     /// @notice Get full on-chain DAO data by its symbol.
-    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory dest) {
+    function getDAO(string memory daoSymbol) public view returns (IDAOData.DaoData memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         dest.uid = HostLib.getDaoUid($, daoSymbol);
@@ -244,7 +257,7 @@ library HostViewLib {
         return $.daoUids[daoSymbol] != 0;
     }
 
-    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
+    function proposal(bytes32 proposalId) public view returns (ITokenomics.Proposal memory) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalLocal memory local = $.proposals[proposalId];
         HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(local.proposalHeader);

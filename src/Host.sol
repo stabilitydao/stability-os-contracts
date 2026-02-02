@@ -34,6 +34,10 @@ contract Host is IHost, Hosted {
     }
 
     //region -------------------------------------- View
+    /// @inheritdoc IHost
+    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint version) external view returns (bytes memory) {
+        return HostViewLib.getDataReaderItem(itemIndex, input, version);
+    }
 
     /// @inheritdoc IHost
     function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory) {
