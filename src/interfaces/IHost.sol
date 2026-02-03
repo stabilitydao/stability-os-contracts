@@ -26,7 +26,7 @@ interface IHost {
     error AlreadyReceived();
     error IncorrectProposal();
     error NotImplemented();
-    error YouAreNotOwnerOf(string daoSymbol);
+    error YouAreNotOwnerOf(string symbol);
     error IncorrectDao();
     error ZeroBalance();
     error NotRefundPhase();
@@ -57,12 +57,12 @@ interface IHost {
     error NoNewVersion();
     error UpgradeTimerIsNotOver(uint TimerTimestamp);
 
-    event DaoCreated(string name, string daoSymbol, uint daoUid);
+    event DaoCreated(string name, string symbol, uint daoUid);
 
     event OsSettingsUpdated(IHost.HostSettings st);
     event OsChainSettingsUpdated(IHost.HostChainSettings st);
-    event DaoImagesUpdated(string daoSymbol, ITokenomics.DaoImages images);
-    event DaoSocialsUpdated(string daoSymbol, string[] socials);
+    event DaoImagesUpdated(string symbol, ITokenomics.DaoImages images);
+    event DaoSocialsUpdated(string symbol, string[] socials);
 
     event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
 
@@ -81,7 +81,7 @@ interface IHost {
     /// @param proposalUid Zero if updated instantly
     event DaoUnitDeleted(uint daoUid, string unitId, bytes32 proposalUid);
 
-    // todo replace daoSymbol by uid in events
+    // todo replace symbol by uid in events
 
     event DaoFundingUpdated(uint daoUid, ITokenomics.Funding funding);
     event DaoVestingUpdated(uint daoUid, ITokenomics.Vesting[] vestings);
@@ -91,10 +91,10 @@ interface IHost {
     event DaoPhaseChanged(uint daoUid, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(uint daoUid, address funder, uint amount, uint8 fundingType);
     event DaoRefunded(uint daoUid, address funder, address asset, uint amount, uint8 fundingType);
-    event OnRegisterDaoSymbol(string daoSymbol, uint32 srcEid, bytes32 guid_);
+    event OnRegisterDaoSymbol(string symbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
     event SaltUpdated(uint daoUid, uint16[] contractIndices, bytes32[] saltValues);
-    event ProcessUnitRevenue(uint daoUid, string daoSymbol, string unitId, uint amount);
+    event ProcessUnitRevenue(uint daoUid, string symbol, string unitId, uint amount);
     event OnBridgedDaoAction(bytes32 actionHash, uint16 actionKind, uint32 srcEid, bytes32 guid_);
 
     error NotEnoughNativeProvided(uint requiredValue);
@@ -231,19 +231,19 @@ interface IHost {
     function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint version) external view returns (bytes memory);
 
     /// @notice Local DAOs storage (in form of a mapping)
-    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory);
+    function getDAO(string calldata symbol) external view returns (IDAOData.DaoData memory);
 
     /// @notice Owner of the DAO
-    function getDAOOwner(string calldata daoSymbol) external view returns (address);
+    function getDAOOwner(string calldata symbol) external view returns (address);
 
     /// @notice Get UID of the Host DAO
     function getHostDaoUid() external view returns (uint);
 
     /// @notice True if a DAO with such symbol already exists
-    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool);
+    function isDaoSymbolInUse(string calldata symbol) external view returns (bool);
 
     /// @notice Generate list of tasks that should be performed on the current phase
-    function tasks(string calldata daoSymbol) external view returns (Task[] memory);
+    function tasks(string calldata symbol) external view returns (Task[] memory);
 
     /// @notice Get OS settings
     function getSettings() external view returns (HostSettings memory);
@@ -255,22 +255,22 @@ interface IHost {
     function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory);
 
     /// @notice Get number of proposals for the given DAO
-    function proposalsLength(string calldata daoSymbol) external view returns (uint);
+    function proposalsLength(string calldata symbol) external view returns (uint);
 
     /// @notice Governance proposals. Can be created only at initialChain of DAO.
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param index Starting index
     /// @param count Number of proposal ids to return
-    function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory);
+    function proposalIds(string calldata symbol, uint index, uint count) external view returns (bytes32[] memory);
 
     /// @notice Get balance belonging to the given unit
-    function unitBalance(string calldata daoSymbol, string calldata unitUid) external view returns (uint);
+    function unitBalance(string calldata symbol, string calldata unitUid) external view returns (uint);
 
     /// @notice Get salt to create contract with given index
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param contractIndex Contract index, for exact values see ITokenomicsAddons.ContractIndices
     /// @return Salt value used in CREATE2
-    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32);
+    function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32);
 
     /// @notice Get implementation address for the given contract kind
     /// @param kind See IHost.ContractKinds
@@ -318,22 +318,22 @@ interface IHost {
 
     /// @notice Create new DAO
     /// @param name Name of new DAO (any name is allowed)
-    /// @param daoSymbol Symbol of new DAO (should be unique across all DAOs, it can be changed later)
+    /// @param symbol Symbol of new DAO (should be unique across all DAOs, it can be changed later)
     /// @param activity List of activities of the DAO
     /// @param params On-chain DAO parameters
     /// @param funding Initial funding rounds of the DAO
     function createDAO(
         string calldata name,
-        string calldata daoSymbol,
+        string calldata symbol,
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) external payable;
 
     /// @notice Quote cost to create DAO
-    /// @param daoSymbol Symbol of new DAO
-    /// @return Cost in native currency to create the DAO using {createDAO(daoSymbol)}
-    function quoteCreateDAO(string calldata daoSymbol) external view returns (uint);
+    /// @param symbol Symbol of new DAO
+    /// @return Cost in native currency to create the DAO using {createDAO(symbol)}
+    function quoteCreateDAO(string calldata symbol) external view returns (uint);
 
     /// @notice Add live compatible DAO
     /// @custom:restricted Restricted through access manager (only verifier)
@@ -342,10 +342,10 @@ interface IHost {
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager
-    function changePhase(string calldata daoSymbol) external;
+    function changePhase(string calldata symbol) external;
 
     /// @notice Provide funding to the DAO, receive seed or tge tokens in return
-    function fund(string calldata daoSymbol, uint amount) external;
+    function fund(string calldata symbol, uint amount) external;
 
     /// @notice Process voting results from governance
     /// @custom:restricted Restricted through access manager
@@ -363,11 +363,11 @@ interface IHost {
     function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external;
 
     /// @notice Refund funding to the SEED/TGE token holders if funding round failed
-    function refund(string calldata daoSymbol) external;
+    function refund(string calldata symbol) external;
 
     /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
     /// @custom:restricted Restricted through access manager (only admin)
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external;
+    function refundFor(string calldata symbol, address[] memory receivers) external;
 
     /// @notice Handle incoming cross-chain message
     /// @custom:restricted Restricted through access manager (only OS bridge can call this function)
@@ -377,10 +377,10 @@ interface IHost {
     function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external;
 
     /// @notice Process revenue generated by the unit.
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param unitId Unit identifier
     /// @param amount Amount of revenue generated by the unit. This amount will be taken from the sender.
-    function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external;
+    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external;
 
     /// @notice Set implementation address for the contract of the given kind
     /// @param kind See IHost.ContractKinds
@@ -398,20 +398,20 @@ interface IHost {
     //region ---------------------------------------- Update actions
 
     /// @notice Update/create proposal to update DAO values
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param action Action kind, see ITokenomics.DAOAction
     /// @param payload Data of the action. Use HostCodec.encode to create it. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata(?)
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata(?)
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param actionKind Kind of action to perform on the bridged DAO, see BridgedActions enum
     /// @param dstEids LayerZero endpoint IDs of the chains with bridged DAO
     /// @param actionPayloads Payload of the action to perform on the bridged DAO on proper {chain}
     function createBridgedAction(
-        string calldata daoSymbol,
+        string calldata symbol,
         uint16 actionKind,
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads

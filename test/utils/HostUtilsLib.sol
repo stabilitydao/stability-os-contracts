@@ -172,7 +172,7 @@ library HostUtilsLib {
 
     function createDaoInstance(
         IHost os,
-        string memory daoSymbol,
+        string memory symbol,
         string memory daoName
     ) public returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -184,9 +184,9 @@ library HostUtilsLib {
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
         ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
-        os.createDAO(daoName, daoSymbol, activity, params, funding);
+        os.createDAO(daoName, symbol, activity, params, funding);
 
-        return os.getDAO(daoSymbol);
+        return os.getDAO(symbol);
     }
 
     function createAliensDao(Vm vm, IHost os_, string memory symbol) internal returns (IDAOData.DaoData memory) {
@@ -595,10 +595,10 @@ library HostUtilsLib {
         return uint(type(uint).max);
     }
 
-    function getLastProposalId(IHost os, string memory daoSymbol) internal view returns (bytes32) {
-        uint len = os.proposalsLength(daoSymbol);
+    function getLastProposalId(IHost os, string memory symbol) internal view returns (bytes32) {
+        uint len = os.proposalsLength(symbol);
         require(len != 0, "No proposals found");
-        bytes32[] memory proposalIds = os.proposalIds(daoSymbol, len - 1, 1);
+        bytes32[] memory proposalIds = os.proposalIds(symbol, len - 1, 1);
         return proposalIds[0];
     }
 
@@ -620,14 +620,14 @@ library HostUtilsLib {
         address multisig,
         IHost host_,
         IHostCodec codec_,
-        string memory daoSymbol,
+        string memory symbol,
         string[] memory socials
     ) internal returns (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) {
         vm.recordLogs();
         inputPayload = codec_.encode(socials);
-        host_.updateDAO(daoSymbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
+        host_.updateDAO(symbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
         payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
-        proposalId = HostUtilsLib.getLastProposalId(host_, daoSymbol);
+        proposalId = HostUtilsLib.getLastProposalId(host_, symbol);
 
         vm.prank(multisig);
         host_.validateProposal(proposalId, true, payload);

@@ -14,12 +14,12 @@ library HostFundingLib {
     using SafeERC20 for IERC20;
 
     /// @notice Fund DAO in the current funding round
-    function fund(string calldata daoSymbol, uint amount) external {
+    function fund(string calldata symbol, uint amount) external {
         // todo not reentrancy
         require(amount != 0, IHosted.ZeroAmount()); // todo settings.minFunding
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
@@ -62,18 +62,18 @@ library HostFundingLib {
     /// Anybody can call this function to refund his own tokens
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
-    function refund(string calldata daoSymbol) external {
+    function refund(string calldata symbol) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
-            _refundFunding(daoSymbol, ITokenomics.FundingType.SEED_0, msg.sender, seedToken, asset, false);
+            _refundFunding(symbol, ITokenomics.FundingType.SEED_0, msg.sender, seedToken, asset, false);
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
             address tgeToken = $.deployments[daoUid].tgeToken;
-            _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, msg.sender, tgeToken, asset, false);
+            _refundFunding(symbol, ITokenomics.FundingType.TGE_1, msg.sender, tgeToken, asset, false);
         } else {
             revert IHost.NotRefundPhase();
         }
@@ -83,21 +83,21 @@ library HostFundingLib {
     /// Anybody can call this function to make refund of first {limit} token holders
     /// SEED token can be returned only on SEED_FAILED phase
     /// TGE token can be returned only on DEVELOPMENT phase
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external {
+    function refundFor(string calldata symbol, address[] memory receivers) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
             for (uint i; i < receivers.length; i++) {
-                _refundFunding(daoSymbol, ITokenomics.FundingType.SEED_0, receivers[i], seedToken, asset, true);
+                _refundFunding(symbol, ITokenomics.FundingType.SEED_0, receivers[i], seedToken, asset, true);
             }
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
             address tgeToken = $.deployments[daoUid].tgeToken;
             for (uint i; i < receivers.length; i++) {
-                _refundFunding(daoSymbol, ITokenomics.FundingType.TGE_1, receivers[i], tgeToken, asset, true);
+                _refundFunding(symbol, ITokenomics.FundingType.TGE_1, receivers[i], tgeToken, asset, true);
             }
         } else {
             revert IHost.NotRefundPhase();
@@ -105,7 +105,7 @@ library HostFundingLib {
     }
 
     function _refundFunding(
-        string calldata daoSymbol,
+        string calldata symbol,
         ITokenomics.FundingType fundingType_,
         address receiver,
         address fundingToken,
@@ -120,7 +120,7 @@ library HostFundingLib {
 
             IRefundableToken(fundingToken).refund(receiver, balance, exchangeAsset, receiver);
 
-            uint daoUid = HostLib.getDaoUid($, daoSymbol);
+            uint daoUid = HostLib.getDaoUid($, symbol);
             ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(fundingType_))];
             uint raised = funding.raised;
             funding.raised = raised > balance ? raised - balance : 0;

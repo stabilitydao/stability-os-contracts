@@ -37,8 +37,8 @@ library HostLib {
 
     /// @notice ON-CHAIN on chains where DAO bridged (some additional structs are stored in separate mappings)
     struct DaoDataSegment2 {
-        /// @notice Symbol is stored here to have a mapping: daoUid => daoSymbol
-        string daoSymbol;
+        /// @notice Symbol is stored here to have a mapping: daoUid => symbol
+        string symbol;
 
         /// @notice Name of the DAO, used in token names. Without DAO word.
         string name;
@@ -101,7 +101,7 @@ library HostLib {
         uint64 created;
     }
 
-    /// @notice It refers to daoUid instead of daoSymbol
+    /// @notice It refers to daoUid instead of symbol
     struct ProposalLocal {
         /// @notice ProposalHeader packed to single slot
         uint proposalHeader;
@@ -161,9 +161,9 @@ library HostLib {
         // -------------------------------------- SEGMENT 1: ALl chains with Host deployed
         /// @notice Mapping from DAO symbol (changeable) to its unique id
         /// @dev This mapping is used to store:
-        ///    daoSymbol => DAO_UID_STUB_SYMBOL_REGISTERED (segment 1: the symbol is in use but it's daoUid is not known)
-        ///    daoSymbol => daoUid (segment 2: actual uid of the dao with the given symbol is stored)
-        mapping(string daoSymbol => uint daoUid) daoUids;
+        ///    symbol => DAO_UID_STUB_SYMBOL_REGISTERED (segment 1: the symbol is in use but it's daoUid is not known)
+        ///    symbol => daoUid (segment 2: actual uid of the dao with the given symbol is stored)
+        mapping(string symbol => uint daoUid) daoUids;
 
         /// @notice All bridged actions received from other chains. Key is hash of action payload.
         mapping(bytes32 actionHash => BridgedActionLocal) bridgedActionHashes;
@@ -293,8 +293,8 @@ library HostLib {
     }
 
     /// @notice Get value of dao uid. Returns 0 for stub values
-    function getDaoUid(HostLib.HostStorage storage $, string memory daoSymbol) internal view returns (uint daoUid) {
-        daoUid = $.daoUids[daoSymbol];
+    function getDaoUid(HostLib.HostStorage storage $, string memory symbol) internal view returns (uint daoUid) {
+        daoUid = $.daoUids[symbol];
         return daoUid == getDaoUidStub() ? 0 : daoUid;
     }
 

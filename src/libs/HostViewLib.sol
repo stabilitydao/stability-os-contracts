@@ -25,10 +25,10 @@ library HostViewLib {
     }
 
     /// @notice Change lifecycle phase of a DAO
-    /// @param daoSymbol Symbol of the DAO
-    function changePhase(string calldata daoSymbol, address authority) external {
+    /// @param symbol Symbol of the DAO
+    function changePhase(string calldata symbol, address authority) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
         require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
@@ -50,7 +50,7 @@ library HostViewLib {
                 $,
                 daoUid,
                 getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.SEED_0)),
-                getTokenSymbol(daoSymbol, uint(NamingTokenKind.SEED_0)),
+                getTokenSymbol(symbol, uint(NamingTokenKind.SEED_0)),
                 authority
             );
 
@@ -76,7 +76,7 @@ library HostViewLib {
                 $,
                 daoUid,
                 getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.TGE_1)),
-                getTokenSymbol(daoSymbol, uint(NamingTokenKind.TGE_1)),
+                getTokenSymbol(symbol, uint(NamingTokenKind.TGE_1)),
                 authority
             );
 
@@ -149,8 +149,8 @@ library HostViewLib {
     //region -------------------------------------- View
     function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint /*version*/) external view returns (bytes memory) {
         if (itemIndex == IHost.DataReaderItem.DAO_DATA_0) {
-            (string memory daoSymbol) = abi.decode(input, (string));
-            IDAOData.DaoData memory daoData = getDAO(daoSymbol);
+            (string memory symbol) = abi.decode(input, (string));
+            IDAOData.DaoData memory daoData = getDAO(symbol);
             return abi.encode(daoData); // todo version
         } else if (itemIndex == IHost.DataReaderItem.PROPOSAL_1) {
             (bytes32 proposalId) = abi.decode(input, (bytes32));
@@ -161,17 +161,17 @@ library HostViewLib {
     }
 
     /// @notice Get full on-chain DAO data by its symbol.
-    function getDAO(string memory daoSymbol) public view returns (IDAOData.DaoData memory dest) {
+    function getDAO(string memory symbol) public view returns (IDAOData.DaoData memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        dest.uid = HostLib.getDaoUid($, daoSymbol);
+        dest.uid = HostLib.getDaoUid($, symbol);
 
         HostLib.DaoDataSegment2 memory segment2 = $.segment2[dest.uid];
         HostLib.DaoDataSegment3 memory segment3 = $.segment3[dest.uid];
 
         { // ------------------- basic fields
 
-            dest.symbol = segment2.daoSymbol;
+            dest.symbol = segment2.symbol;
             dest.name = segment2.name;
             dest.phase = segment2.phase;
 
@@ -232,9 +232,9 @@ library HostViewLib {
     }
 
     /// @notice Get owner of the DAO depending on its lifecycle phase
-    function getDAOOwner(string calldata daoSymbol) external view returns (address) {
+    function getDAOOwner(string calldata symbol) external view returns (address) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
         require(daoUid != 0, IHost.IncorrectDao());
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
@@ -252,9 +252,9 @@ library HostViewLib {
         return $.deployments[daoUid].daoToken;
     }
 
-    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
+    function isDaoSymbolInUse(string calldata symbol) external view returns (bool) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return $.daoUids[daoSymbol] != 0;
+        return $.daoUids[symbol] != 0;
     }
 
     function proposal(bytes32 proposalId) public view returns (ITokenomics.Proposal memory) {
@@ -264,7 +264,7 @@ library HostViewLib {
         return ITokenomics.Proposal({
             action: header.action,
             id: proposalId,
-            daoSymbol: $.segment2[local.daoUid].daoSymbol,
+            symbol: $.segment2[local.daoUid].symbol,
             created: header.created,
             status: header.status,
             payloadHash: local.payloadHash,
@@ -274,19 +274,19 @@ library HostViewLib {
         });
     }
 
-    function proposalsLength(string calldata daoSymbol) external view returns (uint) {
+    function proposalsLength(string calldata symbol) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return $.daoProposals[HostLib.getDaoUid($, daoSymbol)].length;
+        return $.daoProposals[HostLib.getDaoUid($, symbol)].length;
     }
 
     function proposalIds(
-        string calldata daoSymbol,
+        string calldata symbol,
         uint index,
         uint count
     ) external view returns (bytes32[] memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
-        uint len = $.daoProposals[HostLib.getDaoUid($, daoSymbol)].length;
+        uint daoUid = HostLib.getDaoUid($, symbol);
+        uint len = $.daoProposals[HostLib.getDaoUid($, symbol)].length;
         uint size = index + count > len ? index > len ? 0 : len - index : count;
         dest = new bytes32[](size);
         for (uint i = 0; i < size; i++) {
@@ -295,12 +295,12 @@ library HostViewLib {
     }
 
     /// @notice Get list of pending tasks for the given DAO
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param limit Maximum number of tasks to return. It must be > 0. Use 1 to check if there are any tasks.
     /// @return __tasks List of tasks. The list is limited by {limit} value
-    function tasks(string calldata daoSymbol, uint limit) external view returns (IHost.Task[] memory __tasks) {
+    function tasks(string calldata symbol, uint limit) external view returns (IHost.Task[] memory __tasks) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        return _tasks(uint16(limit), HostLib.getDaoUid($, daoSymbol));
+        return _tasks(uint16(limit), HostLib.getDaoUid($, symbol));
     }
 
     /// @notice Generate token name in same way as getTokensNaming()
@@ -340,15 +340,15 @@ library HostViewLib {
     }
 
     /// @notice Get balance of the given unit for the given DAO
-    function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
+    function unitBalance(string calldata symbol, string calldata unitId) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
         return $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
     }
 
-    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32) {
+    function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
         return $.salt[HostLib.getKey(daoUid, contractIndex)];
     }
     //endregion -------------------------------------- View

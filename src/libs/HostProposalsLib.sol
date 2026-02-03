@@ -146,26 +146,26 @@ library HostProposalsLib {
         }
     }
 
-    function _beforeUpdate(string memory daoSymbol) internal view returns (InitData memory dest) {
+    function _beforeUpdate(string memory symbol) internal view returns (InitData memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        dest.daoUid = HostLib.getDaoUid($, daoSymbol);
+        dest.daoUid = HostLib.getDaoUid($, symbol);
         dest.phase = $.segment2[dest.daoUid].phase;
         require(dest.daoUid != 0, IHost.IncorrectDao());
         dest.instant = dest.phase == ITokenomics.LifecyclePhase.DRAFT_0;
         if (dest.instant) {
-            require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(daoSymbol));
+            require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(symbol));
         }
         return dest;
     }
 
     /// @notice Update instantly / create proposal to update DAO values
-    /// @param daoSymbol DAO symbol
+    /// @param symbol DAO symbol
     /// @param action Action kind, see ITokenomics.DAOAction
     /// @param payload Data of the action. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        InitData memory init = _beforeUpdate(daoSymbol);
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
+        InitData memory init = _beforeUpdate(symbol);
 
         /// @dev Currently metadata is required by units-update only
         require(
@@ -336,12 +336,12 @@ library HostProposalsLib {
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other chain(s)
     function updateBridgedDao(
-        string calldata daoSymbol,
+        string calldata symbol,
         uint16 actionKind,
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads
     ) external {
-        InitData memory _d = _beforeUpdate(daoSymbol);
+        InitData memory _d = _beforeUpdate(symbol);
 
         HostUpdateBridgedLib.verify(_d.daoUid, actionKind, dstEids, actionPayloads);
 

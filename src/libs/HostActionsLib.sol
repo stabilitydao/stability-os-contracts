@@ -44,8 +44,8 @@ library HostActionsLib {
         if (len != 0) {
             uint daoUidStub = HostLib.getDaoUidStub();
             for (uint i = 0; i < len; i++) {
-                string memory daoSymbol = initPayload.usedSymbols[i];
-                $.daoUids[daoSymbol] = daoUidStub;
+                string memory symbol = initPayload.usedSymbols[i];
+                $.daoUids[symbol] = daoUidStub;
             }
         }
 
@@ -65,13 +65,13 @@ library HostActionsLib {
 
     /// @notice Create new DAO
     /// @param name Name of new DAO (any name is allowed)
-    /// @param daoSymbol Symbol of new DAO (should be unique across all DAOs, it can be changed later)
+    /// @param symbol Symbol of new DAO (should be unique across all DAOs, it can be changed later)
     /// @param activity List of activities of the DAO
     /// @param params On-chain DAO parameters
     /// @param funding Initial funding rounds of the DAO
     function createDAO(
         string calldata name,
-        string calldata daoSymbol,
+        string calldata symbol,
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
@@ -86,14 +86,14 @@ library HostActionsLib {
 
         HostLib.DaoDataSegment2 memory daoData2;
         daoData2.name = name;
-        daoData2.daoSymbol = daoSymbol;
+        daoData2.symbol = symbol;
         daoData2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
 
         HostUpdateLib.validate(daoData2, params, funding);
 
         // ------------------------- Save DAO data to the storage
         // we don't use viaIR=true in config so we cannot make direct assignment
-        // $.daos[daoSymbol] = daoData;
+        // $.daos[symbol] = daoData;
 
         $.segment2[daoUid] = daoData2;
         $.daoParameters[daoUid] = params;
@@ -110,7 +110,7 @@ library HostActionsLib {
             }
         }
 
-        _finalizeDaoCreation($, daoSymbol, name, daoUid);
+        _finalizeDaoCreation($, symbol, name, daoUid);
     }
 
     /// @dev Add exist DAO to Host
@@ -120,14 +120,14 @@ library HostActionsLib {
     }
 
     /// @notice Process revenue for the given unit of the DAO
-    function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
+    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, daoSymbol);
+        uint daoUid = HostLib.getDaoUid($, symbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
         require(_isUnitExist($, daoUid, unitId), IHost.UnitNotFound());
 
-        HostActionsLib._processUnitRevenue($, daoUid, daoSymbol, unitId, amount);
+        HostActionsLib._processUnitRevenue($, daoUid, symbol, unitId, amount);
     }
 
     //endregion -------------------------------------- Actions
@@ -136,7 +136,7 @@ library HostActionsLib {
     /// @notice Mark DAO symbol as used and emit events
     function _finalizeDaoCreation(
         HostLib.HostStorage storage $,
-        string memory daoSymbol,
+        string memory symbol,
         string memory daoName,
         uint daoUid
     ) internal {
@@ -156,12 +156,12 @@ library HostActionsLib {
             HostConfigLib.getHostGlobalSettings().priceDao
         );
 
-        $.daoUids[daoSymbol] = daoUid;
+        $.daoUids[symbol] = daoUid;
 
-        emit IHost.DaoCreated(daoName, daoSymbol, daoUid);
+        emit IHost.DaoCreated(daoName, symbol, daoUid);
 
         HostCrossChainLib.sendMessageToAllChains(
-            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
+            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, HostCrossChainLib.packMessageNewDaoSymbol(symbol)
         );
     }
 
@@ -178,7 +178,7 @@ library HostActionsLib {
     function _processUnitRevenue(
         HostLib.HostStorage storage $,
         uint daoUid,
-        string memory daoSymbol,
+        string memory symbol,
         string memory unitId,
         uint amount
     ) internal {
@@ -190,7 +190,7 @@ library HostActionsLib {
             IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), amount);
             $.unitBalances[HostLib.getUnitKey(daoUid, unitId)] += amount;
 
-            emit IHost.ProcessUnitRevenue(daoUid, daoSymbol, unitId, amount);
+            emit IHost.ProcessUnitRevenue(daoUid, symbol, unitId, amount);
         }
     }
 
@@ -204,7 +204,7 @@ library HostActionsLib {
 
         HostLib.DaoDataSegment2 memory daoData2;
         daoData2.name = dao.name;
-        daoData2.daoSymbol = dao.symbol;
+        daoData2.symbol = dao.symbol;
         daoData2.phase = dao.phase;
         daoData2.unitIds = new string[](dao.units.length);
 

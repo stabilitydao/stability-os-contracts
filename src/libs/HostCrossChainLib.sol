@@ -28,11 +28,11 @@ library HostCrossChainLib {
         console.log("onReceiveCrossChainMessage message kind", messageKind);
 
         if (messageKind == uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)) {
-            string memory daoSymbol = unpackMessageNewDaoSymbol(message_);
+            string memory symbol = unpackMessageNewDaoSymbol(message_);
 
-            $.daoUids[daoSymbol] = HostLib.getDaoUidStub();
+            $.daoUids[symbol] = HostLib.getDaoUidStub();
 
-            emit IHost.OnRegisterDaoSymbol(daoSymbol, srcEid, guid_);
+            emit IHost.OnRegisterDaoSymbol(symbol, srcEid, guid_);
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1)) {
             (string memory oldSymbol, string memory newSymbol) = unpackMessageRenameSymbol(message_);
 
@@ -59,13 +59,12 @@ library HostCrossChainLib {
     }
 
     //region ----------------------------------------- Pack/Unpack cross-chain messages
-    function packMessageNewDaoSymbol(string memory daoSymbol) internal pure returns (bytes memory message) {
-        return abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), daoSymbol);
+    function packMessageNewDaoSymbol(string memory symbol) internal pure returns (bytes memory message) {
+        return abi.encode(uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), symbol);
     }
 
-    function unpackMessageNewDaoSymbol(bytes memory message) internal pure returns (string memory daoSymbol) {
-        (, string memory symbol) = abi.decode(message, (uint16, string));
-        return symbol;
+    function unpackMessageNewDaoSymbol(bytes memory message) internal pure returns (string memory symbol) {
+        (, symbol) = abi.decode(message, (uint16, string));
     }
 
     function packMessageRenameSymbol(

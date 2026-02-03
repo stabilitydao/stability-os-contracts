@@ -6,8 +6,8 @@ import {HostCrossChainLib} from "../../src/libs/HostCrossChainLib.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 
 contract HostCrossChainLibCaller {
-    function packNewDaoSymbol(string memory daoSymbol) external pure returns (bytes memory) {
-        return HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol);
+    function packNewDaoSymbol(string memory symbol) external pure returns (bytes memory) {
+        return HostCrossChainLib.packMessageNewDaoSymbol(symbol);
     }
 
     function unpackNewDaoSymbol(bytes memory message) external pure returns (string memory) {

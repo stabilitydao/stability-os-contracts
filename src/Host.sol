@@ -40,8 +40,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function getDAO(string calldata daoSymbol) external view returns (IDAOData.DaoData memory) {
-        return HostViewLib.getDAO(daoSymbol);
+    function getDAO(string calldata symbol) external view returns (IDAOData.DaoData memory) {
+        return HostViewLib.getDAO(symbol);
     }
 
     /// @inheritdoc IHost
@@ -60,18 +60,18 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function tasks(string calldata daoSymbol) external view returns (IHost.Task[] memory) {
-        return HostViewLib.tasks(daoSymbol, MAX_COUNT_TASKS);
+    function tasks(string calldata symbol) external view returns (IHost.Task[] memory) {
+        return HostViewLib.tasks(symbol, MAX_COUNT_TASKS);
     }
 
     /// @inheritdoc IHost
-    function getDAOOwner(string calldata daoSymbol) external view returns (address) {
-        return HostViewLib.getDAOOwner(daoSymbol);
+    function getDAOOwner(string calldata symbol) external view returns (address) {
+        return HostViewLib.getDAOOwner(symbol);
     }
 
     /// @inheritdoc IHost
-    function isDaoSymbolInUse(string calldata daoSymbol) external view returns (bool) {
-        return HostViewLib.isDaoSymbolInUse(daoSymbol);
+    function isDaoSymbolInUse(string calldata symbol) external view returns (bool) {
+        return HostViewLib.isDaoSymbolInUse(symbol);
     }
 
     /// @inheritdoc IHost
@@ -80,28 +80,28 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function proposalsLength(string calldata daoSymbol) external view returns (uint) {
-        return HostViewLib.proposalsLength(daoSymbol);
+    function proposalsLength(string calldata symbol) external view returns (uint) {
+        return HostViewLib.proposalsLength(symbol);
     }
 
     /// @inheritdoc IHost
-    function proposalIds(string calldata daoSymbol, uint index, uint count) external view returns (bytes32[] memory) {
-        return HostViewLib.proposalIds(daoSymbol, index, count);
+    function proposalIds(string calldata symbol, uint index, uint count) external view returns (bytes32[] memory) {
+        return HostViewLib.proposalIds(symbol, index, count);
     }
 
     /// @inheritdoc IHost
-    function quoteCreateDAO(string calldata daoSymbol) external view returns (uint) {
+    function quoteCreateDAO(string calldata symbol) external view returns (uint) {
         return HostCrossChainLib.quoteMessageToAllChains(
-            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, HostCrossChainLib.packMessageNewDaoSymbol(daoSymbol)
+            IHost.CrossChainMessages.NEW_DAO_SYMBOL_0, HostCrossChainLib.packMessageNewDaoSymbol(symbol)
         );
     }
 
-    function unitBalance(string calldata daoSymbol, string calldata unitId) external view returns (uint) {
-        return HostViewLib.unitBalance(daoSymbol, unitId);
+    function unitBalance(string calldata symbol, string calldata unitId) external view returns (uint) {
+        return HostViewLib.unitBalance(symbol, unitId);
     }
 
-    function salt(string calldata daoSymbol, uint16 contractIndex) external view returns (bytes32) {
-        return HostViewLib.salt(daoSymbol, contractIndex);
+    function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32) {
+        return HostViewLib.salt(symbol, contractIndex);
     }
 
     /// @inheritdoc IHost
@@ -146,41 +146,41 @@ contract Host is IHost, Hosted {
     /// @inheritdoc IHost
     function createDAO(
         string calldata name,
-        string calldata daoSymbol,
+        string calldata symbol,
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding
     ) external payable {
         // no restrictions, anybody can create a DAO
-        HostActionsLib.createDAO(name, daoSymbol, activity, params, funding);
+        HostActionsLib.createDAO(name, symbol, activity, params, funding);
     }
 
     /// @inheritdoc IHost
-    function changePhase(string calldata daoSymbol) external {
+    function changePhase(string calldata symbol) external {
         // no restrictions, anybody can call this
 
-        HostViewLib.changePhase(daoSymbol, authority());
+        HostViewLib.changePhase(symbol, authority());
     }
 
     /// @inheritdoc IHost
-    function fund(string calldata daoSymbol, uint amount) external {
+    function fund(string calldata symbol, uint amount) external {
         // todo not reentrant
         // no restrictions, anybody can call this
 
-        HostFundingLib.fund(daoSymbol, amount);
+        HostFundingLib.fund(symbol, amount);
     }
 
     /// @inheritdoc IHost
-    function refund(string calldata daoSymbol) external {
+    function refund(string calldata symbol) external {
         // todo not reentrant
-        HostFundingLib.refund(daoSymbol);
+        HostFundingLib.refund(symbol);
     }
 
     /// @inheritdoc IHost
-    function processUnitRevenue(string calldata daoSymbol, string memory unitId, uint amount) external {
+    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external {
         // todo no restrictions?
         // todo not reentrant
-        HostActionsLib.processUnitRevenue(daoSymbol, unitId, amount);
+        HostActionsLib.processUnitRevenue(symbol, unitId, amount);
     }
 
     //endregion -------------------------------------- Actions
@@ -202,8 +202,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function refundFor(string calldata daoSymbol, address[] memory receivers) external restricted {
-        HostFundingLib.refundFor(daoSymbol, receivers);
+    function refundFor(string calldata symbol, address[] memory receivers) external restricted {
+        HostFundingLib.refundFor(symbol, receivers);
     }
 
     /// @inheritdoc IHost
@@ -240,19 +240,19 @@ contract Host is IHost, Hosted {
     //region -------------------------------------- Update actions
 
     /// @inheritdoc IHost
-    function updateDAO(string calldata daoSymbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        HostProposalsLib.updateDAO(daoSymbol, action, payload, metadata);
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
+        HostProposalsLib.updateDAO(symbol, action, payload, metadata);
     }
 
     /// @inheritdoc IHost
     function createBridgedAction(
-        string calldata daoSymbol,
+        string calldata symbol,
         uint16 actionKind,
         uint32[] calldata dstEids,
         bytes[] calldata actionPayloads
     ) external {
         // restrictions are checked below
-        HostProposalsLib.updateBridgedDao(daoSymbol, actionKind, dstEids, actionPayloads);
+        HostProposalsLib.updateBridgedDao(symbol, actionKind, dstEids, actionPayloads);
     }
 
     /// @inheritdoc IHost

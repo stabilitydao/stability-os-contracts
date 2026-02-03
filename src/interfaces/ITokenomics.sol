@@ -194,7 +194,7 @@ interface ITokenomics {
         ITokenomics.ValidationStatus validationStatus;
 
         bytes32 id; // todo do we really need string id?
-        string daoSymbol; // todo rename back to symbol
+        string symbol; // todo rename back to symbol
         /// @notice Proposal creation timestamp
         uint64 created;
         VotingStatus status;

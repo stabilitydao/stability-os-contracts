@@ -1039,8 +1039,8 @@ contract HostTest is Test {
         IAccessManager(address(authority)).grantRole(5555, MULTISIG, 0);
     }
 
-    function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory daoSymbol) internal {
-        IDAOData.DaoData memory daoData = host_.getDAO(daoSymbol);
+    function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory symbol) internal {
+        IDAOData.DaoData memory daoData = host_.getDAO(symbol);
         skip(7 days);
 
         IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({

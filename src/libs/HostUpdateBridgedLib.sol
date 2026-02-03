@@ -113,7 +113,7 @@ library HostUpdateBridgedLib {
 
                 /// @dev Ensure that user set correct DAO symbol in payload
                 require(
-                    keccak256(bytes(p.symbol)) == keccak256(bytes(segment2.daoSymbol))
+                    keccak256(bytes(p.symbol)) == keccak256(bytes(segment2.symbol))
                         && keccak256(bytes(p.name)) == keccak256(bytes(segment2.name)),
                     IHost.IncorrectInputData()
                 );
@@ -193,7 +193,7 @@ library HostUpdateBridgedLib {
 
         $.daoUids[p.symbol] = daoUid;
         $.segment2[daoUid] = HostLib.DaoDataSegment2({
-            daoSymbol: p.symbol, name: p.name, phase: ITokenomics.LifecyclePhase.DRAFT_0, unitIds: p.unitIds
+            symbol: p.symbol, name: p.name, phase: ITokenomics.LifecyclePhase.DRAFT_0, unitIds: p.unitIds
         });
 
         $.daoParameters[daoUid] = p.daoParameters;

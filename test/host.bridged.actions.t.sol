@@ -332,7 +332,7 @@ contract HostBridgedActionsTest is Test {
         return dao;
     }
 
-    function _addUnitsToDao(IHost host, IHostCodec codec, string memory daoSymbol) internal {
+    function _addUnitsToDao(IHost host, IHostCodec codec, string memory symbol) internal {
         IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
             name: "DAO Factory",
             status: IDAOMetadata.UnitStatus.BUILDING_1,
@@ -348,7 +348,7 @@ contract HostBridgedActionsTest is Test {
         metas[0] = unitMetadata0;
         units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
         host.updateDAO(
-            daoSymbol,
+            symbol,
             uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
             codec.encode(units, codec.PAYLOAD_API_VERSION()),
             codec.encode(metas, codec.PAYLOAD_API_VERSION())

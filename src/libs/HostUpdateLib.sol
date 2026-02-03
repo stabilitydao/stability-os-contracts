@@ -44,7 +44,7 @@ library HostUpdateLib {
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
     function _validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
-        _validateNaming(dao.name, dao.daoSymbol, st);
+        _validateNaming(dao.name, dao.symbol, st);
 
         // todo validate activity
     }
@@ -259,7 +259,7 @@ library HostUpdateLib {
     function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoImages[daoUid] = images;
-        emit IHost.DaoImagesUpdated($.segment2[daoUid].daoSymbol, images);
+        emit IHost.DaoImagesUpdated($.segment2[daoUid].symbol, images);
     }
 
     /// @notice Update socials of the DAO
@@ -273,7 +273,7 @@ library HostUpdateLib {
     function updateSocials(uint daoUid, string[] memory socials) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.segment3[daoUid].socials = socials;
-        emit IHost.DaoSocialsUpdated($.segment2[daoUid].daoSymbol, socials);
+        emit IHost.DaoSocialsUpdated($.segment2[daoUid].symbol, socials);
     }
 
     /// @notice Update revenue generating units of the DAO
@@ -445,10 +445,10 @@ library HostUpdateLib {
     function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        string memory oldSymbol = $.segment2[daoUid].daoSymbol;
+        string memory oldSymbol = $.segment2[daoUid].symbol;
         delete $.daoUids[oldSymbol];
 
-        $.segment2[daoUid].daoSymbol = daoNames_.symbol;
+        $.segment2[daoUid].symbol = daoNames_.symbol;
         $.segment2[daoUid].name = daoNames_.name;
         $.daoUids[daoNames_.symbol] = daoUid;
 
