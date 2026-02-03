@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {HostLib} from "./HostLib.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {HostProxyDeployLib} from "./HostProxyDeployLib.sol";
+import {HostProxyLib} from "./HostProxyLib.sol";
 
 /// @notice Library for deploying any contracts required by DAOs
 library HostDeployLib {
@@ -18,7 +18,7 @@ library HostDeployLib {
         address authority_
     ) internal returns (address) {
         bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1))];
-        return HostProxyDeployLib.deployContract(
+        return HostProxyLib.deployContract(
             seed, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode(token_, symbol_), authority_
         );
     }
@@ -32,7 +32,7 @@ library HostDeployLib {
         address authority_
     ) internal returns (address) {
         bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2))];
-        return HostProxyDeployLib.deployContract(
+        return HostProxyLib.deployContract(
             seed, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode(token_, symbol_), authority_
         );
     }

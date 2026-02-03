@@ -1,43 +1,204 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {console} from "forge-std/console.sol";
-import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
-import {IHost} from "../../src/interfaces/IHost.sol";
-import {IHosted} from "../../src/interfaces/IHosted.sol";
-import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
 import {Test} from "forge-std/Test.sol";
-import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
-import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {HostProxyUpgradeLib} from "../../src/libs/HostProxyUpgradeLib.sol";
+import {HostProxyLib} from "../../src/libs/HostProxyLib.sol";
+import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
+import {Host} from "../../src/Host.sol";
+import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
+import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
+import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {IHosted} from "../../src/interfaces/IHosted.sol";
+import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {IOwnable} from "../../src/interfaces/IOwnable.sol";
+import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
+import {IAuthority} from "../../src/interfaces/IAuthority.sol";
+import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
+import {IProxy} from "../../src/interfaces/IProxy.sol";
+
 
 contract HostrgeUpgradeProxyLibTest is Test {
-    address internal immutable MULTISIG;
+    address public multisig;
+    address public proxyFactory;
+    IAuthority public authority;
+    IHost public host;
 
     constructor() {
-        MULTISIG = makeAddr("multisig");
+        multisig = makeAddr("multisig");
+
+        host = HostUtilsLib.createHostInstance(vm, multisig);
+        authority = IAuthority(IHosted(address(host)).authority());
+        proxyFactory = authority.PROXY_FACTORY();
+
+        address owner = IOwnable(proxyFactory).owner();
+
+        vm.prank(owner);
+        IProxyFactory(proxyFactory).setWhitelisted(address(this), true);
+
+        _setupAccessManager();
+
     }
 
     function testStorageLocation() public pure {
         assertEq(
-            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostUpgradeProxyLib")) - 1))
+            keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyLib")) - 1))
                 & ~bytes32(uint(0xff)),
-            HostProxyUpgradeLib.HOST_UPGRADE_STORAGE_LOCATION,
+            HostProxyLib.HOST_UPGRADE_STORAGE_LOCATION,
             "HOST_UPGRADE_STORAGE_LOCATION"
         );
     }
 
+    //region ------------------------------------- Deploy tests
+    function testSetContractImplementation() public {
+        address seedTokenImplementation = address(new SeedToken());
+        address tgeTokenImplementation = address(new TgeToken());
+
+        vm.expectRevert(); // AccessManagedUnauthorized
+        vm.prank(address(1111));
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+
+        vm.prank(multisig);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+
+        vm.prank(multisig);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
+
+        assertEq(
+            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+            seedTokenImplementation,
+            "Seed token implementation set"
+        );
+        assertEq(
+            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
+            tgeTokenImplementation,
+            "Tge token implementation set"
+        );
+
+        vm.prank(multisig);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), address(0));
+
+        assertEq(
+            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+            seedTokenImplementation,
+            "Seed token implementation not changed"
+        );
+        assertEq(
+            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
+            address(0),
+            "Tge token implementation is zero"
+        );
+    }
+
+    function testDeploySeedToken() public {
+        // ------------------------ Setup implementations
+        address seedTokenImplementation = address(new SeedToken());
+
+        HostProxyLib.setContractImplementation(
+            uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation
+        );
+
+        // ------------------------ Deploy seed token
+
+        bytes32 salt = "0x0101";
+        address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
+
+        address seedToken = HostProxyLib.deployContract(
+            salt, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode("name", "symbol"), address(authority)
+        );
+
+        // ------------------------ Check results
+        assertNotEq(seedToken, address(0), "Deployed seed token address");
+        assertEq(seedToken, predictedProxyAddress, "Predicted address matches deployed");
+
+        assertEq(IERC20Metadata(seedToken).name(), "name", "Seed token name");
+        assertEq(IERC20Metadata(seedToken).symbol(), "symbol", "Seed token symbol");
+
+        assertEq(IProxy(seedToken).implementation(), seedTokenImplementation, "Seed token implementation");
+    }
+
+    function testDeployTgeToken() public {
+        // ------------------------ Setup implementations
+        address tgeTokenImplementation = address(new TgeToken());
+
+        HostProxyLib.setContractImplementation(
+            uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation
+        );
+
+        // ------------------------ Deploy seed token
+
+        bytes32 salt = "0x0101";
+        address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
+
+        address tgeToken = HostProxyLib.deployContract(
+            salt, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode("name", "symbol"), address(authority)
+        );
+
+        // ------------------------ Check results
+        assertNotEq(tgeToken, address(0), "Deployed tge token address");
+        assertEq(tgeToken, predictedProxyAddress, "Predicted address matches deployed");
+
+        assertEq(IERC20Metadata(tgeToken).name(), "name", "Tge token name");
+        assertEq(IERC20Metadata(tgeToken).symbol(), "symbol", "Tge token symbol");
+
+        assertEq(IProxy(tgeToken).implementation(), tgeTokenImplementation, "Tge token implementation");
+    }
+
+    function testDeployProxy() public {
+        address logic = address(new Host());
+
+        bytes32 salt = "0x0101";
+        address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
+
+        string[] memory usedSymbols = new string[](2);
+        usedSymbols[0] = "AAA";
+        usedSymbols[1] = "BBB";
+
+        IHost.HostInitPayload memory init = IHost.HostInitPayload({
+            usedSymbols: usedSymbols, daoHostSymbol: "CCC", daoHostUid: 12345, hostVersion: "1.0.0"
+        });
+
+        vm.expectRevert();
+        vm.prank(address(2222));
+        IHost(host.deployProxy(salt, address(logic), abi.encode(init)));
+
+        IHost newHost = IHost(host.deployProxy(salt, address(logic), abi.encode(init)));
+
+        assertTrue(newHost.isDaoSymbolInUse("AAA"), "AAA");
+        assertTrue(newHost.isDaoSymbolInUse("BBB"), "BBB");
+
+        assertTrue(newHost.isDaoSymbolInUse("CCC"), "CCC");
+        assertEq(newHost.getHostDaoUid(), 12345, "CCC uid");
+
+        assertEq(address(newHost), predictedProxyAddress, "Predicted address matches deployed");
+    }
+
+    function _setupAccessManager() internal {
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = bytes4(IHost.deployProxy.selector);
+
+        vm.prank(multisig);
+        IAccessManager(address(authority))
+        .setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
+
+        vm.prank(multisig);
+        IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
+
+        vm.prank(multisig);
+        IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(this), 0);
+    }
+
+    //endregion ------------------------------------- Deploy tests
+
+    //region ------------------------------------- Upgrade tests
     function testUpgradeHost() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-
-        address authority = IAccessManaged(address(host)).authority();
-        _setupAccessManager(authority, address(host));
-
         // ------------------------- Deploy two proxies
-        vm.startPrank(MULTISIG);
+        vm.startPrank(multisig);
         address[] memory proxies = new address[](2);
         proxies[0] = host.deployProxy("0x1", address(new MinHostedNoReceive()), "");
         proxies[1] = host.deployProxy("0x2", address(new MinHostedNoReceiveV2()), "");
@@ -53,7 +214,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         implementations[1] = address(new MinHostedNoReceive()); // downgrade
 
         // ------------------------- Announce upgrade
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.announceUpgrade("1.1.0", proxies, implementations);
 
         {
@@ -80,7 +241,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         assertEq(MinHostedNoReceiveV2(proxies[1]).testFunction(), 1, "before 2");
 
         // ------------------------- Upgrade and check functions after upgrade
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.upgrade();
 
         {
@@ -109,13 +270,8 @@ contract HostrgeUpgradeProxyLibTest is Test {
     }
 
     function testUpgradeHostBadPaths() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-
-        address authority = IAccessManaged(address(host)).authority();
-        _setupAccessManager(authority, address(host));
-
         // ------------------------- Deploy two proxies
-        vm.startPrank(MULTISIG);
+        vm.startPrank(multisig);
         address[] memory proxies = new address[](2);
         proxies[0] = host.deployProxy("0x1", address(new MinHostedNoReceive()), "");
         proxies[1] = host.deployProxy("0x2", address(new MinHostedNoReceiveV2()), "");
@@ -136,7 +292,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
             implementations2[0] = address(new MinHostedNoReceiveV2()); // upgrade
 
             vm.expectRevert(IHost.IncorrectArrayLengths.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.1.0", proxies, implementations2);
 
             implementations2 = new address[](implementations.length);
@@ -145,11 +301,11 @@ contract HostrgeUpgradeProxyLibTest is Test {
             }
 
             vm.expectRevert(IHosted.IncorrectZeroArgument.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.1.0", proxies, implementations2);
 
             vm.expectRevert(IHosted.IncorrectZeroArgument.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.1.0", implementations2, proxies);
 
             implementations2 = new address[](2);
@@ -157,11 +313,11 @@ contract HostrgeUpgradeProxyLibTest is Test {
             implementations2[1] = address(new MinHostedNoReceiveV2()); // downgrade
 
             vm.expectRevert(IHost.SameVersion.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.1.0", implementations2, proxies);
 
             vm.expectRevert(IHost.SameVersion.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.0.0", implementations, proxies);
 
             vm.expectRevert(); // restricted
@@ -170,19 +326,19 @@ contract HostrgeUpgradeProxyLibTest is Test {
         }
 
         // ------------------------- Announce upgrade
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.announceUpgrade("1.1.0", proxies, implementations);
 
         // ------------------------- Bad paths
         {
             // We cannot announce next upgrade before executing or cancelling the previous one
             vm.expectRevert(IHost.AlreadyAnnounced.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.announceUpgrade("1.2.0", proxies, implementations);
 
             // We cannot upgrade before timelock
             vm.expectRevert(abi.encodeWithSelector(IHost.UpgradeTimerIsNotOver.selector, uint(1801)));
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.upgrade();
         }
 
@@ -194,26 +350,21 @@ contract HostrgeUpgradeProxyLibTest is Test {
         vm.prank(address(0x1));
         host.upgrade();
 
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.upgrade();
 
         // ------------------------- Bad paths
         {
             // nothing to cancel
             vm.expectRevert(IHost.NoNewVersion.selector);
-            vm.prank(MULTISIG);
+            vm.prank(multisig);
             host.cancelUpgrade();
         }
     }
 
     function testCancelUpgradeHost() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-
-        address authority = IAccessManaged(address(host)).authority();
-        _setupAccessManager(authority, address(host));
-
         // ------------------------- Deploy two proxies
-        vm.startPrank(MULTISIG);
+        vm.startPrank(multisig);
         address[] memory proxies = new address[](2);
         proxies[0] = host.deployProxy("0x1", address(new MinHostedNoReceive()), "");
         proxies[1] = host.deployProxy("0x2", address(new MinHostedNoReceiveV2()), "");
@@ -229,7 +380,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         implementations[1] = address(new MinHostedNoReceive()); // downgrade
 
         // ------------------------- Announce upgrade
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.announceUpgrade("1.1.0", proxies, implementations);
 
         console.log("Host version before upgrade:", host.hostVersion());
@@ -240,7 +391,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         assertEq(keccak256(bytes(IHosted(proxies[1]).VERSION())), keccak256(bytes("2.0.0")), "version not changed");
 
         // ------------------------- Cancel upgrade at any time
-        vm.prank(MULTISIG);
+        vm.prank(multisig);
         host.cancelUpgrade();
 
         assertEq(keccak256(bytes(IHosted(proxies[0]).VERSION())), keccak256(bytes("1.0.0")), "version not changed");
@@ -261,34 +412,35 @@ contract HostrgeUpgradeProxyLibTest is Test {
             );
         }
     }
+    //endregion ------------------------------------- Upgrade tests
 
     //region ------------------------------------- Internal utils
-    function _setupAccessManager(address authority, address host) internal {
+    function _setupAccessManager(IAuthority authority_, address host_) internal {
         bytes4[] memory selectors = new bytes4[](4);
         selectors[0] = bytes4(IHost.upgrade.selector);
         selectors[1] = bytes4(IHost.announceUpgrade.selector);
         selectors[2] = bytes4(IHost.cancelUpgrade.selector);
         selectors[3] = bytes4(IHost.deployProxy.selector);
 
-        vm.prank(MULTISIG);
-        IAccessManager(address(authority)).setTargetFunctionRole(host, selectors, AccessRolesLib.HOST_UPGRADER);
+        vm.prank(multisig);
+        authority_.setTargetFunctionRole(host_, selectors, AccessRolesLib.HOST_UPGRADER);
 
-        vm.prank(MULTISIG);
-        IAccessManager(authority).grantRole(AccessRolesLib.HOST_UPGRADER, MULTISIG, 0);
+        vm.prank(multisig);
+        authority_.grantRole(AccessRolesLib.HOST_UPGRADER, multisig, 0);
 
-        vm.prank(MULTISIG);
-        IAccessManager(authority).grantRole(AccessRolesLib.HOST_UPGRADER, address(this), 0);
+        vm.prank(multisig);
+        authority_.grantRole(AccessRolesLib.HOST_UPGRADER, address(this), 0);
     }
 
-    function _setupContractUpgrader(address authority, address proxy, address upgrader) internal {
+    function _setupContractUpgrader(IAuthority authority_, address proxy, address upgrader) internal {
         bytes4[] memory selectors = new bytes4[](1);
         selectors[0] = bytes4(IUUPSUpgradable.upgradeToAndCall.selector);
 
-        vm.prank(MULTISIG);
-        IAccessManager(authority).setTargetFunctionRole(proxy, selectors, AccessRolesLib.CONTRACTS_UPGRADER);
+        vm.prank(multisig);
+        authority_.setTargetFunctionRole(proxy, selectors, AccessRolesLib.CONTRACTS_UPGRADER);
 
-        vm.prank(MULTISIG);
-        IAccessManager(authority).grantRole(AccessRolesLib.CONTRACTS_UPGRADER, upgrader, 0);
+        vm.prank(multisig);
+        authority_.grantRole(AccessRolesLib.CONTRACTS_UPGRADER, upgrader, 0);
     }
     //endregion ------------------------------------- Internal utils
 }

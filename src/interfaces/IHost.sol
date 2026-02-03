@@ -113,6 +113,13 @@ interface IHost {
         address indexed proxy, address implementation, string oldContractVersion, string newContractVersion
     );
 
+    error LogicNotFound(uint kind);
+
+    event NewContractImplementation(uint kind, address seedToken);
+    event ProxyDeployed(address proxy, address implementation, bytes payload);
+    event ContractDeployed(address proxy, uint kind, bytes payload);
+
+
     /// @notice DAO-setting common for all chains
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset

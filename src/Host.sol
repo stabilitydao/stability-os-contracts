@@ -5,9 +5,8 @@ import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
 import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
-import {HostProxyDeployLib} from "./libs/HostProxyDeployLib.sol";
 import {HostBridgeLib} from "./libs/HostBridgeLib.sol";
-import {HostProxyUpgradeLib} from "./libs/HostProxyUpgradeLib.sol";
+import {HostProxyLib} from "./libs/HostProxyLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
@@ -97,7 +96,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function contractImplementation(uint kind) external view returns (address) {
-        return HostProxyDeployLib.contractImplementation(kind);
+        return HostProxyLib.contractImplementation(kind);
     }
 
     /// @inheritdoc IHost
@@ -119,7 +118,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function hostVersion() external view returns (string memory) {
-        return HostProxyUpgradeLib.hostVersion();
+        return HostProxyLib.hostVersion();
     }
 
     /// @inheritdoc IHost
@@ -128,7 +127,7 @@ contract Host is IHost, Hosted {
         view
         returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations)
     {
-        return HostProxyUpgradeLib.pendingUpgrade();
+        return HostProxyLib.pendingUpgrade();
     }
 
     //endregion -------------------------------------- View
@@ -214,7 +213,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function setContractImplementation(uint kind, address implementation) external restricted {
-        HostProxyDeployLib.setContractImplementation(kind, implementation);
+        HostProxyLib.setContractImplementation(kind, implementation);
     }
 
     /// @inheritdoc IHost
@@ -223,7 +222,7 @@ contract Host is IHost, Hosted {
         address logic,
         bytes memory payload
     ) external restricted returns (address proxy) {
-        return HostProxyDeployLib.deployProxy(salt_, logic, payload, authority());
+        return HostProxyLib.deployProxy(salt_, logic, payload, authority());
     }
 
     //endregion -------------------------------------- Restricted actions
@@ -260,17 +259,17 @@ contract Host is IHost, Hosted {
         address[] memory proxies,
         address[] memory newImplementations
     ) external restricted {
-        HostProxyUpgradeLib.announceUpgrade(newVersion, proxies, newImplementations);
+        HostProxyLib.announceUpgrade(newVersion, proxies, newImplementations);
     }
 
     /// @inheritdoc IHost
     function upgrade() external restricted {
-        HostProxyUpgradeLib.upgrade();
+        HostProxyLib.upgrade();
     }
 
     /// @inheritdoc IHost
     function cancelUpgrade() external restricted {
-        HostProxyUpgradeLib.cancelUpgrade();
+        HostProxyLib.cancelUpgrade();
     }
 
     //endregion ---------------------------------------- Update host platform
