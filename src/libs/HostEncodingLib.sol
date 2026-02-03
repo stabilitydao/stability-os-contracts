@@ -8,6 +8,7 @@ import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 import {IDAOMetadata} from "../interfaces/IDAOMetadata.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
+/// There are several uses cases for encoding/decoding:
 /// Tokenomic uses some structs.
 /// The structs are stored as payload and emitted in events.
 /// After voting these payloads can be passed to update functions.
@@ -386,7 +387,7 @@ library HostEncodingLib {
         dest = abi.encode(dest, unitsMetaData);
     }
 
-    function decodeDaoDataInput(bytes memory payload) external pure returns (IDAOData.DaoDataInput memory dao) {
+    function decodeDaoDataInput(bytes memory payload) internal pure returns (IDAOData.DaoDataInput memory dao) {
         bytes memory rest = payload;
 
         bytes[] memory unitsMetaDataEncoded;

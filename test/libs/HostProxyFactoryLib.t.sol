@@ -16,7 +16,7 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
-import {HostProxyFactoryLib} from "../../src/libs/HostProxyFactoryLib.sol";
+import {HostProxyDeployLib} from "../../src/libs/HostProxyDeployLib.sol";
 import {IOwnable} from "../../src/deprecated/interfaces/IOwnable.sol";
 
 contract HostProxyFactoryLibTest is Test {
@@ -91,7 +91,7 @@ contract HostProxyFactoryLibTest is Test {
         // ------------------------ Setup implementations
         address seedTokenImplementation = address(new SeedToken());
 
-        HostProxyFactoryLib.setContractImplementation(
+        HostProxyDeployLib.setContractImplementation(
             uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation
         );
 
@@ -100,7 +100,7 @@ contract HostProxyFactoryLibTest is Test {
         bytes32 salt = "0x0101";
         address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
 
-        address seedToken = HostProxyFactoryLib.deployContract(
+        address seedToken = HostProxyDeployLib.deployContract(
             salt, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode("name", "symbol"), address(authority)
         );
 
@@ -118,7 +118,7 @@ contract HostProxyFactoryLibTest is Test {
         // ------------------------ Setup implementations
         address tgeTokenImplementation = address(new TgeToken());
 
-        HostProxyFactoryLib.setContractImplementation(
+        HostProxyDeployLib.setContractImplementation(
             uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation
         );
 
@@ -127,7 +127,7 @@ contract HostProxyFactoryLibTest is Test {
         bytes32 salt = "0x0101";
         address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
 
-        address tgeToken = HostProxyFactoryLib.deployContract(
+        address tgeToken = HostProxyDeployLib.deployContract(
             salt, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode("name", "symbol"), address(authority)
         );
 

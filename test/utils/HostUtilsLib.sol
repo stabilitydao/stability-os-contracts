@@ -130,7 +130,7 @@ library HostUtilsLib {
         // ---------------------- set up multisig as operator for all restricted functions of host
         {
             bytes4[] memory selectors = new bytes4[](5);
-            selectors[0] = bytes4(Host.addLiveDAO.selector);
+            selectors[0] = bytes4(Host.updateRestricted.selector);
             selectors[1] = bytes4(Host.receiveVotingResults.selector);
             selectors[2] = bytes4(Host.refundFor.selector);
             selectors[3] = bytes4(Host.setSettings.selector);

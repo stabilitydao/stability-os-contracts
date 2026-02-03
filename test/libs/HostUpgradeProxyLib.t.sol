@@ -12,7 +12,7 @@ import {Test} from "forge-std/Test.sol";
 import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
 import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
-import {HostUpgradeProxyLib} from "../../src/libs/HostUpgradeProxyLib.sol";
+import {HostProxyUpgradeLib} from "../../src/libs/HostProxyUpgradeLib.sol";
 
 contract HostrgeUpgradeProxyLibTest is Test {
     address internal immutable MULTISIG;
@@ -25,7 +25,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
         assertEq(
             keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostUpgradeProxyLib")) - 1))
                 & ~bytes32(uint(0xff)),
-            HostUpgradeProxyLib.HOST_UPGRADE_STORAGE_LOCATION,
+            HostProxyUpgradeLib.HOST_UPGRADE_STORAGE_LOCATION,
             "HOST_UPGRADE_STORAGE_LOCATION"
         );
     }

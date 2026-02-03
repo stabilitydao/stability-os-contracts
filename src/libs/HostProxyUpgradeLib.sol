@@ -8,7 +8,7 @@ import {HostConfigLib} from "./HostConfigLib.sol";
 
 /// @notice Announce and execute proxy upgrades
 /// All proxies created by Host can be upgraded only with announced implementations after timelock
-library HostUpgradeProxyLib {
+library HostProxyUpgradeLib {
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostUpgradeProxyLib")) - 1)) & ~bytes32(uint(0xff));
     bytes32 public constant HOST_UPGRADE_STORAGE_LOCATION =
         0xc6cc33f51e79dcd808aa47351ee32870820c11ca0b19637a0d2e8a409b563a00;

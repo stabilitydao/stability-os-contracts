@@ -6,7 +6,8 @@ import {IHosted} from "../interfaces/IHosted.sol";
 import {IProxyFactory} from "../interfaces/IProxyFactory.sol";
 import {IAuthority} from "../interfaces/IAuthority.sol";
 
-library HostProxyFactoryLib {
+/// @notice Library to deploy proxy contracts.
+library HostProxyDeployLib {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyFactoryLib")) - 1)) & ~bytes32(uint(0xff));

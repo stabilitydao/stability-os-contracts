@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {HostUpdateBridgedLib} from "./HostUpdateBridgedLib.sol";
+import {HostBridgeLib} from "./HostBridgeLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostLib} from "./HostLib.sol";
@@ -74,7 +74,7 @@ library HostProposalsLib {
             if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
-                fee = HostUpdateBridgedLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
+                fee = HostBridgeLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
                 // todo not-bridged actions with cross-chain messages
             }
@@ -139,7 +139,7 @@ library HostProposalsLib {
         } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
             HostUpdateLib.updateSalt(daoUid, payload);
         } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9) {
-            HostUpdateBridgedLib.sendBridgedAction(daoUid, payload, proposalId);
+            HostBridgeLib.sendBridgedAction(daoUid, payload, proposalId);
         } else {
             // todo other actions
             revert IHost.NotImplemented();
@@ -345,7 +345,7 @@ library HostProposalsLib {
     ) external {
         InitData memory _d = _beforeUpdate(symbol);
 
-        HostUpdateBridgedLib.verify(_d.daoUid, actionKind, dstEids, actionPayloads);
+        HostBridgeLib.verify(_d.daoUid, actionKind, dstEids, actionPayloads);
 
         HostUpdateLib.ActionParams memory p =
             HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9, actionKind);

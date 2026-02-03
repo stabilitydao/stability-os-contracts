@@ -7,7 +7,7 @@ import {HostLib} from "./HostLib.sol";
 import {IHostBridge} from "../interfaces/IHostBridge.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 
-/// @notice Basic data types, validation and update logic
+/// @notice Quote and send cross-chain messages, handle incoming cross-chain messages, pack/unpack cross-chain messages
 library HostCrossChainLib {
     error TooShortCrossChainMessage();
     error UnknownCrossChainMessageKind();

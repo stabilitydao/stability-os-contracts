@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "./interfaces/ITokenomics.sol";
-import {IHost} from "./interfaces/IHost.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
-import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
-import {HostFundingLib} from "./libs/HostFundingLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
+import {HostFundingLib} from "./libs/HostFundingLib.sol";
+import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
+import {HostProxyDeployLib} from "./libs/HostProxyDeployLib.sol";
+import {HostBridgeLib} from "./libs/HostBridgeLib.sol";
+import {HostProxyUpgradeLib} from "./libs/HostProxyUpgradeLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
-import {HostProxyFactoryLib} from "./libs/HostProxyFactoryLib.sol";
-import {HostUpdateBridgedLib} from "./libs/HostUpdateBridgedLib.sol";
-import {HostUpgradeProxyLib} from "./libs/HostUpgradeProxyLib.sol";
+import {IHost} from "./interfaces/IHost.sol";
+import {ITokenomics} from "./interfaces/ITokenomics.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
@@ -97,7 +97,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function contractImplementation(uint kind) external view returns (address) {
-        return HostProxyFactoryLib.contractImplementation(kind);
+        return HostProxyDeployLib.contractImplementation(kind);
     }
 
     /// @inheritdoc IHost
@@ -114,12 +114,12 @@ contract Host is IHost, Hosted {
         bytes32 proposalId,
         bytes memory payload
     ) external view returns (bool applied, uint16 actionKind, uint daoUid) {
-        return HostViewLib.getBridgedAction(HostUpdateBridgedLib._getHashProposalAction(proposalId, payload));
+        return HostViewLib.getBridgedAction(HostBridgeLib._getHashProposalAction(proposalId, payload));
     }
 
     /// @inheritdoc IHost
     function hostVersion() external view returns (string memory) {
-        return HostUpgradeProxyLib.hostVersion();
+        return HostProxyUpgradeLib.hostVersion();
     }
 
     /// @inheritdoc IHost
@@ -128,7 +128,7 @@ contract Host is IHost, Hosted {
         view
         returns (string memory newVersion, address[] memory proxies, address[] memory newImplementations)
     {
-        return HostUpgradeProxyLib.pendingUpgrade();
+        return HostProxyUpgradeLib.pendingUpgrade();
     }
 
     //endregion -------------------------------------- View
@@ -150,7 +150,7 @@ contract Host is IHost, Hosted {
     function changePhase(string calldata symbol) external {
         // no restrictions, anybody can call this
 
-        HostViewLib.changePhase(symbol, authority());
+        HostActionsLib.changePhase(symbol, authority());
     }
 
     /// @inheritdoc IHost
@@ -188,8 +188,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function addLiveDAO(bytes memory payload) external restricted {
-        HostActionsLib.addLiveDAO(payload);
+    function updateRestricted(uint actionIndex, bytes memory payload) external restricted {
+        HostActionsLib.updateRestricted(actionIndex, payload);
     }
 
     /// @inheritdoc IHost
@@ -214,7 +214,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function setContractImplementation(uint kind, address implementation) external restricted {
-        HostProxyFactoryLib.setContractImplementation(kind, implementation);
+        HostProxyDeployLib.setContractImplementation(kind, implementation);
     }
 
     /// @inheritdoc IHost
@@ -223,7 +223,7 @@ contract Host is IHost, Hosted {
         address logic,
         bytes memory payload
     ) external restricted returns (address proxy) {
-        return HostProxyFactoryLib.deployProxy(salt_, logic, payload, authority());
+        return HostProxyDeployLib.deployProxy(salt_, logic, payload, authority());
     }
 
     //endregion -------------------------------------- Restricted actions
@@ -248,7 +248,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external {
-        HostUpdateBridgedLib.applyBridgedAction(proposalId, actionPayload);
+        HostBridgeLib.applyBridgedAction(proposalId, actionPayload);
     }
 
     //endregion -------------------------------------- Update actions
@@ -260,17 +260,17 @@ contract Host is IHost, Hosted {
         address[] memory proxies,
         address[] memory newImplementations
     ) external restricted {
-        HostUpgradeProxyLib.announceUpgrade(newVersion, proxies, newImplementations);
+        HostProxyUpgradeLib.announceUpgrade(newVersion, proxies, newImplementations);
     }
 
     /// @inheritdoc IHost
     function upgrade() external restricted {
-        HostUpgradeProxyLib.upgrade();
+        HostProxyUpgradeLib.upgrade();
     }
 
     /// @inheritdoc IHost
     function cancelUpgrade() external restricted {
-        HostUpgradeProxyLib.cancelUpgrade();
+        HostProxyUpgradeLib.cancelUpgrade();
     }
 
     //endregion ---------------------------------------- Update host platform

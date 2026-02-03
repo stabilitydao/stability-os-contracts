@@ -11,8 +11,10 @@ import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 
-/// @notice Bridged DAO updating logic
-library HostUpdateBridgedLib {
+/// @notice Process "bridged actions". Such actions are registered and voted on initial chains, then their
+/// payload hashes are sent to bridged DAO hosts through cross-chain messages.
+/// Finally, the action is performed on bridged DAO hosts by applying the payload registered on the initial chain.
+library HostBridgeLib {
     //region ----------------------------------------- Public
     /// @dev Proposal to update bridged DAO on other chains is accepted => send payload hashes to bridged DAO hosts
     /// @param daoUid UID of the DAO to update

@@ -10,6 +10,7 @@ import {IHosted} from "../interfaces/IHosted.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 
+/// @notice Funding and re-funding
 library HostFundingLib {
     using SafeERC20 for IERC20;
 

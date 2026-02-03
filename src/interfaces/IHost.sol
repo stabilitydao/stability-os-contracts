@@ -51,6 +51,7 @@ interface IHost {
     error AlreadyBridged();
     error IncorrectInputData();
     error InvalidMetadataForAction();
+    error UnknownRestrictedAction();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -219,9 +220,19 @@ interface IHost {
         DEPLOYMENTS_8
     }
 
+    /// @notice Data items that can be requested from DataReader
     enum DataReaderItem {
+        /// @notice Full DAO data
         DAO_DATA_0,
+        /// @notice Full proposal data
         PROPOSAL_1
+    }
+
+    /// @notice Rarely used restricted actions, see {updateRestricted}
+    enum RestrictedUpdates {
+        /// @notice Add live compatible DAO
+        /// payload is encoded DaoDataInput, see HostEncodingLib.encodeDaoDataInput
+        ADD_LIVE_DAO_0
     }
 
     //region ---------------------------------------- Read
@@ -332,10 +343,11 @@ interface IHost {
     /// @return Cost in native currency to create the DAO using {createDAO(symbol)}
     function quoteCreateDAO(string calldata symbol) external view returns (uint);
 
-    /// @notice Add live compatible DAO
+    /// @notice Any rarely used restricted action like addLiveDAO
     /// @custom:restricted Restricted through access manager (only verifier)
-    /// @param payload Encoded payload with DAO data. Use HostEncodingLib.encodeDaoDataInput to create it.
-    function addLiveDAO(bytes memory payload) external;
+    /// @param actionIndex Index of the action to perform, see IHost.RestrictedActions
+    /// @param payload Encoded payload of the action. Its format depend on the action kind. See IHost.RestrictedUpdates
+    function updateRestricted(uint actionIndex, bytes memory payload) external;
 
     /// @notice Change lifecycle phase of a DAO
     /// @custom:restricted Restricted through access manager

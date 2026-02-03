@@ -5,13 +5,12 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
-import {HostDeployLib} from "./HostDeployLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-// import {console} from "forge-std/console.sol";
 
+/// @notice Library with view functions for Host contract
 library HostViewLib {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -23,128 +22,6 @@ library HostViewLib {
         TOKEN_2,
         XTOKEN_3,
         DAO_4
-    }
-
-    /// @notice Change lifecycle phase of a DAO
-    /// @param symbol Symbol of the DAO
-    function changePhase(string calldata symbol, address authority) external {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        uint daoUid = HostLib.getDaoUid($, symbol);
-
-        require(daoUid != 0, IHost.IncorrectDao());
-        require(_tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
-
-        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
-        ITokenomics.LifecyclePhase newPhase = phase;
-
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.start < block.timestamp, IHost.WaitFundingStart());
-
-            // SEED can be started not later than 1 week after configured start time
-            require(
-                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
-                IHost.TooLateSoSetupFundingAgain()
-            );
-
-            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
-                $,
-                daoUid,
-                getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.SEED_0)),
-                getTokenSymbol(symbol, uint(NamingTokenKind.SEED_0)),
-                authority
-            );
-
-            newPhase = ITokenomics.LifecyclePhase.SEED_1;
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
-
-            bool success = seed.raised >= seed.minRaise;
-
-            if (success) {
-                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-            } else {
-                newPhase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
-                // now refund can be called
-            }
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
-            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-
-            require(tge.start <= block.timestamp, IHost.WaitFundingStart());
-
-            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
-                $,
-                daoUid,
-                getTokenName($.segment2[daoUid].name, uint(NamingTokenKind.TGE_1)),
-                getTokenSymbol(symbol, uint(NamingTokenKind.TGE_1)),
-                authority
-            );
-
-            newPhase = ITokenomics.LifecyclePhase.TGE_4;
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-
-            require(tge.end < block.timestamp, IHost.WaitFundingEnd());
-
-            bool success = tge.raised >= tge.minRaise;
-
-            if (success) {
-                // todo deploy token, xToken, staking, daoToken
-
-                $.deployments[daoUid].token = address(0); // todo deployed token
-                $.deployments[daoUid].xToken = address(0); // todo deployed xToken
-                $.deployments[daoUid].staking = address(0); // todo deployed staking token
-                $.deployments[daoUid].daoToken = address(0); // todo deployed daoToken
-
-                // todo deploy vesting contracts and allocate token
-
-                // todo seedToken holders became xToken holders by predefined rate
-
-                // todo deploy v2 liquidity from TGE funds at predefined price
-                newPhase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
-            } else {
-                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-                // now refund can be called
-                // refunding is available up to the start of next TGE
-            }
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
-            // if any vesting started then phase changed
-
-            // slither-disable-next-line uninitialized-local
-            bool isVestingStarted;
-
-            uint countVesting = $.segment3[daoUid].countVesting;
-            for (uint i; i < countVesting; i++) {
-                if ($.vesting[HostLib.getKey(daoUid, i)].start < block.timestamp) {
-                    isVestingStarted = true;
-                    break;
-                }
-            }
-
-            require(isVestingStarted, IHost.WaitVestingStart());
-
-            newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
-            // slither-disable-next-line uninitialized-local
-            bool isVestingNotEnded;
-
-            uint countVesting = $.segment3[daoUid].countVesting;
-            for (uint i; i < countVesting; i++) {
-                if ($.vesting[HostLib.getKey(daoUid, i)].end <= block.timestamp) {
-                    isVestingNotEnded = true;
-                    break;
-                }
-            }
-
-            require(isVestingNotEnded, IHost.WaitVestingEnd());
-
-            newPhase = ITokenomics.LifecyclePhase.LIVE_7;
-        }
-
-        $.segment2[daoUid].phase = newPhase;
-
-        emit IHost.DaoPhaseChanged(daoUid, newPhase);
     }
 
     //region -------------------------------------- View
@@ -352,7 +229,15 @@ library HostViewLib {
         uint daoUid = HostLib.getDaoUid($, symbol);
         return $.salt[HostLib.getKey(daoUid, contractIndex)];
     }
+
+    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid) {
+        HostLib.BridgedActionLocal storage local = HostLib.getHostStorage().bridgedActionHashes[actionHash];
+        HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(local.bridgedActionHeader);
+        return (header.applied, header.actionKind, local.daoUid);
+    }
     //endregion -------------------------------------- View
+
+    //region -------------------------------------- Internal utils
 
     function _tasks(uint16 limit, uint daoUid) internal view returns (IHost.Task[] memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
@@ -442,9 +327,6 @@ library HostViewLib {
         return dest;
     }
 
-    function getBridgedAction(bytes32 actionHash) external view returns (bool applied, uint16 actionKind, uint daoUid) {
-        HostLib.BridgedActionLocal storage local = HostLib.getHostStorage().bridgedActionHashes[actionHash];
-        HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(local.bridgedActionHeader);
-        return (header.applied, header.actionKind, local.daoUid);
-    }
+    //endregion -------------------------------------- Internal utils
+
 }
