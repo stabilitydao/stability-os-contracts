@@ -7,6 +7,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
@@ -62,7 +63,7 @@ contract HostTest is Test {
             assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "testCreateDAO - balance after");
         }
 
-        IDAOData.DaoData memory dao = host.getDAO(DAO_SYMBOL);
+        IDAOData.DaoData memory dao = IDataReader(host.getChainSettings().dataReader).getDAO(DAO_SYMBOL);
         assertEq(dao.name, DAO_NAME, "expected name");
         // todo assertEq(os.eventsCount(), 1);
 
@@ -117,7 +118,7 @@ contract HostTest is Test {
         vm.prank(MULTISIG);
         host.addLiveDAO(payload);
 
-        IDAOData.DaoData memory readDao = host.getDAO(daoOrigin.symbol);
+        IDAOData.DaoData memory readDao = IDataReader(host.getChainSettings().dataReader).getDAO(daoOrigin.symbol);
 
         _assertDaoEqual(daoOrigin, readDao);
     }
@@ -335,7 +336,7 @@ contract HostTest is Test {
         }
 
         {
-            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.images.seedToken, "new/images/seed.png", "seedToken updated");
             assertEq(daoAfter.images.tgeToken, dao.images.tgeToken, "tgeToken unchanged");
             assertEq(daoAfter.images.token, dao.images.token, "token unchanged");
@@ -355,7 +356,7 @@ contract HostTest is Test {
         }
 
         {
-            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.images.seedToken, "1", "seedToken updated");
             assertEq(daoAfter.images.tgeToken, "2", "tgeToken updated");
             assertEq(daoAfter.images.token, "3", "token updated");
@@ -390,18 +391,18 @@ contract HostTest is Test {
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(p.validationRequired, "validation required for socials update");
             assertFalse(p.votingRequired, "voting not required for socials update");
             assertEq(uint(p.status), uint(ITokenomics.VotingStatus.VOTING_0), "no voting results");
 
-            IDAOData.DaoData memory daoBefore = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoBefore = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoBefore.socials.length, dao.socials.length, "proposal is not applied without validation");
 
             vm.prank(MULTISIG);
             host.validateProposal(proposalId, true, payload);
 
-            ITokenomics.Proposal memory pAfter = host.proposal(proposalId);
+            ITokenomics.Proposal memory pAfter = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(pAfter.validationStatus == ITokenomics.ValidationStatus.APPROVED_1, "proposal is approved");
             assertEq(
                 uint(pAfter.status),
@@ -409,7 +410,7 @@ contract HostTest is Test {
                 "still no voting results (voting is NOT required)"
             );
 
-            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.socials.length, 4, "socials length");
             assertEq(daoAfter.socials[0], "updated-1", "socials[0] updated");
             assertEq(daoAfter.socials[1], "2", "socials[1] updated");
@@ -425,14 +426,14 @@ contract HostTest is Test {
 
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(p.validationRequired, "validation required for socials update");
             assertFalse(p.votingRequired, "voting not required for socials update");
 
             vm.prank(MULTISIG);
             host.validateProposal(proposalId, true, payload);
 
-            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.socials.length, 2, "socials length 2");
             assertEq(daoAfter.socials[0], "1111", "socials[0] updated");
             assertEq(daoAfter.socials[1], "", "socials[1] updated");
@@ -457,7 +458,7 @@ contract HostTest is Test {
         bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
 
         {
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(p.validationStatus == ITokenomics.ValidationStatus.NONE_0, "proposal is not validated yet");
             assertEq(
                 uint(p.status), uint(ITokenomics.VotingStatus.VOTING_0), "no voting results yet (no voting is required)"
@@ -484,11 +485,11 @@ contract HostTest is Test {
         vm.prank(MULTISIG);
         host.validateProposal(proposalId, false, ""); // payload content is not required if rejected
 
-        IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+        IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
         assertEq(daoAfter.socials.length, dao.socials.length, "socials unchanged after rejection");
 
         {
-            ITokenomics.Proposal memory pAfter = host.proposal(proposalId);
+            ITokenomics.Proposal memory pAfter = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(pAfter.validationStatus == ITokenomics.ValidationStatus.REJECTED_2, "proposal is rejected");
             assertEq(
                 uint(pAfter.status),
@@ -510,7 +511,7 @@ contract HostTest is Test {
 
         // ------------------------------ Move to seed phase to enable voting
         _moveDaoToSeedPhase(host, codec, daoData.symbol);
-        daoData = host.getDAO(daoData.symbol);
+        daoData = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
 
         // ------------------------------ Update socials with proposal
         string[] memory socials = new string[](3);
@@ -526,7 +527,7 @@ contract HostTest is Test {
 
         // ------------------------------ Check proposal status before validation and voting
         {
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(p.validationRequired, "validation required for socials update");
             assertTrue(p.votingRequired, "voting required for socials update");
             assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.NONE_0), "no validation yet");
@@ -559,11 +560,11 @@ contract HostTest is Test {
             vm.prank(MULTISIG);
             host.receiveVotingResults(proposalId, true, payload);
 
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.APPROVED_1), "validated");
             assertEq(uint(p.status), uint(ITokenomics.VotingStatus.APPROVED_1), "approved in voting");
 
-            IDAOData.DaoData memory daoAfter = host.getDAO(daoData.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(daoAfter.socials.length, 3, "socials length");
             assertEq(daoAfter.socials[0], "https://a.aa/a1", "socials[0] updated");
             assertEq(daoAfter.socials[1], "https://b.bb/b2", "socials[1] updated");
@@ -579,11 +580,11 @@ contract HostTest is Test {
             vm.prank(MULTISIG);
             host.receiveVotingResults(proposalId, false, payload);
 
-            ITokenomics.Proposal memory p = host.proposal(proposalId);
+            ITokenomics.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertEq(uint(p.validationStatus), uint(ITokenomics.ValidationStatus.APPROVED_1), "validated");
             assertEq(uint(p.status), uint(ITokenomics.VotingStatus.REJECTED_2), "rejected in voting");
 
-            IDAOData.DaoData memory daoAfter = host.getDAO(daoData.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(daoAfter.socials.length, daoData.socials.length, "socials unchanged after rejection");
 
@@ -595,10 +596,10 @@ contract HostTest is Test {
 
     //region ----------------------------------- Update units
     function testUpdateUnitsInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, os);
-        _dealAndApprove(os);
-        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
             IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](2);
@@ -632,14 +633,14 @@ contract HostTest is Test {
                 api: new string[](0)
             });
             units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
                 codec.encode(units, codec.PAYLOAD_API_VERSION()),
                 codec.encode(metas, codec.PAYLOAD_API_VERSION())
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 2, "units length");
             assertTrue(
                 keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq1"
@@ -676,14 +677,14 @@ contract HostTest is Test {
                 api: notEmptyApi
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitAAAA", developerUid: ""});
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
                 codec.encode(units, codec.PAYLOAD_API_VERSION()),
                 codec.encode(metas, codec.PAYLOAD_API_VERSION())
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.units.length, 1, "units length");
 
             // todo
@@ -699,10 +700,10 @@ contract HostTest is Test {
 
     //region ----------------------------------- Update funding
     function testUpdateFundingInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, os);
-        _dealAndApprove(os);
-        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         ITokenomics.Funding memory seed;
         seed.fundingType = ITokenomics.FundingType.SEED_0;
@@ -714,14 +715,14 @@ contract HostTest is Test {
         seed.claim = 1;
 
         {
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
                 codec.encode(seed, codec.PAYLOAD_API_VERSION()),
                 ""
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.funding.length, 1, "funding length");
 
             ITokenomics.Funding memory fundingAfter = daoAfter.funding[0];
@@ -745,14 +746,14 @@ contract HostTest is Test {
             tge.raised = 2505;
             tge.claim = 16;
 
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
                 codec.encode(tge, codec.PAYLOAD_API_VERSION()),
                 ""
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.funding.length, 2, "funding length");
 
             ITokenomics.Funding memory seed0 = daoAfter.funding[0];
@@ -780,10 +781,10 @@ contract HostTest is Test {
 
     //region ----------------------------------- Update vesting
     function testUpdateVestingInstant() public {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, os);
-        _dealAndApprove(os);
-        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
@@ -792,14 +793,14 @@ contract HostTest is Test {
             vesting[1] =
                 ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
 
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
                 codec.encode(vesting, codec.PAYLOAD_API_VERSION()),
                 ""
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 2, "vesting length");
 
             assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
@@ -812,14 +813,14 @@ contract HostTest is Test {
                 name: "Team3", description: "team vesting3", allocation: 10003, start: 3, end: 300
             });
 
-            os.updateDAO(
+            host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
                 codec.encode(vesting, codec.PAYLOAD_API_VERSION()),
                 ""
             );
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 1, "vesting length 2");
 
             assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
@@ -831,24 +832,24 @@ contract HostTest is Test {
     //region ----------------------------------- Update naming
     // todo fix: validation
     function testUpdateNamingInstant() internal {
-        IHost os = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, os);
-        _dealAndApprove(os);
-        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(os, DAO_SYMBOL, DAO_NAME);
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
             ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
 
             bytes memory payload = codec.encode(naming, codec.PAYLOAD_API_VERSION());
 
-            os.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_NAMING_2), payload, "");
+            host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_NAMING_2), payload, "");
 
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(os, dao.symbol);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, dao.symbol);
 
             vm.prank(MULTISIG);
-            os.validateProposal(proposalId, true, payload);
+            host.validateProposal(proposalId, true, payload);
 
-            IDAOData.DaoData memory daoAfter = os.getDAO(naming.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(naming.symbol);
 
             assertEq(daoAfter.name, naming.name, "name updated");
             assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
@@ -882,7 +883,7 @@ contract HostTest is Test {
                 ""
             );
 
-            IDAOData.DaoData memory daoAfter = host.getDAO(dao.symbol);
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
 
             assertEq(keccak256(abi.encode(daoAfter.params)), keccak256(abi.encode(a)), "params");
         }
@@ -1040,7 +1041,7 @@ contract HostTest is Test {
     }
 
     function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory symbol) internal {
-        IDAOData.DaoData memory daoData = host_.getDAO(symbol);
+        IDAOData.DaoData memory daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(symbol);
         skip(7 days);
 
         IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
@@ -1124,10 +1125,9 @@ contract HostTest is Test {
 
         // ------------------------------ setup seed token, refresh daoData
         {
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
         }
-        console.log("_moveDaoToSeedPhase.2");
     }
 
     /// @dev A function to modify i-th byte in payload for test purpose

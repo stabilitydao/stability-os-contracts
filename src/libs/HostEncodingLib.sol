@@ -307,7 +307,6 @@ library HostEncodingLib {
 
     //region ----------------------- Decode / Encode bridged-actions structs with versions
 
-    //endregion ----------------------- Decode / Encode bridged-actions structs with versions
     /// @notice Encode BridgeDaoParams struct of the given version. Version is supported explicitly to simplify testing
     function encodeBridgeDaoParams(
         IBridgedActions.BridgeDaoParams memory data,
@@ -357,6 +356,9 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
+
+    //endregion ----------------------- Decode / Encode bridged-actions structs with versions
+
     //region ----------------------- Decode / Encode data without versions
 
     function decodeSocials(bytes memory payload) internal pure returns (string[] memory) {
@@ -371,32 +373,11 @@ library HostEncodingLib {
 
     //region ----------------------- DaoDataInput for addLiveDao
     function encodeDaoDataInput(IDAOData.DaoDataInput memory dao) internal pure returns (bytes memory dest) {
-        dest = abi.encode(
-            dao.symbol,
-            dao.name,
-            uint8(dao.phase),
-            dao.deployments
-        );
-        dest = abi.encode(dest,
-            dao.chainSettings,
-            dao.unitIds,
-            dao.params
-        );
-        dest = abi.encode(dest,
-            dao.socials,
-            dao.activity,
-            dao.images
-        );
-        dest = abi.encode(dest,
-            dao.units,
-            dao.funding,
-            dao.vesting,
-            dao.governanceSettings
-        );
-        dest = abi.encode(dest,
-            dao.deployer,
-            dao.daoMetaDataLocation
-        );
+        dest = abi.encode(dao.symbol, dao.name, uint8(dao.phase), dao.deployments);
+        dest = abi.encode(dest, dao.chainSettings, dao.unitIds, dao.params);
+        dest = abi.encode(dest, dao.socials, dao.activity, dao.images);
+        dest = abi.encode(dest, dao.units, dao.funding, dao.vesting, dao.governanceSettings);
+        dest = abi.encode(dest, dao.deployer, dao.daoMetaDataLocation);
         uint len = dao.unitsMetaData.length;
         bytes[] memory unitsMetaData = new bytes[](len);
         for (uint i; i < len; ++i) {
@@ -405,9 +386,7 @@ library HostEncodingLib {
         dest = abi.encode(dest, unitsMetaData);
     }
 
-    function decodeDaoDataInput(
-        bytes memory payload
-    ) external pure returns (IDAOData.DaoDataInput memory dao) {
+    function decodeDaoDataInput(bytes memory payload) external pure returns (IDAOData.DaoDataInput memory dao) {
         bytes memory rest = payload;
 
         bytes[] memory unitsMetaDataEncoded;
@@ -419,16 +398,9 @@ library HostEncodingLib {
             dao.unitsMetaData[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
         }
 
-        (rest, dao.deployer, dao.daoMetaDataLocation) =
-        abi.decode(rest, (bytes, address, string));
+        (rest, dao.deployer, dao.daoMetaDataLocation) = abi.decode(rest, (bytes, address, string));
 
-        (
-            rest,
-            dao.units,
-            dao.funding,
-            dao.vesting,
-            dao.governanceSettings
-        ) = abi.decode(
+        (rest, dao.units, dao.funding, dao.vesting, dao.governanceSettings) = abi.decode(
             rest,
             (
                 bytes,
@@ -439,34 +411,21 @@ library HostEncodingLib {
             )
         );
 
-        (rest, dao.socials, dao.activity, dao.images) = abi.decode(
-            rest,
-            (bytes, string[], ITokenomics.Activity[], ITokenomics.DaoImages)
-        );
+        (rest, dao.socials, dao.activity, dao.images) =
+            abi.decode(rest, (bytes, string[], ITokenomics.Activity[], ITokenomics.DaoImages));
 
         (rest, dao.chainSettings, dao.unitIds, dao.params) =
-        abi.decode(
-            rest,
-            (bytes, ITokenomics.DaoChainSettings, string[], ITokenomics.DaoParameters)
-        );
+            abi.decode(rest, (bytes, ITokenomics.DaoChainSettings, string[], ITokenomics.DaoParameters));
 
         {
             uint8 phase;
-            (
-                dao.symbol,
-                dao.name,
-                phase,
-                dao.deployments
-            ) = abi.decode(
-                rest,
-                (string, string, uint8, ITokenomics.DaoDeploymentInfo)
-            );
+            (dao.symbol, dao.name, phase, dao.deployments) =
+                abi.decode(rest, (string, string, uint8, ITokenomics.DaoDeploymentInfo));
             dao.phase = ITokenomics.LifecyclePhase(phase);
         }
 
         return dao;
     }
-
 
     function encodeUnitsMetaData(IDAOData.UnitMetaData memory data) internal pure returns (bytes memory dest) {
         dest = abi.encode(data.name, uint8(data.status), data.unitType, data.revenueShare, data.emoji);
@@ -487,22 +446,13 @@ library HostEncodingLib {
         uint len = uiEncoded.length;
         data.ui = new IDAOMetadata.UnitUiLink[](len);
         for (uint i; i < len; ++i) {
-            (data.ui[i].href, data.ui[i].title) =
-            abi.decode(uiEncoded[i], (string, string));
+            (data.ui[i].href, data.ui[i].title) = abi.decode(uiEncoded[i], (string, string));
         }
 
         {
             uint8 status;
-            (
-                data.name,
-                status,
-                data.unitType,
-                data.revenueShare,
-                data.emoji
-            ) = abi.decode(
-                rest,
-                (string, uint8, uint16, uint, string)
-            );
+            (data.name, status, data.unitType, data.revenueShare, data.emoji) =
+                abi.decode(rest, (string, uint8, uint16, uint, string));
             data.status = IDAOMetadata.UnitStatus(status);
         }
 
@@ -510,4 +460,121 @@ library HostEncodingLib {
     }
 
     //endregion ----------------------- DaoDataInput for addLiveDao
+
+    //region ----------------------- Decode / Encode data for data reader
+    function encodeDAOData(IDAOData.DaoData memory data, uint16 version) internal pure returns (bytes memory dest) {
+        if (version == 1) {
+            // --- enum[] -> uint8[] ---
+            uint len = data.activity.length;
+            uint8[] memory activityRaw = new uint8[](len);
+            for (uint i; i < len; ++i) {
+                activityRaw[i] = uint8(data.activity[i]);
+            }
+
+            bytes memory b1 = abi.encode(data.symbol, data.uid, data.name, uint8(data.phase), data.deployments);
+            bytes memory b2 = abi.encode(data.chainSettings, data.unitIds, data.params, data.initialChain, data.socials);
+            bytes memory b3 = abi.encode(activityRaw, data.images, data.units, data.funding, data.vesting);
+            bytes memory b4 = abi.encode(data.governanceSettings, data.deployer, data.daoMetaDataLocation);
+
+            dest = abi.encode(version, b1, b2, b3, b4);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeDAOData(bytes memory payload) internal pure returns (IDAOData.DaoData memory dest) {
+        (uint16 version) = abi.decode(payload, (uint16));
+
+        if (version == 1) {
+            bytes memory b1;
+            bytes memory b2;
+            bytes memory b3;
+            bytes memory b4;
+
+            (, b1, b2, b3, b4) = abi.decode(payload, (uint16, bytes, bytes, bytes, bytes));
+
+            {
+                uint8 phaseRaw;
+
+                (dest.symbol, dest.uid, dest.name, phaseRaw, dest.deployments) =
+                    abi.decode(b1, (string, uint, string, uint8, ITokenomics.DaoDeploymentInfo));
+
+                dest.phase = ITokenomics.LifecyclePhase(phaseRaw);
+            }
+
+            (dest.chainSettings, dest.unitIds, dest.params, dest.initialChain, dest.socials) =
+                abi.decode(b2, (ITokenomics.DaoChainSettings, string[], ITokenomics.DaoParameters, uint, string[]));
+
+            {
+                uint8[] memory activityRaw;
+
+                (activityRaw, dest.images, dest.units, dest.funding, dest.vesting) = abi.decode(
+                    b3,
+                    (
+                        uint8[],
+                        ITokenomics.DaoImages,
+                        ITokenomics.UnitData[],
+                        ITokenomics.Funding[],
+                        ITokenomics.Vesting[]
+                    )
+                );
+
+                uint len = activityRaw.length;
+                dest.activity = new ITokenomics.Activity[](len);
+                for (uint i; i < len; ++i) {
+                    dest.activity[i] = ITokenomics.Activity(activityRaw[i]);
+                }
+            }
+
+            (dest.governanceSettings, dest.deployer, dest.daoMetaDataLocation) =
+                abi.decode(b4, (ITokenomics.GovernanceSettings, address, string));
+
+            return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function encodeProposal(
+        ITokenomics.Proposal memory data,
+        uint16 version
+    ) internal pure returns (bytes memory dest) {
+        if (version == 1) {
+            bytes memory b1 = abi.encode(
+                data.action, data.validationRequired, data.votingRequired, data.validationStatus, data.id
+            );
+            bytes memory b2 = abi.encode(data.symbol, data.created, data.status, data.payloadHash);
+            return abi.encode(version, b1, b2);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeProposal(bytes memory payload) internal pure returns (ITokenomics.Proposal memory dest) {
+        (uint16 version) = abi.decode(payload, (uint16));
+        if (version == 1) {
+            (, bytes memory b1, bytes memory b2) = abi.decode(payload, (uint16, bytes, bytes));
+            {
+                uint8 action;
+                uint8 validationStatus;
+                (action, dest.validationRequired, dest.votingRequired, validationStatus, dest.id) =
+                    abi.decode(b1, (uint8, bool, bool, uint8, bytes32));
+                dest.action = ITokenomics.DAOAction(action);
+                dest.validationStatus = ITokenomics.ValidationStatus(validationStatus);
+            }
+
+            {
+                uint8 status;
+                (dest.symbol, dest.created, status, dest.payloadHash) = abi.decode(b2, (string, uint64, uint8, bytes32));
+                dest.status = ITokenomics.VotingStatus(status);
+            }
+
+            return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    //endregion ----------------------- Decode / Encode data for data reader
 }
+

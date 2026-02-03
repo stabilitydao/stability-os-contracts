@@ -14,6 +14,7 @@ import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
@@ -65,7 +66,7 @@ contract HostBridgedActionsTest is Test {
         // ------------------------ Ensure that dao is correctly created on Avalanche
         vm.selectFork(avalanche.fork);
         IHost hostAvalanche = _getHostAvalanche();
-        IDAOData.DaoData memory daoAvalanche = hostAvalanche.getDAO("ALIENS");
+        IDAOData.DaoData memory daoAvalanche = IDataReader(hostAvalanche.getChainSettings().dataReader).getDAO("ALIENS");
 
         assertEq(daoAvalanche.uid, daoSonic.uid, "dao uid");
         assertEq(daoAvalanche.symbol, daoSonic.symbol, "dao symbol");
@@ -103,7 +104,7 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ add units to dao
         _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
-        dao = hostSonic.getDAO(dao.symbol);
+        dao = IDataReader(hostSonic.getChainSettings().dataReader).getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
         (uint32[] memory dstEids, IBridgedActions.BridgeDaoParams memory daoParams) = _prepareDataToBridgeDao(dao);
@@ -187,7 +188,9 @@ contract HostBridgedActionsTest is Test {
         // ------------------------ Process bridged action on Avalanche
         vm.selectFork(avalanche.fork);
         assertNotEq(
-            keccak256(abi.encode(_getHostAvalanche().getDAO(dao.symbol).params)),
+            keccak256(
+                abi.encode(IDataReader(_getHostAvalanche().getChainSettings().dataReader).getDAO(dao.symbol).params)
+            ),
             keccak256(abi.encode(daoParams)),
             "dao params are not updated"
         );
@@ -198,7 +201,9 @@ contract HostBridgedActionsTest is Test {
         vm.selectFork(avalanche.fork);
 
         assertEq(
-            keccak256(abi.encode(_getHostAvalanche().getDAO(dao.symbol).params)),
+            keccak256(
+                abi.encode(IDataReader(_getHostAvalanche().getChainSettings().dataReader).getDAO(dao.symbol).params)
+            ),
             keccak256(abi.encode(daoParams)),
             "dao params updated"
         );
@@ -225,7 +230,11 @@ contract HostBridgedActionsTest is Test {
         // ------------------------ Process bridged action on Avalanche
         vm.selectFork(avalanche.fork);
         assertNotEq(
-            keccak256(abi.encode(_getHostAvalanche().getDAO(dao.symbol).chainSettings)),
+            keccak256(
+                abi.encode(
+                    IDataReader(_getHostAvalanche().getChainSettings().dataReader).getDAO(dao.symbol).chainSettings
+                )
+            ),
             keccak256(abi.encode(chainSettings)),
             "chain settings are not updated"
         );
@@ -236,7 +245,11 @@ contract HostBridgedActionsTest is Test {
         vm.selectFork(avalanche.fork);
 
         assertEq(
-            keccak256(abi.encode(_getHostAvalanche().getDAO(dao.symbol).chainSettings)),
+            keccak256(
+                abi.encode(
+                    IDataReader(_getHostAvalanche().getChainSettings().dataReader).getDAO(dao.symbol).chainSettings
+                )
+            ),
             keccak256(abi.encode(chainSettings)),
             "chain settings updated"
         );
@@ -292,7 +305,7 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ add units to dao
         _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
-        dao = hostSonic.getDAO(dao.symbol);
+        dao = IDataReader(hostSonic.getChainSettings().dataReader).getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
         (bytes memory proposalPayload, IBridgedActions.BridgeDaoParams memory daoParams) =
@@ -355,7 +368,7 @@ contract HostBridgedActionsTest is Test {
     }
 
     function _processProposal(IHost host, bytes32 proposalId, bytes memory proposalPayload) internal {
-        ITokenomics.Proposal memory proposal = host.proposal(proposalId);
+        ITokenomics.Proposal memory proposal = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
         assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
         assertTrue(proposal.votingRequired, "proposal should require voting");
 
@@ -386,7 +399,7 @@ contract HostBridgedActionsTest is Test {
 
         assertTrue(hostAvalanche.isDaoSymbolInUse(dao.symbol), "dao symbol should be in use on Avalanche");
         // assertEq(hostAvalanche.getDAO(dao.symbol).uid, 0, "dao is not bridged");
-        console.log("uid", hostAvalanche.getDAO(dao.symbol).uid, dao.uid);
+        console.log("uid", IDataReader(hostAvalanche.getChainSettings().dataReader).getDAO(dao.symbol).uid, dao.uid);
 
         // get bridged action for Avalanche
         (,, bytes[] memory actionPayloads) = HostEncodingLib.decodeBridgedAction(proposalPayload);

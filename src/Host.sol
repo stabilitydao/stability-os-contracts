@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {ITokenomics} from "./interfaces/ITokenomics.sol";
-import {IDAOData} from "./interfaces/IDAOData.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
@@ -35,13 +34,8 @@ contract Host is IHost, Hosted {
 
     //region -------------------------------------- View
     /// @inheritdoc IHost
-    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint version) external view returns (bytes memory) {
-        return HostViewLib.getDataReaderItem(itemIndex, input, version);
-    }
-
-    /// @inheritdoc IHost
-    function getDAO(string calldata symbol) external view returns (IDAOData.DaoData memory) {
-        return HostViewLib.getDAO(symbol);
+    function getBinaryData(uint itemIndex, bytes memory input, uint16 version) external view returns (bytes memory) {
+        return HostViewLib.getDataReaderItem(IHost.DataReaderItem(itemIndex), input, version);
     }
 
     /// @inheritdoc IHost
@@ -75,11 +69,6 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory) {
-        return HostViewLib.proposal(proposalId);
-    }
-
-    /// @inheritdoc IHost
     function proposalsLength(string calldata symbol) external view returns (uint) {
         return HostViewLib.proposalsLength(symbol);
     }
@@ -96,10 +85,12 @@ contract Host is IHost, Hosted {
         );
     }
 
+    /// @inheritdoc IHost
     function unitBalance(string calldata symbol, string calldata unitId) external view returns (uint) {
         return HostViewLib.unitBalance(symbol, unitId);
     }
 
+    /// @inheritdoc IHost
     function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32) {
         return HostViewLib.salt(symbol, contractIndex);
     }

@@ -205,7 +205,7 @@ contract HostCodecTest is Test {
 
         // craft payload with unsupported version prefix and expect decode to revert
         bytes memory payloadUnknownVersion =
-                            abi.encode(INCORRECT_VERSION, a.fundingType, a.start, a.end, a.minRaise, a.maxRaise, a.raised, a.claim);
+            abi.encode(INCORRECT_VERSION, a.fundingType, a.start, a.end, a.minRaise, a.maxRaise, a.raised, a.claim);
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.decodeFunding(payloadUnknownVersion);
@@ -299,7 +299,7 @@ contract HostCodecTest is Test {
         hostCodec.encode(a, INCORRECT_VERSION);
 
         bytes memory payloadUnknownVersion =
-                            abi.encode(INCORRECT_VERSION, a.seedToken, a.tgeToken, a.token, a.xToken, a.daoToken);
+            abi.encode(INCORRECT_VERSION, a.seedToken, a.tgeToken, a.token, a.xToken, a.daoToken);
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.decodeImages(payloadUnknownVersion);
@@ -394,6 +394,5 @@ contract HostCodecTest is Test {
         payloadUnknownVersion = abi.encode(INCORRECT_VERSION, metas);
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.decodeUnitsMetadata(payloadUnknownVersion);
-
     }
 }

@@ -9,6 +9,7 @@ import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
+import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
@@ -41,7 +42,7 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ Ensure that first DAO becomes Host DAO
         {
             uint uid = host56.getHostDaoUid();
-            IDAOData.DaoData memory data = host56.getDAO("ALIENS");
+            IDAOData.DaoData memory data = IDataReader(host56.getChainSettings().dataReader).getDAO("ALIENS");
             assertEq(data.uid, uid, "ALIENS is Host dao");
         }
 
@@ -174,7 +175,8 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ change phase to seed
         {
             host_.changePhase(daoData.symbol);
-            IDAOData.DaoData memory daoDataAfter = host_.getDAO(daoData.symbol);
+            IDAOData.DaoData memory daoDataAfter =
+                IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
 
@@ -184,7 +186,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ setup seed token, refresh daoData
         {
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             //OsUtilsLib.printDaoData(daoData);
             HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
 
@@ -224,7 +226,7 @@ contract HostLifeCycleTest is Test {
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
 
-            IDAOData.DaoData memory daoAfter = host_.getDAO("ALIENS");
+            IDAOData.DaoData memory daoAfter = IDataReader(host_.getChainSettings().dataReader).getDAO("ALIENS");
             assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
 
             assertEq(
@@ -274,7 +276,7 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ DEVELOPMENT phase started (SEED succeed), refresh daoData
         {
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
@@ -309,7 +311,7 @@ contract HostLifeCycleTest is Test {
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
                 HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
             );
@@ -419,7 +421,7 @@ contract HostLifeCycleTest is Test {
             skip(180 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -478,7 +480,7 @@ contract HostLifeCycleTest is Test {
 
             host_.changePhase(daoData.symbol);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "phase should be LIVE_CLIFF");
         }
@@ -492,7 +494,7 @@ contract HostLifeCycleTest is Test {
 
             host_.changePhase(daoData.symbol);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "phase should be VESTING");
 
@@ -509,7 +511,7 @@ contract HostLifeCycleTest is Test {
 
             host_.changePhase(daoData.symbol);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_7), "phase should be LIVE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -635,10 +637,11 @@ contract HostLifeCycleTest is Test {
             skip(7 days + 1); // todo why do we need +1 second here?
 
             host_.changePhase(daoData.symbol);
-            IDAOData.DaoData memory daoDataAfter = host_.getDAO(daoData.symbol);
+            IDAOData.DaoData memory daoDataAfter =
+                IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             // setup seed token
             HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
@@ -657,7 +660,7 @@ contract HostLifeCycleTest is Test {
             skip(127 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_2), "phase should be SEED_FAILED"
@@ -764,7 +767,7 @@ contract HostLifeCycleTest is Test {
             );
         }
 
-        daoData = host_.getDAO(daoData.symbol);
+        daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
         {
             // put some amount on unit balance - it means that the unit is "live"
@@ -779,10 +782,11 @@ contract HostLifeCycleTest is Test {
             skip(7 days + 1); // todo why do we need +1 second here?
 
             host_.changePhase(daoData.symbol);
-            IDAOData.DaoData memory daoDataAfter = host_.getDAO(daoData.symbol);
+            IDAOData.DaoData memory daoDataAfter =
+                IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             // setup seed token
             HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
@@ -801,7 +805,7 @@ contract HostLifeCycleTest is Test {
             skip(127 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
@@ -818,7 +822,7 @@ contract HostLifeCycleTest is Test {
             skip(180 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
 
@@ -849,7 +853,7 @@ contract HostLifeCycleTest is Test {
             skip(180 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
                 uint8(daoData.phase),
@@ -920,7 +924,7 @@ contract HostLifeCycleTest is Test {
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
                 keccak256(abi.encode(daoData.params)),
                 keccak256(abi.encode(daoParameters)),
@@ -1042,7 +1046,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ setup seed token, refresh daoData
         {
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
 
             assertEq(daoData.deployments.seedToken, predictedSeedAddress, "seed token address matches predicted");
@@ -1142,7 +1146,7 @@ contract HostLifeCycleTest is Test {
             skip(100 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
                 uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
@@ -1177,7 +1181,7 @@ contract HostLifeCycleTest is Test {
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
 
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
                 HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
             );
@@ -1255,7 +1259,7 @@ contract HostLifeCycleTest is Test {
             skip(180 days);
 
             host_.changePhase(daoData.symbol);
-            daoData = host_.getDAO(daoData.symbol);
+            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -1270,6 +1274,7 @@ contract HostLifeCycleTest is Test {
 
     //endregion ------------------------------ Life cycles logic
 
+    //region ------------------------------ Utils
     /// @notice user should pay for DAO-creation
     function _dealAndApprove(IHost os_) internal {
         address exchangeAsset = os_.getChainSettings().exchangeAsset;
@@ -1289,4 +1294,5 @@ contract HostLifeCycleTest is Test {
     function _createHostCodec(IHost host) internal returns (IHostCodec) {
         return HostUtilsLib.createHostCodec(vm, MULTISIG, host);
     }
+    //endregion ------------------------------ Utils
 }

@@ -17,6 +17,7 @@ import {SetConfigParam} from "@layerzerolabs/lz-evm-protocol-v2/contracts/interf
 import {ExecutorConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/SendLibBase.sol";
 import {UlnConfig} from "@layerzerolabs/lz-evm-messagelib-v2/contracts/uln/UlnBase.sol";
 import {HostBridge} from "../../src/HostBridge.sol";
+import {DataReader} from "../../src/DataReader.sol";
 import {HostUtilsLib} from "./HostUtilsLib.sol";
 // import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
@@ -57,6 +58,7 @@ library BridgeTestLib {
         address authority;
         address hostBridge;
         address hostCodec;
+        address dataReader;
 
         uint32 endpointId;
         address endpoint;
@@ -81,6 +83,7 @@ library BridgeTestLib {
 
         address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
+        address dataReader;
         {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
@@ -90,8 +93,15 @@ library BridgeTestLib {
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
-            address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = host.deployProxy("0x6512222222", hostBridgeImpl, abi.encode(multisig, delegator));
+            {
+                address hostBridgeImpl = address(new HostBridge(endpoint));
+                hostBridge = host.deployProxy("0x6512222222", hostBridgeImpl, abi.encode(multisig, delegator));
+            }
+
+            {
+                address dataReaderImpl = address(new DataReader());
+                dataReader = host.deployProxy("0x6513333333", dataReaderImpl, abi.encode(multisig, delegator));
+            }
         }
 
         return BridgeTestLib.ChainConfig({
@@ -100,7 +110,8 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
-            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
+            dataReader: dataReader,
+            hostCodec: address(host.deployProxy("0x1888888", address(new HostCodec()), "")),
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: endpoint,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
@@ -121,6 +132,7 @@ library BridgeTestLib {
 
         address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
+        address dataReader;
         {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
@@ -130,8 +142,14 @@ library BridgeTestLib {
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
-            address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = host.deployProxy("0x65172300", hostBridgeImpl, abi.encode(multisig, delegator));
+            {
+                address hostBridgeImpl = address(new HostBridge(endpoint));
+                hostBridge = host.deployProxy("0x65172301", hostBridgeImpl, abi.encode(multisig, delegator));
+            }
+            {
+                address dataReaderImpl = address(new DataReader());
+                dataReader = host.deployProxy("0x65144444444", dataReaderImpl, abi.encode(multisig, delegator));
+            }
         }
 
         return BridgeTestLib.ChainConfig({
@@ -140,6 +158,7 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
+            dataReader: dataReader,
             hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
@@ -161,6 +180,7 @@ library BridgeTestLib {
 
         address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
+        address dataReader;
         {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
@@ -170,8 +190,14 @@ library BridgeTestLib {
             vm.prank(multisig);
             accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
-            address hostBridgeImpl = address(new HostBridge(endpoint));
-            hostBridge = host.deployProxy("0x65172399", hostBridgeImpl, abi.encode(multisig, delegator));
+            {
+                address hostBridgeImpl = address(new HostBridge(endpoint));
+                hostBridge = host.deployProxy("0x65172399", hostBridgeImpl, abi.encode(multisig, delegator));
+            }
+            {
+                address dataReaderImpl = address(new DataReader());
+                dataReader = host.deployProxy("0x651555555555", dataReaderImpl, abi.encode(multisig, delegator));
+            }
         }
 
         return BridgeTestLib.ChainConfig({
@@ -180,6 +206,7 @@ library BridgeTestLib {
             delegator: delegator,
             authority: address(accessManager),
             hostBridge: hostBridge,
+            dataReader: dataReader,
             hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
@@ -709,7 +736,10 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         host.setChainSettings(
             IHost.HostChainSettings({
-                exchangeAsset: config.exchangeAsset, hostBridge: chain.hostBridge, timelock: 30 minutes
+                exchangeAsset: config.exchangeAsset,
+                hostBridge: chain.hostBridge,
+                timelock: 30 minutes,
+                dataReader: chain.dataReader
             })
         );
 

@@ -1,15 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
+import {Authority} from "../../src/Authority.sol";
+import {DataReader} from "../../src/DataReader.sol";
+import {HostBridge} from "../../src/HostBridge.sol";
+import {Host} from "../../src/Host.sol";
+import {IHosted} from "../../src/interfaces/IHosted.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {IOwnable} from "../../src/deprecated/interfaces/IOwnable.sol";
+import {IOwnable} from "../../src/deprecated/interfaces/IOwnable.sol";
+import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
+import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
+import {Script} from "forge-std/Script.sol";
+import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Variable, LibVariable} from "forge-std/LibVariable.sol";
-import {Script} from "forge-std/Script.sol";
-import {Authority} from "../../src/Authority.sol";
-import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
+import {HostCodec} from "../../src/HostCodec.sol";
 
 /// @notice Deploy ProxyFactory
 contract DeployProxyFactory is Script {
     using LibVariable for Variable;
+
+    uint internal constant SONIC_CHAIN_ID = 146;
+    uint internal constant PLASMA_CHAIN_ID = 9745;
 
     // Ethereum
     bytes32 constant SALT_HOST_MAINNET = 0xece9ebd163ac88bd95711ee95b86f0f473593c23de779f85d0fa56d69acc4f64;
@@ -39,10 +54,21 @@ contract DeployProxyFactory is Script {
         // ---------------------- Read initial data
         uint deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address multisig = vm.envAddress("MULTISIG");
-        require(multisig != address(0), "Multisig is not set");
-
-        address hostPredicted = vm.envAddress("HOST_PREDICTED");
+        address[3] memory hostBridgeReader = block.chainid == SONIC_CHAIN_ID
+            ? [TARGET_HOST_SONIC, TARGET_HOST_BRIDGE_SONIC, TARGET_DATA_READER_SONIC]
+            : block.chainid == PLASMA_CHAIN_ID
+                ? [TARGET_HOST_PLASMA, TARGET_HOST_BRIDGE_PLASMA, TARGET_DATA_READER_PLASMA]
+                : [TARGET_HOST_MAINNET, TARGET_HOST_BRIDGE_MAINNET, TARGET_DATA_READER_MAINNET];
+        bytes32[3] memory salts = block.chainid == SONIC_CHAIN_ID
+            ? [SALT_HOST_SONIC, SALT_HOST_BRIDGE_SONIC, SALT_DATA_READER_SONIC]
+            : block.chainid == PLASMA_CHAIN_ID
+                ? [SALT_HOST_PLASMA, SALT_HOST_BRIDGE_PLASMA, SALT_DATA_READER_PLASMA]
+                : [SALT_HOST_MAINNET, SALT_HOST_BRIDGE_MAINNET, SALT_DATA_READER_MAINNET];
+        address endpoint = block.chainid == SONIC_CHAIN_ID
+            ? SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT
+            : block.chainid == PLASMA_CHAIN_ID
+                ? PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT
+                : 0x1a44076050125825900e736c501f859c50fE728c; // todo move Endpoint for Ethereum Mainnet to constants
 
         // ---------------------- Initialize
         StdConfig configDeployed = new StdConfig("./config.d.toml", true); // auto-write deployed addresses
@@ -50,21 +76,86 @@ contract DeployProxyFactory is Script {
         require(uint(configDeployed.get("PROXY_FACTORY").ty.kind) != 0, "ProxyFactory is NOT deployed on this chain");
         address proxyFactory = configDeployed.get("PROXY_FACTORY").toAddress();
 
-        require(uint(configDeployed.get("AUTHORITY").ty.kind) == 0, "Authority is deployed on this chain");
+        // todo require(uint(configDeployed.get("AUTHORITY").ty.kind) == 0, "Authority is deployed on this chain");
 
         // ---------------------- Deploy
+        address _deployer = IOwnable(proxyFactory).owner();
+
         vm.startBroadcast(deployerPrivateKey);
 
-        Authority authority = new Authority(multisig, hostPredicted, address(proxyFactory));
+        /// @dev Deploy Authority
+        Authority authority = new Authority(_deployer, hostBridgeReader[0], address(proxyFactory));
 
-        // allow authority to create new proxies
+        /// @dev Allow authority to create new proxies
         IProxyFactory(proxyFactory).setWhitelisted(address(authority), true);
 
-        // allow host to create new proxies
-        IProxyFactory(proxyFactory).setWhitelisted(address(hostPredicted), true);
+        /// @dev Allow host to create new proxies
+        IProxyFactory(proxyFactory).setWhitelisted(address(hostBridgeReader[0]), true);
+
+        /// @dev Deploy host
+        {
+            IHost.HostInitPayload memory init = IHost.HostInitPayload({
+                usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "2026.00.00"
+            });
+            address logic = address(new Host());
+
+            authority.execute(
+                address(proxyFactory),
+                abi.encodeCall(
+                    IProxyFactory.create2NewProxy,
+                    (salts[0], logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(init))))
+                )
+            );
+        }
+
+        /// @dev Allow host to deploy proxy
+        {
+            bytes4[] memory selectors = new bytes4[](1);
+            selectors[0] = bytes4(IHost.deployProxy.selector);
+
+            IAccessManager(address(authority))
+                .setTargetFunctionRole(
+                    address(hostBridgeReader[0]), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER
+                );
+
+            IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, _deployer, 0);
+        }
+
+        /// @dev Deploy host bridge
+        {
+            address logic = address(new HostBridge(endpoint));
+            address proxy = IHost(hostBridgeReader[0])
+                .deployProxy(
+                    salts[1],
+                    logic,
+                    abi.encode(
+                        address(_deployer), // owner
+                        address(_deployer) // delegate to setup the bridge
+                    )
+                );
+            require(proxy == hostBridgeReader[1], "HostBridge address mismatch");
+        }
+
+        /// @dev Deploy data reader
+        {
+            address logic = address(new DataReader());
+            address proxy = IHost(hostBridgeReader[0]).deployProxy(salts[2], logic, "");
+            require(proxy == hostBridgeReader[2], "DataReader address mismatch");
+        }
+
+        /// @dev Deploy HostCodec
+        {
+            address logic = address(new HostCodec());
+            //            address proxy =
+            IHost(hostBridgeReader[0]).deployProxy("0x12345", logic, ""); // todo real salt
+            // todo require(proxy == hostBridgeReader[2], "DataReader address mismatch");
+        }
 
         // ---------------------- Write results
         vm.stopBroadcast();
         configDeployed.set("AUTHORITY", address(authority));
+        configDeployed.set("HOST", address(hostBridgeReader[0]));
+        configDeployed.set("HOST_BRIDGE", address(hostBridgeReader[1]));
+        configDeployed.set("DATA_READER", address(hostBridgeReader[2]));
     }
 }

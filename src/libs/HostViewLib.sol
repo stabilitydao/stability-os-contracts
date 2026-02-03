@@ -2,13 +2,14 @@
 pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IHost} from "../interfaces/IHost.sol";
-import {IDAOData} from "../interfaces/IDAOData.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {HostLib} from "./HostLib.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostDeployLib} from "./HostDeployLib.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {HostLib} from "./HostLib.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 // import {console} from "forge-std/console.sol";
 
 library HostViewLib {
@@ -147,15 +148,19 @@ library HostViewLib {
     }
 
     //region -------------------------------------- View
-    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint /*version*/) external view returns (bytes memory) {
+    function getDataReaderItem(
+        IHost.DataReaderItem itemIndex,
+        bytes memory input,
+        uint16 version
+    ) external view returns (bytes memory) {
         if (itemIndex == IHost.DataReaderItem.DAO_DATA_0) {
             (string memory symbol) = abi.decode(input, (string));
             IDAOData.DaoData memory daoData = getDAO(symbol);
-            return abi.encode(daoData); // todo version
+            return HostEncodingLib.encodeDAOData(daoData, version);
         } else if (itemIndex == IHost.DataReaderItem.PROPOSAL_1) {
             (bytes32 proposalId) = abi.decode(input, (bytes32));
             ITokenomics.Proposal memory proposalData = proposal(proposalId);
-            return abi.encode(proposalData); // todo version
+            return HostEncodingLib.encodeProposal(proposalData, version);
         }
         return "";
     }
@@ -279,11 +284,7 @@ library HostViewLib {
         return $.daoProposals[HostLib.getDaoUid($, symbol)].length;
     }
 
-    function proposalIds(
-        string calldata symbol,
-        uint index,
-        uint count
-    ) external view returns (bytes32[] memory dest) {
+    function proposalIds(string calldata symbol, uint index, uint count) external view returns (bytes32[] memory dest) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
         uint len = $.daoProposals[HostLib.getDaoUid($, symbol)].length;

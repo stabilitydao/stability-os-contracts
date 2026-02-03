@@ -159,6 +159,22 @@ contract HostEncodingLibTest is Test {
     function _decodeDaoDataInput(bytes memory payload) public pure returns (IDAOData.DaoDataInput memory dao) {
         dao = HostEncodingLib.decodeDaoDataInput(payload);
     }
+
+    function _encodeDAOData(IDAOData.DaoData memory data, uint16 version) public pure returns (bytes memory) {
+        return HostEncodingLib.encodeDAOData(data, version);
+    }
+
+    function _decodeDAOData(bytes memory data) public pure returns (IDAOData.DaoData memory) {
+        return HostEncodingLib.decodeDAOData(data);
+    }
+
+    function _encodeProposal(ITokenomics.Proposal memory data, uint16 version) public pure returns (bytes memory) {
+        return HostEncodingLib.encodeProposal(data, version);
+    }
+
+    function _decodeProposal(bytes memory data) public pure returns (ITokenomics.Proposal memory) {
+        return HostEncodingLib.decodeProposal(data);
+    }
     //endregion -------------------------------------- Public wrappers of OsEncodingLib-functions for tests
 
     function testEncodeDaoImages() public pure {
@@ -497,5 +513,165 @@ contract HostEncodingLibTest is Test {
         IDAOData.DaoDataInput memory restored = this._decodeDaoDataInput(encA);
 
         assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(dao)), "DaoDataInput");
+    }
+
+    function testEncodeProposal() public view {
+        {
+            ITokenomics.Proposal memory data = ITokenomics.Proposal({
+                action: ITokenomics.DAOAction.UPDATE_UNITS_3,
+                validationRequired: true,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
+                id: "37097271",
+                symbol: "aaaa",
+                created: 15202617,
+                status: ITokenomics.VotingStatus.REJECTED_2,
+                payloadHash: "0x61214220"
+            });
+
+            bytes memory encA = this._encodeProposal(data, HostEncodingLib.PAYLOAD_API_VERSION);
+            ITokenomics.Proposal memory restored = this._decodeProposal(encA);
+
+            assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "proposal");
+        }
+
+        {
+            ITokenomics.Proposal memory data = ITokenomics.Proposal({
+                action: ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9,
+                validationRequired: false,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.REJECTED_2,
+                id: "37097271",
+                symbol: "aaaa adsfadf asdasdfasdf ",
+                created: 0,
+                status: ITokenomics.VotingStatus.VOTING_0,
+                payloadHash: ""
+            });
+
+            bytes memory encA = this._encodeProposal(data, HostEncodingLib.PAYLOAD_API_VERSION);
+            ITokenomics.Proposal memory restored = this._decodeProposal(encA);
+
+            assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "proposal");
+        }
+    }
+
+    function testEncodeProposalBadPaths() public {
+        ITokenomics.Proposal memory data = ITokenomics.Proposal({
+            action: ITokenomics.DAOAction.UPDATE_UNITS_3,
+            validationRequired: true,
+            votingRequired: true,
+            validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
+            id: "37097271",
+            symbol: "aaaa",
+            created: 15202617,
+            status: ITokenomics.VotingStatus.REJECTED_2,
+            payloadHash: "0x61214220"
+        });
+
+        // encode with unsupported version should revert
+        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
+        this._encodeProposal(data, INCORRECT_VERSION);
+
+        bytes memory encA = abi.encode(data.symbol, data.created, data.status, data.payloadHash);
+        encA = abi.encode(
+            INCORRECT_VERSION,
+            encA,
+            data.action,
+            data.validationRequired,
+            data.votingRequired,
+            data.validationStatus,
+            data.id
+        );
+
+        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
+        this._decodeProposal(encA);
+    }
+
+    function testEncodeDAOData() public {
+        IDAOData.DaoData memory data = IDAOData.DaoData({
+            symbol: "symbol",
+            uid: 0x672027567634233,
+            name: "DAO name",
+            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+            deployments: ITokenomics.DaoDeploymentInfo({
+                seedToken: makeAddr("seedToken"),
+                tgeToken: makeAddr("tgeToken"),
+                token: makeAddr("token"),
+                xToken: makeAddr("xToken"),
+                staking: makeAddr("staking"),
+                daoToken: makeAddr("daoToken"),
+                revenueRouter: makeAddr("revenueRouter"),
+                recovery: makeAddr("recovery"),
+                vesting: new address[](3),
+                tokenBridge: makeAddr("tokenBridge"),
+                xTokenBridge: makeAddr("xTokenBridge"),
+                daoTokenBridge: makeAddr("daoTokenBridge")
+            }),
+            chainSettings: ITokenomics.DaoChainSettings({bbRate: 150}),
+            unitIds: new string[](2),
+            params: ITokenomics.DaoParameters({
+                vePeriod: type(uint32).max,
+                pvpFee: type(uint16).max,
+                minPower: 1000,
+                ttBribe: type(uint16).max,
+                recoveryShare: type(uint16).max,
+                proposalThreshold: 50
+            }),
+            initialChain: 1,
+            socials: new string[](3),
+            activity: new ITokenomics.Activity[](4),
+            images: ITokenomics.DaoImages({
+                seedToken: "seedToken", tgeToken: "tgeToken", token: "token", xToken: "xToken", daoToken: "daoToken"
+            }),
+            units: new ITokenomics.UnitData[](2),
+            funding: new ITokenomics.Funding[](2),
+            vesting: new ITokenomics.Vesting[](2),
+            governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: 1111, ttBribe: type(uint).max - 1}),
+            deployer: makeAddr("deployer"),
+            daoMetaDataLocation: "daoMetaDataLocation"
+        });
+
+        data.unitIds[0] = "unit1";
+        data.unitIds[1] = "unit2";
+
+        data.units[0] = ITokenomics.UnitData({unitId: "unit1", chainIds: new uint[](4), developerUid: "developerUid0"});
+        data.units[1] = ITokenomics.UnitData({unitId: "unit1", chainIds: new uint[](1), developerUid: "developerUid0"});
+        for (uint i; i < 4; i++) {
+            data.units[0].chainIds[i] = i + 1;
+        }
+        data.units[1].chainIds[0] = 10;
+
+        data.socials[0] = "twitter";
+        data.socials[1] = "discord";
+        data.socials[2] = "github";
+
+        data.activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        data.activity[1] = ITokenomics.Activity.SAAS_OPERATOR_1;
+        data.activity[2] = ITokenomics.Activity.MEV_SEARCHER_2;
+        data.activity[3] = ITokenomics.Activity.BUILDER_3;
+
+        data.funding[0] = ITokenomics.Funding({
+            fundingType: ITokenomics.FundingType.SEED_0,
+            start: 100,
+            end: 200,
+            minRaise: 1000,
+            maxRaise: 5000,
+            raised: 250,
+            claim: 1
+        });
+        data.funding[1] = ITokenomics.Funding({
+            fundingType: ITokenomics.FundingType.TGE_1,
+            start: type(uint64).max,
+            end: type(uint64).max,
+            minRaise: type(uint).max,
+            maxRaise: type(uint).max / 2,
+            raised: 0,
+            claim: type(uint).max
+        });
+
+        bytes memory encA = this._encodeDAOData(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        IDAOData.DaoData memory restored = this._decodeDAOData(encA);
+
+        assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "dao data");
     }
 }

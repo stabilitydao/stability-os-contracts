@@ -145,6 +145,9 @@ interface IHost {
 
         /// @notice Timelock duration for host platform upgrades, sec
         uint timelock;
+
+        /// @notice Data reader provides access to any DAO-related complex data in human-readable format
+        address dataReader;
     }
 
     struct Task {
@@ -224,14 +227,11 @@ interface IHost {
     //region ---------------------------------------- Read
 
     /// @notice Data rider gets all data through this function
-    /// @param itemIndex Index of the item to get
+    /// @param itemIndex Index of the item to get, see IHost.DataReaderItem
     /// @param input Encoded input data for the item
     /// @param version Required version of the output data
     /// @return Encoded output data for the item
-    function getDataReaderItem(IHost.DataReaderItem itemIndex, bytes memory input, uint version) external view returns (bytes memory);
-
-    /// @notice Local DAOs storage (in form of a mapping)
-    function getDAO(string calldata symbol) external view returns (IDAOData.DaoData memory);
+    function getBinaryData(uint itemIndex, bytes memory input, uint16 version) external view returns (bytes memory);
 
     /// @notice Owner of the DAO
     function getDAOOwner(string calldata symbol) external view returns (address);
@@ -250,9 +250,6 @@ interface IHost {
 
     /// @notice Get OS chain-depended settings
     function getChainSettings() external view returns (HostChainSettings memory);
-
-    /// @notice Governance proposals. Can be created only at initialChain of DAO.
-    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory);
 
     /// @notice Get number of proposals for the given DAO
     function proposalsLength(string calldata symbol) external view returns (uint);

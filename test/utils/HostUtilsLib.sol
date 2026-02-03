@@ -22,6 +22,8 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {IDataReader} from "../../src/interfaces/IDataReader.sol";
+import {DataReader} from "../../src/DataReader.sol";
 
 library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -164,14 +166,22 @@ library HostUtilsLib {
             vm.stopPrank();
         }
 
+        // ---------------------- set up data reader
+        IDataReader dataReader;
+        {
+            address logic = address(new DataReader());
+            vm.prank(multisig);
+            dataReader = IDataReader(host.deployProxy("0x26313520", logic, ""));
+        }
+
         // ---------------------- set host settings
         setHostSettings(vm, host, multisig);
 
-        setChainSettings(vm, host, multisig);
+        setChainSettings(vm, host, multisig, address(dataReader));
     }
 
     function createDaoInstance(
-        IHost os,
+        IHost host,
         string memory symbol,
         string memory daoName
     ) public returns (IDAOData.DaoData memory) {
@@ -184,9 +194,9 @@ library HostUtilsLib {
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
         ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
-        os.createDAO(daoName, symbol, activity, params, funding);
+        host.createDAO(daoName, symbol, activity, params, funding);
 
-        return os.getDAO(symbol);
+        return IDataReader(host.getChainSettings().dataReader).getDAO(symbol);
     }
 
     function createAliensDao(Vm vm, IHost os_, string memory symbol) internal returns (IDAOData.DaoData memory) {
@@ -231,20 +241,20 @@ library HostUtilsLib {
 
     function _createDao(
         Vm vm,
-        IHost os_,
+        IHost host_,
         string memory name_,
-        string memory daoSymbol_,
+        string memory symbol_,
         ITokenomics.Funding[] memory funding,
         ITokenomics.Activity[] memory activity,
         ITokenomics.DaoParameters memory params
     ) internal returns (IDAOData.DaoData memory) {
         // user should pay for cross-chain messages
-        uint value = os_.quoteCreateDAO(daoSymbol_);
+        uint value = host_.quoteCreateDAO(symbol_);
         vm.deal(address(this), value);
 
-        os_.createDAO{value: value}(name_, daoSymbol_, activity, params, funding);
+        host_.createDAO{value: value}(name_, symbol_, activity, params, funding);
 
-        return os_.getDAO(daoSymbol_);
+        return IDataReader(host_.getChainSettings().dataReader).getDAO(symbol_);
     }
 
     //endregion ----------------------------- Create OS and DAO instances
@@ -275,7 +285,7 @@ library HostUtilsLib {
         );
     }
 
-    function setChainSettings(Vm vm, IHost host_, address multisig) internal {
+    function setChainSettings(Vm vm, IHost host_, address multisig, address dataReader) internal {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
@@ -284,7 +294,9 @@ library HostUtilsLib {
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
         host_.setChainSettings(
-            IHost.HostChainSettings({exchangeAsset: address(usdc), hostBridge: address(bridge), timelock: 30 minutes})
+            IHost.HostChainSettings({
+                exchangeAsset: address(usdc), hostBridge: address(bridge), timelock: 30 minutes, dataReader: dataReader
+            })
         );
     }
 
@@ -536,9 +548,11 @@ library HostUtilsLib {
     //region ----------------------------- Print
     function printDaoData(IDAOData.DaoData memory data) internal pure {
         console.log("DAO Symbol:", data.symbol);
+        console.log("DAO uid:", data.uid);
         console.log("DAO Name:", data.name);
         console.log("Deployer:", data.deployer);
         console.log("Phase:", uint8(data.phase));
+        console.log("Initial chain", data.initialChain);
 
         console.log("Deployments:");
         console.log("  Seed Token:", data.deployments.seedToken);
@@ -556,6 +570,27 @@ library HostUtilsLib {
             console.log(i, data.deployments.vesting[i]);
         }
 
+        console.log("Chain settings:");
+        console.log("  bbRate:", data.chainSettings.bbRate);
+
+        console.log("DAO Params:");
+        console.log("  vePeriod:", data.params.vePeriod);
+        console.log("  pvpFee:", data.params.pvpFee);
+        console.log("  minPower:", data.params.minPower);
+        console.log("  ttBribe:", data.params.ttBribe);
+        console.log("  recoveryShare:", data.params.recoveryShare);
+        console.log("  proposalThreshold:", data.params.proposalThreshold);
+
+        console.log("Socials:");
+        for (uint i = 0; i < data.socials.length; i++) {
+            console.log(" ", i, data.socials[i]);
+        }
+
+        console.log("Activity:");
+        for (uint i = 0; i < data.activity.length; i++) {
+            console.log(" ", i, uint(data.activity[i]));
+        }
+
         console.log("Images:");
         console.log("  Seed Token:", data.images.seedToken);
         console.log("  TGE Token:", data.images.tgeToken);
@@ -563,15 +598,21 @@ library HostUtilsLib {
         console.log("  xToken:", data.images.xToken);
         console.log("  DAO Token:", data.images.daoToken);
 
-        console.log("Socials:");
-        for (uint i = 0; i < data.socials.length; i++) {
-            console.log(i, data.socials[i]);
+        console.log("Units (unit.unitId, unitId):");
+        for (uint i = 0; i < data.units.length; i++) {
+            console.log(" ", i, data.units[i].unitId, data.unitIds[i]);
         }
 
-        console.log("Units:");
-        for (uint i = 0; i < data.units.length; i++) {
-            console.log(i, data.units[i].unitId);
+        console.log("Funding: type, raised");
+        for (uint i = 0; i < data.funding.length; i++) {
+            console.log(" ", i, uint8(data.funding[i].fundingType), data.funding[i].raised);
         }
+
+        console.log("daoMetaDataLocation", data.daoMetaDataLocation);
+
+        console.log("GovernanceSettings:");
+        console.log("  proposalThreshold:", data.governanceSettings.proposalThreshold);
+        console.log("  ttBribe:", data.governanceSettings.ttBribe);
     }
 
     function printTasks(IHost.Task[] memory tasks) internal pure {

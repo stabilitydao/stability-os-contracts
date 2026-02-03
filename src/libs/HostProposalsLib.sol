@@ -243,6 +243,8 @@ library HostProposalsLib {
 
         bytes32 proposalId;
 
+        // todo on initial chain: update list of chains on which the unit is bridged, see UnitData.chainIds
+
         if (d_.instant) {
             HostUpdateLib.updateUnits(d_.daoUid, units, 0, unitsMetadata); // 0 - instant update
         } else {
