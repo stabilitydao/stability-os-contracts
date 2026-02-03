@@ -8,6 +8,7 @@ import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
 import {HostBridgeLib} from "./libs/HostBridgeLib.sol";
 import {HostProxyLib} from "./libs/HostProxyLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
+import {HostConfigLib} from "./libs/HostConfigLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {IHost} from "./interfaces/IHost.sol";
@@ -32,6 +33,11 @@ contract Host is IHost, Hosted {
     }
 
     //region -------------------------------------- View
+    /// @inheritdoc IHost
+    function dataReader() external view returns (address) {
+        return HostConfigLib.getHostChainSettings().dataReader;
+    }
+
     /// @inheritdoc IHost
     function getBinaryData(uint itemIndex, bytes memory input, uint16 version) external view returns (bytes memory) {
         return HostViewLib.getDataReaderItem(IHost.DataReaderItem(itemIndex), input, version);

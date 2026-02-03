@@ -22,8 +22,7 @@ import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
 
-
-contract HostrgeUpgradeProxyLibTest is Test {
+contract HostProxyLibTest is Test {
     address public multisig;
     address public proxyFactory;
     IAuthority public authority;
@@ -42,7 +41,6 @@ contract HostrgeUpgradeProxyLibTest is Test {
         IProxyFactory(proxyFactory).setWhitelisted(address(this), true);
 
         _setupAccessManager();
-
     }
 
     function testStorageLocation() public pure {
@@ -99,25 +97,24 @@ contract HostrgeUpgradeProxyLibTest is Test {
         // ------------------------ Setup implementations
         address seedTokenImplementation = address(new SeedToken());
 
-        HostProxyLib.setContractImplementation(
-            uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation
-        );
+        HostProxyLib.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         // ------------------------ Deploy seed token
 
         bytes32 salt = "0x0101";
         address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
 
+        uint daoUid = 1000;
         address seedToken = HostProxyLib.deployContract(
-            salt, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode("name", "symbol"), address(authority)
+            salt, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode(daoUid), address(authority)
         );
 
         // ------------------------ Check results
         assertNotEq(seedToken, address(0), "Deployed seed token address");
         assertEq(seedToken, predictedProxyAddress, "Predicted address matches deployed");
 
-        assertEq(IERC20Metadata(seedToken).name(), "name", "Seed token name");
-        assertEq(IERC20Metadata(seedToken).symbol(), "symbol", "Seed token symbol");
+        assertEq(IERC20Metadata(seedToken).name(), " SEED", "Seed token name (dao name is empty here)");
+        assertEq(IERC20Metadata(seedToken).symbol(), "seed", "Seed token symbol (dao name is empty here)");
 
         assertEq(IProxy(seedToken).implementation(), seedTokenImplementation, "Seed token implementation");
     }
@@ -126,25 +123,24 @@ contract HostrgeUpgradeProxyLibTest is Test {
         // ------------------------ Setup implementations
         address tgeTokenImplementation = address(new TgeToken());
 
-        HostProxyLib.setContractImplementation(
-            uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation
-        );
+        HostProxyLib.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
 
         // ------------------------ Deploy seed token
 
+        uint daoUid = 1000;
         bytes32 salt = "0x0101";
         address predictedProxyAddress = IProxyFactory(proxyFactory).predictAddress(salt);
 
         address tgeToken = HostProxyLib.deployContract(
-            salt, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode("name", "symbol"), address(authority)
+            salt, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode(daoUid), address(authority)
         );
 
         // ------------------------ Check results
         assertNotEq(tgeToken, address(0), "Deployed tge token address");
         assertEq(tgeToken, predictedProxyAddress, "Predicted address matches deployed");
 
-        assertEq(IERC20Metadata(tgeToken).name(), "name", "Tge token name");
-        assertEq(IERC20Metadata(tgeToken).symbol(), "symbol", "Tge token symbol");
+        assertEq(IERC20Metadata(tgeToken).name(), " PRESALE", "Tge token name (dao name is empty here)");
+        assertEq(IERC20Metadata(tgeToken).symbol(), "sale", "Tge token symbol (dao name is empty here)");
 
         assertEq(IProxy(tgeToken).implementation(), tgeTokenImplementation, "Tge token implementation");
     }
@@ -184,7 +180,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
 
         vm.prank(multisig);
         IAccessManager(address(authority))
-        .setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
+            .setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
 
         vm.prank(multisig);
         IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
@@ -412,6 +408,7 @@ contract HostrgeUpgradeProxyLibTest is Test {
             );
         }
     }
+
     //endregion ------------------------------------- Upgrade tests
 
     //region ------------------------------------- Internal utils

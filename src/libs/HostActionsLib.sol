@@ -148,13 +148,7 @@ library HostActionsLib {
                 IHost.TooLateSoSetupFundingAgain()
             );
 
-            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken(
-                $,
-                daoUid,
-                HostViewLib.getTokenName($.segment2[daoUid].name, uint(HostViewLib.NamingTokenKind.SEED_0)),
-                HostViewLib.getTokenSymbol(symbol, uint(HostViewLib.NamingTokenKind.SEED_0)),
-                authority
-            );
+            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
 
             newPhase = ITokenomics.LifecyclePhase.SEED_1;
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
@@ -174,13 +168,7 @@ library HostActionsLib {
 
             require(tge.start <= block.timestamp, IHost.WaitFundingStart());
 
-            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken(
-                $,
-                daoUid,
-                HostViewLib.getTokenName($.segment2[daoUid].name, uint(HostViewLib.NamingTokenKind.TGE_1)),
-                HostViewLib.getTokenSymbol(symbol, uint(HostViewLib.NamingTokenKind.TGE_1)),
-                authority
-            );
+            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken($, daoUid, authority);
 
             newPhase = ITokenomics.LifecyclePhase.TGE_4;
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
@@ -257,6 +245,7 @@ library HostActionsLib {
             revert IHost.UnknownRestrictedAction();
         }
     }
+
     //endregion -------------------------------------- Actions
 
     //region -------------------------------------- Internal logic

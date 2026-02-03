@@ -40,6 +40,28 @@ contract DataReader is IDataReader, Hosted {
         return HostEncodingLib.decodeProposal(data);
     }
 
+    /// @notice IDataReader
+    function getTokenName(uint daoUid, uint namingTokenKind) external view returns (string memory) {
+        bytes memory data = _host()
+            .getBinaryData(
+                uint(IHost.DataReaderItem.DAO_NAME_2),
+                abi.encode(daoUid, namingTokenKind),
+                HostEncodingLib.PAYLOAD_API_VERSION
+            );
+        return abi.decode(data, (string));
+    }
+
+    /// @notice IDataReader
+    function getTokenSymbol(uint daoUid, uint namingTokenKind) external view returns (string memory) {
+        bytes memory data = _host()
+            .getBinaryData(
+                uint(IHost.DataReaderItem.DAO_SYMBOL_3),
+                abi.encode(daoUid, namingTokenKind),
+                HostEncodingLib.PAYLOAD_API_VERSION
+            );
+        return abi.decode(data, (string));
+    }
+
     function _host() internal view returns (IHost) {
         return IHost(IAuthority(authority()).HOST());
     }

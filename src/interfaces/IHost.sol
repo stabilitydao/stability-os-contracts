@@ -119,7 +119,6 @@ interface IHost {
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
-
     /// @notice DAO-setting common for all chains
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset
@@ -232,7 +231,9 @@ interface IHost {
         /// @notice Full DAO data
         DAO_DATA_0,
         /// @notice Full proposal data
-        PROPOSAL_1
+        PROPOSAL_1,
+        DAO_NAME_2,
+        DAO_SYMBOL_3
     }
 
     /// @notice Rarely used restricted actions, see {updateRestricted}
@@ -242,7 +243,19 @@ interface IHost {
         ADD_LIVE_DAO_0
     }
 
+    /// @notice Token kind for getTokenName and getTokenSymbol
+    enum NamingTokenKind {
+        SEED_0,
+        TGE_1,
+        TOKEN_2,
+        XTOKEN_3,
+        DAO_4
+    }
+
     //region ---------------------------------------- Read
+
+    /// @notice Data reader provides access to any DAO-related complex data in human-readable format
+    function dataReader() external view returns (address);
 
     /// @notice Data rider gets all data through this function
     /// @param itemIndex Index of the item to get, see IHost.DataReaderItem

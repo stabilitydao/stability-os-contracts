@@ -15,15 +15,6 @@ library HostViewLib {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    /// @notice Token kind for getTokenName and getTokenSymbol
-    enum NamingTokenKind {
-        SEED_0,
-        TGE_1,
-        TOKEN_2,
-        XTOKEN_3,
-        DAO_4
-    }
-
     //region -------------------------------------- View
     function getDataReaderItem(
         IHost.DataReaderItem itemIndex,
@@ -38,6 +29,14 @@ library HostViewLib {
             (bytes32 proposalId) = abi.decode(input, (bytes32));
             ITokenomics.Proposal memory proposalData = proposal(proposalId);
             return HostEncodingLib.encodeProposal(proposalData, version);
+        } else if (itemIndex == IHost.DataReaderItem.DAO_NAME_2) {
+            HostLib.HostStorage storage $ = HostLib.getHostStorage();
+            (uint daoUid, uint namingTokenKind) = abi.decode(input, (uint, uint));
+            return abi.encode(getTokenName($.segment2[daoUid].name, namingTokenKind));
+        } else if (itemIndex == IHost.DataReaderItem.DAO_SYMBOL_3) {
+            HostLib.HostStorage storage $ = HostLib.getHostStorage();
+            (uint daoUid, uint namingTokenKind) = abi.decode(input, (uint, uint));
+            return abi.encode(getTokenSymbol($.segment2[daoUid].symbol, namingTokenKind));
         }
         return "";
     }
@@ -183,17 +182,17 @@ library HostViewLib {
 
     /// @notice Generate token name in same way as getTokensNaming()
     /// @param name dao name
-    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
-    function getTokenName(string memory name, uint kind) internal pure returns (string memory) {
-        if (kind == uint(NamingTokenKind.SEED_0)) {
+    /// @param namingTokenKind Token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenName(string memory name, uint namingTokenKind) internal pure returns (string memory) {
+        if (namingTokenKind == uint(IHost.NamingTokenKind.SEED_0)) {
             return string(abi.encodePacked(name, " SEED"));
-        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.TGE_1)) {
             return string(abi.encodePacked(name, " PRESALE"));
-        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.TOKEN_2)) {
             return name;
-        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.XTOKEN_3)) {
             return string(abi.encodePacked("x", name));
-        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.DAO_4)) {
             return string(abi.encodePacked(name, " DAO"));
         }
         return "";
@@ -201,17 +200,17 @@ library HostViewLib {
 
     /// @notice Generate token symbol in same way as getTokensNaming()
     /// @param symbol dao symbol
-    /// @param kind token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
-    function getTokenSymbol(string memory symbol, uint kind) internal pure returns (string memory) {
-        if (kind == uint(NamingTokenKind.SEED_0)) {
+    /// @param namingTokenKind Token kind, see NamingTokenKind: 0 - seed, 1 - tge, 2 - main token, 3 - x-token, 4 - dao token
+    function getTokenSymbol(string memory symbol, uint namingTokenKind) internal pure returns (string memory) {
+        if (namingTokenKind == uint(IHost.NamingTokenKind.SEED_0)) {
             return string(abi.encodePacked("seed", symbol));
-        } else if (kind == uint(NamingTokenKind.TGE_1)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.TGE_1)) {
             return string(abi.encodePacked("sale", symbol));
-        } else if (kind == uint(NamingTokenKind.TOKEN_2)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.TOKEN_2)) {
             return symbol;
-        } else if (kind == uint(NamingTokenKind.XTOKEN_3)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.XTOKEN_3)) {
             return string(abi.encodePacked("x", symbol));
-        } else if (kind == uint(NamingTokenKind.DAO_4)) {
+        } else if (namingTokenKind == uint(IHost.NamingTokenKind.DAO_4)) {
             return string(abi.encodePacked(symbol, "_DAO"));
         }
         return "";
@@ -328,5 +327,4 @@ library HostViewLib {
     }
 
     //endregion -------------------------------------- Internal utils
-
 }

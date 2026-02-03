@@ -15,7 +15,8 @@ library HostProxyLib {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     // keccak256(abi.encode(uint(keccak256("erc7201:stability.host-contracts.HostProxyLib")) - 1)) & ~bytes32(uint(0xff));
-    bytes32 public constant HOST_UPGRADE_STORAGE_LOCATION = 0xd39611a167548b62409d893b03e2cfda51ee7f22bb3b158652037b265ed0a600;
+    bytes32 public constant HOST_UPGRADE_STORAGE_LOCATION =
+        0xd39611a167548b62409d893b03e2cfda51ee7f22bb3b158652037b265ed0a600;
 
     //region -------------------------------------- Data types
     /// @dev Data announced for next host platform upgrade
@@ -82,6 +83,7 @@ library HostProxyLib {
         proxy = _deployAndInitProxy(salt, logic, payload, authority);
         emit IHost.ContractDeployed(proxy, kind, payload);
     }
+
     //endregion -------------------------------------- Deploy logic
 
     //region -------------------------------------- Upgrade logic
