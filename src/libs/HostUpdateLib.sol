@@ -5,7 +5,6 @@ import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {ITokenomicsAddons} from "../interfaces/ITokenomicsAddons.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
@@ -137,7 +136,7 @@ library HostUpdateLib {
 
         for (uint i; i < len; ++i) {
             require(
-                contractIndices[i] < uint16(ITokenomicsAddons.ContractIndices.COUNT_CONTRACT_INDICES),
+                contractIndices[i] < uint16(ITokenomics.ContractIndices.COUNT_CONTRACT_INDICES),
                 IHost.TooHighContractIndex(contractIndices[i])
             );
 

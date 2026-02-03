@@ -12,7 +12,6 @@ import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
-import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
@@ -452,7 +451,7 @@ contract HostBridgedActionsTest is Test {
         }
 
         uint16[] memory saltContractIndices = new uint16[](1);
-        saltContractIndices[0] = uint16(ITokenomicsAddons.ContractIndices.TOKEN_3);
+        saltContractIndices[0] = uint16(ITokenomics.ContractIndices.TOKEN_3);
 
         bytes32[] memory salts = new bytes32[](1);
         salts[0] = "0x70859983";
@@ -522,8 +521,8 @@ contract HostBridgedActionsTest is Test {
         dstEids[0] = avalanche.endpointId;
 
         contractIndices = new uint16[](2);
-        contractIndices[0] = uint16(ITokenomicsAddons.ContractIndices.TOKEN_3);
-        contractIndices[1] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
+        contractIndices[0] = uint16(ITokenomics.ContractIndices.TOKEN_3);
+        contractIndices[1] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
 
         salt = new bytes32[](2);
         salt[0] = "0x24310218";

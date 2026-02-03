@@ -12,7 +12,7 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {ITokenomicsAddons} from "../../src/interfaces/ITokenomicsAddons.sol";
+import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
@@ -53,35 +53,35 @@ contract HostProxyFactoryLibTest is Test {
 
         vm.expectRevert(); // AccessManagedUnauthorized
         vm.prank(address(1111));
-        host.setContractImplementation(uint(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
 
         assertEq(
-            host.contractImplementation(uint(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
+            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
             seedTokenImplementation,
             "Seed token implementation set"
         );
         assertEq(
-            host.contractImplementation(uint(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2)),
+            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
             tgeTokenImplementation,
             "Tge token implementation set"
         );
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), address(0));
+        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), address(0));
 
         assertEq(
-            host.contractImplementation(uint(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
+            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
             seedTokenImplementation,
             "Seed token implementation not changed"
         );
         assertEq(
-            host.contractImplementation(uint(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2)),
+            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
             address(0),
             "Tge token implementation is zero"
         );
@@ -92,7 +92,7 @@ contract HostProxyFactoryLibTest is Test {
         address seedTokenImplementation = address(new SeedToken());
 
         HostProxyFactoryLib.setContractImplementation(
-            uint(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1), seedTokenImplementation
+            uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation
         );
 
         // ------------------------ Deploy seed token
@@ -119,7 +119,7 @@ contract HostProxyFactoryLibTest is Test {
         address tgeTokenImplementation = address(new TgeToken());
 
         HostProxyFactoryLib.setContractImplementation(
-            uint(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation
+            uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation
         );
 
         // ------------------------ Deploy seed token

@@ -2,11 +2,10 @@
 pragma solidity ^0.8.28;
 
 import {IDAOMetadata} from "./IDAOMetadata.sol";
-import {ITokenomicsAddons} from "./ITokenomicsAddons.sol";
 import {ITokenomics} from "./ITokenomics.sol";
 
 /// @notice Various variants of DAO data
-interface IDAOData is ITokenomics, ITokenomicsAddons, IDAOMetadata {
+interface IDAOData is ITokenomics, IDAOMetadata {
     /// @notice DAO data available on-chain for users
     struct DaoData {
         // ---------------------------- SEGMENT 1: ON-CHAIN on all chains where Host deployed

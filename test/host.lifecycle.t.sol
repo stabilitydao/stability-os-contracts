@@ -11,7 +11,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
-import {ITokenomicsAddons} from "../src/interfaces/ITokenomicsAddons.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {MockOsBridge} from "./mocks/MockOsBridge.sol";
 import {Test} from "forge-std/Test.sol";
@@ -1024,7 +1023,7 @@ contract HostLifeCycleTest is Test {
             predictedSeedAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
             uint16[] memory indices = new uint16[](1);
-            indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1);
+            indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
 
             host_.updateDAO(
                 daoData.symbol,
@@ -1049,7 +1048,7 @@ contract HostLifeCycleTest is Test {
             assertEq(daoData.deployments.seedToken, predictedSeedAddress, "seed token address matches predicted");
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
+                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
@@ -1087,8 +1086,8 @@ contract HostLifeCycleTest is Test {
                 predictedTgeAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
                 uint16[] memory indices = new uint16[](2);
-                indices[0] = uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
-                indices[1] = uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2);
+                indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
+                indices[1] = uint16(ITokenomics.ContractIndices.TGE_TOKEN_2);
 
                 input = codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION());
             }
@@ -1104,12 +1103,12 @@ contract HostLifeCycleTest is Test {
             host_.receiveVotingResults(proposalId, true, payload);
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.SEED_TOKEN_1)),
+                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomicsAddons.ContractIndices.TGE_TOKEN_2)),
+                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2)),
                 "0x0202",
                 "TGE salt should be updated after proposal"
             );
