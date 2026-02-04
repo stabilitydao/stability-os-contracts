@@ -52,19 +52,20 @@ interface IHost {
     error IncorrectInputData();
     error InvalidMetadataForAction();
     error UnknownRestrictedAction();
+    error TooLowValue();
 
     error AlreadyAnnounced();
     error SameVersion();
     error NoNewVersion();
     error UpgradeTimerIsNotOver(uint TimerTimestamp);
+    error LogicNotFound(uint kind);
+
 
     event DaoCreated(string name, string symbol, uint daoUid);
-
     event OsSettingsUpdated(IHost.HostSettings st);
     event OsChainSettingsUpdated(IHost.HostChainSettings st);
     event DaoImagesUpdated(string symbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string symbol, string[] socials);
-
     event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
 
     /// @notice Units are updated via proposal or instantly
@@ -81,8 +82,6 @@ interface IHost {
     /// @notice Unit is deleted
     /// @param proposalUid Zero if updated instantly
     event DaoUnitDeleted(uint daoUid, string unitId, bytes32 proposalUid);
-
-    // todo replace symbol by uid in events
 
     event DaoFundingUpdated(uint daoUid, ITokenomics.Funding funding);
     event DaoVestingUpdated(uint daoUid, ITokenomics.Vesting[] vestings);
@@ -113,8 +112,6 @@ interface IHost {
         address indexed proxy, address implementation, string oldContractVersion, string newContractVersion
     );
 
-    error LogicNotFound(uint kind);
-
     event NewContractImplementation(uint kind, address seedToken);
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
@@ -136,7 +133,9 @@ interface IHost {
         uint maxPvPFee;
         uint minFundingDuration;
         uint maxFundingDuration;
-        uint minAbsorbOfferUsd;
+
+        /// @notice Minimum funding amount for the seed and rounds
+        uint minFunding;
 
         /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
         uint maxSeedStartDelay;

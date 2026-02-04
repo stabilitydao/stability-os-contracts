@@ -279,8 +279,8 @@ library HostUtilsLib {
                 maxPvPFee: 100,
                 minFundingDuration: 1,
                 maxFundingDuration: 180,
-                minAbsorbOfferUsd: 50000,
-                maxSeedStartDelay: 7 days
+                maxSeedStartDelay: 7 days,
+                minFunding: 0.1e18
             })
         );
     }

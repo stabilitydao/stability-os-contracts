@@ -15,9 +15,9 @@ library HostFundingLib {
     using SafeERC20 for IERC20;
 
     /// @notice Fund DAO in the current funding round
-    function fund(string calldata symbol, uint amount) external {
-        // todo not reentrancy
-        require(amount != 0, IHosted.ZeroAmount()); // todo settings.minFunding
+    function fund(string memory symbol, uint amount) external {
+
+        require(amount >= HostConfigLib.getHostGlobalSettings().minFunding, IHost.TooLowValue());
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
@@ -35,7 +35,6 @@ library HostFundingLib {
 
             seed.raised += amount;
 
-            // mint seedToken to user
             IMintedERC20(seedToken).mint(msg.sender, amount);
 
             emit IHost.DaoFunded(daoUid, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
@@ -50,7 +49,6 @@ library HostFundingLib {
 
             tge.raised += amount;
 
-            // record msg.sender as funder with amount
             IMintedERC20(tgeToken).mint(msg.sender, amount);
 
             emit IHost.DaoFunded(daoUid, msg.sender, amount, uint8(ITokenomics.FundingType.TGE_1));

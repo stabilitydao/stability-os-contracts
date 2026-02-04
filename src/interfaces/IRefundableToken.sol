@@ -6,7 +6,7 @@ import {IMintedERC20} from "./IMintedERC20.sol";
 
 interface IRefundableToken is IERC20, IMintedERC20 {
     /// @notice Burn tokens from specific address by Authority and refund underlying asset back to the user
-    /// @custom:restricted OS only
+    /// @custom:restricted Host only
     /// @param from Address to burn tokens from
     /// @param amount Amount of tokens to burn
     /// @param asset Address of the underlying asset to refund
