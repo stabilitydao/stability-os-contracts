@@ -40,7 +40,7 @@ contract HostProxyLibTest is Test {
         vm.prank(owner);
         IProxyFactory(proxyFactory).setWhitelisted(address(this), true);
 
-        _setupAccessManager();
+        _setupAuthority();
     }
 
     function testStorageLocation() public pure {
@@ -174,7 +174,7 @@ contract HostProxyLibTest is Test {
         assertEq(address(newHost), predictedProxyAddress, "Predicted address matches deployed");
     }
 
-    function _setupAccessManager() internal {
+    function _setupAuthority() internal {
         bytes4[] memory selectors = new bytes4[](1);
         selectors[0] = bytes4(IHost.deployProxy.selector);
 

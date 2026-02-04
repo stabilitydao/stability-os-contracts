@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {
     ERC20BurnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
@@ -40,31 +41,36 @@ contract TgeToken is ITgeToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeab
         $.daoUid = abi.decode(payload, (uint));
 
         __Hosted_init(authority_);
+
+        /// @dev values stored inside ERC20 are not used
         __ERC20_init("", "");
         __ERC20Burnable_init();
         __ERC20Permit_init("TgeToken"); // todo Token is NOT transferable => ERC20PermitUpgradeable is not needed???
     }
 
+    //region -------------------------------- View
+    /// @inheritdoc ERC20Upgradeable
+    function name() public view override(IERC20Metadata, ERC20Upgradeable) returns (string memory) {
+        return _dataReader().getTokenName(daoUid(), uint(IHost.NamingTokenKind.TGE_1));
+    }
+
+    /// @inheritdoc ERC20Upgradeable
+    function symbol() public view override(IERC20Metadata, ERC20Upgradeable) returns (string memory) {
+        return _dataReader().getTokenSymbol(daoUid(), uint(IHost.NamingTokenKind.TGE_1));
+    }
+
+    /// @inheritdoc ITgeToken
     function daoUid() public view returns (uint) {
         TgeTokenStorage storage $ = _tgeTokenStorage();
         return $.daoUid;
     }
 
+    //endregion -------------------------------- View
+
+    //region -------------------------------- Restricted actions
     /// @inheritdoc IMintedERC20
     function mint(address to, uint amount) public restricted {
         _mint(to, amount);
-    }
-
-    /// @inheritdoc ERC20Upgradeable
-    function name() public view override returns (string memory) {
-        return IDataReader(IHost(IAuthority(authority()).HOST()).dataReader())
-            .getTokenName(daoUid(), uint(IHost.NamingTokenKind.TGE_1));
-    }
-
-    /// @inheritdoc ERC20Upgradeable
-    function symbol() public view override returns (string memory) {
-        return IDataReader(IHost(IAuthority(authority()).HOST()).dataReader())
-            .getTokenSymbol(daoUid(), uint(IHost.NamingTokenKind.TGE_1));
     }
 
     /// @inheritdoc IRefundableToken
@@ -74,10 +80,18 @@ contract TgeToken is ITgeToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeab
         IERC20(asset).safeTransfer(receiver, amount);
     }
 
+    //endregion -------------------------------- Restricted actions
+
+    //region -------------------------------- Internal logic
+    function _dataReader() internal view returns (IDataReader) {
+        return IDataReader(IHost(IAuthority(authority()).HOST()).dataReader());
+    }
+
     function _tgeTokenStorage() private pure returns (TgeTokenStorage storage $) {
         //slither-disable-next-line assembly
         assembly {
             $.slot := TGE_TOKEN_STORAGE_LOCATION
         }
     }
+    //endregion -------------------------------- Internal logic
 }
