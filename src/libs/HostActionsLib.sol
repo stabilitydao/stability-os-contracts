@@ -91,7 +91,7 @@ library HostActionsLib {
         daoData2.symbol = symbol;
         daoData2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
 
-        HostUpdateLib.validate(daoData2, params, funding);
+        HostUpdateLib.validate(daoData2, params, funding, activity);
 
         // ------------------------- Save DAO data to the storage
         // we don't use viaIR=true in config so we cannot make direct assignment
@@ -324,7 +324,7 @@ library HostActionsLib {
         daoData2.phase = dao.phase;
         daoData2.unitIds = new string[](dao.units.length);
 
-        HostUpdateLib.validate(daoData2, dao.params, dao.funding);
+        HostUpdateLib.validate(daoData2, dao.params, dao.funding, dao.activity);
 
         // ------------------------- Prepare units data
         require(dao.units.length == dao.unitsMetaData.length, IHost.IncorrectArrayLengths());

@@ -255,8 +255,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoNames memory daoNames = HostEncodingLib.decodeDaoNames(payload);
 
-        ActionParams memory p =
-            _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, false, true);
+        ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, false, true);
 
         HostUpdateLib._validateNaming(daoNames.name, daoNames.symbol, HostConfigLib.getHostGlobalSettings());
         _proposeAction(d_.daoUid, payload, p);
@@ -364,14 +363,15 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);
         } else {
-            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
+            ActionParams memory p =
+                _getActionParams(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
             _proposeAction(d_.daoUid, payload, p);
         }
     }
 
     //endregion -------------------------------------- Internal logic for updating instantly or through proposals
 
-    //region -------------------------------------- Internal utils
+    //region -------------------------------------- Proposal utils
 
     /// @dev Trivial function to generate ActionParams struct.
     /// All logic of values detection should be implemented on the caller side.
@@ -393,27 +393,29 @@ library HostProposalLib {
     ) internal pure returns (ActionParams memory) {
         return ActionParams({
             action: action_,
-            validationRequired:
+            validationRequired: 
             /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
-            bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
-            /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
-            || bridgedActionKind_ != uint16(IHost.BridgedActions.BRIDGE_DAO_1),
+            bridgedActionKind_ == uint16(IHost.BridgedActions.SET_SALTS_5)
+                /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+                || bridgedActionKind_ == uint16(IHost.BridgedActions.BRIDGE_DAO_1),
             votingRequired: true
         });
     }
 
     /// @notice Create new proposal
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded proposal data.
+    /// @param payload Encoded proposal data. Assume below that the payload is already validated.
     /// @param params_ Parameters of the proposal action
     /// @return proposalId Id of the created proposal. It is unique across all DAOs
     function _proposeAction(uint daoUid, bytes memory payload, ActionParams memory params_) internal returns (bytes32) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        // todo check for initial chain
+        // @dev Proposal can be created on initial chain only
+        require($.segment3[daoUid].initialChain == block.chainid, IHost.NotInitialChain());
+
         // todo get user power
+        // seed power => dao token power
         // todo check proposalThreshold
-        // todo validate payload
 
         /// @dev Hash of the payload
         bytes32 payloadHash = getPayloadHash(payload);
@@ -424,12 +426,14 @@ library HostProposalLib {
         HostLib.ProposalData storage proposal = $.proposals[proposalId];
         proposal.daoUid = daoUid;
 
-        HostLib.ProposalHeader memory proposalHeader;
-        proposalHeader.action = params_.action;
-        proposalHeader.created = uint64(block.timestamp);
-        proposalHeader.status = ITokenomics.VotingStatus.VOTING_0;
-        proposalHeader.validationRequired = params_.validationRequired;
-        proposalHeader.votingRequired = params_.votingRequired;
+        HostLib.ProposalHeader memory proposalHeader = HostLib.ProposalHeader({
+            action: params_.action,
+            validationRequired: params_.validationRequired,
+            votingRequired: params_.votingRequired,
+            validationStatus: ITokenomics.ValidationStatus.NONE_0,
+            status: ITokenomics.VotingStatus.VOTING_0,
+            created: uint64(block.timestamp)
+        });
         proposal.proposalHeader = HostLib.packProposalHeader(proposalHeader);
 
         proposal.id = proposalId;
@@ -465,6 +469,5 @@ library HostProposalLib {
         return EfficientHashLib.hash(payload);
     }
 
-
-    //endregion -------------------------------------- Internal utils
+    //endregion -------------------------------------- Proposal utils
 }

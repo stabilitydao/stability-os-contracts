@@ -30,7 +30,7 @@ contract TgeTokenTest is Test {
         authority = _createAuthorityWithMocks(address(dataReader));
         host = authority.HOST();
     }
-    
+
     function testStorageLocation() internal pure {
         console.log("keccak256(abi.encode(uint(keccak256(erc7201:stability.host-contracts.TgeToken))))");
         console.logBytes32(
@@ -38,7 +38,7 @@ contract TgeTokenTest is Test {
                 & ~bytes32(uint(0xff))
         );
     }
-    
+
     function testDaoUid() public {
         ITgeToken tgeToken = _deployTgeToken(555);
         assertEq(tgeToken.daoUid(), 555, "daoUid");

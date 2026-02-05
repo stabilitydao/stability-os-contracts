@@ -18,7 +18,8 @@ library HostUpdateLib {
     function validate(
         HostLib.DaoDataSegment2 memory daoData2,
         ITokenomics.DaoParameters memory params,
-        ITokenomics.Funding[] memory funding
+        ITokenomics.Funding[] memory funding,
+        ITokenomics.Activity[] memory activity
     ) internal view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
@@ -34,8 +35,14 @@ library HostUpdateLib {
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
     function _validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
         _validateNaming(dao.name, dao.symbol, st);
+    }
 
-        // todo validate activity
+    function _validateActivity(ITokenomics.Activity[] memory activity, IHost.HostSettings storage st) internal pure {
+        st; // todo
+        uint len = activity.length;
+        for (uint i; i < len; ++i) {
+            // todo check activity consistency
+        }
     }
 
     function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
@@ -49,6 +56,8 @@ library HostUpdateLib {
         {
             uint len = bytes(symbol).length;
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
+
+            // todo only upper case
 
             require(HostLib.getDaoUid($, symbol) == 0, IHost.SymbolNotUnique(symbol));
         }

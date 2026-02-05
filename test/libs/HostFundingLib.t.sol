@@ -203,7 +203,9 @@ contract HostFundingLibTest is Test {
         HostFundingLib.refund("abc");
 
         assertEq(exchangeAsset.balanceOf(user), 0, "user hasn't received any asset");
-        assertEq(exchangeAsset.balanceOf(address(seedToken)), 900e18, "exchange asset balance of seed token is not changed");
+        assertEq(
+            exchangeAsset.balanceOf(address(seedToken)), 900e18, "exchange asset balance of seed token is not changed"
+        );
 
         ISeedToken(seedToken).mint(user, 100e18);
 
@@ -212,7 +214,11 @@ contract HostFundingLibTest is Test {
 
         assertEq(ISeedToken(seedToken).balanceOf(user), 0, "user seed token balance after refund");
         assertEq(exchangeAsset.balanceOf(user), 100e18, "user exchange asset balance after refund");
-        assertEq(exchangeAsset.balanceOf(address(seedToken)), 800e18, "seed token contract exchange asset balance after refund");
+        assertEq(
+            exchangeAsset.balanceOf(address(seedToken)),
+            800e18,
+            "seed token contract exchange asset balance after refund"
+        );
     }
 
     function testRefundTgeNormal() public {
@@ -228,7 +234,9 @@ contract HostFundingLibTest is Test {
         HostFundingLib.refund("abc");
 
         assertEq(exchangeAsset.balanceOf(user), 0, "user hasn't received any asset");
-        assertEq(exchangeAsset.balanceOf(address(tgeToken)), 900e18, "exchange asset balance of seed token is not changed");
+        assertEq(
+            exchangeAsset.balanceOf(address(tgeToken)), 900e18, "exchange asset balance of seed token is not changed"
+        );
 
         ITgeToken(tgeToken).mint(user, 100e18);
 
@@ -237,7 +245,9 @@ contract HostFundingLibTest is Test {
 
         assertEq(ITgeToken(tgeToken).balanceOf(user), 0, "user TGE token balance after refund");
         assertEq(exchangeAsset.balanceOf(user), 100e18, "user exchange asset balance after refund");
-        assertEq(exchangeAsset.balanceOf(address(tgeToken)), 800e18, "TGE token contract exchange asset balance after refund");
+        assertEq(
+            exchangeAsset.balanceOf(address(tgeToken)), 800e18, "TGE token contract exchange asset balance after refund"
+        );
     }
 
     function testRefundForTgeNormal() public {
@@ -267,7 +277,11 @@ contract HostFundingLibTest is Test {
         assertEq(exchangeAsset.balanceOf(users[1]), 800e18, "receiver2 exchange asset balance after refund");
         assertEq(exchangeAsset.balanceOf(users[2]), 0, "receiver3 exchange asset balance after refund");
 
-        assertEq(exchangeAsset.balanceOf(address(tgeToken)), 1000e18, "seed token contract exchange asset balance after refund");
+        assertEq(
+            exchangeAsset.balanceOf(address(tgeToken)),
+            1000e18,
+            "seed token contract exchange asset balance after refund"
+        );
     }
 
     function testRefundForSeedNormal() public {
@@ -297,11 +311,13 @@ contract HostFundingLibTest is Test {
         assertEq(exchangeAsset.balanceOf(users[1]), 800e18, "receiver2 exchange asset balance after refund");
         assertEq(exchangeAsset.balanceOf(users[2]), 0, "receiver3 exchange asset balance after refund");
 
-        assertEq(exchangeAsset.balanceOf(address(seedToken)), 1000e18, "seed token contract exchange asset balance after refund");
+        assertEq(
+            exchangeAsset.balanceOf(address(seedToken)),
+            1000e18,
+            "seed token contract exchange asset balance after refund"
+        );
     }
-    //endregion ------------------------------------------ Refund tests
 
-    //region ------------------------------------------ Internal logic
     function _testNotRefundPhase(ITokenomics.LifecyclePhase notRefundPhases) internal {
         uint snapshot = vm.snapshotState();
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
@@ -314,6 +330,10 @@ contract HostFundingLibTest is Test {
 
         vm.revertToState(snapshot);
     }
+
+    //endregion ------------------------------------------ Refund tests
+
+    //region ------------------------------------------ Internal logic
 
     function _deploySeedToken(uint daoUid) internal returns (ISeedToken _seedToken) {
         address logic = address(new SeedToken());
@@ -382,5 +402,5 @@ contract HostFundingLibTest is Test {
         authority_.grantRole(65871739, address(this), 0);
     }
 
-    //endregion ------------------------------------------ Internal logic}
+    //endregion ------------------------------------------ Internal logic
 }

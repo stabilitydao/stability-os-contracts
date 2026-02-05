@@ -69,7 +69,8 @@ library HostFundingLib {
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
-            ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            ITokenomics.Funding storage funding =
+                $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             _refundFunding(funding, daoUid, msg.sender, seedToken, asset);
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
             address tgeToken = $.deployments[daoUid].tgeToken;
@@ -92,7 +93,8 @@ library HostFundingLib {
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
             address seedToken = $.deployments[daoUid].seedToken;
-            ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            ITokenomics.Funding storage funding =
+                $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             for (uint i; i < users.length; i++) {
                 _refundFunding(funding, daoUid, users[i], seedToken, asset);
             }

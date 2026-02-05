@@ -53,13 +53,13 @@ interface IHost {
     error InvalidMetadataForAction();
     error UnknownRestrictedAction();
     error TooLowValue();
+    error NotInitialChain();
 
     error AlreadyAnnounced();
     error SameVersion();
     error NoNewVersion();
     error UpgradeTimerIsNotOver(uint TimerTimestamp);
     error LogicNotFound(uint kind);
-
 
     event DaoCreated(string name, string symbol, uint daoUid);
     event OsSettingsUpdated(IHost.HostSettings st);

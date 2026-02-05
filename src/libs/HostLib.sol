@@ -21,20 +21,6 @@ library HostLib {
     uint internal constant DAO_UID_STUB_SYMBOL_REGISTERED = 1;
 
     //region -------------------------------------- Data types
-    /// @notice Supply distribution and fundraising events.
-    struct TokenomicsLocal {
-        /// @notice Fundraising. Only funding types.
-        /// @dev Actual funding data are stored in the mapping (to be able to extend list of Funding fields)
-        ITokenomics.FundingType[] funding;
-
-        /// @notice id of the chain where initial deployment became
-        uint initialChain;
-
-        /// @notice Vesting allocations (optional — may be empty). Count of registered vesting items.
-        /// @dev Actual vesting data are stored in the mapping (to be able to extend list of Vesting fields)
-        uint countVesting;
-    }
-
     /// @notice ON-CHAIN on chains where DAO bridged (some additional structs are stored in separate mappings)
     struct DaoDataSegment2 {
         /// @notice Symbol is stored here to have a mapping: daoUid => symbol
