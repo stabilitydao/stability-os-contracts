@@ -90,7 +90,7 @@ interface IHost {
     event DaoChainSettingsUpdated(uint daoUid, ITokenomics.DaoChainSettings chainSettings);
     event DaoPhaseChanged(uint daoUid, ITokenomics.LifecyclePhase newPhase);
     event DaoFunded(uint daoUid, address funder, uint amount, uint8 fundingType);
-    event DaoRefunded(uint daoUid, address funder, address asset, uint amount, uint8 fundingType);
+    event DaoRefunded(uint daoUid, address funder, address asset, uint amount, address fundingToken);
     event OnRegisterDaoSymbol(string symbol, uint32 srcEid, bytes32 guid_);
     event OnRenameDaoSymbol(string oldSymbol, string newSymbol, uint32 srcEid, bytes32 guid_);
     event SaltUpdated(uint daoUid, uint16[] contractIndices, bytes32[] saltValues);
@@ -395,7 +395,10 @@ interface IHost {
 
     /// @notice Refund funding to the given SEED/TGE token holders if funding round failed
     /// @custom:restricted Restricted through access manager (only admin)
-    function refundFor(string calldata symbol, address[] memory receivers) external;
+    /// @param symbol DAO symbol
+    /// @param users List of users to refund. Each user receives exchange asset in exchange on funding tokens as 1:1.
+    /// Exact kind of funding token depends on the current phase of the DAO.
+    function refundFor(string calldata symbol, address[] memory users) external;
 
     /// @notice Handle incoming cross-chain message
     /// @custom:restricted Restricted through access manager (only OS bridge can call this function)

@@ -196,8 +196,16 @@ contract HostFundingLibTest is Test {
         $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
         $.deployments[1].seedToken = address(seedToken);
 
-        ISeedToken(seedToken).mint(user, 100e18);
         exchangeAsset.mint(address(seedToken), 900e18);
+
+        /// @dev User has no seed tokens
+        vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
+        HostFundingLib.refund("abc");
+
+        assertEq(exchangeAsset.balanceOf(user), 0, "user hasn't received any asset");
+        assertEq(exchangeAsset.balanceOf(address(seedToken)), 900e18, "exchange asset balance of seed token is not changed");
+
+        ISeedToken(seedToken).mint(user, 100e18);
 
         vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
         HostFundingLib.refund("abc");
@@ -213,8 +221,16 @@ contract HostFundingLibTest is Test {
         $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
         $.deployments[1].tgeToken = address(tgeToken);
 
-        ITgeToken(tgeToken).mint(user, 100e18);
         exchangeAsset.mint(address(tgeToken), 900e18);
+
+        /// @dev User has no tge tokens
+        vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
+        HostFundingLib.refund("abc");
+
+        assertEq(exchangeAsset.balanceOf(user), 0, "user hasn't received any asset");
+        assertEq(exchangeAsset.balanceOf(address(tgeToken)), 900e18, "exchange asset balance of seed token is not changed");
+
+        ITgeToken(tgeToken).mint(user, 100e18);
 
         vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
         HostFundingLib.refund("abc");
@@ -224,6 +240,65 @@ contract HostFundingLibTest is Test {
         assertEq(exchangeAsset.balanceOf(address(tgeToken)), 800e18, "TGE token contract exchange asset balance after refund");
     }
 
+    function testRefundForTgeNormal() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoUids["abc"] = 1;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+        $.deployments[1].tgeToken = address(tgeToken);
+
+        exchangeAsset.mint(address(tgeToken), 1900e18);
+
+        address[] memory users = new address[](3);
+        users[0] = makeAddr("user1");
+        users[1] = makeAddr("user2");
+        users[2] = makeAddr("user3");
+
+        ISeedToken(tgeToken).mint(users[0], 100e18);
+        ISeedToken(tgeToken).mint(users[1], 800e18);
+        ISeedToken(tgeToken).mint(users[2], 0); //user 3 has zero balance of seed tokens
+
+        HostFundingLib.refundFor("abc", users);
+
+        assertEq(ISeedToken(tgeToken).balanceOf(users[0]), 0, "user1 seed token balance after refund");
+        assertEq(ISeedToken(tgeToken).balanceOf(users[1]), 0, "user2 seed token balance after refund");
+        assertEq(ISeedToken(tgeToken).balanceOf(users[2]), 0, "user3 seed token balance after refund");
+
+        assertEq(exchangeAsset.balanceOf(users[0]), 100e18, "receiver1 exchange asset balance after refund");
+        assertEq(exchangeAsset.balanceOf(users[1]), 800e18, "receiver2 exchange asset balance after refund");
+        assertEq(exchangeAsset.balanceOf(users[2]), 0, "receiver3 exchange asset balance after refund");
+
+        assertEq(exchangeAsset.balanceOf(address(tgeToken)), 1000e18, "seed token contract exchange asset balance after refund");
+    }
+
+    function testRefundForSeedNormal() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoUids["abc"] = 1;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+        $.deployments[1].seedToken = address(seedToken);
+
+        exchangeAsset.mint(address(seedToken), 1900e18);
+
+        address[] memory users = new address[](3);
+        users[0] = makeAddr("user1");
+        users[1] = makeAddr("user2");
+        users[2] = makeAddr("user3");
+
+        ISeedToken(seedToken).mint(users[0], 100e18);
+        ISeedToken(seedToken).mint(users[1], 800e18);
+        ISeedToken(seedToken).mint(users[2], 0); //user 3 has zero balance of seed tokens
+
+        HostFundingLib.refundFor("abc", users);
+
+        assertEq(ISeedToken(seedToken).balanceOf(users[0]), 0, "user1 seed token balance after refund");
+        assertEq(ISeedToken(seedToken).balanceOf(users[1]), 0, "user2 seed token balance after refund");
+        assertEq(ISeedToken(seedToken).balanceOf(users[2]), 0, "user3 seed token balance after refund");
+
+        assertEq(exchangeAsset.balanceOf(users[0]), 100e18, "receiver1 exchange asset balance after refund");
+        assertEq(exchangeAsset.balanceOf(users[1]), 800e18, "receiver2 exchange asset balance after refund");
+        assertEq(exchangeAsset.balanceOf(users[2]), 0, "receiver3 exchange asset balance after refund");
+
+        assertEq(exchangeAsset.balanceOf(address(seedToken)), 1000e18, "seed token contract exchange asset balance after refund");
+    }
     //endregion ------------------------------------------ Refund tests
 
     //region ------------------------------------------ Internal logic

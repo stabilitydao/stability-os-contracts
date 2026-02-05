@@ -198,8 +198,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function refundFor(string calldata symbol, address[] memory receivers) external restricted {
-        HostFundingLib.refundFor(symbol, receivers);
+    function refundFor(string calldata symbol, address[] memory users) external restricted {
+        HostFundingLib.refundFor(symbol, users);
     }
 
     /// @inheritdoc IHost
