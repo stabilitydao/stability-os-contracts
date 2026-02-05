@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
-import {HostProposalsLib} from "./libs/HostProposalsLib.sol";
+import {HostProposalLib} from "./libs/HostProposalLib.sol";
 import {HostBridgeLib} from "./libs/HostBridgeLib.sol";
 import {HostProxyLib} from "./libs/HostProxyLib.sol";
 import {HostViewLib} from "./libs/HostViewLib.sol";
@@ -111,7 +111,7 @@ contract Host is IHost, Hosted {
         bool succeed,
         bytes memory payload
     ) external view returns (uint) {
-        return HostProposalsLib.quoteReceiveVotingResults(proposalId, succeed, payload);
+        return HostProposalLib.quoteReceiveVotingResults(proposalId, succeed, payload);
     }
 
     /// @inheritdoc IHost
@@ -209,12 +209,12 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external payable restricted {
-        HostProposalsLib.receiveVotingResults(proposalId, succeed, payload);
+        HostProposalLib.receiveVotingResults(proposalId, succeed, payload);
     }
 
     /// @inheritdoc IHost
     function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external restricted {
-        HostProposalsLib.validateProposal(proposalId, valid, payload);
+        HostProposalLib.validateProposal(proposalId, valid, payload);
     }
 
     /// @inheritdoc IHost
@@ -237,7 +237,7 @@ contract Host is IHost, Hosted {
 
     /// @inheritdoc IHost
     function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        HostProposalsLib.updateDAO(symbol, action, payload, metadata);
+        HostProposalLib.updateDAO(symbol, action, payload, metadata);
     }
 
     /// @inheritdoc IHost
@@ -248,7 +248,7 @@ contract Host is IHost, Hosted {
         bytes[] calldata actionPayloads
     ) external {
         // restrictions are checked below
-        HostProposalsLib.updateBridgedDao(symbol, actionKind, dstEids, actionPayloads);
+        HostProposalLib.updateBridgedDao(symbol, actionKind, dstEids, actionPayloads);
     }
 
     /// @inheritdoc IHost

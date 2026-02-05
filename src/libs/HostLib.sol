@@ -102,7 +102,7 @@ library HostLib {
     }
 
     /// @notice It refers to daoUid instead of symbol
-    struct ProposalLocal {
+    struct ProposalData {
         /// @notice ProposalHeader packed to single slot
         uint proposalHeader;
 
@@ -223,7 +223,7 @@ library HostLib {
 
         // -------------------------------------- Proposals
         /// @notice All registered proposals. Proposal id is unique across all DAOs
-        mapping(bytes32 proposalId => ProposalLocal) proposals;
+        mapping(bytes32 proposalId => ProposalData) proposals;
 
         /// @notice List of ids of all proposals for each DAO in order
         mapping(uint daoUid => bytes32[] proposalIds) daoProposals;

@@ -140,7 +140,7 @@ library HostViewLib {
 
     function proposal(bytes32 proposalId) public view returns (ITokenomics.Proposal memory) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.ProposalLocal memory local = $.proposals[proposalId];
+        HostLib.ProposalData memory local = $.proposals[proposalId];
         HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(local.proposalHeader);
         return ITokenomics.Proposal({
             action: header.action,

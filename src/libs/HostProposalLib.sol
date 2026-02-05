@@ -11,9 +11,9 @@ import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Library with proposal related functions
-library HostProposalsLib {
-    /// @dev Initial data that is detected before update for given DAO
-    struct InitData {
+library HostProposalLib {
+    /// @dev Initial data that is read before updating a DAO
+    struct LocalInitData {
         uint daoUid;
         /// @dev True if instant update is possible
         bool instant;
@@ -21,6 +21,7 @@ library HostProposalsLib {
         ITokenomics.LifecyclePhase phase;
     }
 
+    //region -------------------------------------- Main logic
     /// @notice Receive voting results from voting module and execute proposal if approved
     /// @param proposalId Proposal unique id
     /// @param succeed True if proposal is approved
@@ -28,10 +29,12 @@ library HostProposalsLib {
     /// Can be 0 if proposal was rejected.
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.ProposalLocal storage p = $.proposals[proposalId];
+        HostLib.ProposalData storage p = $.proposals[proposalId];
         HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
 
-        require(p.daoUid != 0, IHost.IncorrectProposal());
+        uint daoUid = p.daoUid;
+
+        require(daoUid != 0, IHost.IncorrectProposal());
         require(header.status == ITokenomics.VotingStatus.VOTING_0, IHost.AlreadyReceived());
 
         /// @dev Only proposals that require a voting can receive voting results
@@ -50,7 +53,7 @@ library HostProposalsLib {
             /// @dev Ensure that provided payload is equal to the original one
             require(p.payloadHash == HostUpdateLib.getPayloadHash(payload), IHost.IncorrectProposalPayload());
 
-            _doAction(p.daoUid, header.action, payload, p.id);
+            _doAction(daoUid, header.action, payload, p.id);
         }
     }
 
@@ -66,7 +69,7 @@ library HostProposalsLib {
         bytes memory payload
     ) external view returns (uint fee) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.ProposalLocal storage p = $.proposals[proposalId];
+        HostLib.ProposalData storage p = $.proposals[proposalId];
 
         if (succeed) {
             HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
@@ -76,7 +79,7 @@ library HostProposalsLib {
                     HostEncodingLib.decodeBridgedAction(payload);
                 fee = HostBridgeLib.quoteSendBridgedAction(p.daoUid, actionKind, dstEids, actionPayloads);
             } else {
-                // todo not-bridged actions with cross-chain messages
+                // todo not-bridged actions with cross-chain messages: updateNaming
             }
         }
 
@@ -90,7 +93,7 @@ library HostProposalsLib {
     /// Can be 0 if the proposal requires voting or is rejected.
     function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.ProposalLocal storage p = $.proposals[proposalId];
+        HostLib.ProposalData storage p = $.proposals[proposalId];
         HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
 
         require(p.daoUid != 0, IHost.IncorrectProposal());
@@ -101,10 +104,9 @@ library HostProposalsLib {
         /// @dev Any proposal can be validated only once. Re-validation is not allowed to simplify uses cases
         require(header.validationStatus == ITokenomics.ValidationStatus.NONE_0, IHost.AlreadyValidated());
 
-        /// @dev Rejected proposals are automatically get rejected-status, no voting is allowed
+        /// @dev Save validation status to prevent re-validation
         header.validationStatus =
             valid ? ITokenomics.ValidationStatus.APPROVED_1 : ITokenomics.ValidationStatus.REJECTED_2;
-
         p.proposalHeader = HostLib.packProposalHeader(header);
 
         if (valid) {
@@ -120,44 +122,6 @@ library HostProposalsLib {
         emit IHost.ProposalValidated(proposalId, valid);
     }
 
-    //region -------------------------------------- Update instantly or through proposals
-    function _doAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload, bytes32 proposalId) internal {
-        if (action == ITokenomics.DAOAction.UPDATE_IMAGES_0) {
-            HostUpdateLib.updateImages(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_SOCIALS_1) {
-            HostUpdateLib.updateSocials(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_NAMING_2) {
-            HostUpdateLib.updateNaming(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_UNITS_3) {
-            HostUpdateLib.updateUnitsForProposal(daoUid, payload, proposalId);
-        } else if (action == ITokenomics.DAOAction.UPDATE_FUNDING_4) {
-            HostUpdateLib.updateFunding(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_VESTING_5) {
-            HostUpdateLib.updateVesting(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6) {
-            HostUpdateLib.updateDaoParameters(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
-            HostUpdateLib.updateSalt(daoUid, payload);
-        } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9) {
-            HostBridgeLib.sendBridgedAction(daoUid, payload, proposalId);
-        } else {
-            // todo other actions
-            revert IHost.NotImplemented();
-        }
-    }
-
-    function _beforeUpdate(string memory symbol) internal view returns (InitData memory dest) {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        dest.daoUid = HostLib.getDaoUid($, symbol);
-        dest.phase = $.segment2[dest.daoUid].phase;
-        require(dest.daoUid != 0, IHost.IncorrectDao());
-        dest.instant = dest.phase == ITokenomics.LifecyclePhase.DRAFT_0;
-        if (dest.instant) {
-            require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(symbol));
-        }
-        return dest;
-    }
-
     /// @notice Update instantly / create proposal to update DAO values
     /// @param symbol DAO symbol
     /// @param action Action kind, see ITokenomics.DAOAction
@@ -165,7 +129,7 @@ library HostProposalsLib {
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
     function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        InitData memory init = _beforeUpdate(symbol);
+        LocalInitData memory init = _beforeUpdate(symbol);
 
         /// @dev Currently metadata is required by units-update only
         require(
@@ -196,8 +160,73 @@ library HostProposalsLib {
         }
     }
 
+    /// @notice Create proposal to update bridged DAO version of the DAO on other chain(s)
+    /// @param symbol DAO symbol
+    /// @param bridgedAction_ Kind of the action to be executed on other chain(s), see IHost.BridgedActions
+    /// @param dstEids Array of destination LayerZero-endpoints where the action will be executed
+    /// @param actionPayloads Array of payloads for the action to be executed on chains with provided endpoints
+    function updateBridgedDao(
+        string calldata symbol,
+        uint16 bridgedAction_,
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads
+    ) external {
+        LocalInitData memory _d = _beforeUpdate(symbol);
+
+        HostBridgeLib.verify(_d.daoUid, bridgedAction_, dstEids, actionPayloads);
+
+        bytes memory payload = HostEncodingLib.encodeBridgedAction(
+            bridgedAction_, dstEids, actionPayloads, HostEncodingLib.PAYLOAD_API_VERSION
+        );
+        HostUpdateLib.ActionParams memory p =
+                            HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9, bridgedAction_);
+        HostUpdateLib.proposeAction(_d.daoUid, payload, p);
+    }
+
+    //endregion -------------------------------------- Main logic
+
+    //region -------------------------------------- Internal logic for updating instantly or through proposals
+    /// @dev Execute action according validated and approved proposal to update DAO values
+    function _doAction(uint daoUid, ITokenomics.DAOAction action, bytes memory payload, bytes32 proposalId) internal {
+        if (action == ITokenomics.DAOAction.UPDATE_IMAGES_0) {
+            HostUpdateLib.updateImages(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_SOCIALS_1) {
+            HostUpdateLib.updateSocials(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_NAMING_2) {
+            HostUpdateLib.updateNaming(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_UNITS_3) {
+            HostUpdateLib.updateUnitsForProposal(daoUid, payload, proposalId);
+        } else if (action == ITokenomics.DAOAction.UPDATE_FUNDING_4) {
+            HostUpdateLib.updateFunding(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_VESTING_5) {
+            HostUpdateLib.updateVesting(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6) {
+            HostUpdateLib.updateDaoParameters(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_SALT_7) {
+            HostUpdateLib.updateSalt(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8) {
+            HostUpdateLib.updateDaoChainSettings(daoUid, payload);
+        } else if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9) {
+            HostBridgeLib.sendBridgedAction(daoUid, payload, proposalId);
+        } else {
+            revert IHost.NotImplemented();
+        }
+    }
+
+    function _beforeUpdate(string memory symbol) internal view returns (LocalInitData memory dest) {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        dest.daoUid = HostLib.getDaoUid($, symbol);
+        dest.phase = $.segment2[dest.daoUid].phase;
+        require(dest.daoUid != 0, IHost.IncorrectDao());
+        dest.instant = dest.phase == ITokenomics.LifecyclePhase.DRAFT_0;
+        if (dest.instant) {
+            require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(symbol));
+        }
+        return dest;
+    }
+
     /// @dev Update/create proposal to update implementations of the DAO contracts
-    function _updateImages(InitData memory d_, bytes memory payload) internal {
+    function _updateImages(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoImages memory images = HostEncodingLib.decodeDaoImages(payload);
 
@@ -211,7 +240,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update DAO naming (name and symbol)
-    function _updateNaming(InitData memory d_, bytes memory payload) internal {
+    function _updateNaming(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoNames memory daoNames = HostEncodingLib.decodeDaoNames(payload);
 
@@ -224,7 +253,7 @@ library HostProposalsLib {
 
     /// @notice Update/create proposal to update list of socials of the DAO
     /// Instant update forbidden. Validation of the provided links is required before updating socials.
-    function _updateSocials(InitData memory d_, bytes memory payload) internal {
+    function _updateSocials(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         HostEncodingLib.decodeSocials(payload);
 
@@ -234,7 +263,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update tokenomics units of the DAO
-    function _updateUnits(InitData memory d_, bytes memory payload, bytes memory metadata_) internal {
+    function _updateUnits(LocalInitData memory d_, bytes memory payload, bytes memory metadata_) internal {
         /// @dev Ensure that provided payload is in correct format
         IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
         IDAOData.UnitMetaData[] memory unitsMetadata = HostEncodingLib.decodeUnitsMetadata(metadata_);
@@ -257,7 +286,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update funding rounds of the DAO
-    function _updateFunding(InitData memory d_, bytes memory payload) internal {
+    function _updateFunding(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.Funding memory funding = HostEncodingLib.decodeFunding(payload);
 
@@ -273,7 +302,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update vesting schedules of the DAO
-    function _updateVesting(InitData memory d_, bytes memory payload) internal {
+    function _updateVesting(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
 
@@ -289,7 +318,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update global DAO parameters on current chain
-    function _updateDaoParameters(InitData memory d_, bytes memory payload) internal {
+    function _updateDaoParameters(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoParameters memory daoParameters_ = HostEncodingLib.decodeDaoParameters(payload);
 
@@ -305,7 +334,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update salts
-    function _updateSalts(InitData memory d_, bytes memory payload) internal {
+    function _updateSalts(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         (uint16[] memory contractIndices, bytes32[] memory salt_) = HostEncodingLib.decodeSalt(payload);
 
@@ -321,7 +350,7 @@ library HostProposalsLib {
     }
 
     /// @notice Update/create proposal to update chain-related DAO parameters on current chain
-    function _updateDaoChainSettings(InitData memory d_, bytes memory payload) internal {
+    function _updateDaoChainSettings(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoChainSettings memory settings = HostEncodingLib.decodeDaoChainSettings(payload);
 
@@ -336,24 +365,5 @@ library HostProposalsLib {
         }
     }
 
-    /// @notice Create proposal to update bridged DAO version of the DAO on other chain(s)
-    function updateBridgedDao(
-        string calldata symbol,
-        uint16 actionKind,
-        uint32[] calldata dstEids,
-        bytes[] calldata actionPayloads
-    ) external {
-        InitData memory _d = _beforeUpdate(symbol);
-
-        HostBridgeLib.verify(_d.daoUid, actionKind, dstEids, actionPayloads);
-
-        HostUpdateLib.ActionParams memory p =
-            HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9, actionKind);
-        bytes memory payload = HostEncodingLib.encodeBridgedAction(
-            actionKind, dstEids, actionPayloads, HostEncodingLib.PAYLOAD_API_VERSION
-        );
-        HostUpdateLib.proposeAction(_d.daoUid, payload, p);
-    }
-
-    //endregion -------------------------------------- Update instantly or through proposals
+    //endregion -------------------------------------- Internal logic for updating instantly or through proposals
 }

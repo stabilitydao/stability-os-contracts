@@ -199,7 +199,7 @@ library HostUpdateLib {
         /// @dev Unique proposal id
         bytes32 proposalId = _createProposalId(daoUid, params_.action, payloadHash);
 
-        HostLib.ProposalLocal storage proposal = $.proposals[proposalId];
+        HostLib.ProposalData storage proposal = $.proposals[proposalId];
         proposal.daoUid = daoUid;
 
         HostLib.ProposalHeader memory proposalHeader;
@@ -485,6 +485,11 @@ library HostUpdateLib {
         }
 
         emit IHost.SaltUpdated(daoUid, contractIndices, salt_);
+    }
+
+    function updateDaoChainSettings(uint daoUid, bytes memory payload) internal {
+        ITokenomics.DaoChainSettings memory settings_ = HostEncodingLib.decodeDaoChainSettings(payload);
+        updateDaoChainSettings(daoUid, settings_);
     }
 
     function updateDaoChainSettings(uint daoUid, ITokenomics.DaoChainSettings memory settings_) internal {

@@ -94,7 +94,7 @@ library HostBridgeLib {
     /// @notice Ensure that all payloads can be decoded correctly for the given action kind
     function verify(
         uint daoUid,
-        uint16 actionKind,
+        uint16 bridgedAction_,
         uint32[] memory dstEids,
         bytes[] memory listPayloads
     ) external view {
@@ -102,7 +102,7 @@ library HostBridgeLib {
 
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
-            if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
+            if (bridgedAction_ == uint16(IHost.BridgedActions.BRIDGE_DAO_1)) {
                 IBridgedActions.BridgeDaoParams memory p = HostEncodingLib.decodeBridgeDaoParams(listPayloads[i]);
                 /// @dev Assume here that it's useless to bridge DAO without any units
                 require(p.unitIds.length != 0, IHost.UnitsRequired());
@@ -119,19 +119,19 @@ library HostBridgeLib {
                         && keccak256(bytes(p.name)) == keccak256(bytes(segment2.name)),
                     IHost.IncorrectInputData()
                 );
-            } else if (actionKind == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.SET_BRIDGED_UNIT_2)) {
                 // todo
-            } else if (actionKind == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3)) {
                 // todo
-            } else if (actionKind == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.SET_DAO_PARAMS_4)) {
                 HostEncodingLib.decodeDaoParameters(listPayloads[i]);
-            } else if (actionKind == uint16(IHost.BridgedActions.SET_SALTS_5)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.SET_SALTS_5)) {
                 HostEncodingLib.decodeSalt(listPayloads[i]);
-            } else if (actionKind == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6)) {
                 HostEncodingLib.decodeDaoChainSettings(listPayloads[i]);
-            } else if (actionKind == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.BRIDGE_DAO_WITH_DEPLOYMENTS_7)) {
                 // todo
-            } else if (actionKind == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
+            } else if (bridgedAction_ == uint16(IHost.BridgedActions.DEPLOYMENTS_8)) {
                 // todo
             } else {
                 revert IHost.UnknownBridgedActionKind();

@@ -277,13 +277,13 @@ library HostEncodingLib {
     }
 
     function encodeBridgedAction(
-        uint16 actionKind,
+        uint16 bridgedAction_,
         uint32[] memory dstEids,
         bytes[] memory actionPayloads,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
-            return abi.encode(version, actionKind, dstEids, actionPayloads);
+            return abi.encode(version, bridgedAction_, dstEids, actionPayloads);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
