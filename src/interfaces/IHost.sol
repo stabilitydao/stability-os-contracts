@@ -55,6 +55,9 @@ interface IHost {
     error UnknownRestrictedAction();
     error TooLowValue();
     error NotInitialChain();
+    error InvalidActivityCombination();
+    error SingleBuilderActivityNotAllowed();
+    error InvalidFundingPeriod();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -135,7 +138,7 @@ interface IHost {
         uint minFundingDuration;
         uint maxFundingDuration;
 
-        /// @notice Minimum funding amount for the seed and rounds
+        /// @notice Minimum funding amount for the seed and rounds provided by user at fund()
         uint minFunding;
 
         /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.

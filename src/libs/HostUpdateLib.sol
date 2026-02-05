@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {LibString} from "@solady/utils/LibString.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -28,6 +29,7 @@ library HostUpdateLib {
         _validateDaoData(daoData2, st);
         _validateDaoParameters(params, st);
         _validateFundingList(funding, st);
+        _validateActivity(activity);
     }
 
     //endregion -------------------------------------- Actions
@@ -39,12 +41,21 @@ library HostUpdateLib {
         _validateNaming(dao.name, dao.symbol, st);
     }
 
-    function _validateActivity(ITokenomics.Activity[] memory activity, IHost.HostSettings storage st) internal pure {
-        st; // todo
+    /// @dev activity contains only valid enum values - decoder reverts automatically if it contains invalid value
+    function _validateActivity(ITokenomics.Activity[] memory activity) internal pure {
+        // todo code in TS
+        uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
+        bool[] memory foundActivity = new bool[](count);
+
         uint len = activity.length;
         for (uint i; i < len; ++i) {
-            // todo check activity consistency
+            /// @dev Check that activity are not repeat
+            require(!foundActivity[uint(activity[i])], IHost.InvalidActivityCombination());
+            foundActivity[uint(activity[i])] = true;
         }
+
+        require(len > 1 || !foundActivity[uint(ITokenomics.Activity.BUILDER_3)], IHost.SingleBuilderActivityNotAllowed());
+
     }
 
     function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {

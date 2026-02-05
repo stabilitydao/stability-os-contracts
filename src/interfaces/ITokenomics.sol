@@ -60,7 +60,10 @@ interface ITokenomics {
         MEV_SEARCHER_2,
 
         /// @notice BUILDER is a team of engineers managed by DAOs.
-        BUILDER_3
+        BUILDER_3,
+
+        /// @dev Total count of activities, must be the last enum value
+        COUNT_ACTIVITY
     }
 
     enum VotingStatus {

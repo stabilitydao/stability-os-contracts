@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {MockHost} from "../mocks/MockHost.sol";
@@ -13,6 +13,7 @@ import {HostUpdateLib} from "../../src/libs/HostUpdateLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
 
 contract HostUpdateLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -103,6 +104,212 @@ contract HostUpdateLibTest is Test {
         this.validateDaoDataPublic(dao);
     }
 
+    function testValidateActivityPositive() public {
+        uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
+        {   // all activity
+            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](count);
+            for (uint i = 0; i < count; i++) {
+                activity[i] = ITokenomics.Activity(i);
+            }
+            this.validateActivityPublic(activity);
+        }
+
+        {   // empty activity
+            ITokenomics.Activity[] memory activity;
+            this.validateActivityPublic(activity);
+        }
+
+        // single activity (not builder)
+        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
+            if (i != uint(ITokenomics.Activity.BUILDER_3)) {
+                ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+                activity[0] = ITokenomics.Activity(i);
+                this.validateActivityPublic(activity);
+            }
+        }
+        { // builder + one more activity
+          ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
+          activity[0] = ITokenomics.Activity.BUILDER_3;
+          activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+          this.validateActivityPublic(activity);
+        }
+    }
+
+    function testValidateActivityNegative() public {
+        {   // builder alone
+            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+            activity[0] = ITokenomics.Activity.BUILDER_3;
+            vm.expectRevert(abi.encodeWithSelector(IHost.SingleBuilderActivityNotAllowed.selector));
+            this.validateActivityPublic(activity);
+        }
+
+        // activity repeat
+        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
+            if (i != uint(ITokenomics.Activity.BUILDER_3)) {
+                ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
+                activity[0] = ITokenomics.Activity(i);
+                activity[1] = ITokenomics.Activity(i);
+                vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
+                this.validateActivityPublic(activity);
+            }
+        }
+
+        // no need to test incorrect enum values - solidity decoder doesn't allow that
+    }
+
+    function testValidateDaoParametersPositive() public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        st.minPvPFee = 100;
+        st.maxPvPFee = 1000;
+        st.minVePeriod = 14;
+        st.maxVePeriod = 365;
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 500;
+            params.vePeriod = 30;
+            this.validateDaoParametersPublic(params);
+        }
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 100;
+            params.vePeriod = 14;
+            this.validateDaoParametersPublic(params);
+        }
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 1000;
+            params.vePeriod = 365;
+            this.validateDaoParametersPublic(params);
+        }
+    }
+
+    function testValidateDaoParametersNegative() public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        st.minPvPFee = 100;
+        st.maxPvPFee = 1000;
+        st.minVePeriod = 14;
+        st.maxVePeriod = 365;
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 99;
+            params.vePeriod = 30;
+            vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(99)));
+            this.validateDaoParametersPublic(params);
+        }
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 1001;
+            params.vePeriod = 30;
+            vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(1001)));
+            this.validateDaoParametersPublic(params);
+        }
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 500;
+            params.vePeriod = 13;
+            vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(13)));
+            this.validateDaoParametersPublic(params);
+        }
+
+        {
+            ITokenomics.DaoParameters memory params;
+            params.pvpFee = 500;
+            params.vePeriod = 366;
+            vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(366)));
+            this.validateDaoParametersPublic(params);
+        }
+
+    }
+
+    function testValidateFundingListPositive() public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+            funding[0].start = uint64(block.timestamp + 1 days);
+            funding[0].end = uint64(block.timestamp + 10 days);
+            funding[0].minRaise = 1e18;
+            funding[0].maxRaise = 100e18;
+            funding[0].fundingType = ITokenomics.FundingType.TGE_1;
+
+            this.validateFundingListPublic(funding);
+        }
+
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+            funding[0].start = uint64(block.timestamp + 1 days);
+            funding[0].end = uint64(block.timestamp + 10 days);
+            funding[0].minRaise = 1e18;
+            funding[0].maxRaise = 100e18;
+            funding[0].fundingType = ITokenomics.FundingType.TGE_1;
+
+            funding[1].start = uint64(block.timestamp + 1 days);
+            funding[1].end = uint64(block.timestamp + 10 days);
+            funding[1].minRaise = 1e18;
+            funding[1].maxRaise = 100e18;
+            funding[1].fundingType = ITokenomics.FundingType.SEED_0;
+
+            this.validateFundingListPublic(funding);
+        }
+    }
+
+    function testValidateFundingListNegative() public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+            funding[0].start = uint64(block.timestamp + 1 days);
+            funding[0].end = 0; // (!)
+            funding[0].minRaise = 1e18;
+            funding[0].maxRaise = 100e18;
+            funding[0].fundingType = ITokenomics.FundingType.TGE_1;
+
+            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
+            this.validateFundingListPublic(funding);
+        }
+
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+            funding[0].start = uint64(block.timestamp + 1 days);
+            funding[0].end = uint64(block.timestamp + 1 days);
+            funding[0].minRaise = 1e18;
+            funding[0].maxRaise = 100e18;
+            funding[0].fundingType = ITokenomics.FundingType.TGE_1;
+
+            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
+            this.validateFundingListPublic(funding);
+        }
+
+        {
+            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+            funding[0].start = uint64(block.timestamp + 1 days);
+            funding[0].end = uint64(block.timestamp + 10 days);
+            funding[0].minRaise = 1e18;
+            funding[0].maxRaise = 100e18;
+            funding[0].fundingType = ITokenomics.FundingType.TGE_1;
+
+            funding[1].start = uint64(block.timestamp + 1 days);
+            funding[1].end = uint64(block.timestamp + 10 days);
+            funding[1].minRaise = 1e18;
+            funding[1].maxRaise = 100e18;
+            funding[1].fundingType = ITokenomics.FundingType.SEED_0;
+
+            this.validateFundingListPublic(funding);
+        }
+    }
+
     //endregion ------------------------------------------ Tests for validation
 
     //region ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
@@ -119,6 +326,10 @@ contract HostUpdateLibTest is Test {
     function validateDaoParametersPublic(ITokenomics.DaoParameters memory params) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         HostUpdateLib._validateDaoParameters(params, st);
+    }
+
+    function validateActivityPublic(ITokenomics.Activity[] memory activity_) public view {
+        HostUpdateLib._validateActivity(activity_);
     }
 
     function validateFundingListPublic(ITokenomics.Funding[] memory funding) public view {
