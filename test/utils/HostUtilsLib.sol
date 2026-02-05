@@ -394,7 +394,7 @@ library HostUtilsLib {
     function createTestDaoData() internal pure returns (IDAOData.DaoDataInput memory data) {
         // ---------------- base fields
         data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-        data.symbol = "testdao";
+        data.symbol = "TESTDAO";
         data.name = "Test DAO";
         data.deployer = address(0x123);
 

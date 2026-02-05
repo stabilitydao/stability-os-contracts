@@ -59,13 +59,13 @@ contract TgeTokenTest is Test {
     function testSymbol() public {
         uint daoUid = 45427366;
 
-        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.TGE_1), "symbol");
+        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.TGE_1), "SYMBOL");
 
         ITgeToken tgeToken = _deployTgeToken(daoUid);
-        assertEq(tgeToken.symbol(), "symbol", "symbol before change");
+        assertEq(tgeToken.symbol(), "SYMBOL", "symbol before change");
 
-        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.TGE_1), "symbol2");
-        assertEq(tgeToken.symbol(), "symbol2", "symbol after change");
+        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.TGE_1), "SYMBOL2");
+        assertEq(tgeToken.symbol(), "SYMBOL2", "symbol after change");
     }
 
     function testMint() public {

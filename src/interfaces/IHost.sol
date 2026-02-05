@@ -10,6 +10,7 @@ interface IHost {
     error NameLength(uint length);
     error SymbolLength(uint length);
     error SymbolNotUnique(string symbol);
+    error UpperCaseRequired(string symbol);
     error PvPFee(uint value);
     error TooLateToUpdateSuchFunding();
     error TooLateToUpdateVesting();

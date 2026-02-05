@@ -271,7 +271,9 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ Process proposal on Sonic
         bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
-        _processProposal(hostSonic, proposalId, proposalPayload);
+        ITokenomics.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
+        assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
+        assertTrue(proposal.votingRequired, "proposal should require voting");
 
         // ------------------------ Process bridged action on Avalanche
         vm.selectFork(avalanche.fork);
@@ -313,7 +315,9 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ Process proposal on Sonic
         bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
-        _processProposal(hostSonic, proposalId, proposalPayload);
+        ITokenomics.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
+        assertTrue(proposal.validationRequired, "validation is required");
+        assertTrue(proposal.votingRequired, "voting required");
 
         // ------------------------ Process bridged action on Avalanche
         _applyBridgeAction(dao, proposalId, proposalPayload, uint16(IHost.BridgedActions.BRIDGE_DAO_1));
@@ -367,24 +371,26 @@ contract HostBridgedActionsTest is Test {
         );
     }
 
-    function _processProposal(IHost host, bytes32 proposalId, bytes memory proposalPayload) internal {
-        ITokenomics.Proposal memory proposal = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
-        assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
-        assertTrue(proposal.votingRequired, "proposal should require voting");
+    function _processProposal(IHost host, bytes32 proposalId, bytes memory proposalPayload) internal returns (ITokenomics.Proposal memory proposal) {
+        proposal = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
 
-        vm.prank(sonic.multisig);
-        host.validateProposal(proposalId, true, proposalPayload);
+        if (proposal.validationRequired) {
+            vm.prank(sonic.multisig);
+            host.validateProposal(proposalId, true, proposalPayload);
+        }
 
-        uint fee = host.quoteReceiveVotingResults(proposalId, true, proposalPayload);
+        if (proposal.votingRequired) {
+            uint fee = host.quoteReceiveVotingResults(proposalId, true, proposalPayload);
 
-        deal(sonic.multisig, fee);
+            deal(sonic.multisig, fee);
 
-        vm.recordLogs();
+            vm.recordLogs();
 
-        vm.prank(sonic.multisig);
-        host.receiveVotingResults{value: fee}(proposalId, true, proposalPayload);
+            vm.prank(sonic.multisig);
+            host.receiveVotingResults{value: fee}(proposalId, true, proposalPayload);
 
-        _processCrossChainMessages(vm.getRecordedLogs(), sonic, avalanche);
+            _processCrossChainMessages(vm.getRecordedLogs(), sonic, avalanche);
+        }
     }
 
     function _applyBridgeAction(

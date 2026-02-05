@@ -59,13 +59,13 @@ contract SeedTokenTest is Test {
     function testSymbol() public {
         uint daoUid = 45427366;
 
-        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.SEED_0), "symbol");
+        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.SEED_0), "SYMBOL");
 
         ISeedToken seedToken = _deploySeedToken(daoUid);
-        assertEq(seedToken.symbol(), "symbol", "symbol before change");
+        assertEq(seedToken.symbol(), "SYMBOL", "symbol before change");
 
-        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.SEED_0), "symbol2");
-        assertEq(seedToken.symbol(), "symbol2", "symbol after change");
+        dataReader.setSymbol(daoUid, uint(IHost.NamingTokenKind.SEED_0), "SYMBOL2");
+        assertEq(seedToken.symbol(), "SYMBOL2", "symbol after change");
     }
 
     function testMint() public {

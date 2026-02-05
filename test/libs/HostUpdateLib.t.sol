@@ -40,7 +40,7 @@ contract HostUpdateLibTest is Test {
         st.minNameLength = 3;
         st.maxSymbolLength = 3;
         st.minSymbolLength = 2;
-        this.validateNamingPublic("abcd", "ab");
+        this.validateNamingPublic("abcd", "AB");
         this.validateNamingPublic("12345", "123");
 
         vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(6)));
@@ -56,10 +56,35 @@ contract HostUpdateLibTest is Test {
         this.validateNamingPublic("123", "1");
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        $.daoUids["abc"] = 1;
+        $.daoUids["ABC"] = 1;
 
-        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "abc"));
-        this.validateNamingPublic("abcd", "abc");
+        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "ABC"));
+        this.validateNamingPublic("abcd", "ABC");
+    }
+
+    function testValidateNamingUppercase() public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        st.maxNameLength = 50;
+        st.maxSymbolLength = 30;
+
+        this.validateNamingPublic("", "ABC");
+        this.validateNamingPublic("", "ABC123");
+        this.validateNamingPublic("", "123");
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.UpperCaseRequired.selector, "aBC"));
+        this.validateNamingPublic("", "aBC");
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.UpperCaseRequired.selector, "AbC"));
+        this.validateNamingPublic("", "AbC");
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.UpperCaseRequired.selector, "ABc"));
+        this.validateNamingPublic("", "ABc");
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.UpperCaseRequired.selector, "abc"));
+        this.validateNamingPublic("", "abc");
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.UpperCaseRequired.selector, "a1"));
+        this.validateNamingPublic("", "a1");
     }
 
     function testValidateDaoData() public {

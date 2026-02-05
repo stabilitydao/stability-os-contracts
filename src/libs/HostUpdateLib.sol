@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
+import {LibString} from "@solady/utils/LibString.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
@@ -57,7 +59,8 @@ library HostUpdateLib {
             uint len = bytes(symbol).length;
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
 
-            // todo only upper case
+            // @dev Symbol must be uppercase only
+            require(EfficientHashLib.hash(abi.encode(LibString.upper(symbol))) == EfficientHashLib.hash(abi.encode(symbol)), IHost.UpperCaseRequired(symbol));
 
             require(HostLib.getDaoUid($, symbol) == 0, IHost.SymbolNotUnique(symbol));
         }

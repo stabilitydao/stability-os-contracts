@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostBridgeLib} from "./HostBridgeLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
@@ -390,8 +391,8 @@ library HostProposalLib {
     function _getBridgedActionParams(
         ITokenomics.DAOAction action_,
         uint16 bridgedActionKind_
-    ) internal pure returns (ActionParams memory) {
-        return ActionParams({
+    ) internal pure returns (ActionParams memory dest) {
+        dest = ActionParams({
             action: action_,
             validationRequired: 
             /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
@@ -400,6 +401,7 @@ library HostProposalLib {
                 || bridgedActionKind_ == uint16(IHost.BridgedActions.BRIDGE_DAO_1),
             votingRequired: true
         });
+        console.log(dest.validationRequired, dest.votingRequired);
     }
 
     /// @notice Create new proposal

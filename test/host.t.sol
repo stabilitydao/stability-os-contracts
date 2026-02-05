@@ -149,7 +149,7 @@ contract HostTest is Test {
         }
 
         // -------------------- not unique symbol
-        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "testdao"));
+        vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "TESTDAO"));
         vm.prank(MULTISIG);
         host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
 
@@ -194,11 +194,11 @@ contract HostTest is Test {
         assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
 
         // ----------------------------- create second-dao
-        host.createDAO("name2", "symbol2", activity, params, funding);
+        host.createDAO("name2", "SYMBOL2", activity, params, funding);
         assertEq(
             host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao"
         );
-        assertEq(host.unitBalance("symbol2", HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
+        assertEq(host.unitBalance("SYMBOL2", HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
         assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount, "user has paid for creation of the second dao");
         assertEq(
             IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host"
@@ -220,7 +220,7 @@ contract HostTest is Test {
             units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
 
             host.updateDAO(
-                "symbol2",
+                "SYMBOL2",
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
                 codec.encode(units, codec.PAYLOAD_API_VERSION()),
                 codec.encode(metas, codec.PAYLOAD_API_VERSION())
@@ -228,9 +228,9 @@ contract HostTest is Test {
 
             deal(exchangeAsset, address(this), 1e18);
             IERC20(exchangeAsset).approve(address(host), 1e18);
-            host.processUnitRevenue("symbol2", "unitA", 1e18);
+            host.processUnitRevenue("SYMBOL2", "unitA", 1e18);
 
-            assertEq(host.unitBalance("symbol2", "unitA"), 1e18, "second dao received the payment");
+            assertEq(host.unitBalance("SYMBOL2", "unitA"), 1e18, "second dao received the payment");
         }
 
         // ----------------------------- pay to second dao to NOT-registered unit
@@ -239,7 +239,7 @@ contract HostTest is Test {
             IERC20(exchangeAsset).approve(address(host), 1e18);
 
             vm.expectRevert(IHost.UnitNotFound.selector);
-            host.processUnitRevenue("symbol2", "unitB", 1e18);
+            host.processUnitRevenue("SYMBOL2", "unitB", 1e18);
         }
     }
 
@@ -282,7 +282,7 @@ contract HostTest is Test {
         assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao");
 
         // ----------------------------- create second-dao
-        host.createDAO("name2", "symbol2", activity, params, funding);
+        host.createDAO("name2", "SYMBOL2", activity, params, funding);
         assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao");
 
         // ----------------------------- Bad paths: Set priceDao to NOT zero
@@ -295,7 +295,7 @@ contract HostTest is Test {
         }
 
         vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
-        host.createDAO("name3", "symbol3", activity, params, funding);
+        host.createDAO("name3", "SYMBOL3", activity, params, funding);
     }
 
     function testTasks() public {
