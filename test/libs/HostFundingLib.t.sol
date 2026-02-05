@@ -18,7 +18,7 @@ import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MockHost} from "../mocks/MockHost.sol";
 import {Authority} from "../../src/Authority.sol";
 import {ProxyFactory} from "../../src/ProxyFactory.sol";
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 
 contract HostFundingLibTest is Test {
     MockERC20 internal exchangeAsset;

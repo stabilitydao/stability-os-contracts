@@ -6,7 +6,6 @@ import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {HostLib} from "./HostLib.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
-import {IHosted} from "../interfaces/IHosted.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 

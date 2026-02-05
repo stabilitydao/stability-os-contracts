@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {console} from "forge-std/console.sol";
 import {Authority} from "../../src/Authority.sol";
 import {MockDataReader} from "../mocks/MockDataReader.sol";
@@ -13,10 +14,11 @@ import {ITgeToken} from "../../src/interfaces/ITgeToken.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
-import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 
 contract TgeTokenTest is Test {
+    using SafeERC20 for IERC20;
+
     address public multisig;
     IAuthority public authority;
     address public host;
@@ -106,7 +108,7 @@ contract TgeTokenTest is Test {
 
         tgeToken.mint(address(this), 1e18);
 
-        tgeToken.transfer(receiver, 1e18);
+        IERC20(address(tgeToken)).safeTransfer(receiver, 1e18);
 
         assertEq(tgeToken.balanceOf(receiver), 1e18, "receiver balance");
         assertEq(tgeToken.balanceOf(address(this)), 0, "sender balance");

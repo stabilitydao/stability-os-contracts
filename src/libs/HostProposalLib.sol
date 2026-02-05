@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostBridgeLib} from "./HostBridgeLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
@@ -12,6 +13,7 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Library with proposal related functions
 library HostProposalLib {
+    //region -------------------------------------- Data types
     /// @dev Initial data that is read before updating a DAO
     struct LocalInitData {
         uint daoUid;
@@ -20,6 +22,17 @@ library HostProposalLib {
         /// @dev Current phase of the DAO
         ITokenomics.LifecyclePhase phase;
     }
+
+    struct ActionParams {
+        /// @param action Action type of the proposal
+        ITokenomics.DAOAction action;
+        /// @param validationRequired True if proposal requires validation by admins before voting
+        bool validationRequired;
+        /// @param votingRequired True if proposal requires voting by DAO members
+        bool votingRequired;
+    }
+
+    //endregion -------------------------------------- Data types
 
     //region -------------------------------------- Main logic
     /// @notice Receive voting results from voting module and execute proposal if approved
@@ -51,7 +64,7 @@ library HostProposalLib {
 
         if (succeed) {
             /// @dev Ensure that provided payload is equal to the original one
-            require(p.payloadHash == HostUpdateLib.getPayloadHash(payload), IHost.IncorrectProposalPayload());
+            require(p.payloadHash == getPayloadHash(payload), IHost.IncorrectProposalPayload());
 
             _doAction(daoUid, header.action, payload, p.id);
         }
@@ -111,7 +124,7 @@ library HostProposalLib {
 
         if (valid) {
             /// @dev Ensure that provided payload is equal to the original one
-            require(p.payloadHash == HostUpdateLib.getPayloadHash(payload), IHost.IncorrectProposalPayload());
+            require(p.payloadHash == getPayloadHash(payload), IHost.IncorrectProposalPayload());
         }
 
         if (valid && !header.votingRequired) {
@@ -178,9 +191,8 @@ library HostProposalLib {
         bytes memory payload = HostEncodingLib.encodeBridgedAction(
             bridgedAction_, dstEids, actionPayloads, HostEncodingLib.PAYLOAD_API_VERSION
         );
-        HostUpdateLib.ActionParams memory p =
-                            HostUpdateLib.getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9, bridgedAction_);
-        HostUpdateLib.proposeAction(_d.daoUid, payload, p);
+        ActionParams memory p = _getBridgedActionParams(ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9, bridgedAction_);
+        _proposeAction(_d.daoUid, payload, p);
     }
 
     //endregion -------------------------------------- Main logic
@@ -233,9 +245,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateImages(d_.daoUid, images);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_IMAGES_0, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_IMAGES_0, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
@@ -244,11 +255,11 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoNames memory daoNames = HostEncodingLib.decodeDaoNames(payload);
 
-        HostUpdateLib.ActionParams memory p =
-            HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, false, true);
+        ActionParams memory p =
+            _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, false, true);
 
         HostUpdateLib._validateNaming(daoNames.name, daoNames.symbol, HostConfigLib.getHostGlobalSettings());
-        HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+        _proposeAction(d_.daoUid, payload, p);
     }
 
     /// @notice Update/create proposal to update list of socials of the DAO
@@ -257,9 +268,8 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         HostEncodingLib.decodeSocials(payload);
 
-        HostUpdateLib.ActionParams memory p =
-            HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_SOCIALS_1, d_.instant, true);
-        HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+        ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_SOCIALS_1, d_.instant, true);
+        _proposeAction(d_.daoUid, payload, p);
     }
 
     /// @notice Update/create proposal to update tokenomics units of the DAO
@@ -277,9 +287,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateUnits(d_.daoUid, units, 0, unitsMetadata); // 0 - instant update
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_UNITS_3, d_.instant, false);
-            proposalId = HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_UNITS_3, d_.instant, false);
+            proposalId = _proposeAction(d_.daoUid, payload, p);
 
             emit IHost.ProposalToUpdateDaoUnits(proposalId, d_.daoUid, units, unitsMetadata);
         }
@@ -295,9 +304,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateFunding(d_.daoUid, funding);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_FUNDING_4, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_FUNDING_4, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
@@ -311,9 +319,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateVesting(d_.daoUid, vesting);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_VESTING_5, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_VESTING_5, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
@@ -327,9 +334,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateDaoParameters(d_.daoUid, daoParameters_);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
@@ -343,9 +349,8 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateSalt(d_.daoUid, contractIndices, salt_);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_SALT_7, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_SALT_7, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
@@ -359,11 +364,107 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);
         } else {
-            HostUpdateLib.ActionParams memory p =
-                HostUpdateLib.getActionParams(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
-            HostUpdateLib.proposeAction(d_.daoUid, payload, p);
+            ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
         }
     }
 
     //endregion -------------------------------------- Internal logic for updating instantly or through proposals
+
+    //region -------------------------------------- Internal utils
+
+    /// @dev Trivial function to generate ActionParams struct.
+    /// All logic of values detection should be implemented on the caller side.
+    function _getActionParams(
+        ITokenomics.DAOAction action_,
+        bool instantExecution,
+        bool validationRequired
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_, validationRequired: validationRequired, votingRequired: !instantExecution
+        });
+    }
+
+    /// @dev Generate ActionParams for bridged actions.
+    /// Logic of values detection is here.
+    function _getBridgedActionParams(
+        ITokenomics.DAOAction action_,
+        uint16 bridgedActionKind_
+    ) internal pure returns (ActionParams memory) {
+        return ActionParams({
+            action: action_,
+            validationRequired:
+            /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+            bridgedActionKind_ != uint16(IHost.BridgedActions.SET_SALTS_5)
+            /// @dev Admin should ensure that provided salts are not used in any other proposals on target chain
+            || bridgedActionKind_ != uint16(IHost.BridgedActions.BRIDGE_DAO_1),
+            votingRequired: true
+        });
+    }
+
+    /// @notice Create new proposal
+    /// @param daoUid Unique id of the DAO
+    /// @param payload Encoded proposal data.
+    /// @param params_ Parameters of the proposal action
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
+    function _proposeAction(uint daoUid, bytes memory payload, ActionParams memory params_) internal returns (bytes32) {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        // todo check for initial chain
+        // todo get user power
+        // todo check proposalThreshold
+        // todo validate payload
+
+        /// @dev Hash of the payload
+        bytes32 payloadHash = getPayloadHash(payload);
+
+        /// @dev Unique proposal id
+        bytes32 proposalId = _createProposalId(daoUid, params_.action, payloadHash);
+
+        HostLib.ProposalData storage proposal = $.proposals[proposalId];
+        proposal.daoUid = daoUid;
+
+        HostLib.ProposalHeader memory proposalHeader;
+        proposalHeader.action = params_.action;
+        proposalHeader.created = uint64(block.timestamp);
+        proposalHeader.status = ITokenomics.VotingStatus.VOTING_0;
+        proposalHeader.validationRequired = params_.validationRequired;
+        proposalHeader.votingRequired = params_.votingRequired;
+        proposal.proposalHeader = HostLib.packProposalHeader(proposalHeader);
+
+        proposal.id = proposalId;
+        proposal.payloadHash = EfficientHashLib.hash(payload);
+
+        $.daoProposals[daoUid].push(proposalId);
+
+        /// @dev Emit payload, don't store it on chain
+        emit IHost.Proposal(daoUid, params_.action, proposalId, payloadHash, payload);
+
+        return proposalId;
+    }
+
+    /// @notice Create unique proposal id
+    /// @param daoUid Unique id of the DAO
+    /// @param action Action type of the proposal
+    /// @param payloadHash Hash of the proposal payload
+    /// @return proposalId Id of the created proposal. It is unique across all DAOs
+    function _createProposalId(
+        uint daoUid,
+        ITokenomics.DAOAction action,
+        bytes32 payloadHash
+    ) internal view returns (bytes32) {
+        return EfficientHashLib.hash(
+            abi.encode(daoUid, HostLib.getHostStorage().daoProposals[daoUid].length, action, payloadHash)
+        );
+    }
+
+    /// @notice Calculate hash of the proposal payload
+    /// @param payload Encoded proposal data
+    /// @return Hash of the payload
+    function getPayloadHash(bytes memory payload) internal pure returns (bytes32) {
+        return EfficientHashLib.hash(payload);
+    }
+
+
+    //endregion -------------------------------------- Internal utils
 }

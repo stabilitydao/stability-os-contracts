@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {console} from "forge-std/console.sol";
 import {Authority} from "../../src/Authority.sol";
 import {MockDataReader} from "../mocks/MockDataReader.sol";
@@ -13,10 +14,11 @@ import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
-import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 
 contract SeedTokenTest is Test {
+    using SafeERC20 for IERC20;
+
     address public multisig;
     IAuthority public authority;
     address public host;
