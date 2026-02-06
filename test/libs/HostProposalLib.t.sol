@@ -167,7 +167,7 @@ contract HostProposalLibTest is Test {
     //endregion ------------------------------------------ Public functions to be able to test expectRevert on library calls
 
     //region ------------------------------------------ Internal logic
-    function _getSampleProposalPayload() internal view returns (bytes memory) {
+    function _getSampleProposalPayload() internal pure returns (bytes memory) {
         ITokenomics.DaoImages memory data =
             ITokenomics.DaoImages({seedToken: "1", tgeToken: "22", token: "333", xToken: "4444", daoToken: "55555"});
 

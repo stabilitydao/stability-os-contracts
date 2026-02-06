@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {Test} from "forge-std/Test.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostFundingLib} from "../../src/libs/HostFundingLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
-import {Test} from "forge-std/Test.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {ITgeToken} from "../../src/interfaces/ITgeToken.sol";
@@ -151,7 +151,7 @@ contract HostFundingLibTest is Test {
     }
 
     function testFundTooLowFundAmount() public {
-        HostConfigLib.getHostGlobalSettings().minFunding = 1e18;
+        HostConfigLib.getHostGlobalSettings().minFundingRaise = 1e18;
 
         exchangeAsset.mint(user, 1e18);
 
@@ -159,8 +159,8 @@ contract HostFundingLibTest is Test {
         exchangeAsset.approve(address(this), 0.01e18);
 
         vm.prank(user);
-        vm.expectRevert(IHost.TooLowValue.selector);
-        HostFundingLib.fund("abc", 0.01e18);
+        vm.expectRevert(IHosted.ZeroAmount.selector);
+        HostFundingLib.fund("abc", 0);
     }
 
     function testFundNotFundingPhase() public {

@@ -10,6 +10,7 @@ import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
+import {IHosted} from "../interfaces/IHosted.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
@@ -58,6 +59,7 @@ library HostUpdateLib {
 
     }
 
+    /// @dev Check length of name and symbol, uppercase requirement for symbol and uniqueness of symbol
     function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
@@ -86,22 +88,42 @@ library HostUpdateLib {
         require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
     }
 
-    /// @notice Ensure that funding is not empty
-    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal pure {
+    /// @notice Check funding list before creation
+    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal view {
         require(funding.length != 0, IHost.NeedFunding());
 
-        st; // todo
+        bool[] memory foundFunding = new bool[](uint(ITokenomics.FundingType.COUNT_FUNDING_TYPES));
+        uint len = funding.length;
+        for (uint i; i < len; ++i) {
+            require(!foundFunding[uint(funding[i].fundingType)], IHost.InvalidFundingArray());
+            foundFunding[uint(funding[i].fundingType)] = true;
 
-        // todo: check funding array has unique funding types
-        // todo: check funding dates
-        // todo: check funding raise goals
+            _validateFunding(funding[i], st);
+        }
     }
 
+    /// @dev Check funding params according to Host settings
+    function _validateFunding(
+        ITokenomics.Funding memory funding,
+        IHost.HostSettings storage st
+    ) internal view {
+        uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
+        require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
+
+        if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
+            // todo check start date delay
+
+        }
+
+        require(funding.maxRaise > funding.minRaise && funding.minRaise > st.minFundingRaise, IHost.InvalidFundingRaise());
+    }
+
+    /// @dev Check funding before updating. Funding can be updated on proper phase only.
     function _validateFunding(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Funding memory funding,
         IHost.HostSettings storage st
-    ) internal pure {
+    ) internal view {
         if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
             require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IHost.TooLateToUpdateSuchFunding());
         }
@@ -114,19 +136,14 @@ library HostUpdateLib {
             );
         }
 
-        st; // todo
-        // todo check min round duration
-        // todo check max round duration
-        // todo check start date delay
-        // todo check min amount
-        // todo check max amount
+        _validateFunding(funding, st);
     }
 
     function _validateVestingList(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Vesting[] memory vesting,
         IHost.HostSettings storage st
-    ) internal pure {
+    ) internal view {
         require(
             phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
                 && phase != ITokenomics.LifecyclePhase.LIVE_7,
@@ -135,8 +152,15 @@ library HostUpdateLib {
 
         uint len = vesting.length;
         for (uint i; i < len; ++i) {
-            // todo check vesting consistency
-            st;
+            // check vesting consistency
+            require(vesting[i].allocation != 0, IHosted.ZeroAmount());
+
+            uint lenName = bytes(vesting[i].name).length;
+            require(lenName >= st.minNameLength && lenName <= st.maxNameLength, IHost.NameLength(lenName));
+
+            // uint vePeriod = vesting[i].end > vesting[i].start ? vesting[i].end - vesting[i].start : 0;
+
+            // todo require(vePeriod >= st.minVePeriod && vePeriod <= st.maxVePeriod, IHost.IncorrectVestingPeriod()); // todo IHost.VePeriod(vePeriod));
         }
     }
 

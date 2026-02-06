@@ -25,7 +25,9 @@ interface ITokenomics {
         LIVE_VESTING_6,
 
         /// @notice Vesting completed — tokens fully distributed.
-        LIVE_7
+        LIVE_7,
+
+        COUNT_LIFECYCLE_PHASES
     }
 
     enum DAOAction {
@@ -45,7 +47,9 @@ interface ITokenomics {
     /// @notice Funding types.
     enum FundingType {
         SEED_0,
-        TGE_1
+        TGE_1,
+
+        COUNT_FUNDING_TYPES
     }
 
     /// @notice Organization activities supported by OS.

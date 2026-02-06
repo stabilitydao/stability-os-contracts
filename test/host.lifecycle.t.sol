@@ -13,7 +13,7 @@ import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
-import {MockOsBridge} from "./mocks/MockOsBridge.sol";
+import {MockHostBridge} from "./mocks/MockHostBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 
@@ -76,7 +76,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
-            MockOsBridge bridge = MockOsBridge(host_.getChainSettings().hostBridge);
+            MockHostBridge bridge = MockHostBridge(host_.getChainSettings().hostBridge);
             bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory symbol) = abi.decode(message, (uint16, string));
             assertEq(symbol, daoData.symbol, "bridge received new DAO symbol message");
@@ -556,7 +556,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
-            MockOsBridge bridge = MockOsBridge(host_.getChainSettings().hostBridge);
+            MockHostBridge bridge = MockHostBridge(host_.getChainSettings().hostBridge);
             bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory symbol) = abi.decode(message, (uint16, string));
             assertEq(symbol, daoData.symbol, "bridge received new DAO symbol message");
@@ -700,7 +700,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
-            MockOsBridge bridge = MockOsBridge(host_.getChainSettings().hostBridge);
+            MockHostBridge bridge = MockHostBridge(host_.getChainSettings().hostBridge);
             bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory symbol) = abi.decode(message, (uint16, string));
             assertEq(symbol, daoData.symbol, "bridge received new DAO symbol message");
@@ -708,7 +708,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ other OS instances must see a symbol of new DAO
         {
-            MockOsBridge bridge = MockOsBridge(host_.getChainSettings().hostBridge);
+            MockHostBridge bridge = MockHostBridge(host_.getChainSettings().hostBridge);
             bytes memory message = bridge.receivedMessages(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0));
             (, string memory symbol) = abi.decode(message, (uint16, string));
             assertEq(symbol, daoData.symbol, "bridge received new DAO symbol message");

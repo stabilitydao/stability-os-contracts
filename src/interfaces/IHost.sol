@@ -53,11 +53,13 @@ interface IHost {
     error IncorrectInputData();
     error InvalidMetadataForAction();
     error UnknownRestrictedAction();
-    error TooLowValue();
     error NotInitialChain();
     error InvalidActivityCombination();
     error SingleBuilderActivityNotAllowed();
     error InvalidFundingPeriod();
+    error InvalidFundingRaise();
+    error InvalidFundingArray();
+    error IncorrectVestingPeriod();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -138,8 +140,8 @@ interface IHost {
         uint minFundingDuration;
         uint maxFundingDuration;
 
-        /// @notice Minimum funding amount for the seed and rounds provided by user at fund()
-        uint minFunding;
+        /// @notice Minimum allowed funding amount to raise
+        uint minFundingRaise;
 
         /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
         uint maxSeedStartDelay;
@@ -299,7 +301,7 @@ interface IHost {
 
     /// @notice Get salt to create contract with given index
     /// @param symbol DAO symbol
-    /// @param contractIndex Contract index, for exact values see ITokenomicsAddons.ContractIndices
+    /// @param contractIndex Contract index, for exact values see ITokenomics.ContractIndices
     /// @return Salt value used in CREATE2
     function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32);
 

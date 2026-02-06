@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 // import {IOSBridge} from "../interfaces/IOSBridge.sol";
 
-contract MockOsBridge {
+contract MockHostBridge {
     mapping(uint => bytes) public receivedMessages;
 
     function quoteSendMessageToAllChains(uint messageKind, bytes memory message_) external pure returns (uint) {

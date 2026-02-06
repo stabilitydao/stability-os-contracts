@@ -2,12 +2,13 @@
 pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostLib} from "./HostLib.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {IHosted} from "../interfaces/IHosted.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
-import {HostConfigLib} from "./HostConfigLib.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Funding and re-funding
 library HostFundingLib {
@@ -17,8 +18,7 @@ library HostFundingLib {
     function fund(string memory symbol, uint amount) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        /// @dev Minimum allowed amount is limited by host global settings
-        require(amount >= HostConfigLib.getHostGlobalSettings().minFunding, IHost.TooLowValue());
+        require(amount != 0, IHosted.ZeroAmount());
 
         uint daoUid = HostLib.getDaoUid($, symbol);
 

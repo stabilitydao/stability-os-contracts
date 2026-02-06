@@ -16,7 +16,7 @@ import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockOsBridge} from "../mocks/MockOsBridge.sol";
+import {MockHostBridge} from "../mocks/MockHostBridge.sol";
 import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
@@ -280,7 +280,7 @@ library HostUtilsLib {
                 minFundingDuration: 1,
                 maxFundingDuration: 180,
                 maxSeedStartDelay: 7 days,
-                minFunding: 0.1e18
+                minFundingRaise: 0.1e18
             })
         );
     }
@@ -289,7 +289,7 @@ library HostUtilsLib {
         MockERC20 usdc = new MockERC20();
         usdc.init("USD Coin", "USDC", 6);
 
-        MockOsBridge bridge = new MockOsBridge();
+        MockHostBridge bridge = new MockHostBridge();
 
         // Prepare and set OS chain settings using the IHost.OsChainSettings struct
         vm.prank(multisig);
