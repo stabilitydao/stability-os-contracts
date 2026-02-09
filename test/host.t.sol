@@ -706,10 +706,10 @@ contract HostTest is Test {
 
         ITokenomics.Funding memory seed;
         seed.fundingType = ITokenomics.FundingType.SEED_0;
-        seed.start = 100;
-        seed.end = 200;
-        seed.minRaise = 1000;
-        seed.maxRaise = 5000;
+        seed.start = 1 days;
+        seed.end = 90 days;
+        seed.minRaise = 1e18;
+        seed.maxRaise = 100e18;
         seed.raised = 250;
         seed.claim = 1;
 
@@ -738,10 +738,10 @@ contract HostTest is Test {
         {
             ITokenomics.Funding memory tge;
             tge.fundingType = ITokenomics.FundingType.TGE_1;
-            tge.start = 1001;
-            tge.end = 2002;
-            tge.minRaise = 10003;
-            tge.maxRaise = 50004;
+            tge.start = 1 days;
+            tge.end = 120 days;
+            tge.minRaise = 10003e18;
+            tge.maxRaise = 50004e18;
             tge.raised = 2505;
             tge.claim = 16;
 

@@ -158,6 +158,9 @@ library HostUpdateLib {
             uint lenName = bytes(vesting[i].name).length;
             require(lenName >= st.minNameLength && lenName <= st.maxNameLength, IHost.NameLength(lenName));
 
+            // todo vesting[i].start should be after tge.claim
+            // todo don't allow to create vesting if tge doesn't exist
+
             // uint vePeriod = vesting[i].end > vesting[i].start ? vesting[i].end - vesting[i].start : 0;
 
             // todo require(vePeriod >= st.minVePeriod && vePeriod <= st.maxVePeriod, IHost.IncorrectVestingPeriod()); // todo IHost.VePeriod(vePeriod));
@@ -309,6 +312,7 @@ library HostUpdateLib {
             if (proposalId == 0) {
                 emit IHost.DaoUnitUpdatedInstantly(daoUid, units[i].unitId, metadata[i]);
             } else {
+                // we don't need to emit metadata here because it's emitted during proposal creation
                 emit IHost.DaoUnitUpdatedByProposal(daoUid, units[i].unitId, proposalId);
             }
         }

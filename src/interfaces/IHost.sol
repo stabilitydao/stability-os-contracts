@@ -60,6 +60,7 @@ interface IHost {
     error InvalidFundingRaise();
     error InvalidFundingArray();
     error IncorrectVestingPeriod();
+    error TooLowValue();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -137,6 +138,8 @@ interface IHost {
         uint maxVePeriod;
         uint minPvPFee;
         uint maxPvPFee;
+        /// @notice Minimum funding amount for the seed and rounds provided by user at fund()
+        uint minFunding;
         uint minFundingDuration;
         uint maxFundingDuration;
 

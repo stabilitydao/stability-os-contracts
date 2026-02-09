@@ -18,7 +18,8 @@ library HostFundingLib {
     function fund(string memory symbol, uint amount) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        require(amount != 0, IHosted.ZeroAmount());
+        /// @dev Minimum allowed amount is limited by host global settings
+        require(amount >= HostConfigLib.getHostGlobalSettings().minFunding, IHost.TooLowValue());
 
         uint daoUid = HostLib.getDaoUid($, symbol);
 

@@ -151,6 +151,8 @@ contract HostFundingLibTest is Test {
     }
 
     function testFundTooLowFundAmount() public {
+        HostConfigLib.getHostGlobalSettings().minFunding = 1e18;
+
         HostConfigLib.getHostGlobalSettings().minFundingRaise = 1e18;
 
         exchangeAsset.mint(user, 1e18);
@@ -159,8 +161,8 @@ contract HostFundingLibTest is Test {
         exchangeAsset.approve(address(this), 0.01e18);
 
         vm.prank(user);
-        vm.expectRevert(IHosted.ZeroAmount.selector);
-        HostFundingLib.fund("abc", 0);
+        vm.expectRevert(IHost.TooLowValue.selector);
+        HostFundingLib.fund("abc", 0.01e18);
     }
 
     function testFundNotFundingPhase() public {

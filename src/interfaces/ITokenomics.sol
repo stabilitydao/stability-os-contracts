@@ -156,7 +156,7 @@ interface ITokenomics {
         /// @notice Amount already raised, USD decimals 18
         uint raised;
 
-        /// @notice todo
+        /// @notice Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
         uint claim;
         // Attention: Don't forget to increment OsEncodingLib.FUNDING_STRUCT_VERSION if you add new fields here
     }
@@ -169,7 +169,7 @@ interface ITokenomics {
         /// @notice How must be spent
         string description;
 
-        /// @notice Vesting supply. 10 == 10e18 TOKEN
+        /// @notice Vesting supply, in percents. 10 == 10e18 TOKEN
         uint allocation;
 
         /// @notice Start timestamp

@@ -1045,7 +1045,6 @@ contract HostUpdateLibTest is Test {
 
         IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](1);
         metadata[0].name = "aaa";
-        metadata[1].name = "bbb";
 
         // expect single instant update event
         vm.expectEmit(false, false, false, true);
@@ -1090,8 +1089,8 @@ contract HostUpdateLibTest is Test {
         emit IHost.DaoUnitDeleted(117, "u3", bytes32(0));
 
         // call with empty units -> all should be deleted
-        IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](0);
-        IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](0);
+        IDAOData.UnitDataInput[] memory units;
+        IDAOData.UnitMetaData[] memory metadata;
 
         HostUpdateLib.updateUnits(117, units, bytes32(0), metadata);
 
@@ -1137,8 +1136,11 @@ contract HostUpdateLibTest is Test {
         units[2].developerUid = "55"; // new
 
         IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](3);
+        metadata[0].name = "meta b";
+        metadata[1].name = "meta d";
+        metadata[2].name = "meta e";
 
-        bytes32 proposalId = bytes32(uint256(0x123));
+        bytes32 proposalId = bytes32("0x123");
 
         // Expect deletions first (a,c), then three by-proposal updates (b,d,e) in order
         vm.expectEmit(false, false, false, true);
@@ -1185,6 +1187,17 @@ contract HostUpdateLibTest is Test {
         // 'a' and 'c' removed
         assertEq($.units[ka].daoUid, 0);
         assertEq($.units[kc].daoUid, 0);
+    }
+
+    function testUpdateUnits() public {
+        // -------------------------- Create 3 units
+
+        // -------------------------- Delete first unit
+
+        // -------------------------- Add 1 unit and update last unit
+
+        // -------------------------- Update first and last units and delete middle unit
+
     }
     //endregion ------------------------------------------ Tests for updating list of units
 

@@ -277,8 +277,9 @@ library HostUtilsLib {
                 maxVePeriod: 365 * 4,
                 minPvPFee: 10,
                 maxPvPFee: 100,
-                minFundingDuration: 1,
-                maxFundingDuration: 180,
+                minFunding: 10,
+                minFundingDuration: 1 days,
+                maxFundingDuration: 180 days,
                 maxSeedStartDelay: 7 days,
                 minFundingRaise: 0.1e18
             })
