@@ -284,8 +284,9 @@ library HostUtilsLib {
                 maxFundingRaise: 1_000_000e18,
                 minVestingNameLen: 3,
                 maxVestingNameLen: 30,
-                minCliff: 7 days,
-                maxSeedStartDelay: 7 days
+                minCliff: 7 days
+                // todo Inception phase
+                // maxSeedStartDelay: 7 days
             })
         );
     }

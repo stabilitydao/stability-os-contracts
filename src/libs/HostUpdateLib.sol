@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {LibString} from "@solady/utils/LibString.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -109,9 +108,6 @@ library HostUpdateLib {
 
     /// @dev Check funding params according to Host settings
     function _validateFunding(ITokenomics.Funding memory funding, IHost.HostSettings storage st) internal view {
-        console.log("funding.start, end", funding.start, funding.end);
-        console.log("minFundingDuration, maxFundingDuration", st.minFundingDuration, st.maxFundingDuration);
-
         uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
         require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
 
@@ -394,6 +390,8 @@ library HostUpdateLib {
     function updateNaming(uint daoUid, bytes memory payload) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         ITokenomics.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
+
+        // we assume here that new symbol is NOT used on any chain by any DAO
 
         // todo we must validate if the new symbol is not used already
         // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y

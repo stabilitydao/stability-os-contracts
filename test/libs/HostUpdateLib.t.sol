@@ -1322,17 +1322,6 @@ contract HostUpdateLibTest is Test {
         assertEq($.units[kc].daoUid, 0);
     }
 
-    function testUpdateUnits() public {
-        // -------------------------- Create 3 units
-
-        // -------------------------- Delete first unit
-
-        // -------------------------- Add 1 unit and update last unit
-
-        // -------------------------- Update first and last units and delete middle unit
-
-        }
-
     //endregion ------------------------------------------ Tests for updating list of units
 
     //region ------------------------------------------ Internal logic

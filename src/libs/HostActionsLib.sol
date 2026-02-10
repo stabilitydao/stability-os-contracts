@@ -142,11 +142,12 @@ library HostActionsLib {
             ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
-            // SEED can be started not later than 1 week after configured start time
-            require(
-                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
-                IHost.TooLateSoSetupFundingAgain()
-            );
+// todo Inception phase
+//            // SEED can be started not later than 1 week after configured start time
+//            require(
+//                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
+//                IHost.TooLateSoSetupFundingAgain()
+//            );
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
 

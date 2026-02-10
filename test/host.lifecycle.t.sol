@@ -616,10 +616,9 @@ contract HostLifeCycleTest is Test {
         {
             skip(15 days);
 
-            console.log("lifeCycleDaoApes1");
-            vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
-            host_.changePhase(daoData.symbol);
-            console.log("lifeCycleDaoApes1");
+// todo Inception phase
+//            vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
+//            host_.changePhase(daoData.symbol);
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
                 7 days,

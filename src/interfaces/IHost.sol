@@ -170,8 +170,9 @@ interface IHost {
         /// @notice Min allowed interval (seconds) between vesting.start and tge.claim
         uint minCliff;
 
-        /// @notice Seed start delay interval, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
-        uint maxSeedStartDelay;
+// todo Inception phase
+//        /// @notice Seed start delay interval, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
+//        uint maxSeedStartDelay;
     }
 
     /// @notice Chain-dependent data of the DAO
