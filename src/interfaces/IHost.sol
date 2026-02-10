@@ -140,14 +140,22 @@ interface IHost {
         uint maxPvPFee;
         /// @notice Minimum funding amount for the seed and rounds provided by user at fund()
         uint minFunding;
+        /// @notice Minimal funding duration in days
         uint minFundingDuration;
+        /// @notice Maximal funding duration in days
         uint maxFundingDuration;
 
         /// @notice Minimum allowed funding amount to raise
         uint minFundingRaise;
 
-        /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
-        uint maxSeedStartDelay;
+        /// @notice Maximum allowed funding amount to raise.
+        uint maxFundingRaise;
+
+        /// @notice Min length of a vesting name
+        uint minVestingNameLen;
+
+        /// @notice Max length of a vesting name
+        uint maxVestingNameLen;
     }
 
     /// @notice Chain-dependent data of the DAO

@@ -115,7 +115,12 @@ library HostUpdateLib {
 
         }
 
-        require(funding.maxRaise > funding.minRaise && funding.minRaise > st.minFundingRaise, IHost.InvalidFundingRaise());
+        require(
+            funding.maxRaise > funding.minRaise
+            && funding.maxRaise <= st.maxFundingRaise
+            && funding.minRaise >= st.minFundingRaise,
+            IHost.InvalidFundingRaise()
+        );
     }
 
     /// @dev Check funding before updating. Funding can be updated on proper phase only.
@@ -156,7 +161,7 @@ library HostUpdateLib {
             require(vesting[i].allocation != 0, IHosted.ZeroAmount());
 
             uint lenName = bytes(vesting[i].name).length;
-            require(lenName >= st.minNameLength && lenName <= st.maxNameLength, IHost.NameLength(lenName));
+            require(lenName >= st.minVestingNameLen && lenName <= st.maxVestingNameLen, IHost.NameLength(lenName));
 
             // todo vesting[i].start should be after tge.claim
             // todo don't allow to create vesting if tge doesn't exist

@@ -166,7 +166,7 @@ interface ITokenomics {
         /// @notice Short name of vesting allocation
         string name;
 
-        /// @notice How must be spent
+        /// @notice How must be spent  // todo emit only
         string description;
 
         /// @notice Vesting supply, in percents. 10 == 10e18 TOKEN
@@ -177,6 +177,9 @@ interface ITokenomics {
 
         /// @notice End timestamp
         uint64 end;
+
+        // todo address?: `0x${string}`;  Return deployed address to the user
+
         // Attention: Don't forget to increment OsEncodingLib.VESTING_STRUCT_VERSION if you add new fields here
     }
 
