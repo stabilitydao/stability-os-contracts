@@ -332,7 +332,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoParameters memory daoParameters_ = HostEncodingLib.decodeDaoParameters(payload);
 
-        HostUpdateLib._validateDaoParameters(daoParameters_, HostConfigLib.getHostGlobalSettings());
+        HostUpdateLib._validateDaoParameters(d_.daoUid, d_.phase, daoParameters_, HostConfigLib.getHostGlobalSettings());
 
         if (d_.instant) {
             HostUpdateLib.updateDaoParameters(d_.daoUid, daoParameters_);

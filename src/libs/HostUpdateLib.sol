@@ -20,6 +20,8 @@ library HostUpdateLib {
 
     //region -------------------------------------- Actions
     function validate(
+        uint daoUid,
+        ITokenomics.LifecyclePhase phase,
         HostLib.DaoDataSegment2 memory daoData2,
         ITokenomics.DaoParameters memory params,
         ITokenomics.Funding[] memory funding,
@@ -28,7 +30,7 @@ library HostUpdateLib {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         _validateDaoData(daoData2, st);
-        _validateDaoParameters(params, st);
+        _validateDaoParameters(daoUid, phase, params, st);
         _validateFundingList(funding, st);
         _validateActivity(activity);
     }
@@ -85,11 +87,19 @@ library HostUpdateLib {
 
     /// @notice Validate DAO params according to OS settings
     function _validateDaoParameters(
+        uint daoUid,
+        ITokenomics.LifecyclePhase phase,
         ITokenomics.DaoParameters memory params,
         IHost.HostSettings storage st
     ) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IHost.PvPFee(params.pvpFee));
         require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
+        if (phase >= ITokenomics.LifecyclePhase.TGE_4) {
+            require(
+                params.totalSupply == HostLib.getHostStorage().daoParameters[daoUid].totalSupply,
+                IHost.TooLateToUpdateTotalSupply()
+            );
+        }
     }
 
     /// @notice Check funding list before creation
@@ -391,10 +401,6 @@ library HostUpdateLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         ITokenomics.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
 
-        // we assume here that new symbol is NOT used on any chain by any DAO
-
-        // todo we must validate if the new symbol is not used already
-        // todo there is following case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
         require($.daoUids[_daoNames.symbol] == 0, IHost.SymbolNotUnique(_daoNames.symbol));
 
         updateNaming(daoUid, _daoNames);
@@ -402,6 +408,10 @@ library HostUpdateLib {
 
     function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        // We assume here that new symbol cannot be changed by any other DAO on any chain
+        // Admin validates all renaming requests.
+        // Validation guarantees that new symbol is not used and not requested by any other DAO at the moment of renaming.
 
         string memory oldSymbol = $.segment2[daoUid].symbol;
         delete $.daoUids[oldSymbol];

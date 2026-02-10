@@ -114,6 +114,39 @@ contract HostUpdateLibTest is Test {
         this.validateDaoDataPublic(dao);
     }
 
+    function testValidateDaoParameters_ChangeTotalSupplyAfterTgeStarted_Throws() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ITokenomics.DaoParameters memory data;
+        data.proposalThreshold = 1;
+
+        // ------------------ Set initial version of total supply
+        data.totalSupply = 100_000_000e18;
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DRAFT_0, data);
+        $.daoParameters[117] = data;
+
+        // ------------------ Change total supply in SEED
+        data.totalSupply = 110_000_000e18;
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.SEED_1, data);
+        $.daoParameters[117] = data;
+
+        // ------------------ Change total supply in DEVELOPMENT
+        data.totalSupply = 120_000_000e18;
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DEVELOPMENT_3, data);
+        $.daoParameters[117] = data;
+
+        // ------------------ Fail to change total supply after TGE started
+        data.totalSupply = 130_000_000e18;
+        vm.expectRevert(IHost.TooLateToUpdateTotalSupply.selector);
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_4, data);
+
+        // ------------------ Other parameters can be updated after TGE started
+        data.totalSupply = 120_000_000e18;
+        data.proposalThreshold = 2;
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_4, data);
+        $.daoParameters[117] = data;
+    }
+
     function testValidateActivityPositive() public view {
         uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
         { // all activity
@@ -178,21 +211,21 @@ contract HostUpdateLibTest is Test {
             ITokenomics.DaoParameters memory params;
             params.pvpFee = 500;
             params.vePeriod = 30;
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
 
         {
             ITokenomics.DaoParameters memory params;
             params.pvpFee = 100;
             params.vePeriod = 14;
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
 
         {
             ITokenomics.DaoParameters memory params;
             params.pvpFee = 1000;
             params.vePeriod = 365;
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
     }
 
@@ -208,7 +241,7 @@ contract HostUpdateLibTest is Test {
             params.pvpFee = 99;
             params.vePeriod = 30;
             vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(99)));
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
 
         {
@@ -216,7 +249,7 @@ contract HostUpdateLibTest is Test {
             params.pvpFee = 1001;
             params.vePeriod = 30;
             vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(1001)));
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
 
         {
@@ -224,7 +257,7 @@ contract HostUpdateLibTest is Test {
             params.pvpFee = 500;
             params.vePeriod = 13;
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(13)));
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
 
         {
@@ -232,19 +265,19 @@ contract HostUpdateLibTest is Test {
             params.pvpFee = 500;
             params.vePeriod = 366;
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(366)));
-            this.validateDaoParametersPublic(params);
+            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
     }
 
     //endregion ------------------------------------------ Tests for validation
 
     //region ------------------------------------------ Tests for Activity validation
-    function testValidateActivityEmpty() public {
+    function testValidateActivityEmpty() public view {
         ITokenomics.Activity[] memory activity;
         this.validateActivityPublic(activity);
     }
 
-    function testValidateActivityNormal() public {
+    function testValidateActivityNormal() public view {
         uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](count);
         for (uint i = 0; i < count; i++) {
@@ -852,9 +885,13 @@ contract HostUpdateLibTest is Test {
         HostUpdateLib._validateDaoData(dao, st);
     }
 
-    function validateDaoParametersPublic(ITokenomics.DaoParameters memory params) public view {
+    function validateDaoParametersPublic(
+        uint daoUid,
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.DaoParameters memory params
+    ) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateDaoParameters(params, st);
+        HostUpdateLib._validateDaoParameters(daoUid, phase, params, st);
     }
 
     function validateActivityPublic(ITokenomics.Activity[] memory activity_) public pure {

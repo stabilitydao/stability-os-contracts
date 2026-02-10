@@ -380,7 +380,13 @@ library HostUtilsLib {
         uint16 pvpFee_
     ) internal pure returns (ITokenomics.DaoParameters memory) {
         return ITokenomics.DaoParameters({
-            vePeriod: vePeriod_, pvpFee: pvpFee_, minPower: 0, ttBribe: 0, recoveryShare: 0, proposalThreshold: 0
+            vePeriod: vePeriod_,
+            pvpFee: pvpFee_,
+            minPower: 0,
+            ttBribe: 0,
+            recoveryShare: 0,
+            proposalThreshold: 0,
+            totalSupply: 1e9
         });
     }
 
@@ -511,7 +517,8 @@ library HostUtilsLib {
             minPower: uint(100 ether),
             ttBribe: uint16(20000),
             recoveryShare: uint16(10000),
-            proposalThreshold: uint(5000)
+            proposalThreshold: uint(5000),
+            totalSupply: 1e9
         });
 
         { // ---------------- Tokenomics

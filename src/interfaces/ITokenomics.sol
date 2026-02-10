@@ -133,6 +133,9 @@ interface ITokenomics {
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint proposalThreshold;
+
+        /// @notice Total supply of the DAO token. This value cannot be changed after start of TGE
+        uint totalSupply;
         // Attention: Don't forget to increment OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION if you add new fields here
     }
 

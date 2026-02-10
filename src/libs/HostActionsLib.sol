@@ -91,7 +91,7 @@ library HostActionsLib {
         daoData2.symbol = symbol;
         daoData2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
 
-        HostUpdateLib.validate(daoData2, params, funding, activity);
+        HostUpdateLib.validate(daoUid, ITokenomics.LifecyclePhase.DRAFT_0, daoData2, params, funding, activity);
 
         // ------------------------- Save DAO data to the storage
         // we don't use viaIR=true in config so we cannot make direct assignment
@@ -142,12 +142,12 @@ library HostActionsLib {
             ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
-// todo Inception phase
-//            // SEED can be started not later than 1 week after configured start time
-//            require(
-//                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
-//                IHost.TooLateSoSetupFundingAgain()
-//            );
+            // todo Inception phase
+            //            // SEED can be started not later than 1 week after configured start time
+            //            require(
+            //                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
+            //                IHost.TooLateSoSetupFundingAgain()
+            //            );
 
             $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
 
@@ -325,7 +325,7 @@ library HostActionsLib {
         daoData2.phase = dao.phase;
         daoData2.unitIds = new string[](dao.units.length);
 
-        HostUpdateLib.validate(daoData2, dao.params, dao.funding, dao.activity);
+        HostUpdateLib.validate(daoUid, dao.phase, daoData2, dao.params, dao.funding, dao.activity);
 
         // ------------------------- Prepare units data
         require(dao.units.length == dao.unitsMetaData.length, IHost.IncorrectArrayLengths());

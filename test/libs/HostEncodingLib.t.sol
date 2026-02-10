@@ -615,7 +615,8 @@ contract HostEncodingLibTest is Test {
                 minPower: 1000,
                 ttBribe: type(uint16).max,
                 recoveryShare: type(uint16).max,
-                proposalThreshold: 50
+                proposalThreshold: 50,
+                totalSupply: 1e9
             }),
             initialChain: 1,
             socials: new string[](3),

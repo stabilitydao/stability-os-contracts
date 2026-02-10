@@ -184,7 +184,8 @@ library HostEncodingLib {
                 data.minPower,
                 data.ttBribe,
                 data.recoveryShare,
-                data.proposalThreshold
+                data.proposalThreshold,
+                data.totalSupply
             );
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -195,8 +196,16 @@ library HostEncodingLib {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
-            (, dest.vePeriod, dest.pvpFee, dest.minPower, dest.ttBribe, dest.recoveryShare, dest.proposalThreshold) =
-                abi.decode(payload, (uint16, uint32, uint16, uint, uint16, uint16, uint));
+            (
+                ,
+                dest.vePeriod,
+                dest.pvpFee,
+                dest.minPower,
+                dest.ttBribe,
+                dest.recoveryShare,
+                dest.proposalThreshold,
+                dest.totalSupply
+            ) = abi.decode(payload, (uint16, uint32, uint16, uint, uint16, uint16, uint, uint));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
