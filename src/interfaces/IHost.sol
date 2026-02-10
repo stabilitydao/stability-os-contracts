@@ -61,6 +61,8 @@ interface IHost {
     error InvalidFundingArray();
     error IncorrectVestingPeriod();
     error TooLowValue();
+    error ZeroValueNotAllowed();
+    error TotalAllocationTooHigh();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -138,11 +140,9 @@ interface IHost {
         uint maxVePeriod;
         uint minPvPFee;
         uint maxPvPFee;
-        /// @notice Minimum funding amount for the seed and rounds provided by user at fund()
-        uint minFunding;
         /// @notice Minimal funding duration in days
         uint minFundingDuration;
-        /// @notice Maximal funding duration in days
+        /// @notice Max funding duration in days
         uint maxFundingDuration;
 
         /// @notice Minimum allowed funding amount to raise
@@ -152,10 +152,10 @@ interface IHost {
         uint maxFundingRaise;
 
         /// @notice Min length of a vesting name
-        uint minVestingNameLen;
+        uint minVestingNameLength;
 
         /// @notice Max length of a vesting name
-        uint maxVestingNameLen;
+        uint maxVestingNameLength;
     }
 
     /// @notice Chain-dependent data of the DAO

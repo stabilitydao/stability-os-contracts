@@ -108,12 +108,7 @@ library HostUpdateLib {
         IHost.HostSettings storage st
     ) internal view {
         uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
-        require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
-
-        if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
-            // todo check start date delay
-
-        }
+        require(duration >= st.minFundingDuration * 24 * 3600  && duration <= st.maxFundingDuration * 24 * 3600, IHost.InvalidFundingPeriod());
 
         require(
             funding.maxRaise > funding.minRaise
