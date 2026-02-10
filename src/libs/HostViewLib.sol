@@ -84,7 +84,7 @@ library HostViewLib {
 
             dest.funding = new ITokenomics.Funding[](segment3.funding.length);
             for (uint i; i < dest.funding.length; i++) {
-                dest.funding[i] = $.funding[HostLib.getIndexKey(dest.uid, i)];
+                dest.funding[i] = $.funding[HostLib.getKey(dest.uid, uint(segment3.funding[i]))];
             }
 
             dest.vesting = new ITokenomics.Vesting[](segment3.countVesting);

@@ -371,7 +371,11 @@ contract HostBridgedActionsTest is Test {
         );
     }
 
-    function _processProposal(IHost host, bytes32 proposalId, bytes memory proposalPayload) internal returns (ITokenomics.Proposal memory proposal) {
+    function _processProposal(
+        IHost host,
+        bytes32 proposalId,
+        bytes memory proposalPayload
+    ) internal returns (ITokenomics.Proposal memory proposal) {
         proposal = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
 
         if (proposal.validationRequired) {

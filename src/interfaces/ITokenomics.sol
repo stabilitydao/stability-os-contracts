@@ -177,9 +177,7 @@ interface ITokenomics {
 
         /// @notice End timestamp
         uint64 end;
-
         // todo address?: `0x${string}`;  Return deployed address to the user
-
         // Attention: Don't forget to increment OsEncodingLib.VESTING_STRUCT_VERSION if you add new fields here
     }
 

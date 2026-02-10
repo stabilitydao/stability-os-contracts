@@ -280,8 +280,12 @@ library HostUtilsLib {
                 minFunding: 10,
                 minFundingDuration: 1 days,
                 maxFundingDuration: 180 days,
-                maxSeedStartDelay: 7 days,
-                minFundingRaise: 0.1e18
+                minFundingRaise: 0.1e18,
+                maxFundingRaise: 1_000_000e18,
+                minVestingNameLen: 3,
+                maxVestingNameLen: 30,
+                minCliff: 7 days,
+                maxSeedStartDelay: 7 days
             })
         );
     }
@@ -366,7 +370,7 @@ library HostUtilsLib {
             minRaise: minRaise,
             maxRaise: maxRaise,
             raised: 0,
-            claim: 0
+            claim: block.timestamp + 1 days
         });
     }
 

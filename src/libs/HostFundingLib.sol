@@ -5,7 +5,6 @@ import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeE
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {IHosted} from "../interfaces/IHosted.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";

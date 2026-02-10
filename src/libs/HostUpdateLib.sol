@@ -13,6 +13,7 @@ import {IHost} from "../interfaces/IHost.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {stdStorage} from "../../lib/solidity-bytes-utils/lib/forge-std/src/StdStorage.sol";
 
 /// @notice Data validation, updating logic
 library HostUpdateLib {
@@ -55,8 +56,9 @@ library HostUpdateLib {
             foundActivity[uint(activity[i])] = true;
         }
 
-        require(len > 1 || !foundActivity[uint(ITokenomics.Activity.BUILDER_3)], IHost.SingleBuilderActivityNotAllowed());
-
+        require(
+            len > 1 || !foundActivity[uint(ITokenomics.Activity.BUILDER_3)], IHost.SingleBuilderActivityNotAllowed()
+        );
     }
 
     /// @dev Check length of name and symbol, uppercase requirement for symbol and uniqueness of symbol
@@ -73,7 +75,10 @@ library HostUpdateLib {
             require(len >= st.minSymbolLength && len <= st.maxSymbolLength, IHost.SymbolLength(len));
 
             // @dev Symbol must be uppercase only
-            require(EfficientHashLib.hash(abi.encode(LibString.upper(symbol))) == EfficientHashLib.hash(abi.encode(symbol)), IHost.UpperCaseRequired(symbol));
+            require(
+                EfficientHashLib.hash(abi.encode(LibString.upper(symbol))) == EfficientHashLib.hash(abi.encode(symbol)),
+                IHost.UpperCaseRequired(symbol)
+            );
 
             require(HostLib.getDaoUid($, symbol) == 0, IHost.SymbolNotUnique(symbol));
         }
@@ -103,17 +108,16 @@ library HostUpdateLib {
     }
 
     /// @dev Check funding params according to Host settings
-    function _validateFunding(
-        ITokenomics.Funding memory funding,
-        IHost.HostSettings storage st
-    ) internal view {
+    function _validateFunding(ITokenomics.Funding memory funding, IHost.HostSettings storage st) internal view {
+        console.log("funding.start, end", funding.start, funding.end);
+        console.log("minFundingDuration, maxFundingDuration", st.minFundingDuration, st.maxFundingDuration);
+
         uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
-        require(duration >= st.minFundingDuration * 24 * 3600  && duration <= st.maxFundingDuration * 24 * 3600, IHost.InvalidFundingPeriod());
+        require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
 
         require(
-            funding.maxRaise > funding.minRaise
-            && funding.maxRaise <= st.maxFundingRaise
-            && funding.minRaise >= st.minFundingRaise,
+            funding.maxRaise > funding.minRaise && funding.maxRaise <= st.maxFundingRaise
+                && funding.minRaise >= st.minFundingRaise,
             IHost.InvalidFundingRaise()
         );
     }
@@ -139,10 +143,12 @@ library HostUpdateLib {
         _validateFunding(funding, st);
     }
 
+    /// @param tgeClaim Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
     function _validateVestingList(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Vesting[] memory vesting,
-        IHost.HostSettings storage st
+        IHost.HostSettings storage st,
+        uint tgeClaim
     ) internal view {
         require(
             phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
@@ -151,20 +157,30 @@ library HostUpdateLib {
         );
 
         uint len = vesting.length;
+        require(tgeClaim != 0 || len == 0, IHost.VestingNotAllowed());
+
+        uint totalAllocation;
         for (uint i; i < len; ++i) {
-            // check vesting consistency
-            require(vesting[i].allocation != 0, IHosted.ZeroAmount());
-
-            uint lenName = bytes(vesting[i].name).length;
-            require(lenName >= st.minVestingNameLen && lenName <= st.maxVestingNameLen, IHost.NameLength(lenName));
-
-            // todo vesting[i].start should be after tge.claim
-            // todo don't allow to create vesting if tge doesn't exist
-
-            // uint vePeriod = vesting[i].end > vesting[i].start ? vesting[i].end - vesting[i].start : 0;
-
-            // todo require(vePeriod >= st.minVePeriod && vePeriod <= st.maxVePeriod, IHost.IncorrectVestingPeriod()); // todo IHost.VePeriod(vePeriod));
+            _validateVesting(vesting[i], st, tgeClaim);
+            totalAllocation += vesting[i].allocation;
         }
+
+        require(totalAllocation < 100_000, IHost.TotalAllocationTooHigh());
+    }
+
+    function _validateVesting(
+        ITokenomics.Vesting memory vesting,
+        IHost.HostSettings storage st,
+        uint claim
+    ) internal view {
+        {
+            uint len = bytes(vesting.name).length;
+            require(len >= st.minVestingNameLen && len <= st.maxVestingNameLen, IHost.NameLength(len));
+        }
+
+        require(vesting.allocation != 0, IHost.ZeroValueNotAllowed());
+
+        require(vesting.start >= claim + st.minCliff, IHost.IncorrectVestingStart());
     }
 
     /// @notice Validate salts: salts is not used OR used by the given DAO

@@ -599,24 +599,27 @@ contract HostLifeCycleTest is Test {
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
-            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-            vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
-
-            host_.updateDAO(
-                daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
-                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
-                ""
-            );
+            // todo we cannot add vesting here because tge.claim is 0
+            //            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
+            //            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            //            vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
+            //
+            //            host_.updateDAO(
+            //                daoData.symbol,
+            //                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+            //                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
+            //                ""
+            //            );
         }
 
         // ------------------------------ apes forgot they created DRAFT
         {
             skip(15 days);
 
+            console.log("lifeCycleDaoApes1");
             vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
             host_.changePhase(daoData.symbol);
+            console.log("lifeCycleDaoApes1");
 
             ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
                 7 days,

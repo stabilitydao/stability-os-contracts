@@ -785,12 +785,35 @@ contract HostTest is Test {
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
+        // ------------------------------ set TGE to be able to set vesting
+        {
+            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
+
+            vm.recordLogs();
+            host.updateDAO(
+                dao.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                codec.encode(funding, codec.PAYLOAD_API_VERSION()),
+                ""
+            );
+        }
+
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
-            vesting[0] =
-                ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
-            vesting[1] =
-                ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
+            vesting[0] = ITokenomics.Vesting({
+                name: "Team",
+                description: "team vesting",
+                allocation: 10_000,
+                start: uint64(block.timestamp + 20 days),
+                end: uint64(block.timestamp + 50 days)
+            });
+            vesting[1] = ITokenomics.Vesting({
+                name: "Seed",
+                description: "seed vesting",
+                allocation: 20_000,
+                start: uint64(block.timestamp + 30 days),
+                end: uint64(block.timestamp + 70 days)
+            });
 
             host.updateDAO(
                 dao.symbol,
@@ -809,7 +832,11 @@ contract HostTest is Test {
         {
             ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
             vesting[0] = ITokenomics.Vesting({
-                name: "Team3", description: "team vesting3", allocation: 10003, start: 3, end: 300
+                name: "Team3",
+                description: "team vesting3",
+                allocation: 10_003,
+                start: uint64(block.timestamp + 33 days),
+                end: uint64(block.timestamp + 55 days)
             });
 
             host.updateDAO(

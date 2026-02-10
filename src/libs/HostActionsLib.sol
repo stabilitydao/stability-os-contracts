@@ -108,7 +108,7 @@ library HostActionsLib {
 
             for (uint i = 0; i < funding.length; i++) {
                 segment3.funding.push(funding[i].fundingType);
-                $.funding[HostLib.getIndexKey(daoUid, i)] = funding[i];
+                $.funding[HostLib.getKey(daoUid, uint(funding[i].fundingType))] = funding[i];
             }
         }
 
@@ -367,7 +367,7 @@ library HostActionsLib {
         { // ------------------------- funding
             for (uint i; i < dao.funding.length; i++) {
                 segment3.funding.push(dao.funding[i].fundingType);
-                $.funding[HostLib.getIndexKey(daoUid, i)] = dao.funding[i];
+                $.funding[HostLib.getKey(daoUid, uint(dao.funding[i].fundingType))] = dao.funding[i];
             }
         }
 

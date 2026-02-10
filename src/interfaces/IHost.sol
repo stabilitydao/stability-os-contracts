@@ -63,6 +63,8 @@ interface IHost {
     error TooLowValue();
     error ZeroValueNotAllowed();
     error TotalAllocationTooHigh();
+    error VestingNotAllowed();
+    error IncorrectVestingStart();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -136,13 +138,21 @@ interface IHost {
         uint maxNameLength;
         uint minSymbolLength;
         uint maxSymbolLength;
+
+        /// @notice min VE period in days
         uint minVePeriod;
+        /// @notice max VE period in days
         uint maxVePeriod;
+
         uint minPvPFee;
         uint maxPvPFee;
-        /// @notice Minimal funding duration in days
+
+        /// @notice Min amount allowed to fund the DAO in exchange asset.
+        uint minFunding;
+
+        /// @notice Minimal funding duration, seconds
         uint minFundingDuration;
-        /// @notice Max funding duration in days
+        /// @notice Max funding duration, seconds
         uint maxFundingDuration;
 
         /// @notice Minimum allowed funding amount to raise
@@ -152,10 +162,16 @@ interface IHost {
         uint maxFundingRaise;
 
         /// @notice Min length of a vesting name
-        uint minVestingNameLength;
+        uint minVestingNameLen;
 
         /// @notice Max length of a vesting name
-        uint maxVestingNameLength;
+        uint maxVestingNameLen;
+
+        /// @notice Min allowed interval (seconds) between vesting.start and tge.claim
+        uint minCliff;
+
+        /// @notice Seed start delay interval, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
+        uint maxSeedStartDelay;
     }
 
     /// @notice Chain-dependent data of the DAO

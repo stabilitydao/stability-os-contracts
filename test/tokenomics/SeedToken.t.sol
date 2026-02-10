@@ -154,6 +154,7 @@ contract SeedTokenTest is Test {
         seedToken.mint(address(this), 1e18);
 
         vm.expectRevert(ISeedToken.NonTransferable.selector);
+        /// forge-lint: disable-next-line(erc20-unchecked-transfer)
         seedToken.transfer(receiver, 1e18);
     }
 

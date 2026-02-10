@@ -311,10 +311,13 @@ library HostProposalLib {
 
     /// @notice Update/create proposal to update vesting schedules of the DAO
     function _updateVesting(LocalInitData memory d_, bytes memory payload) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
 
-        HostUpdateLib._validateVestingList(d_.phase, vesting, HostConfigLib.getHostGlobalSettings());
+        uint tgeClaim = $.funding[HostLib.getKey(d_.daoUid, uint(ITokenomics.FundingType.TGE_1))].claim;
+        HostUpdateLib._validateVestingList(d_.phase, vesting, HostConfigLib.getHostGlobalSettings(), tgeClaim);
 
         if (d_.instant) {
             HostUpdateLib.updateVesting(d_.daoUid, vesting);
