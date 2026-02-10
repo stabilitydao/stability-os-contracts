@@ -60,6 +60,8 @@ interface IHost {
     error InvalidFundingRaise();
     error InvalidFundingArray();
     error IncorrectVestingPeriod();
+    error ZeroValueNotAllowed();
+    error TotalAllocationTooHigh();
 
     error AlreadyAnnounced();
     error SameVersion();
@@ -137,7 +139,10 @@ interface IHost {
         uint maxVePeriod;
         uint minPvPFee;
         uint maxPvPFee;
+
+        /// @notice Min funding duration in days
         uint minFundingDuration;
+        /// @notice Max funding duration in days
         uint maxFundingDuration;
 
         /// @notice Minimum allowed funding amount to raise
@@ -145,6 +150,13 @@ interface IHost {
 
         /// @notice Maximum delay (in seconds) before the seed funding round can start after DAO creation.
         uint maxSeedStartDelay;
+
+        /// @notice Minimum allowed length of vesting name
+        uint minVestingNameLength;
+
+        /// @notice Maximum allowed length of vesting name
+        uint maxVestingNameLength;
+
     }
 
     /// @notice Chain-dependent data of the DAO

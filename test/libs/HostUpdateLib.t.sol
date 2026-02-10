@@ -236,7 +236,9 @@ contract HostUpdateLibTest is Test {
         }
 
     }
+    //endregion ------------------------------------------ Tests for validation
 
+    //region ------------------------------------------ Tests for Funding validation
     function fixtureFundingType() public pure returns (ITokenomics.FundingType[] memory) {
         ITokenomics.FundingType[] memory fundingTypes = new ITokenomics.FundingType[](2);
         fundingTypes[0] = ITokenomics.FundingType.TGE_1;
@@ -282,94 +284,124 @@ contract HostUpdateLibTest is Test {
         }
     }
 
-    function tableValidateFundingListNegative(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_NotUniqueFundingTypes_Throws(ITokenomics.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
         st.maxFundingDuration = 90 days;
         st.minFundingRaise = 0.1e18;
 
-        {  // ----------------- funding array has not unique funding types
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = uint64(block.timestamp + 10 days);
-            funding[0].minRaise = 1e18;
-            funding[0].maxRaise = 100e18;
-            funding[0].fundingType = fundingType;
+        // ----------------- funding array has not unique funding types
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = uint64(block.timestamp + 10 days);
+        funding[0].minRaise = 1e18;
+        funding[0].maxRaise = 100e18;
+        funding[0].fundingType = fundingType;
 
-            funding[1].start = uint64(block.timestamp + 1 days);
-            funding[1].end = uint64(block.timestamp + 10 days);
-            funding[1].minRaise = 1e18;
-            funding[1].maxRaise = 100e18;
-            funding[1].fundingType = fundingType;
+        funding[1].start = uint64(block.timestamp + 1 days);
+        funding[1].end = uint64(block.timestamp + 10 days);
+        funding[1].minRaise = 1e18;
+        funding[1].maxRaise = 100e18;
+        funding[1].fundingType = fundingType;
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingArray.selector));
-            this.validateFundingListPublic(funding);
-        }
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingArray.selector));
+        this.validateFundingListPublic(funding);
+    }
 
-        { // ------------------ end < start
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = 0; // (!)
-            funding[0].minRaise = 1e18;
-            funding[0].maxRaise = 100e18;
-            funding[0].fundingType = fundingType;
+    function tableValidateFundingListNegative_EndLessStart_Throws(ITokenomics.FundingType fundingType) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
-            this.validateFundingListPublic(funding);
-        }
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+        st.minFundingRaise = 0.1e18;
 
-        { // ------------------ duration < minFundingDuration
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = uint64(block.timestamp + 7 days);
-            funding[0].minRaise = 1e18;
-            funding[0].maxRaise = 100e18;
-            funding[0].fundingType = fundingType;
+        // ------------------ end < start
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = 0; // (!)
+        funding[0].minRaise = 1e18;
+        funding[0].maxRaise = 100e18;
+        funding[0].fundingType = fundingType;
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
-            this.validateFundingListPublic(funding);
-        }
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
+        this.validateFundingListPublic(funding);
+    }
 
-        { // ------------------ duration > maxFundingDuration
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = uint64(block.timestamp + 91 days + 1);
-            funding[0].minRaise = 1e18;
-            funding[0].maxRaise = 100e18;
-            funding[0].fundingType = fundingType;
+    function tableValidateFundingListNegative_DurationLessMin_Throws(ITokenomics.FundingType fundingType) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
-            this.validateFundingListPublic(funding);
-        }
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+        st.minFundingRaise = 0.1e18;
 
-        { // ------------------ start of SEED < dao creation time + maxSeedStartDelay
-            // todo add dao creation date
-        }
+        // ------------------ duration < minFundingDuration
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = uint64(block.timestamp + 7 days);
+        funding[0].minRaise = 1e18;
+        funding[0].maxRaise = 100e18;
+        funding[0].fundingType = fundingType;
 
-        { // ------------------ minRaise < maxRaise
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = uint64(block.timestamp + 45 days);
-            funding[0].minRaise = 100e18;
-            funding[0].maxRaise = 1e18;
-            funding[0].fundingType = fundingType;
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
+        this.validateFundingListPublic(funding);
+    }
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingRaise.selector));
-            this.validateFundingListPublic(funding);
-        }
+    function tableValidateFundingListNegative_DurationGreaterMax_Throws(ITokenomics.FundingType fundingType) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-        { // ------------------ minRaise < minFunding
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0].start = uint64(block.timestamp + 1 days);
-            funding[0].end = uint64(block.timestamp + 45 days);
-            funding[0].minRaise = st.minFundingRaise - 1;
-            funding[0].maxRaise = 1000e18;
-            funding[0].fundingType = fundingType;
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+        st.minFundingRaise = 0.1e18;
 
-            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingRaise.selector));
-            this.validateFundingListPublic(funding);
-        }
+        // ------------------ duration > maxFundingDuration
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = uint64(block.timestamp + 91 days + 1);
+        funding[0].minRaise = 1e18;
+        funding[0].maxRaise = 100e18;
+        funding[0].fundingType = fundingType;
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingPeriod.selector));
+        this.validateFundingListPublic(funding);
+    }
+
+    function tableValidateFundingListNegative_MaxRaiseLessMinRaise_Throws(ITokenomics.FundingType fundingType) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+        st.minFundingRaise = 0.1e18;
+
+        // ------------------ maxRaise < minRaise
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = uint64(block.timestamp + 45 days);
+        funding[0].minRaise = 100e18;
+        funding[0].maxRaise = 1e18;
+        funding[0].fundingType = fundingType;
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingRaise.selector));
+        this.validateFundingListPublic(funding);
+    }
+
+    function tableValidateFundingListNegative_MinRaiseLessMinFundingRaise(ITokenomics.FundingType fundingType) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minFundingDuration = 7 days;
+        st.maxFundingDuration = 90 days;
+        st.minFundingRaise = 0.1e18;
+
+        // ------------------ minRaise < minFunding
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0].start = uint64(block.timestamp + 1 days);
+        funding[0].end = uint64(block.timestamp + 45 days);
+        funding[0].minRaise = st.minFundingRaise - 1;
+        funding[0].maxRaise = 1000e18;
+        funding[0].fundingType = fundingType;
+
+        vm.expectRevert(abi.encodeWithSelector(IHost.InvalidFundingRaise.selector));
+        this.validateFundingListPublic(funding);
     }
 
     function testValidateSeedFundingPositive() public {
@@ -523,6 +555,10 @@ contract HostUpdateLibTest is Test {
         this.validateFundingPublic(badFundingPhase.phase, funding);
     }
 
+    //endregion ------------------------------------------ Tests for Funding validation
+
+    //region ------------------------------------------ Tests for Vesting validation
+    /// @dev Source data for tableVestingListGoodPhase_XXX
     function fixtureVestingGoodPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
         uint countPhases = uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
         uint n;
@@ -535,29 +571,114 @@ contract HostUpdateLibTest is Test {
         }
     }
 
-    function tableVestingListPositiveGoodPhase(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+    function tableVestingListGoodPhase_LenNameInRange_Ok(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-        st.maxNameLength = 50;
+        st.minVestingNameLength = 5;
+        st.maxVestingNameLength = 7;
         st.minVePeriod = 14;
         st.maxVePeriod = 365;
 
         ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
-        vesting[0].name = "vesting name";
+        vesting[0].name = "12345";
         vesting[0].description = "vesting description";
-        vesting[0].allocation = 1e18;
+        vesting[0].allocation = 45e5;
         vesting[0].start = uint64(block.timestamp + 1 days);
         vesting[0].end = uint64(block.timestamp + 50 days);
 
-        vesting[1].name = "vesting 1";
+        vesting[1].name = "1234567";
         vesting[1].description = "vesting 2";
-        vesting[1].allocation = 1e18;
+        vesting[1].allocation = 45e5;
         vesting[1].start = uint64(block.timestamp + 1 days);
         vesting[1].end = uint64(block.timestamp + 50 days);
 
         this.validateVestingListPublic(vestingGoodPhase, vesting);
     }
 
+    function tableVestingListGoodPhase_LenNameOutOfRange_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minVestingNameLength = 5;
+        st.maxVestingNameLength = 7;
+        st.minVePeriod = 14;
+        st.maxVePeriod = 365;
+
+        {
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0].name = "1234";
+            vesting[0].description = "vesting description";
+            vesting[0].allocation = 50e5;
+            vesting[0].start = uint64(block.timestamp + 1 days);
+            vesting[0].end = uint64(block.timestamp + 50 days);
+
+            vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(4)));
+            this.validateVestingListPublic(vestingGoodPhase, vesting);
+        }
+        {
+            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            vesting[0].name = "12345678";
+            vesting[0].description = "vesting description";
+            vesting[0].allocation = 45e5;
+            vesting[0].start = uint64(block.timestamp + 1 days);
+            vesting[0].end = uint64(block.timestamp + 50 days);
+
+            vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(8)));
+            this.validateVestingListPublic(vestingGoodPhase, vesting);
+        }
+    }
+
+    function tableVestingListGoodPhase_ZeroAllocation_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minVestingNameLength = 5;
+        st.maxVestingNameLength = 7;
+        st.minVePeriod = 14;
+        st.maxVePeriod = 365;
+
+        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+        vesting[0].name = "12345";
+        vesting[0].description = "vesting description";
+        vesting[0].allocation = 0;
+        vesting[0].start = uint64(block.timestamp + 1 days);
+        vesting[0].end = uint64(block.timestamp + 50 days);
+
+        vm.expectRevert(IHost.ZeroValueNotAllowed.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting);
+    }
+
+    function tableVestingListGoodPhase_TotalAllocationGe100_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minVestingNameLength = 5;
+        st.maxVestingNameLength = 7;
+        st.minVePeriod = 14;
+        st.maxVePeriod = 365;
+
+        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
+        vesting[0].name = "123456";
+        vesting[0].description = "vesting description";
+        vesting[0].allocation = 99e5;
+        vesting[0].start = uint64(block.timestamp + 1 days);
+        vesting[0].end = uint64(block.timestamp + 50 days);
+
+        vesting[1].name = "123456";
+        vesting[1].description = "vesting 2";
+        vesting[1].allocation = 1e5;
+        vesting[1].start = uint64(block.timestamp + 1 days);
+        vesting[1].end = uint64(block.timestamp + 50 days);
+
+        vm.expectRevert(IHost.TotalAllocationTooHigh.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting);
+
+        vesting[0].allocation = 100e5;
+        vesting[1].allocation = 1e5;
+
+        vm.expectRevert(IHost.TotalAllocationTooHigh.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting);
+    }
+
+    /// @dev Source data for tableVestingListPositiveBadPhase
     function fixtureVestingBadPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
         phases = new ITokenomics.LifecyclePhase[](3);
         phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
@@ -583,62 +704,9 @@ contract HostUpdateLibTest is Test {
         this.validateVestingListPublic(vestingBadPhase, vesting);
     }
 
-    function testVestingListNegativeGoodPhase() public {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        ITokenomics.LifecyclePhase vestingGoodPhase = ITokenomics.LifecyclePhase.DRAFT_0;
+    //endregion ------------------------------------------ Tests for Vesting validation
 
-        st.maxNameLength = 5;
-        st.minVePeriod = 14;
-        st.maxVePeriod = 365;
-
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
-
-        { // name length
-            vesting[0].name = "123456";
-            vesting[0].description = "vesting 2";
-            vesting[0].allocation = 1e18;
-            vesting[0].start = uint64(block.timestamp + 1 days);
-            vesting[0].end = uint64(block.timestamp + 50 days);
-
-            vm.expectRevert(abi.encodeWithSelector(IHost.NameLength.selector, uint(6)));
-            this.validateVestingListPublic(vestingGoodPhase, vesting);
-        }
-
-        { // zero allocation
-            vesting[0].name = "123";
-            vesting[0].description = "vesting 2";
-            vesting[0].allocation = 0; // (!)
-            vesting[0].start = uint64(block.timestamp + 1 days);
-            vesting[0].end = uint64(block.timestamp + 50 days);
-
-            vm.expectRevert(IHosted.ZeroAmount.selector);
-            this.validateVestingListPublic(vestingGoodPhase, vesting);
-        }
-
-// todo
-//        { // too small period
-//            vesting[0].name = "123";
-//            vesting[0].description = "vesting 2";
-//            vesting[0].allocation = 1;
-//            vesting[0].start = uint64(block.timestamp + 1 days);
-//            vesting[0].end = uint64(block.timestamp + 14 days); // (!)
-//
-//            vm.expectRevert(IHost.IncorrectVestingPeriod.selector);
-//            this.validateVestingListPublic(vestingGoodPhase, vesting);
-//        }
-//
-//        { // too long period
-//            vesting[0].name = "123";
-//            vesting[0].description = "vesting 2";
-//            vesting[0].allocation = 1;
-//            vesting[0].start = uint64(block.timestamp + 1 days);
-//            vesting[0].end = uint64(block.timestamp + 367 days); // (!)
-//
-//            vm.expectRevert(IHost.IncorrectVestingPeriod.selector);
-//            this.validateVestingListPublic(vestingGoodPhase, vesting);
-//        }
-    }
-
+    //region ------------------------------------------ Tests for Salt validation
     function testValidateSaltSetAllPositive() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = 7;
@@ -707,8 +775,7 @@ contract HostUpdateLibTest is Test {
             this.validateSaltPublic(1, contractIndices, salt);
         }
     }
-
-    //endregion ------------------------------------------ Tests for validation
+    //endregion ------------------------------------------ Tests for Salt validation
 
     //region ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
     function validateNamingPublic(string memory name, string memory symbol) public view {
@@ -740,9 +807,11 @@ contract HostUpdateLibTest is Test {
         HostUpdateLib._validateFunding(phase, funding, st);
     }
 
+    /// @param tgeClaim
     function validateVestingListPublic(
         ITokenomics.LifecyclePhase phase,
-        ITokenomics.Vesting[] memory vesting
+        ITokenomics.Vesting[] memory vesting,
+        uint tgeClaim
     ) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         HostUpdateLib._validateVestingList(phase, vesting, st);
