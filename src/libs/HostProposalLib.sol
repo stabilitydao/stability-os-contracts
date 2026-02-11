@@ -257,7 +257,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoNames memory daoNames = HostEncodingLib.decodeDaoNames(payload);
 
-        ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, false, true);
+        ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, d_.instant, true);
 
         HostUpdateLib._validateNaming(daoNames.name, daoNames.symbol, HostConfigLib.getHostGlobalSettings());
         _proposeAction(d_.daoUid, payload, p);
@@ -363,8 +363,6 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoChainSettings memory settings = HostEncodingLib.decodeDaoChainSettings(payload);
 
-        // todo validate settings?
-
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);
         } else {
@@ -421,7 +419,6 @@ library HostProposalLib {
                 || bridgedActionKind_ == uint16(IHost.BridgedActions.BRIDGE_DAO_1),
             votingRequired: true
         });
-        console.log(dest.validationRequired, dest.votingRequired);
     }
 
     /// @notice Create new proposal

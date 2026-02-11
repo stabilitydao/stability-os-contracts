@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -856,9 +857,10 @@ contract HostTest is Test {
     //endregion ----------------------------------- Update vesting
 
     //region ----------------------------------- Update naming
-    // todo fix: validation
-    function testUpdateNamingInstant() internal {
+    /// @dev Instant update is not possible. Admin must validate proposal to avoid any collision with other updates
+    function testUpdateNamingWith_ValidationNoVoting() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
@@ -875,14 +877,51 @@ contract HostTest is Test {
             vm.prank(MULTISIG);
             host.validateProposal(proposalId, true, payload);
 
-            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(naming.symbol);
+            IDAOData.DaoData memory dao1 = IDataReader(host.getChainSettings().dataReader).getDAO(DAO_SYMBOL);
+            IDAOData.DaoData memory dao2 = IDataReader(host.getChainSettings().dataReader).getDAO(naming.symbol);
 
-            assertEq(daoAfter.name, naming.name, "name updated");
-            assertEq(daoAfter.deployer, dao.deployer, "deployer wasn't changed");
+            assertEq(dao2.uid, dao.uid, "uid is unchanged");
+            assertEq(dao1.uid, 0, "old symbol is not used anymore");
+
+            assertEq(dao2.name, naming.name, "name updated");
+            assertEq(dao2.deployer, dao.deployer, "deployer wasn't changed");
         }
     }
 
-    // todo test case: X exists, X decides to change name to Y, Y is created while X voting is in progress, X cannot change name to Y
+    function testUpdateNamingWith_ValidationVoting() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
+
+        _moveDaoToSeedPhase(host, codec, dao.symbol);
+
+        {
+            ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
+
+            bytes memory payload = codec.encode(naming, codec.PAYLOAD_API_VERSION());
+
+            host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_NAMING_2), payload, "");
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, dao.symbol);
+
+            vm.prank(MULTISIG);
+            host.validateProposal(proposalId, true, payload);
+
+            vm.prank(MULTISIG);
+            host.receiveVotingResults(proposalId, true, payload);
+
+            IDAOData.DaoData memory dao1 = IDataReader(host.getChainSettings().dataReader).getDAO(DAO_SYMBOL);
+            IDAOData.DaoData memory dao2 = IDataReader(host.getChainSettings().dataReader).getDAO(naming.symbol);
+
+            assertEq(dao2.uid, dao.uid, "uid is unchanged");
+            assertEq(dao1.uid, 0, "old symbol is not used anymore");
+
+            assertEq(dao2.name, naming.name, "name updated");
+            assertEq(dao2.deployer, dao.deployer, "deployer wasn't changed");
+        }
+    }
 
     //endregion ----------------------------------- Update naming
 
@@ -912,6 +951,59 @@ contract HostTest is Test {
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
 
             assertEq(keccak256(abi.encode(daoAfter.params)), keccak256(abi.encode(a)), "params");
+        }
+    }
+
+    function testUpdateDaoChainSettingsInstant() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
+
+        {
+            ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
+                bbRate: 1e17 // todo use normal value
+            });
+
+            host.updateDAO(
+                dao.symbol,
+                uint16(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8),
+                codec.encode(data, codec.PAYLOAD_API_VERSION()),
+                ""
+            );
+
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
+
+            assertEq(keccak256(abi.encode(daoAfter.chainSettings)), keccak256(abi.encode(data)), "chain settings");
+        }
+    }
+
+    function testUpdateDaoChainSettingsProposal() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        _setupAccessManager(host);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+        _dealAndApprove(host);
+
+        IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
+        _moveDaoToSeedPhase(host, codec, dao.symbol);
+
+        {
+            ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
+                bbRate: 1e17 // todo use normal value
+            });
+
+            bytes memory payload = codec.encode(data, codec.PAYLOAD_API_VERSION());
+
+            host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, dao.symbol);
+
+            vm.prank(MULTISIG);
+            host.receiveVotingResults(proposalId, true, payload);
+
+            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
+
+            assertEq(keccak256(abi.encode(daoAfter.chainSettings)), keccak256(abi.encode(data)), "chain settings");
         }
     }
 

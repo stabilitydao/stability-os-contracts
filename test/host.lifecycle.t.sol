@@ -945,9 +945,7 @@ contract HostLifeCycleTest is Test {
         }
     }
 
-    /**
-     * Try to create DAO contracts with salt
-     */
+    /// @dev Try to create DAO contracts with salt
     function lifeCycleWithSalt(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
 
