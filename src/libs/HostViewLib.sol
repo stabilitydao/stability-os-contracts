@@ -87,9 +87,16 @@ library HostViewLib {
                 dest.funding[i] = $.funding[HostLib.getKey(dest.uid, uint(segment3.funding[i]))];
             }
 
-            dest.vesting = new ITokenomics.Vesting[](segment3.countVesting);
+            dest.vesting = new IDAOData.VestingData[](segment3.countVesting);
             for (uint i; i < dest.vesting.length; i++) {
-                dest.vesting[i] = $.vesting[HostLib.getIndexKey(dest.uid, i)];
+                HostLib.VestingLocal memory v = $.vesting[HostLib.getIndexKey(dest.uid, i)];
+                dest.vesting[i] = IDAOData.VestingData({
+                    name: v.name,
+                    allocation: v.allocation,
+                    start: v.start,
+                    end: v.end,
+                    vestingContract: address(0) // todo: where to take address of contract?
+                });
             }
         }
 

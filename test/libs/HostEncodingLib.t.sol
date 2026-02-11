@@ -626,7 +626,7 @@ contract HostEncodingLibTest is Test {
             }),
             units: new ITokenomics.UnitData[](2),
             funding: new ITokenomics.Funding[](2),
-            vesting: new ITokenomics.Vesting[](2),
+            vesting: new IDAOData.VestingData[](2),
             governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: 1111, ttBribe: type(uint).max - 1}),
             deployer: makeAddr("deployer"),
             daoMetaDataLocation: "daoMetaDataLocation"

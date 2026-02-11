@@ -525,7 +525,7 @@ library HostEncodingLib {
                         ITokenomics.DaoImages,
                         ITokenomics.UnitData[],
                         ITokenomics.Funding[],
-                        ITokenomics.Vesting[]
+                        IDAOData.VestingData[]
                     )
                 );
 

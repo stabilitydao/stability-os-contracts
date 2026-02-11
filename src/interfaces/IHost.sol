@@ -128,6 +128,8 @@ interface IHost {
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
+    event VestingDescription(uint daoUid, string vestingName, string description);
+
     /// @notice DAO-setting common for all chains
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset

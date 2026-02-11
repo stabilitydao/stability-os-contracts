@@ -377,7 +377,13 @@ library HostActionsLib {
             segment3.countVesting = countVesting;
 
             for (uint i; i < dao.vesting.length; i++) {
-                $.vesting[HostLib.getIndexKey(daoUid, i)] = dao.vesting[i];
+                $.vesting[HostLib.getIndexKey(daoUid, i)] = HostLib.VestingLocal({
+                    name: dao.vesting[i].name,
+                    allocation: dao.vesting[i].allocation,
+                    start: dao.vesting[i].start,
+                    end: dao.vesting[i].end
+                });
+                emit IHost.VestingDescription(daoUid, dao.vesting[i].name, dao.vesting[i].description);
             }
         }
 

@@ -825,8 +825,8 @@ contract HostTest is Test {
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 2, "vesting length");
 
-            assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
-            assertEq(keccak256(abi.encode(daoAfter.vesting[1])), keccak256(abi.encode(vesting[1])), "vesting[1] eq");
+            assertTrue(_same(daoAfter.vesting[0], vesting[0]), "vesting[0] eq");
+            assertTrue(_same(daoAfter.vesting[1], vesting[1]), "vesting[1] eq");
         }
 
         {
@@ -849,7 +849,7 @@ contract HostTest is Test {
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
             assertEq(daoAfter.vesting.length, 1, "vesting length 2");
 
-            assertEq(keccak256(abi.encode(daoAfter.vesting[0])), keccak256(abi.encode(vesting[0])), "vesting[0] eq");
+            assertTrue(_same(daoAfter.vesting[0], vesting[0]), "vesting[0] eq");
         }
     }
 
@@ -918,6 +918,12 @@ contract HostTest is Test {
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
+    function _same(IDAOData.VestingData memory a, ITokenomics.Vesting memory b) internal pure returns (bool) {
+        return a.vestingContract == address(0) // todo check contract address correctly when it will be filled
+            && keccak256(abi.encode(a.name)) == keccak256(abi.encode(b.name)) && a.allocation == b.allocation
+            && a.start == b.start && a.end == b.end;
+    }
+
     function _assertDaoEqual(IDAOData.DaoDataInput memory expected, IDAOData.DaoData memory actual) internal pure {
         // basic fields
         assertEq(uint(uint8(expected.phase)), uint(uint8(actual.phase)), "phase");
@@ -1016,10 +1022,9 @@ contract HostTest is Test {
         assertEq(expected.vesting.length, actual.vesting.length, "tokenomics.vesting.length");
         for (uint i = 0; i < expected.vesting.length; i++) {
             ITokenomics.Vesting memory ev = expected.vesting[i];
-            ITokenomics.Vesting memory av = actual.vesting[i];
+            IDAOData.VestingData memory av = actual.vesting[i];
 
             assertEq(ev.name, av.name, "vesting.name");
-            assertEq(ev.description, av.description, "vesting.description");
             assertEq(ev.allocation, av.allocation, "vesting.allocation");
             assertEq(ev.start, av.start, "vesting.start");
             assertEq(ev.end, av.end, "vesting.end");

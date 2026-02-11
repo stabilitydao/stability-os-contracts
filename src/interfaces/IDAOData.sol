@@ -6,6 +6,24 @@ import {ITokenomics} from "./ITokenomics.sol";
 
 /// @notice Various variants of DAO data
 interface IDAOData is ITokenomics, IDAOMetadata {
+    /// @notice Vesting allocation data available on-chain for users
+    struct VestingData {
+        /// @notice Short name of vesting allocation
+        string name;
+
+        /// @notice Vesting supply, in percents. Decimals 1e5, i.e. 20_000 = 20%
+        uint allocation;
+
+        /// @notice Start timestamp
+        uint64 start;
+
+        /// @notice End timestamp
+        uint64 end;
+
+        /// @notice Deployed vesting contract if any
+        address vestingContract;
+    }
+
     /// @notice DAO data available on-chain for users
     struct DaoData {
         // ---------------------------- SEGMENT 1: ON-CHAIN on all chains where Host deployed
@@ -59,7 +77,7 @@ interface IDAOData is ITokenomics, IDAOMetadata {
         Funding[] funding;
 
         /// @notice Vesting allocations (optional)
-        Vesting[] vesting;
+        VestingData[] vesting;
 
         /// @notice Settings of DAO Governance
         GovernanceSettings governanceSettings;
