@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-//import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {MockHost} from "../mocks/MockHost.sol";
@@ -13,10 +13,17 @@ import {HostLib} from "../../src/libs/HostLib.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
+import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IHosted} from "../../src/interfaces/IHosted.sol";
+import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
+import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {IToken} from "../../src/deprecated/interfaces/IToken.sol";
 
 contract HostProposalLibTest is Test {
     MockERC20 internal exchangeAsset;
+
+    uint64 internal constant MINTER_ROLE = 123456;
 
     /// @dev msg.sender (it cannot be changed by vm.prank in library calls)
     address internal user;
@@ -154,6 +161,98 @@ contract HostProposalLibTest is Test {
     }
 
     //endregion ------------------------------------------ Tests for proposal utils
+
+    //region ------------------------------------------ Check user power tests
+    function testCheckUserPower_Draft_Success() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.DRAFT_0;
+
+        // Proposal that requires voting cannot be created on DRAFT stage
+        // Anyway, proposal that requires validation only can be created
+        // No user power is required in that case, anybody can create such proposal
+        this._checkUserPowerPublic(1); // no revert
+    }
+
+    // todo: implement _checkUserPowerPublic for LIVE_CLIFF_5 and other phases
+    function testCheckUserPower_LiveCliff_NotImplemented() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
+
+        vm.expectRevert(IHost.NotImplemented.selector);
+        this._checkUserPowerPublic(1); // no revert
+    }
+
+    function fixtureSeedPowerPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
+        phases = new ITokenomics.LifecyclePhase[](4);
+        for (uint i = 0; i < 4; i++) {
+            phases[i] = ITokenomics.LifecyclePhase(i + 1);
+        }
+    }
+
+    function testCheckUserPower_UserHasEnoughSeedPower_Success() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ISeedToken seedToken = _deploySeedToken(1);
+        $.deployments[1].seedToken = address(seedToken);
+        _setupSeedTokenMinter(address(this), address(seedToken));
+
+        seedToken.mint(address(this), 2_000); // 20%
+        seedToken.mint(makeAddr("other user"), 8_000); // 80%
+        ITokenomics.LifecyclePhase[] memory phases = fixtureSeedPowerPhase();
+        for (uint i; i < phases.length; i++) {
+            ITokenomics.LifecyclePhase seedPowerPhase = phases[i];
+            $.segment2[1].phase = ITokenomics.LifecyclePhase(seedPowerPhase);
+            $.daoParameters[1].proposalThreshold = 20_000; // 20%, user has 20%
+            this._checkUserPowerPublic(1); // no revert
+
+            $.segment2[1].phase = ITokenomics.LifecyclePhase(seedPowerPhase);
+            $.daoParameters[1].proposalThreshold = 10_000; // 10%, user has 20%
+            this._checkUserPowerPublic(1); // no revert
+        }
+    }
+
+    function testCheckUserPower_SeedZeroTotalSupply_Revert() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ISeedToken seedToken = _deploySeedToken(1);
+        $.deployments[1].seedToken = address(seedToken);
+        _setupSeedTokenMinter(address(this), address(seedToken));
+
+        ITokenomics.LifecyclePhase[] memory phases = fixtureSeedPowerPhase();
+        for (uint i; i < phases.length; i++) {
+            ITokenomics.LifecyclePhase seedPowerPhase = phases[i];
+
+            $.segment2[1].phase = ITokenomics.LifecyclePhase(seedPowerPhase);
+            $.daoParameters[1].proposalThreshold = 21_000; // 21%, user has 20%, not enough
+
+            vm.expectRevert(IHost.NotEnoughUserPower.selector);
+            this._checkUserPowerPublic(1);
+        }
+    }
+
+    function testCheckUserPower_UserHasNotEnoughSeedPower_Revert() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ISeedToken seedToken = _deploySeedToken(1);
+        $.deployments[1].seedToken = address(seedToken);
+        _setupSeedTokenMinter(address(this), address(seedToken));
+
+        seedToken.mint(address(this), 2_000); // 20%
+        seedToken.mint(makeAddr("other user"), 8_000); // 80%
+
+        ITokenomics.LifecyclePhase[] memory phases = fixtureSeedPowerPhase();
+        for (uint i; i < phases.length; i++) {
+            ITokenomics.LifecyclePhase seedPowerPhase = phases[i];
+
+            $.segment2[1].phase = ITokenomics.LifecyclePhase(seedPowerPhase);
+            $.daoParameters[1].proposalThreshold = 21_000; // 21%, user has 20%, not enough
+
+            vm.expectRevert(IHost.NotEnoughUserPower.selector);
+            this._checkUserPowerPublic(1);
+        }
+    }
+
+    //endregion ------------------------------------------ Check user power tests
 
     //region ------------------------------------------ Tests for _isActionRunnable
     function testIsActionRunnable_NoValidationNoVoting_ReturnFalse() public view {
@@ -358,28 +457,39 @@ contract HostProposalLibTest is Test {
         return _authority;
     }
 
-    //    function _setupAuthority(IAuthority authority_, address seedToken_, address tgeToken_) internal {
-    //        bytes4[] memory selectors = new bytes4[](3);
-    //        selectors[0] = bytes4(SeedToken.mint.selector);
-    //        selectors[1] = bytes4(SeedToken.refund.selector);
-    //        selectors[2] = bytes4(SeedToken.transferTo.selector);
-    //
-    //        vm.prank(multisig);
-    //        authority_.setTargetFunctionRole(seedToken_, selectors, 65871739); // 65871739 = random role uid
-    //
-    //        selectors = new bytes4[](2);
-    //        selectors[0] = bytes4(TgeToken.mint.selector);
-    //        selectors[1] = bytes4(TgeToken.refund.selector);
-    //
-    //        vm.prank(multisig);
-    //        authority_.setTargetFunctionRole(tgeToken_, selectors, 65871739);
-    //
-    //        vm.prank(multisig);
-    //        authority_.grantRole(65871739, multisig, 0);
-    //
-    //        vm.prank(multisig);
-    //        authority_.grantRole(65871739, address(this), 0);
-    //    }
+    function _setupSeedTokenMinter(address minter, address seedToken) internal {
+        // set up OS as operator for all restricted functions
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = bytes4(SeedToken.mint.selector);
+
+        vm.prank(multisig);
+        IAuthority(authority).setTargetFunctionRole(seedToken, selectors, MINTER_ROLE);
+
+        vm.prank(multisig);
+        IAuthority(authority).grantRole(MINTER_ROLE, address(minter), 0);
+    }
+
+    function _deploySeedToken(uint daoUid) internal returns (ISeedToken _seedToken) {
+        address logic = address(new SeedToken());
+        address proxyFactory = authority.PROXY_FACTORY();
+        _seedToken = ISeedToken(IProxyFactory(proxyFactory).predictAddress("0x375654"));
+
+        vm.prank(multisig);
+        authority.execute(
+            proxyFactory,
+            abi.encodeCall(
+                IProxyFactory.create2NewProxy,
+                ("0x375654", logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(daoUid))))
+            )
+        );
+    }
 
     //endregion ------------------------------------------ Internal logic
+
+    //region ------------------------------------------ External access to library functions
+    function _checkUserPowerPublic(uint daoUid) public view {
+        HostProposalLib._checkUserPower(daoUid);
+    }
+
+    //endregion ------------------------------------------ External zccess to library functions
 }

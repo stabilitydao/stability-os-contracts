@@ -66,6 +66,7 @@ interface IHost {
     error VestingNotAllowed();
     error IncorrectVestingStart();
     error TooLateToUpdateTotalSupply();
+    error NotEnoughUserPower();
 
     error AlreadyAnnounced();
     error SameVersion();

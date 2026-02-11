@@ -11,6 +11,7 @@ import {HostUpdateLib} from "./HostUpdateLib.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {ISeedToken} from "../interfaces/ISeedToken.sol";
 
 /// @notice Library with proposal related functions
 library HostProposalLib {
@@ -432,9 +433,7 @@ library HostProposalLib {
         // @dev Proposal can be created on initial chain only
         require($.segment3[daoUid].initialChain == block.chainid, IHost.NotInitialChain());
 
-        // todo get user power
-        // seed power => dao token power
-        // todo check proposalThreshold
+        _checkUserPower(daoUid);
 
         /// @dev Hash of the payload
         bytes32 payloadHash = getPayloadHash(payload);
@@ -464,6 +463,32 @@ library HostProposalLib {
         emit IHost.Proposal(daoUid, params_.action, proposalId, payloadHash, payload);
 
         return proposalId;
+    }
+
+    /// @dev Ensure that msg.sender has enough user power to make a proposal
+    function _checkUserPower(uint daoUid) internal view {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
+        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+            // Proposal created at DRAFT phase doesn't require any power
+            // it doesn't require voting, only validation
+        } else if (
+            phase == ITokenomics.LifecyclePhase.SEED_1 || phase == ITokenomics.LifecyclePhase.SEED_FAILED_2
+                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3 || phase == ITokenomics.LifecyclePhase.TGE_4
+        ) {
+            ISeedToken seedToken = ISeedToken($.deployments[daoUid].seedToken);
+            uint power = seedToken.balanceOf(msg.sender);
+            uint totalPower = seedToken.totalSupply();
+            require(
+                totalPower != 0
+                && $.daoParameters[daoUid].proposalThreshold <= power * HostLib.DENOMINATOR / totalPower,
+                IHost.NotEnoughUserPower()
+            );
+        } else {
+            // todo check dao token power
+            revert IHost.NotImplemented();
+        }
     }
 
     /// @notice Create unique proposal id

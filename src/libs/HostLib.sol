@@ -16,6 +16,9 @@ library HostLib {
     /// @notice Values in range [0..99) are reserved for internal use (so we can use some values as stubs)
     uint private constant MIN_DAO_UID = 100;
 
+    /// @dev Decimals for percents
+    uint public constant DENOMINATOR = 100_000;
+
     /// @notice This value is used in daoUids mapping to mark that the given symbol is registered
     /// @dev We don't know exact daoUid at the moment of registration at segment 1, we only know that the symbol is in use
     uint internal constant DAO_UID_STUB_SYMBOL_REGISTERED = 1;
