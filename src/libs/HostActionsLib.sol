@@ -19,20 +19,7 @@ library HostActionsLib {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
-    //region -------------------------------------- Restricted actions
-    function setSettings(IHost.HostSettings memory st) external {
-        HostConfigLib.HostGlobalStorage storage $ = HostConfigLib.getHostGlobalStorage();
-        $.globalSettings = st;
-
-        emit IHost.OsSettingsUpdated(st);
-    }
-
-    function setChainSettings(IHost.HostChainSettings memory st) external {
-        HostConfigLib.HostChainStorage storage $ = HostConfigLib.getHostChainStorage();
-        $.chainSettings = st;
-
-        emit IHost.OsChainSettingsUpdated(st);
-    }
+    //region -------------------------------------- Initialization
 
     /// @notice Initialize OS with existing DAO symbols from other chains
     function initHost(IHost.HostInitPayload memory initPayload) external {
@@ -58,7 +45,26 @@ library HostActionsLib {
         }
 
         HostProxyLib.initialize(initPayload.hostVersion);
-        // todo event Host initialized
+        emit IHost.HostInitialized(
+            initPayload.daoHostSymbol, initPayload.daoHostUid, initPayload.hostVersion, initPayload.usedSymbols
+        );
+    }
+
+    //endregion -------------------------------------- Initialization
+
+    //region -------------------------------------- Restricted actions
+    function setSettings(IHost.HostSettings memory st) external {
+        HostConfigLib.HostGlobalStorage storage $ = HostConfigLib.getHostGlobalStorage();
+        $.globalSettings = st;
+
+        emit IHost.OsSettingsUpdated(st);
+    }
+
+    function setChainSettings(IHost.HostChainSettings memory st) external {
+        HostConfigLib.HostChainStorage storage $ = HostConfigLib.getHostChainStorage();
+        $.chainSettings = st;
+
+        emit IHost.OsChainSettingsUpdated(st);
     }
 
     //endregion -------------------------------------- Restricted actions
@@ -94,9 +100,6 @@ library HostActionsLib {
         HostUpdateLib.validate(daoUid, ITokenomics.LifecyclePhase.DRAFT_0, daoData2, params, funding, activity);
 
         // ------------------------- Save DAO data to the storage
-        // we don't use viaIR=true in config so we cannot make direct assignment
-        // $.daos[symbol] = daoData;
-
         $.segment2[daoUid] = daoData2;
         $.daoParameters[daoUid] = params;
 
@@ -217,17 +220,17 @@ library HostActionsLib {
             newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
             // slither-disable-next-line uninitialized-local
-            bool isVestingNotEnded;
+            bool isVestingActive;
 
             uint countVesting = $.segment3[daoUid].countVesting;
             for (uint i; i < countVesting; i++) {
-                if ($.vesting[HostLib.getKey(daoUid, i)].end <= block.timestamp) {
-                    isVestingNotEnded = true;
+                if ($.vesting[HostLib.getKey(daoUid, i)].end > block.timestamp) {
+                    isVestingActive = true;
                     break;
                 }
             }
 
-            require(isVestingNotEnded, IHost.WaitVestingEnd());
+            require(!isVestingActive, IHost.WaitVestingEnd());
 
             newPhase = ITokenomics.LifecyclePhase.LIVE_7;
         }
@@ -268,7 +271,7 @@ library HostActionsLib {
         _processUnitRevenue(
             $,
             hostDaoUid,
-            "", // todo symbol of host dao, can we keep it empty here?
+            $.segment2[hostDaoUid].symbol,
             HostLib.HOST_UNIT,
             HostConfigLib.getHostGlobalSettings().priceDao
         );

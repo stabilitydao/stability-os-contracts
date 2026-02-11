@@ -40,7 +40,7 @@ interface IHostBridge {
     function endpoints() external view returns (uint32[] memory);
 
     /// @notice Get gas limit for a specific message kind
-    /// @param messageKind See IOS.CrossChainMessages
+    /// @param messageKind See IHost.CrossChainMessages
     function gasLimit(uint messageKind) external view returns (uint128);
 
     /// @notice Add supported chains by their endpoint LayerZero IDs
@@ -52,7 +52,7 @@ interface IHostBridge {
     function removeEndpoint(uint32[] memory eids_) external;
 
     /// @notice Set gas limit for a specific message kind
-    /// @param messageKind See IOS.CrossChainMessages
+    /// @param messageKind See IHost.CrossChainMessages
     /// @param gasLimit_ Gas limit to set
     function setGasLimit(uint messageKind, uint128 gasLimit_) external;
 }

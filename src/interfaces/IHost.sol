@@ -130,6 +130,7 @@ interface IHost {
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
     event VestingDescription(uint daoUid, string vestingName, string description);
+    event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
 
     /// @notice DAO-setting common for all chains
     struct HostSettings {

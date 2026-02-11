@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
@@ -15,8 +16,8 @@ import {IHost} from "./interfaces/IHost.sol";
 import {ITokenomics} from "./interfaces/ITokenomics.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
-/// [META-ISSUE] DAO must manage properties itself via voting by executing Operating proposals.
-contract Host is IHost, Hosted {
+/// DAO must manage properties itself via voting by executing Operating proposals.
+contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     /// @inheritdoc IHosted
     string public constant VERSION = "1.0.0";
 
@@ -26,6 +27,7 @@ contract Host is IHost, Hosted {
     /// @inheritdoc IHosted
     function initialize(address authority_, bytes memory payload) public payable initializer {
         __Hosted_init(authority_);
+        __ReentrancyGuard_init();
 
         // register all symbols registered on other chains
         IHost.HostInitPayload memory initPayload = abi.decode(payload, (IHost.HostInitPayload));
@@ -159,23 +161,20 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function fund(string calldata symbol, uint amount) external {
-        // todo not reentrant
+    function fund(string calldata symbol, uint amount) external nonReentrant {
         // no restrictions, anybody can call this
 
         HostFundingLib.fund(symbol, amount);
     }
 
     /// @inheritdoc IHost
-    function refund(string calldata symbol) external {
-        // todo not reentrant
+    function refund(string calldata symbol) external nonReentrant {
         HostFundingLib.refund(symbol);
     }
 
     /// @inheritdoc IHost
-    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external {
+    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external nonReentrant {
         // todo no restrictions?
-        // todo not reentrant
         HostActionsLib.processUnitRevenue(symbol, unitId, amount);
     }
 

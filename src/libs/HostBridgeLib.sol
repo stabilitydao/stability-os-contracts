@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
-import {console} from "forge-std/console.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
@@ -37,7 +36,6 @@ library HostBridgeLib {
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
             bytes32 hash = EfficientHashLib.hash(payloads[i]);
-            console.log("quoteSendBridgedAction.hash", uint(hash));
             fee += HostCrossChainLib._quoteMessage(
                 dstEids[i],
                 IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2,
@@ -165,7 +163,6 @@ library HostBridgeLib {
         uint len = dstEids.length;
         for (uint i; i < len; i++) {
             bytes32 hash = _getHashProposalAction(proposalId, listPayloads[i]);
-            console.log("_sendBridgedAction.hash", uint(hash));
             HostCrossChainLib._sendCrossChainMessage(
                 dstEids[i],
                 IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2,
@@ -188,7 +185,7 @@ library HostBridgeLib {
         IBridgedActions.BridgeDaoParams memory p = HostEncodingLib.decodeBridgeDaoParams(actionPayload);
 
         /// @dev Dao UID stored in the chain for the given symbol
-        uint chainDaoUid = $.daoUids[p.symbol]; // don't exclude stub here
+        uint chainDaoUid = $.daoUids[p.symbol]; // getDaoUidStub value is valid here, don't exclude it
 
         /// @dev Bridging DAO is allowed only if it is not bridged yet
         require(chainDaoUid == 0 || chainDaoUid == HostLib.getDaoUidStub(), IHost.AlreadyBridged());

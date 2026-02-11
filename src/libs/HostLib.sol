@@ -219,9 +219,6 @@ library HostLib {
         /// @notice Settings of DAO Governance
         mapping(uint daoUid => ITokenomics.GovernanceSettings) governanceSettings;
 
-        // todo DAOChainSettings are not used on chain so we don't store them here
-        // todo same situation with sending salt to other chains
-
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment3;
 

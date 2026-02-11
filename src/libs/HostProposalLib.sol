@@ -482,11 +482,11 @@ library HostProposalLib {
             uint totalPower = seedToken.totalSupply();
             require(
                 totalPower != 0
-                && $.daoParameters[daoUid].proposalThreshold <= power * HostLib.DENOMINATOR / totalPower,
+                    && $.daoParameters[daoUid].proposalThreshold <= power * HostLib.DENOMINATOR / totalPower,
                 IHost.NotEnoughUserPower()
             );
         } else {
-            // todo check dao token power
+            // todo Add implementation of checking dao token power in LIVE and later phases
             revert IHost.NotImplemented();
         }
     }

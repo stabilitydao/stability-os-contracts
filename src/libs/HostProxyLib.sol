@@ -21,7 +21,7 @@ library HostProxyLib {
     //region -------------------------------------- Data types
     /// @dev Data announced for next host platform upgrade
     struct HostUpgradeData {
-        /// @dev Next host version, format yyyy.mm.dd
+        /// @dev Next host version, YY.MM.MINOR-tag
         string newVersion;
         /// @dev Proxies to be upgraded
         address[] proxies;
@@ -31,7 +31,7 @@ library HostProxyLib {
 
     /// @custom:storage-location erc7201:stability.host-contracts.HostProxyLib
     struct HostProxyStorage {
-        /// @notice Current implementation of the given contracts
+        /// @notice Current implementation of the given contracts, ITokenomics.ContractIndices
         mapping(uint contractKind => address logic) implementations;
 
         /// @dev Announced pending host upgrade data
@@ -45,11 +45,13 @@ library HostProxyLib {
     //endregion -------------------------------------- Data types
 
     //region -------------------------------------- Deploy logic
+    /// @param kind ITokenomics.ContractIndices
     function contractImplementation(uint kind) external view returns (address) {
         HostProxyStorage storage $ = getHostProxyStorage();
         return $.implementations[kind];
     }
 
+    /// @param kind ITokenomics.ContractIndices
     function setContractImplementation(uint kind, address implementation) external {
         HostProxyStorage storage $ = getHostProxyStorage();
         $.implementations[kind] = implementation;
@@ -206,7 +208,7 @@ library HostProxyLib {
         return keccak256(bytes(a)) == keccak256(bytes(b));
     }
 
-    function getHostProxyStorage() private pure returns (HostProxyStorage storage $) {
+    function getHostProxyStorage() internal pure returns (HostProxyStorage storage $) {
         //slither-disable-next-line assembly
         assembly {
             $.slot := HOST_UPGRADE_STORAGE_LOCATION
