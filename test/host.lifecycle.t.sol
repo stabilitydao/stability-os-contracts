@@ -41,7 +41,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Ensure that first DAO becomes Host DAO
         {
-            uint uid = host56.getHostDaoUid();
+            uint uid = host56.hostDaoUid();
             IDAOData.DaoData memory data = IDataReader(host56.getChainSettings().dataReader).getDAO("ALIENS");
             assertEq(data.uid, uid, "ALIENS is Host dao");
         }
@@ -405,7 +405,7 @@ contract HostLifeCycleTest is Test {
         }
 
         // ------------------------------ owner of DAO is seed token
-        assertEq(host_.getDAOOwner(daoData.symbol), daoData.deployments.seedToken, "owner should be seed token");
+        assertEq(host_.ownerDAO(daoData.symbol), daoData.deployments.seedToken, "owner should be seed token");
 
         // ------------------------------ try fund on not funding phase
         {

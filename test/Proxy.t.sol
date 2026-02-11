@@ -73,7 +73,7 @@ contract ProxyTest is Test {
 
         assertEq(IProxy(host).implementation(), logic, "logic is set");
         assertEq(IAccessManaged(host).authority(), address(authority), "authority is set");
-        assertNotEq(IHost(host).getHostDaoUid(), 0, "host dao uid is set");
+        assertNotEq(IHost(host).hostDaoUid(), 0, "host dao uid is set");
 
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         IHosted(host).initialize(address(authority), abi.encode(emptyHostPayload));
@@ -117,7 +117,7 @@ contract ProxyTest is Test {
 
         assertEq(IProxy(host).implementation(), logic, "logic is set");
         assertEq(IAccessManaged(host).authority(), address(authority), "authority is set");
-        assertNotEq(IHost(host).getHostDaoUid(), 0, "host dao uid is set");
+        assertNotEq(IHost(host).hostDaoUid(), 0, "host dao uid is set");
 
         vm.expectRevert(Initializable.InvalidInitialization.selector);
         IHosted(host).initialize(address(authority), abi.encode(emptyHostPayload));

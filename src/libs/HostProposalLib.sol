@@ -71,23 +71,24 @@ library HostProposalLib {
         }
     }
 
-    /// @notice Quote gas cost to process voting results from governance
+    /// @notice Quote gas cost to perform action suggested by proposal
+    /// The action can be performed by calling either {receiveVotingResults(succeeded=true)} or {validateProposal(valid=true)}
     /// @param proposalId Proposal unique id
-    /// @param succeed True if proposal is approved
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if proposal was rejected.
+    /// @param method Kind of operation that you are going to perform: 0 - receiveVotingResults, 1 - validateProposal
     /// @return fee Estimated fee (in native token) to process the voting results
-    function quoteReceiveVotingResults(
+    function quoteProposalAction(
         bytes32 proposalId,
-        bool succeed,
-        bytes memory payload
+        bytes memory payload,
+        IHost.ValidationMethod method
     ) external view returns (uint fee) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalData storage p = $.proposals[proposalId];
 
-        if (succeed) {
-            HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
-            ITokenomics.DAOAction action = header.action;
+        HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(p.proposalHeader);
+        ITokenomics.DAOAction action = header.action;
+        if (_isActionRunnable(header, method)) {
             if (action == ITokenomics.DAOAction.UPDATE_BRIDGED_DAO_9) {
                 (uint16 actionKind, uint32[] memory dstEids, bytes[] memory actionPayloads) =
                     HostEncodingLib.decodeBridgedAction(payload);
@@ -376,6 +377,22 @@ library HostProposalLib {
     //endregion -------------------------------------- Internal logic for updating instantly or through proposals
 
     //region -------------------------------------- Proposal utils
+
+    /// @notice Check if action can be executed according to the proposal header and kind of the operation that you are going to perform
+    function _isActionRunnable(
+        HostLib.ProposalHeader memory header,
+        IHost.ValidationMethod method
+    ) internal pure returns (bool) {
+        if (method == IHost.ValidationMethod.VOTING_0) {
+            /// @dev receiveVotingResults can be called only for approved proposals that require voting
+            return header.votingRequired && header.status == ITokenomics.VotingStatus.VOTING_0
+                && (!header.validationRequired || header.validationStatus == ITokenomics.ValidationStatus.APPROVED_1);
+        } else {
+            /// @dev validateProposal can be called only for proposals that require validation and are not validated yet
+            return (header.validationRequired && header.validationStatus == ITokenomics.ValidationStatus.NONE_0)
+                && (!header.votingRequired || header.status == ITokenomics.VotingStatus.APPROVED_1);
+        }
+    }
 
     /// @dev Trivial function to generate ActionParams struct.
     /// All logic of values detection should be implemented on the caller side.

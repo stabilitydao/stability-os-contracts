@@ -169,7 +169,7 @@ contract HostProxyLibTest is Test {
         assertTrue(newHost.isDaoSymbolInUse("BBB"), "BBB");
 
         assertTrue(newHost.isDaoSymbolInUse("CCC"), "CCC");
-        assertEq(newHost.getHostDaoUid(), 12345, "CCC uid");
+        assertEq(newHost.hostDaoUid(), 12345, "CCC uid");
 
         assertEq(address(newHost), predictedProxyAddress, "Predicted address matches deployed");
     }

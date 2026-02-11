@@ -77,8 +77,8 @@ contract AuthorityTest is Test {
         // ------------------- verify host
         IHost host = IHost(hostPredicted);
         assertEq(IAccessManaged(hostPredicted).authority(), address(authority), "host authority");
-        assertNotEq(host.getHostDaoUid(), 0, "host dao uid set");
-        assertEq(host.getHostDaoUid(), dataReader.getDAO("A").uid, "host dao uid");
+        assertNotEq(host.hostDaoUid(), 0, "host dao uid set");
+        assertEq(host.hostDaoUid(), dataReader.getDAO("A").uid, "host dao uid");
         assertEq(host.isDaoSymbolInUse("B"), true, "host used symbol");
         assertEq(keccak256(bytes(host.hostVersion())), keccak256(bytes("1.0.0")), "host version");
 

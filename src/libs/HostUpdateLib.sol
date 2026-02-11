@@ -9,10 +9,8 @@ import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {IHosted} from "../interfaces/IHosted.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {stdStorage} from "../../lib/solidity-bytes-utils/lib/forge-std/src/StdStorage.sol";
 
 /// @notice Data validation, updating logic
 library HostUpdateLib {

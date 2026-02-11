@@ -115,7 +115,7 @@ contract HostTest is Test {
 
         bytes memory payload = _encode(daoOrigin);
         vm.prank(MULTISIG);
-        host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
+        host.updateByAdmin(IHost.AdminUpdateActions.ADD_LIVE_DAO_0, payload);
 
         IDAOData.DaoData memory readDao = IDataReader(host.getChainSettings().dataReader).getDAO(daoOrigin.symbol);
 
@@ -137,13 +137,13 @@ contract HostTest is Test {
             // user doesn't pay for creation DAO - ERC20InsufficientAllowance
             vm.expectRevert();
             vm.prank(MULTISIG);
-            host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
+            host.updateByAdmin(IHost.AdminUpdateActions.ADD_LIVE_DAO_0, payload);
 
             vm.prank(MULTISIG);
             IERC20(exchangeAsset).approve(address(host), amount * 3);
 
             vm.prank(MULTISIG);
-            host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
+            host.updateByAdmin(IHost.AdminUpdateActions.ADD_LIVE_DAO_0, payload);
 
             assertEq(IERC20(exchangeAsset).balanceOf(MULTISIG), amount * 2, "balance after 1st dao");
         }
@@ -151,11 +151,11 @@ contract HostTest is Test {
         // -------------------- not unique symbol
         vm.expectRevert(abi.encodeWithSelector(IHost.SymbolNotUnique.selector, "TESTDAO"));
         vm.prank(MULTISIG);
-        host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
+        host.updateByAdmin(IHost.AdminUpdateActions.ADD_LIVE_DAO_0, payload);
 
         // -------------------- only verifier (restricted)
         vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this)));
-        host.updateRestricted(uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0), payload);
+        host.updateByAdmin(IHost.AdminUpdateActions.ADD_LIVE_DAO_0, payload);
 
         // -------------------- todo validation
     }
@@ -1051,7 +1051,7 @@ contract HostTest is Test {
         bytes4[] memory selectors = new bytes4[](9);
         selectors[0] = bytes4(IHost.setSettings.selector);
         selectors[1] = bytes4(IHost.setChainSettings.selector);
-        selectors[2] = bytes4(IHost.updateRestricted.selector);
+        selectors[2] = bytes4(IHost.updateByAdmin.selector);
         selectors[3] = bytes4(IHost.refundFor.selector);
         selectors[4] = bytes4(IHost.onReceiveCrossChainMessage.selector);
         selectors[5] = bytes4(IHost.receiveVotingResults.selector);

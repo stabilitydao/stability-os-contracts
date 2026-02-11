@@ -238,8 +238,8 @@ library HostActionsLib {
     }
 
     /// @dev Add exist DAO to Host
-    function updateRestricted(uint actionIndex, bytes memory payload) external {
-        if (actionIndex == uint(IHost.RestrictedUpdates.ADD_LIVE_DAO_0)) {
+    function updateByAdmin(IHost.AdminUpdateActions actionIndex, bytes memory payload) external {
+        if (actionIndex == IHost.AdminUpdateActions.ADD_LIVE_DAO_0) {
             IDAOData.DaoDataInput memory dao = HostEncodingLib.decodeDaoDataInput(payload);
             _addLiveDAO(dao);
         } else {

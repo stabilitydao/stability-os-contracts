@@ -269,8 +269,8 @@ interface IHost {
         DAO_SYMBOL_3
     }
 
-    /// @notice Rarely used restricted actions, see {updateRestricted}
-    enum RestrictedUpdates {
+    /// @notice Rarely used restricted actions, see {updateByAdmin}
+    enum AdminUpdateActions {
         /// @notice Add live compatible DAO
         /// payload is encoded DaoDataInput, see HostEncodingLib.encodeDaoDataInput
         ADD_LIVE_DAO_0
@@ -285,6 +285,13 @@ interface IHost {
         DAO_4
     }
 
+    /// @notice Validation method for proposals: either receiveVotingResults or validateProposal
+    enum ValidationMethod {
+        /// @notice receiveVotingResults(succeeded=true)
+        VOTING_0,
+        /// @notice validateProposal(valid=true)
+        VALIDATION_1
+    }
     //region ---------------------------------------- Read
 
     /// @notice Data reader provides access to any DAO-related complex data in human-readable format
@@ -298,10 +305,10 @@ interface IHost {
     function getBinaryData(uint itemIndex, bytes memory input, uint16 version) external view returns (bytes memory);
 
     /// @notice Owner of the DAO
-    function getDAOOwner(string calldata symbol) external view returns (address);
+    function ownerDAO(string calldata symbol) external view returns (address);
 
     /// @notice Get UID of the Host DAO
-    function getHostDaoUid() external view returns (uint);
+    function hostDaoUid() external view returns (uint);
 
     /// @notice True if a DAO with such symbol already exists
     function isDaoSymbolInUse(string calldata symbol) external view returns (bool);
@@ -337,22 +344,29 @@ interface IHost {
     /// @param kind See IHost.ContractKinds
     function contractImplementation(uint kind) external view returns (address);
 
-    /// @notice Quote gas cost to process voting results from governance
+    /// @notice Quote cost to create DAO
+    /// @param symbol Symbol of new DAO
+    /// @return Cost in native currency to create the DAO using {createDAO(symbol)}
+    function quoteCreateDAO(string calldata symbol) external view returns (uint);
+
+    /// @notice Quote gas cost to perform action suggested by proposal
+    /// The action can be performed by calling either {receiveVotingResults(succeeded=true)} or {validateProposal(valid=true)}
     /// @param proposalId Proposal unique id
-    /// @param succeed True if proposal is approved
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if proposal was rejected.
-    function quoteReceiveVotingResults(
+    /// @param method Kind of operation that you are going to perform: 0 - receiveVotingResults, 1 - validateProposal
+    /// @return Estimated fee (in native token) to process the voting results
+    function quoteProposalAction(
         bytes32 proposalId,
-        bool succeed,
-        bytes memory payload
+        bytes memory payload,
+        ValidationMethod method
     ) external view returns (uint);
 
     /// @notice Get bridged action status by its hash
     /// @return applied True if the action was already applied on this chain
     /// @return actionKind Kind of the action, see IHost.BridgedActions
     /// @return daoUid UID of the DAO the action is applied to
-    function getBridgedAction(
+    function bridgedAction(
         bytes32 proposalId,
         bytes memory payload
     ) external view returns (bool applied, uint16 actionKind, uint daoUid);
@@ -369,11 +383,11 @@ interface IHost {
 
     //region ---------------------------------------- Write actions
 
-    /// @notice Set OS settings
+    /// @notice Set Host settings
     /// @custom:restricted Restricted through access manager (only admin)
     function setSettings(HostSettings memory newSettings) external;
 
-    /// @notice Set OS chain-depended settings
+    /// @notice Set Host chain-depended settings
     /// @custom:restricted Restricted through access manager (only admin)
     function setChainSettings(HostChainSettings memory newSettings) external;
 
@@ -391,19 +405,7 @@ interface IHost {
         ITokenomics.Funding[] memory funding
     ) external payable;
 
-    /// @notice Quote cost to create DAO
-    /// @param symbol Symbol of new DAO
-    /// @return Cost in native currency to create the DAO using {createDAO(symbol)}
-    function quoteCreateDAO(string calldata symbol) external view returns (uint);
-
-    /// @notice Any rarely used restricted action like addLiveDAO
-    /// @custom:restricted Restricted through access manager (only verifier)
-    /// @param actionIndex Index of the action to perform, see IHost.RestrictedActions
-    /// @param payload Encoded payload of the action. Its format depend on the action kind. See IHost.RestrictedUpdates
-    function updateRestricted(uint actionIndex, bytes memory payload) external;
-
     /// @notice Change lifecycle phase of a DAO
-    /// @custom:restricted Restricted through access manager
     function changePhase(string calldata symbol) external;
 
     /// @notice Provide funding to the DAO, receive seed or tge tokens in return
@@ -435,7 +437,7 @@ interface IHost {
     function refundFor(string calldata symbol, address[] memory users) external;
 
     /// @notice Handle incoming cross-chain message
-    /// @custom:restricted Restricted through access manager (only OS bridge can call this function)
+    /// @custom:restricted Restricted through access manager (only Host bridge can call this function)
     /// @param srcEid LayerZero source endpoint ID
     /// @param guid_ Unique message identifier
     /// @param message_ Message payload
@@ -447,17 +449,6 @@ interface IHost {
     /// @param amount Amount of revenue generated by the unit. This amount will be taken from the sender.
     function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external;
 
-    /// @notice Set implementation address for the contract of the given kind
-    /// @param kind See IHost.ContractKinds
-    function setContractImplementation(uint kind, address implementation) external;
-
-    /// @notice Deploy new proxy contract
-    /// @param salt_ Salt for create2 deployment
-    /// @param logic Address of logic contract
-    /// @param payload Initialization payload to pass to IHosted.initialize.
-    /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
-    /// @return proxy Address of deployed proxy contract
-    function deployProxy(bytes32 salt_, address logic, bytes memory payload) external returns (address proxy);
     //endregion ---------------------------------------- Write actions
 
     //region ---------------------------------------- Update actions
@@ -469,6 +460,12 @@ interface IHost {
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
     function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata(?)
+
+    /// @notice Any rarely used restricted action like addLiveDAO
+    /// @custom:restricted Restricted through access manager (only verifier)
+    /// @param actionIndex Index of the action to perform
+    /// @param payload Encoded payload of the action. Its format depend on the action kind. See IHost.RestrictedUpdates
+    function updateByAdmin(AdminUpdateActions actionIndex, bytes memory payload) external;
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param symbol DAO symbol
@@ -508,6 +505,20 @@ interface IHost {
     /// @notice Cancel pending upgrade
     /// @custom:restricted Restricted through access manager (only operator)
     function cancelUpgrade() external;
+
+    /// @notice Set implementation address for the contract of the given kind
+    /// @custom:restricted Restricted through access manager
+    /// @param kind See IHost.ContractKinds
+    function setContractImplementation(uint kind, address implementation) external;
+
+    /// @notice Deploy new proxy contract
+    /// @custom:restricted Restricted through access manager
+    /// @param salt_ Salt for create2 deployment
+    /// @param logic Address of logic contract
+    /// @param payload Initialization payload to pass to IHosted.initialize.
+    /// Payload is created using abi.encode() and decoded using abi.decode(). Set of params depend on logic contract.
+    /// @return proxy Address of deployed proxy contract
+    function deployProxy(bytes32 salt_, address logic, bytes memory payload) external returns (address proxy);
 
     //endregion ---------------------------------------- Update host platform
 }

@@ -44,7 +44,7 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function getHostDaoUid() external view returns (uint) {
+    function hostDaoUid() external view returns (uint) {
         return HostViewLib.getHostDaoUid();
     }
 
@@ -64,7 +64,7 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function getDAOOwner(string calldata symbol) external view returns (address) {
+    function ownerDAO(string calldata symbol) external view returns (address) {
         return HostViewLib.getDAOOwner(symbol);
     }
 
@@ -106,16 +106,16 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function quoteReceiveVotingResults(
+    function quoteProposalAction(
         bytes32 proposalId,
-        bool succeed,
-        bytes memory payload
+        bytes memory payload,
+        IHost.ValidationMethod method
     ) external view returns (uint) {
-        return HostProposalLib.quoteReceiveVotingResults(proposalId, succeed, payload);
+        return HostProposalLib.quoteProposalAction(proposalId, payload, method);
     }
 
     /// @inheritdoc IHost
-    function getBridgedAction(
+    function bridgedAction(
         bytes32 proposalId,
         bytes memory payload
     ) external view returns (bool applied, uint16 actionKind, uint daoUid) {
@@ -193,8 +193,8 @@ contract Host is IHost, Hosted {
     }
 
     /// @inheritdoc IHost
-    function updateRestricted(uint actionIndex, bytes memory payload) external restricted {
-        HostActionsLib.updateRestricted(actionIndex, payload);
+    function updateByAdmin(IHost.AdminUpdateActions actionIndex, bytes memory payload) external restricted {
+        HostActionsLib.updateByAdmin(actionIndex, payload);
     }
 
     /// @inheritdoc IHost

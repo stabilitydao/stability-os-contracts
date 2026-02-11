@@ -155,6 +155,176 @@ contract HostProposalLibTest is Test {
 
     //endregion ------------------------------------------ Tests for proposal utils
 
+    //region ------------------------------------------ Tests for _isActionRunnable
+    function testIsActionRunnable_NoValidationNoVoting_ReturnFalse() public view {
+        HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+            action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+            validationRequired: false,
+            votingRequired: false,
+            validationStatus: ITokenomics.ValidationStatus.NONE_0,
+            status: ITokenomics.VotingStatus.VOTING_0,
+            created: uint64(block.timestamp)
+        });
+        assertFalse(
+            HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting is not required"
+        );
+        assertFalse(
+            HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "validation is not required"
+        );
+    }
+
+    function testIsActionRunnable_ValidationNoVoting() public view {
+        HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+            action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+            validationRequired: true,
+            votingRequired: false,
+            validationStatus: ITokenomics.ValidationStatus.NONE_0,
+            status: ITokenomics.VotingStatus.VOTING_0,
+            created: uint64(block.timestamp)
+        });
+        assertTrue(
+            HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "validation => action"
+        );
+
+        assertFalse(
+            HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting is not required"
+        );
+
+        header.validationStatus = ITokenomics.ValidationStatus.APPROVED_1;
+        assertFalse(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "already validated");
+
+        header.validationStatus = ITokenomics.ValidationStatus.REJECTED_2;
+        assertFalse(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "already validated");
+    }
+
+    function testIsActionRunnable_NoValidationVoting() public view {
+        HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+            action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+            validationRequired: false,
+            votingRequired: true,
+            validationStatus: ITokenomics.ValidationStatus.NONE_0,
+            status: ITokenomics.VotingStatus.VOTING_0,
+            created: uint64(block.timestamp)
+        });
+        assertTrue(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting => action");
+
+        assertFalse(
+            HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "validation is not required"
+        );
+
+        header.status = ITokenomics.VotingStatus.APPROVED_1;
+        assertFalse(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "already voted");
+
+        header.status = ITokenomics.VotingStatus.REJECTED_2;
+        assertFalse(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "already voted");
+    }
+
+    function testIsActionRunnable_ValidationVoting() public view {
+        // ------------------------------- both validation and voting not performed
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+                validationRequired: true,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.NONE_0,
+                status: ITokenomics.VotingStatus.VOTING_0,
+                created: uint64(block.timestamp)
+            });
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0),
+                "voting cannot be performed before validation"
+            );
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation doesn't perform action, it just approves for voting"
+            );
+        }
+
+        // ------------------------------- validation is performed, voting not performed
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+                validationRequired: true,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
+                status: ITokenomics.VotingStatus.VOTING_0,
+                created: uint64(block.timestamp)
+            });
+            assertTrue(HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting => action");
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation already performed"
+            );
+
+            header.validationStatus = ITokenomics.ValidationStatus.REJECTED_2;
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0),
+                "voting cannot be performed if proposal is rejected"
+            );
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation already performed"
+            );
+        }
+
+        // ------------------------------- validation and voting are performed
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+                validationRequired: true,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
+                status: ITokenomics.VotingStatus.APPROVED_1,
+                created: uint64(block.timestamp)
+            });
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting already performed"
+            );
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation already performed"
+            );
+
+            header.status = ITokenomics.VotingStatus.REJECTED_2;
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting already rejected"
+            );
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation already performed"
+            );
+        }
+
+        // ------------------------------- validation not performed, voting are performed (not real case)
+        {
+            HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
+                action: ITokenomics.DAOAction.UPDATE_IMAGES_0,
+                validationRequired: true,
+                votingRequired: true,
+                validationStatus: ITokenomics.ValidationStatus.NONE_0,
+                status: ITokenomics.VotingStatus.APPROVED_1,
+                created: uint64(block.timestamp)
+            });
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting already performed"
+            );
+            assertTrue(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1), "validation => true"
+            );
+
+            header.status = ITokenomics.VotingStatus.REJECTED_2;
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VOTING_0), "voting already rejected"
+            );
+            assertFalse(
+                HostProposalLib._isActionRunnable(header, IHost.ValidationMethod.VALIDATION_1),
+                "validation cannot perform action if proposal is rejected"
+            );
+        }
+    }
+
+    //endregion ------------------------------------------ Tests for _isActionRunnable
+
     //region ------------------------------------------ Public functions to be able to test expectRevert on library calls
     function proposeAction(
         uint daoUid,

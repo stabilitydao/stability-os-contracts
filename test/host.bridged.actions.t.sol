@@ -384,7 +384,7 @@ contract HostBridgedActionsTest is Test {
         }
 
         if (proposal.votingRequired) {
-            uint fee = host.quoteReceiveVotingResults(proposalId, true, proposalPayload);
+            uint fee = host.quoteProposalAction(proposalId, proposalPayload, IHost.ValidationMethod.VOTING_0);
 
             deal(sonic.multisig, fee);
 
@@ -415,8 +415,7 @@ contract HostBridgedActionsTest is Test {
         (,, bytes[] memory actionPayloads) = HostEncodingLib.decodeBridgedAction(proposalPayload);
 
         {
-            (bool applied, uint16 actionKind, uint daoUid) =
-                hostAvalanche.getBridgedAction(proposalId, actionPayloads[0]);
+            (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.bridgedAction(proposalId, actionPayloads[0]);
             assertEq(daoUid, dao.uid, "expected dao uid");
             assertFalse(applied, "not applied");
             assertEq(actionKind, expectedActionKind, "action kind");
@@ -431,8 +430,7 @@ contract HostBridgedActionsTest is Test {
         hostAvalanche.applyBridgedAction(proposalId, actionPayloads[0]);
 
         {
-            (bool applied, uint16 actionKind, uint daoUid) =
-                hostAvalanche.getBridgedAction(proposalId, actionPayloads[0]);
+            (bool applied, uint16 actionKind, uint daoUid) = hostAvalanche.bridgedAction(proposalId, actionPayloads[0]);
             assertEq(daoUid, dao.uid, "expected dao uid");
             assertTrue(applied, "applied now");
             assertEq(actionKind, expectedActionKind, "action kind");
