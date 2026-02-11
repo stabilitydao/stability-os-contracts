@@ -11,6 +11,7 @@ import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {ISeedToken} from "../src/interfaces/ISeedToken.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
@@ -513,6 +514,12 @@ contract HostTest is Test {
         _moveDaoToSeedPhase(host, codec, daoData.symbol);
         daoData = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
 
+        { // ------------------------------ Mint some tokens to be able to vote
+            daoData = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
+            vm.prank(address(host));
+            ISeedToken(daoData.deployments.seedToken).mint(address(this), 1e18);
+        }
+
         // ------------------------------ Update socials with proposal
         string[] memory socials = new string[](3);
         socials[0] = "https://a.aa/a1";
@@ -897,6 +904,12 @@ contract HostTest is Test {
 
         _moveDaoToSeedPhase(host, codec, dao.symbol);
 
+        { // ------------------------------ Mint some tokens to be able to vote
+            dao = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
+            vm.prank(address(host));
+            ISeedToken(dao.deployments.seedToken).mint(address(this), 1e18);
+        }
+
         {
             ITokenomics.DaoNames memory naming = ITokenomics.DaoNames({name: "New DAO Name", symbol: "NEWDS"});
 
@@ -987,24 +1000,27 @@ contract HostTest is Test {
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
         _moveDaoToSeedPhase(host, codec, dao.symbol);
 
-        {
-            ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
-                bbRate: 1e17 // todo use normal value
-            });
+        dao = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
 
-            bytes memory payload = codec.encode(data, codec.PAYLOAD_API_VERSION());
+        vm.prank(address(host));
+        ISeedToken(dao.deployments.seedToken).mint(address(this), 1e18);
 
-            host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
+        ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
+            bbRate: 1e17 // todo use normal value
+        });
 
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(host, dao.symbol);
+        bytes memory payload = codec.encode(data, codec.PAYLOAD_API_VERSION());
 
-            vm.prank(MULTISIG);
-            host.receiveVotingResults(proposalId, true, payload);
+        host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
 
-            IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
+        bytes32 proposalId = HostUtilsLib.getLastProposalId(host, dao.symbol);
 
-            assertEq(keccak256(abi.encode(daoAfter.chainSettings)), keccak256(abi.encode(data)), "chain settings");
-        }
+        vm.prank(MULTISIG);
+        host.receiveVotingResults(proposalId, true, payload);
+
+        IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
+
+        assertEq(keccak256(abi.encode(daoAfter.chainSettings)), keccak256(abi.encode(data)), "chain settings");
     }
 
     //endregion ----------------------------------- Update dao parameters

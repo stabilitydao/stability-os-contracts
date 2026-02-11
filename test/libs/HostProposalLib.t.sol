@@ -18,7 +18,6 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
-import {IToken} from "../../src/deprecated/interfaces/IToken.sol";
 
 contract HostProposalLibTest is Test {
     MockERC20 internal exchangeAsset;
