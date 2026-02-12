@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+// todo rename to ISegment4
 /// @notice All DAO-related data emitted off-chain and not stored on chain
 interface IDAOMetadata {
     /// @notice Unit status can be changed automatically on DAO lifecycle phase changes or manually by DAO holders.
@@ -46,6 +47,20 @@ interface IDAOMetadata {
         // Attention: there is NO gap here so the struct is NOT extendable
     }
 
+    struct GithubLabel {
+        string name;
+        string description;
+        string color;
+    }
+
+    /// @notice Pool of development tasks for Unit. A set of open github issues.
+    struct UnitPool {
+        string[] repos;
+        /// @notice Label on github repositories identifying relation to the pool.
+        GithubLabel label;
+        string contractorSymbol;
+    }
+
     /// @notice Off-chain data of the Unit. It's just emitted in event
     struct UnitMetaData {
         /// @notice Short name of the unit.
@@ -62,5 +77,7 @@ interface IDAOMetadata {
         UnitUiLink[] ui;
         /// @notice Links to API of the Unit.
         string[] api;
+        /// @notice Pool of development tasks for Unit. A set of open github issues.
+        UnitPool pool;
     }
 }

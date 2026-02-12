@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
@@ -98,7 +99,8 @@ contract HostLifeCycleTest is Test {
             revenueShare: 100,
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
-            api: new string[](0)
+            api: new string[](0),
+            pool: SampleDataLib._getUnitPoolSample()
         });
         {
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -331,7 +333,8 @@ contract HostLifeCycleTest is Test {
                 revenueShare: unitMetadata0.revenueShare,
                 ui: unitMetadata0.ui,
                 emoji: unitMetadata0.emoji,
-                api: unitMetadata0.api
+                api: unitMetadata0.api,
+                pool: unitMetadata0.pool
             });
             units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
 
@@ -583,7 +586,8 @@ contract HostLifeCycleTest is Test {
                 revenueShare: 100,
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 emoji: "",
-                api: new string[](0)
+                api: new string[](0),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
             host_.updateDAO(
@@ -741,7 +745,8 @@ contract HostLifeCycleTest is Test {
                 revenueShare: 100,
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 emoji: "",
-                api: new string[](0)
+                api: new string[](0),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "MACHINES:MEVBOT", developerUid: ""});
             host_.updateDAO(
@@ -961,7 +966,8 @@ contract HostLifeCycleTest is Test {
             revenueShare: 100,
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
-            api: new string[](0)
+            api: new string[](0),
+            pool: SampleDataLib._getUnitPoolSample()
         });
 
         {
@@ -1206,7 +1212,8 @@ contract HostLifeCycleTest is Test {
                     revenueShare: unitMetadata0.revenueShare,
                     ui: ui,
                     emoji: unitMetadata0.emoji,
-                    api: unitMetadata0.api
+                    api: unitMetadata0.api,
+                    pool: unitMetadata0.pool
                 });
                 units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
 

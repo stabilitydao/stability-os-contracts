@@ -356,7 +356,8 @@ contract HostBridgedActionsTest is Test {
             revenueShare: 100,
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
-            api: new string[](0)
+            api: new string[](0),
+            pool: _getUnitPoolSample()
         });
 
         IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
@@ -597,5 +598,18 @@ contract HostBridgedActionsTest is Test {
     function _keepConsole() internal pure {
         console.log("keep console in imports");
     }
+
+    function _getUnitPoolSample() internal pure returns (IDAOData.UnitPool memory) {
+        return IDAOMetadata.UnitPool({
+            repos: new string[](0),
+            label: IDAOMetadata.GithubLabel({
+            name: "protocolA",
+            description: "Unit 0 Protocol A tasks",
+            color: "0000FF"
+        }),
+            contractorSymbol: "PA"
+        });
+    }
+
     //endregion ----------------------------------------- Internal utils
 }

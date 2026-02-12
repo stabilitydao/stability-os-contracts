@@ -68,8 +68,6 @@ contract HostActionsLibTest is Test {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["dao"] = daoUid;
         $.segment2[daoUid].phase = ITokenomics.LifecyclePhase.DRAFT_0;
-
-        _solveTasks(daoUid, ITokenomics.LifecyclePhase.DRAFT_0);
         $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1))] = "0x9743733";
 
         HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
@@ -81,18 +79,7 @@ contract HostActionsLibTest is Test {
     //endregion ---------------------------- ChangePhase
 
     //region ------------------------------------------ Test utils
-    function _solveTasks(uint daoUid, ITokenomics.LifecyclePhase phase) internal {
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            // Need images of token and seedToken
-            $.daoImages[daoUid].seedToken = "a";
-            $.daoImages[daoUid].token = "b";
-            // Need at least 2 socials
-            $.segment3[daoUid].socials = new string[](2);
-            // Need at least 1 projected unit
-            $.segment2[daoUid].unitIds = new string[](1);
-        }
-    }
+
 
     //endregion ------------------------------------------ Test utils
 
@@ -100,7 +87,9 @@ contract HostActionsLibTest is Test {
     function changePhase(string calldata symbol, address authority_) public {
         HostActionsLib.changePhase(symbol, authority_);
     }
-
+    function changePhase(uint daoUid, ITokenomics.LifecyclePhase phase, address authority_) public {
+        HostActionsLib._changePhase(daoUid, phase, authority_);
+    }
     //endregion ---------------------------- External access to library functions
 
     //region ------------------------------------------ Internal logic

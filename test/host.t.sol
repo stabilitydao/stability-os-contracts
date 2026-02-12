@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -217,7 +217,8 @@ contract HostTest is Test {
                 revenueShare: 1000,
                 emoji: "emoji1",
                 ui: new IDAOMetadata.UnitUiLink[](0),
-                api: new string[](0)
+                api: new string[](0),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
 
@@ -627,7 +628,8 @@ contract HostTest is Test {
                 revenueShare: 1000,
                 emoji: "emoji1",
                 ui: notEmptyUi,
-                api: notEmptyApi
+                api: notEmptyApi,
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
             metas[1] = IDAOMetadata.UnitMetaData({
@@ -637,7 +639,8 @@ contract HostTest is Test {
                 revenueShare: 2000,
                 emoji: "emoji2",
                 ui: new IDAOMetadata.UnitUiLink[](0),
-                api: new string[](0)
+                api: new string[](0),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
             host.updateDAO(
@@ -681,7 +684,8 @@ contract HostTest is Test {
                 revenueShare: 2000,
                 emoji: "emoji222",
                 ui: notEmptyUi,
-                api: notEmptyApi
+                api: notEmptyApi,
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitAAAA", developerUid: ""});
             host.updateDAO(
@@ -1190,7 +1194,8 @@ contract HostTest is Test {
             revenueShare: 100,
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
-            api: new string[](0)
+            api: new string[](0),
+            pool: SampleDataLib._getUnitPoolSample()
         });
 
         {

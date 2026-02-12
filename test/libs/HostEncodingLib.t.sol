@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SampleDataLib} from "../utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
@@ -497,7 +498,8 @@ contract HostEncodingLibTest is Test {
             revenueShare: 100,
             ui: uiLinks,
             emoji: "aaaa",
-            api: api
+            api: api,
+            pool: SampleDataLib._getUnitPoolSample()
         });
 
         bytes memory encA = this._encodeUnitsMetaData(unitMetadata0);

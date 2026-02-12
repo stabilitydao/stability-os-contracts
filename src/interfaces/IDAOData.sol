@@ -89,7 +89,7 @@ interface IDAOData is ITokenomics, IDAOMetadata {
         string daoMetaDataLocation;
         // ---------------------------- All other segments are excluded here
         // SEGMENT 4: OFF-CHAIN emitted data
-        // SEGMENT 5: OFF-CHAIN custom data managed by DAO
+        // SEGMENT 5: OFF-CHAIN data on custom location
         // SEGMENT 6: API data of DAO
     }
 

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostBridgeLib} from "./HostBridgeLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";

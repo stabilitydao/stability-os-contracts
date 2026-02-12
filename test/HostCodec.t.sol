@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostCodec} from "../src/HostCodec.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
@@ -340,7 +341,8 @@ contract HostCodecTest is Test {
             revenueShare: 1000,
             emoji: "emoji1",
             ui: notEmptyUi,
-            api: notEmptyApi
+            api: notEmptyApi,
+            pool: SampleDataLib._getUnitPoolSample()
         });
         units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
         metas[1] = IDAOMetadata.UnitMetaData({
@@ -350,7 +352,8 @@ contract HostCodecTest is Test {
             revenueShare: 2000,
             emoji: "emoji2",
             ui: new IDAOMetadata.UnitUiLink[](0),
-            api: new string[](0)
+            api: new string[](0),
+            pool: SampleDataLib._getUnitPoolSample()
         });
         units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
 
@@ -377,7 +380,8 @@ contract HostCodecTest is Test {
             revenueShare: 1000,
             emoji: "emoji1",
             ui: emptyUi,
-            api: emptyApi
+            api: emptyApi,
+            pool: SampleDataLib._getUnitPoolSample()
         });
         units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
 

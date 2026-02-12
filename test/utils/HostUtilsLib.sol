@@ -2,15 +2,18 @@
 pragma solidity ^0.8.28;
 
 // import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
-import {HostCodec} from "../../src/HostCodec.sol";
-import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
+import {SampleDataLib} from "./SampleDataLib.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {Authority} from "../../src/Authority.sol";
+import {DataReader} from "../../src/DataReader.sol";
+import {HostCodec} from "../../src/HostCodec.sol";
 import {Host} from "../../src/Host.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
+import {IDataReader} from "../../src/interfaces/IDataReader.sol";
+import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
@@ -22,8 +25,6 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {Vm} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {IDataReader} from "../../src/interfaces/IDataReader.sol";
-import {DataReader} from "../../src/DataReader.sol";
 
 library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -469,7 +470,8 @@ library HostUtilsLib {
                 revenueShare: 20000,
                 emoji: "zzz",
                 ui: ui0,
-                api: api0
+                api: api0,
+                pool: SampleDataLib._getUnitPoolSample()
             });
             data.units[0] = IDAOData.UnitDataInput({unitId: "defi:protocolA", developerUid: ""});
         }
@@ -489,7 +491,8 @@ library HostUtilsLib {
                 revenueShare: 50000,
                 emoji: "aaa",
                 ui: ui1,
-                api: api1
+                api: api1,
+                pool: SampleDataLib._getUnitPoolSample()
             });
             data.units[1] = IDAOData.UnitDataInput({unitId: "saas:serviceX", developerUid: ""});
         }
@@ -505,7 +508,8 @@ library HostUtilsLib {
                 revenueShare: 80000,
                 emoji: "aaaaaaaa",
                 ui: ui2,
-                api: api2
+                api: api2,
+                pool: SampleDataLib._getUnitPoolSample()
             });
             data.units[2] = IDAOData.UnitDataInput({unitId: "mev:botZ", developerUid: ""});
         }

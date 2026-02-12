@@ -139,105 +139,7 @@ library HostActionsLib {
         require(HostViewLib._tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
-        ITokenomics.LifecyclePhase newPhase = phase;
-
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.start < block.timestamp, IHost.WaitFundingStart());
-
-            // todo Inception phase
-            //            // SEED can be started not later than 1 week after configured start time
-            //            require(
-            //                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
-            //                IHost.TooLateSoSetupFundingAgain()
-            //            );
-
-            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
-
-            newPhase = ITokenomics.LifecyclePhase.SEED_1;
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
-
-            bool success = seed.raised >= seed.minRaise;
-
-            if (success) {
-                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-            } else {
-                newPhase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
-                // now refund can be called
-            }
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
-            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-
-            require(tge.start <= block.timestamp, IHost.WaitFundingStart());
-
-            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken($, daoUid, authority);
-
-            newPhase = ITokenomics.LifecyclePhase.TGE_4;
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-
-            require(tge.end < block.timestamp, IHost.WaitFundingEnd());
-
-            bool success = tge.raised >= tge.minRaise;
-
-            if (success) {
-                // todo deploy token, xToken, staking, daoToken
-
-                $.deployments[daoUid].token = address(0); // todo deployed token
-                $.deployments[daoUid].xToken = address(0); // todo deployed xToken
-                $.deployments[daoUid].staking = address(0); // todo deployed staking token
-                $.deployments[daoUid].daoToken = address(0); // todo deployed daoToken
-
-                // todo deploy vesting contracts and allocate token
-
-                // todo seedToken holders became xToken holders by predefined rate
-
-                // todo deploy v2 liquidity from TGE funds at predefined price
-                newPhase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
-            } else {
-                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
-                // now refund can be called
-                // refunding is available up to the start of next TGE
-            }
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
-            // if any vesting started then phase changed
-
-            // slither-disable-next-line uninitialized-local
-            bool isVestingStarted;
-
-            uint countVesting = $.segment3[daoUid].countVesting;
-            for (uint i; i < countVesting; i++) {
-                if ($.vesting[HostLib.getKey(daoUid, i)].start < block.timestamp) {
-                    isVestingStarted = true;
-                    break;
-                }
-            }
-
-            require(isVestingStarted, IHost.WaitVestingStart());
-
-            newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
-            // slither-disable-next-line uninitialized-local
-            bool isVestingActive;
-
-            uint countVesting = $.segment3[daoUid].countVesting;
-            for (uint i; i < countVesting; i++) {
-                if ($.vesting[HostLib.getKey(daoUid, i)].end > block.timestamp) {
-                    isVestingActive = true;
-                    break;
-                }
-            }
-
-            require(!isVestingActive, IHost.WaitVestingEnd());
-
-            newPhase = ITokenomics.LifecyclePhase.LIVE_7;
-        }
-
-        $.segment2[daoUid].phase = newPhase;
-
-        emit IHost.DaoPhaseChanged(daoUid, newPhase);
+        _changePhase(daoUid, phase, authority);
     }
 
     /// @dev Add exist DAO to Host
@@ -396,5 +298,107 @@ library HostActionsLib {
     //endregion -------------------------------------- Internal logic
 
     //region -------------------------------------- Internal utils
+    function _changePhase(uint daoUid, ITokenomics.LifecyclePhase phase, address authority) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.LifecyclePhase newPhase = phase;
+
+        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            require(seed.start < block.timestamp, IHost.WaitFundingStart());
+
+            // todo Inception phase
+            //            // SEED can be started not later than 1 week after configured start time
+            //            require(
+            //                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
+            //                IHost.TooLateSoSetupFundingAgain()
+            //            );
+
+            $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
+
+            newPhase = ITokenomics.LifecyclePhase.SEED_1;
+        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
+            ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+            require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
+
+            bool success = seed.raised >= seed.minRaise;
+
+            if (success) {
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+            } else {
+                newPhase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+                // now refund can be called
+            }
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+
+            require(tge.start <= block.timestamp, IHost.WaitFundingStart());
+
+            $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken($, daoUid, authority);
+
+            newPhase = ITokenomics.LifecyclePhase.TGE_4;
+        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
+            ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+
+            require(tge.end < block.timestamp, IHost.WaitFundingEnd());
+
+            bool success = tge.raised >= tge.minRaise;
+
+            if (success) {
+                // todo deploy token, xToken, staking, daoToken
+
+                $.deployments[daoUid].token = address(0); // todo deployed token
+                $.deployments[daoUid].xToken = address(0); // todo deployed xToken
+                $.deployments[daoUid].staking = address(0); // todo deployed staking token
+                $.deployments[daoUid].daoToken = address(0); // todo deployed daoToken
+
+                // todo deploy vesting contracts and allocate token
+
+                // todo seedToken holders became xToken holders by predefined rate
+
+                // todo deploy v2 liquidity from TGE funds at predefined price
+                newPhase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
+            } else {
+                newPhase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+                // now refund can be called
+                // refunding is available up to the start of next TGE
+            }
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
+            // if any vesting started then phase changed
+
+            // slither-disable-next-line uninitialized-local
+            bool isVestingStarted;
+
+            uint countVesting = $.segment3[daoUid].countVesting;
+            for (uint i; i < countVesting; i++) {
+                if ($.vesting[HostLib.getKey(daoUid, i)].start < block.timestamp) {
+                    isVestingStarted = true;
+                    break;
+                }
+            }
+
+            require(isVestingStarted, IHost.WaitVestingStart());
+
+            newPhase = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
+            // slither-disable-next-line uninitialized-local
+            bool isVestingActive;
+
+            uint countVesting = $.segment3[daoUid].countVesting;
+            for (uint i; i < countVesting; i++) {
+                if ($.vesting[HostLib.getKey(daoUid, i)].end > block.timestamp) {
+                    isVestingActive = true;
+                    break;
+                }
+            }
+
+            require(!isVestingActive, IHost.WaitVestingEnd());
+
+            newPhase = ITokenomics.LifecyclePhase.LIVE_7;
+        }
+
+        $.segment2[daoUid].phase = newPhase;
+
+        emit IHost.DaoPhaseChanged(daoUid, newPhase);
+    }
     //endregion -------------------------------------- Internal utils
 }

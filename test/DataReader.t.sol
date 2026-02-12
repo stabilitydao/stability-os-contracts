@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
@@ -75,7 +76,8 @@ contract DataReaderTest is Test {
                 revenueShare: 100,
                 ui: new IDAOMetadata.UnitUiLink[](1),
                 emoji: "emoji",
-                api: new string[](2)
+                api: new string[](2),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unit1", developerUid: "d1"});
             metas[1] = IDAOMetadata.UnitMetaData({
@@ -85,7 +87,8 @@ contract DataReaderTest is Test {
                 revenueShare: 1,
                 ui: new IDAOMetadata.UnitUiLink[](2),
                 emoji: "emoji",
-                api: new string[](1)
+                api: new string[](1),
+                pool: SampleDataLib._getUnitPoolSample()
             });
             units[1] = IDAOData.UnitDataInput({unitId: "unit2", developerUid: "d2"});
             metas[1].api[0] = "https://api.aa/a";
@@ -323,5 +326,7 @@ contract DataReaderTest is Test {
     function _createHostCodec(IHost host) internal returns (IHostCodec) {
         return HostUtilsLib.createHostCodec(vm, MULTISIG, host);
     }
+
+
     //endregion ------------------------------ Utils
 }
