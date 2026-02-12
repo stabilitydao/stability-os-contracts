@@ -147,7 +147,7 @@ contract HostUpdateLibTest is Test {
         $.daoParameters[117] = data;
     }
 
-    function testValidateActivityPositive() public view {
+    function testValidateActivity_Success() public view {
         uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
         { // all activity
             ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](count);
@@ -200,7 +200,7 @@ contract HostUpdateLibTest is Test {
         // no need to test incorrect enum values - solidity decoder doesn't allow that
     }
 
-    function testValidateDaoParametersPositive() public {
+    function testValidateDaoParameters_Success() public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         st.minPvPFee = 100;
         st.maxPvPFee = 1000;
@@ -267,6 +267,38 @@ contract HostUpdateLibTest is Test {
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(366)));
             this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
         }
+    }
+
+    function testValidateChainSettings_Success() public {
+        {
+            ITokenomics.DaoChainSettings memory st;
+            st.bbRate = 0;
+            st.multisig = address(0);
+            this.validateChainSettingsPublic(st);
+        }
+
+        {
+            ITokenomics.DaoChainSettings memory st;
+            st.bbRate = 100;
+            st.multisig = makeAddr("multisig");
+            this.validateChainSettingsPublic(st);
+        }
+
+        {
+            ITokenomics.DaoChainSettings memory st;
+            st.bbRate = 35;
+            st.multisig = address(0);
+            this.validateChainSettingsPublic(st);
+        }
+    }
+
+    function testValidateChainSettings_BbRateOutOfRange_Revert() public {
+        ITokenomics.DaoChainSettings memory st;
+        st.bbRate = 101;
+        st.multisig = address(0);
+
+        vm.expectRevert(IHost.TooHighValue.selector);
+        this.validateChainSettingsPublic(st);
     }
 
     //endregion ------------------------------------------ Tests for validation
@@ -921,6 +953,10 @@ contract HostUpdateLibTest is Test {
         HostUpdateLib._validateSalt(daoUid, contractIndices, salt_);
     }
 
+    function validateChainSettingsPublic(ITokenomics.DaoChainSettings memory st) public pure {
+        HostUpdateLib._validateDaoChainSettings(st);
+    }
+
     //endregion ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
 
     //region ------------------------------------------ Tests for updating logic (except units updating)
@@ -1133,7 +1169,7 @@ contract HostUpdateLibTest is Test {
         $.segment2[117].symbol = "ABC";
 
         ITokenomics.DaoChainSettings memory settings;
-        settings.bbRate = 1111;
+        settings.bbRate = 100;
 
         bytes memory payload = HostEncodingLib.encodeDaoChainSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
 

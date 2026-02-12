@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
@@ -317,7 +316,11 @@ library HostActionsLib {
     //endregion -------------------------------------- Internal logic
 
     //region -------------------------------------- Internal utils
-    function _changePhaseDraft(HostLib.HostStorage storage $, uint daoUid, address authority) internal returns (ITokenomics.LifecyclePhase phase) {
+    function _changePhaseDraft(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        address authority
+    ) internal returns (ITokenomics.LifecyclePhase phase) {
         ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
         require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
@@ -333,19 +336,23 @@ library HostActionsLib {
         return ITokenomics.LifecyclePhase.SEED_1;
     }
 
-    function _changePhaseSeed(HostLib.HostStorage storage $, uint daoUid) internal view returns (ITokenomics.LifecyclePhase) {
+    function _changePhaseSeed(
+        HostLib.HostStorage storage $,
+        uint daoUid
+    ) internal view returns (ITokenomics.LifecyclePhase) {
         ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
         require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
 
         bool success = seed.raised >= seed.minRaise;
 
-
-        return success
-            ? ITokenomics.LifecyclePhase.DEVELOPMENT_3
-            : ITokenomics.LifecyclePhase.SEED_FAILED_2; // now refund can be called
+        return success ? ITokenomics.LifecyclePhase.DEVELOPMENT_3 : ITokenomics.LifecyclePhase.SEED_FAILED_2; // now refund can be called
     }
 
-    function _changePhaseDevelopment(HostLib.HostStorage storage $, uint daoUid, address authority) internal returns (ITokenomics.LifecyclePhase) {
+    function _changePhaseDevelopment(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        address authority
+    ) internal returns (ITokenomics.LifecyclePhase) {
         ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
         require(tge.start <= block.timestamp, IHost.WaitFundingStart());
@@ -355,7 +362,11 @@ library HostActionsLib {
         return ITokenomics.LifecyclePhase.TGE_4;
     }
 
-    function _changePhaseTge(HostLib.HostStorage storage $, uint daoUid, address authority) internal returns (ITokenomics.LifecyclePhase) {
+    function _changePhaseTge(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        address authority
+    ) internal returns (ITokenomics.LifecyclePhase) {
         ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
         require(tge.end <= block.timestamp, IHost.WaitFundingEnd());
@@ -385,7 +396,10 @@ library HostActionsLib {
     }
 
     /// @dev if any vesting started then phase changed
-    function _changePhaseLiveCliff(HostLib.HostStorage storage $, uint daoUid) internal view returns (ITokenomics.LifecyclePhase) {
+    function _changePhaseLiveCliff(
+        HostLib.HostStorage storage $,
+        uint daoUid
+    ) internal view returns (ITokenomics.LifecyclePhase) {
         // slither-disable-next-line uninitialized-local
         bool isVestingStarted;
 
@@ -403,7 +417,10 @@ library HostActionsLib {
     }
 
     /// @dev if all vesting ended then phase changed
-    function _changePhaseLiveVesting(HostLib.HostStorage storage $, uint daoUid) internal view returns (ITokenomics.LifecyclePhase) {
+    function _changePhaseLiveVesting(
+        HostLib.HostStorage storage $,
+        uint daoUid
+    ) internal view returns (ITokenomics.LifecyclePhase) {
         // slither-disable-next-line uninitialized-local
         bool isVestingActive;
 

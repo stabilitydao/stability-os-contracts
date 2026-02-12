@@ -331,12 +331,12 @@ library HostProposalLib {
     /// @notice Update/create proposal to update global DAO parameters on current chain
     function _updateDaoParameters(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
-        ITokenomics.DaoParameters memory daoParameters_ = HostEncodingLib.decodeDaoParameters(payload);
+        ITokenomics.DaoParameters memory _daoParameters = HostEncodingLib.decodeDaoParameters(payload);
 
-        HostUpdateLib._validateDaoParameters(d_.daoUid, d_.phase, daoParameters_, HostConfigLib.getHostGlobalSettings());
+        HostUpdateLib._validateDaoParameters(d_.daoUid, d_.phase, _daoParameters, HostConfigLib.getHostGlobalSettings());
 
         if (d_.instant) {
-            HostUpdateLib.updateDaoParameters(d_.daoUid, daoParameters_);
+            HostUpdateLib.updateDaoParameters(d_.daoUid, _daoParameters);
         } else {
             ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6, d_.instant, false);
             _proposeAction(d_.daoUid, payload, p);
@@ -362,6 +362,8 @@ library HostProposalLib {
     function _updateDaoChainSettings(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoChainSettings memory settings = HostEncodingLib.decodeDaoChainSettings(payload);
+
+        HostUpdateLib._validateDaoChainSettings(settings);
 
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);

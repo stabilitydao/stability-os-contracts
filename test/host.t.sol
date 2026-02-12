@@ -978,9 +978,7 @@ contract HostTest is Test {
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
-            ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
-                bbRate: 1e17 // todo use normal value
-            });
+            ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({bbRate: 100, multisig: address(0)});
 
             host.updateDAO(
                 dao.symbol,
@@ -1009,9 +1007,7 @@ contract HostTest is Test {
         vm.prank(address(host));
         ISeedToken(dao.deployments.seedToken).mint(address(this), 1e18);
 
-        ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({
-            bbRate: 1e17 // todo use normal value
-        });
+        ITokenomics.DaoChainSettings memory data = ITokenomics.DaoChainSettings({bbRate: 90, multisig: address(0)});
 
         bytes memory payload = codec.encode(data, codec.PAYLOAD_API_VERSION());
 

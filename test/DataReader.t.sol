@@ -327,6 +327,5 @@ contract DataReaderTest is Test {
         return HostUtilsLib.createHostCodec(vm, MULTISIG, host);
     }
 
-
     //endregion ------------------------------ Utils
 }

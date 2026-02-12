@@ -102,11 +102,19 @@ contract HostActionsLibTest is Test {
         seed.minRaise = 100;
         seed.raised = 100;
 
-        assertEq(uint(this.changePhaseSeed(daoUid)), uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "next phase is Development");
+        assertEq(
+            uint(this.changePhaseSeed(daoUid)),
+            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3),
+            "next phase is Development"
+        );
 
         seed.raised = 101;
         seed.end = uint64(block.timestamp - 1);
-        assertEq(uint(this.changePhaseSeed(daoUid)), uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "next phase is Development");
+        assertEq(
+            uint(this.changePhaseSeed(daoUid)),
+            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3),
+            "next phase is Development"
+        );
     }
 
     function testChangePhaseSeed_TooEarly_Revert() public {
@@ -131,7 +139,11 @@ contract HostActionsLibTest is Test {
         seed.minRaise = 100;
         seed.raised = 99;
 
-        assertEq(uint(this.changePhaseSeed(daoUid)), uint(ITokenomics.LifecyclePhase.SEED_FAILED_2), "next phase is Seed Failed");
+        assertEq(
+            uint(this.changePhaseSeed(daoUid)),
+            uint(ITokenomics.LifecyclePhase.SEED_FAILED_2),
+            "next phase is Seed Failed"
+        );
     }
 
     function testChangePhaseDevelopment_Success_ReturnDevelopment() public {
@@ -147,7 +159,9 @@ contract HostActionsLibTest is Test {
         for (uint i = 0; i < 2; ++i) {
             uint snapshot = vm.snapshotState();
             tge.end = uint64(block.timestamp - i);
-            assertEq(uint(this.changePhaseDevelopment(daoUid)), uint(ITokenomics.LifecyclePhase.TGE_4), "next phase is TGE");
+            assertEq(
+                uint(this.changePhaseDevelopment(daoUid)), uint(ITokenomics.LifecyclePhase.TGE_4), "next phase is TGE"
+            );
             assertNotEq($.deployments[daoUid].tgeToken, address(0), "TGE token deployed");
             vm.revertToState(snapshot);
         }
@@ -175,12 +189,20 @@ contract HostActionsLibTest is Test {
         tge.end = uint64(block.timestamp);
         tge.minRaise = 100;
         tge.raised = 100;
-        assertEq(uint(this.changePhaseTge(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "next phase is Life Cliff 1");
+        assertEq(
+            uint(this.changePhaseTge(daoUid)),
+            uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5),
+            "next phase is Life Cliff 1"
+        );
         vm.revertToState(snapshot);
 
         tge.raised = 101;
         tge.end = uint64(block.timestamp - 1);
-        assertEq(uint(this.changePhaseTge(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "next phase is Live Cliff 2");
+        assertEq(
+            uint(this.changePhaseTge(daoUid)),
+            uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5),
+            "next phase is Live Cliff 2"
+        );
 
         // todo: check all deployed addresses
     }
@@ -207,7 +229,11 @@ contract HostActionsLibTest is Test {
         tge.minRaise = 100;
         tge.raised = 99;
 
-        assertEq(uint(this.changePhaseTge(daoUid)), uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "next phase is Development");
+        assertEq(
+            uint(this.changePhaseTge(daoUid)),
+            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_3),
+            "next phase is Development"
+        );
     }
 
     function testChangePhaseLiveCliff_SingleStartedVesting_ReturnLiveVesting() public {
@@ -217,7 +243,11 @@ contract HostActionsLibTest is Test {
 
         $.vesting[HostLib.getKey(daoUid, 0)].start = uint64(block.timestamp - 1);
 
-        assertEq(uint(this.changePhaseLiveCliff(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "next phase is LIVE_VESTING_6");
+        assertEq(
+            uint(this.changePhaseLiveCliff(daoUid)),
+            uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6),
+            "next phase is LIVE_VESTING_6"
+        );
     }
 
     function testChangePhaseLiveCliff_OneStartedOneNotStartedVesting_ReturnLiveVesting() public {
@@ -228,7 +258,11 @@ contract HostActionsLibTest is Test {
         $.vesting[HostLib.getKey(daoUid, 0)].start = uint64(block.timestamp - 1); // started
         $.vesting[HostLib.getKey(daoUid, 1)].start = uint64(block.timestamp + 1); // not started
 
-        assertEq(uint(this.changePhaseLiveCliff(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "next phase is LIVE_VESTING_6");
+        assertEq(
+            uint(this.changePhaseLiveCliff(daoUid)),
+            uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6),
+            "next phase is LIVE_VESTING_6"
+        );
     }
 
     function testChangePhaseLiveCliff_SingleNotStartedVesting_Revert() public {
@@ -244,7 +278,6 @@ contract HostActionsLibTest is Test {
 
         vm.expectRevert(IHost.WaitVestingStart.selector);
         this.changePhaseLiveCliff(daoUid);
-
     }
 
     function testChangePhaseLiveVesting_SingleEndedVesting_ReturnLive() public {
@@ -254,7 +287,9 @@ contract HostActionsLibTest is Test {
 
         $.vesting[HostLib.getKey(daoUid, 0)].end = uint64(block.timestamp - 1); // ended
 
-        assertEq(uint(this.changePhaseLiveVesting(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_7), "next phase is LIVE");
+        assertEq(
+            uint(this.changePhaseLiveVesting(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_7), "next phase is LIVE"
+        );
     }
 
     function testChangePhaseLiveVesting_OneEndedOneNotEndedVesting_Revert() public {
@@ -283,11 +318,10 @@ contract HostActionsLibTest is Test {
 
     //region ------------------------------------------ Test utils
 
-
     //endregion ------------------------------------------ Test utils
 
     //region ---------------------------- External access to library functions
-// solidity
+    // solidity
     //region ---------------------------- External access to library functions
     function changePhase(string calldata symbol, address authority_) public {
         HostActionsLib.changePhase(symbol, authority_);

@@ -9,9 +9,7 @@ library SampleDataLib {
         return IDAOMetadata.UnitPool({
             repos: new string[](0),
             label: IDAOMetadata.GithubLabel({
-                name: "protocolA",
-                description: "Unit 0 Protocol A tasks",
-                color: "0000FF"
+                name: "protocolA", description: "Unit 0 Protocol A tasks", color: "0000FF"
             }),
             contractorSymbol: "PA"
         });

@@ -93,11 +93,7 @@ library HostEncodingLib {
                     unitsMetadata[i].unitType,
                     unitsMetadata[i].revenueShare
                 );
-                bytes memory itemData2 = abi.encode(
-                    unitsMetadata[i].emoji,
-                    unitsMetadata[i].ui,
-                    unitsMetadata[i].api
-                );
+                bytes memory itemData2 = abi.encode(unitsMetadata[i].emoji, unitsMetadata[i].ui, unitsMetadata[i].api);
                 items[i] = abi.encode(itemData1, itemData2, pool);
             }
             return abi.encode(version, items);
@@ -124,20 +120,13 @@ library HostEncodingLib {
 
             {
                 uint8 status;
-                (
-                    unitsMetadata[i].name,
-                    status,
-                    unitsMetadata[i].unitType,
-                    unitsMetadata[i].revenueShare
-                ) = abi.decode(data[0], (string, uint8, uint16, uint));
+                (unitsMetadata[i].name, status, unitsMetadata[i].unitType, unitsMetadata[i].revenueShare) =
+                    abi.decode(data[0], (string, uint8, uint16, uint));
                 unitsMetadata[i].status = IDAOMetadata.UnitStatus(status);
             }
 
-            (
-                unitsMetadata[i].emoji,
-                unitsMetadata[i].ui,
-                unitsMetadata[i].api
-            ) = abi.decode(data[1], (string, IDAOMetadata.UnitUiLink[], string[]));
+            (unitsMetadata[i].emoji, unitsMetadata[i].ui, unitsMetadata[i].api) =
+                abi.decode(data[1], (string, IDAOMetadata.UnitUiLink[], string[]));
 
             (
                 unitsMetadata[i].pool.repos,
@@ -146,7 +135,6 @@ library HostEncodingLib {
                 unitsMetadata[i].pool.label.color,
                 unitsMetadata[i].pool.contractorSymbol
             ) = abi.decode(data[2], (string[], string, string, string, string));
-
         }
         return unitsMetadata;
     }
@@ -258,7 +246,7 @@ library HostEncodingLib {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
-            (, dest.bbRate) = abi.decode(payload, (uint16, uint));
+            (, dest.bbRate) = abi.decode(payload, (uint16, uint8));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -470,15 +458,32 @@ library HostEncodingLib {
         for (uint i; i < len; ++i) {
             ui[i] = abi.encode(data.ui[i].href, data.ui[i].title);
         }
-        dest = abi.encode(dest, ui, data.api, data.pool.repos, data.pool.label.name, data.pool.label.description, data.pool.label.color, data.pool.contractorSymbol);
+        dest = abi.encode(
+            dest,
+            ui,
+            data.api,
+            data.pool.repos,
+            data.pool.label.name,
+            data.pool.label.description,
+            data.pool.label.color,
+            data.pool.contractorSymbol
+        );
     }
 
     function decodeUnitsMetaData(bytes memory payload) internal pure returns (IDAOData.UnitMetaData memory data) {
         bytes memory rest = payload;
 
         bytes[] memory uiEncoded;
-        (rest, uiEncoded, data.api, data.pool.repos, data.pool.label.name, data.pool.label.description, data.pool.label.color, data.pool.contractorSymbol)
-            = abi.decode(rest, (bytes, bytes[], string[], string[], string, string, string, string));
+        (
+            rest,
+            uiEncoded,
+            data.api,
+            data.pool.repos,
+            data.pool.label.name,
+            data.pool.label.description,
+            data.pool.label.color,
+            data.pool.contractorSymbol
+        ) = abi.decode(rest, (bytes, bytes[], string[], string[], string, string, string, string));
 
         uint len = uiEncoded.length;
         data.ui = new IDAOMetadata.UnitUiLink[](len);

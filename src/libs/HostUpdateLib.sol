@@ -100,6 +100,10 @@ library HostUpdateLib {
         }
     }
 
+    function _validateDaoChainSettings(ITokenomics.DaoChainSettings memory settings) internal pure {
+        require(settings.bbRate <= 100, IHost.TooHighValue());
+    }
+
     /// @notice Check funding list before creation
     function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal view {
         require(funding.length != 0, IHost.NeedFunding());

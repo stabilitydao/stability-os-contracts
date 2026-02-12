@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
@@ -318,8 +317,7 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory seed =
-                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
 
         if (index < limit && seed.raised < seed.minRaise && seed.end > block.timestamp) {
             dest[index++] = IHost.Task("Need attract minimal seed funding");
@@ -338,8 +336,7 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory tge =
-                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
         if (index < limit && tge.fundingType != ITokenomics.FundingType.TGE_1) {
             dest[index++] = IHost.Task("Need add pre-TGE funding");
@@ -348,12 +345,10 @@ library HostViewLib {
         ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
 
         if (
-            index < limit &&
-            (
-                bytes(daoImages.tgeToken).length == 0 ||
-                bytes(daoImages.xToken).length == 0 ||
-                bytes(daoImages.daoToken).length == 0
-            )
+            index < limit
+                && (bytes(daoImages.tgeToken).length == 0
+                    || bytes(daoImages.xToken).length == 0
+                    || bytes(daoImages.daoToken).length == 0)
         ) {
             dest[index++] = IHost.Task("Need images of all DAO tokens");
         }
@@ -393,8 +388,7 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory f =
-                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
         if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
             dest[index++] = IHost.Task("Need attract minimal TGE funding");
@@ -403,31 +397,19 @@ library HostViewLib {
         return index;
     }
 
-    function _tasksLiveCliff(
-        HostLib.HostStorage storage,
-        uint,
-        IHost.Task[] memory
-    ) internal pure returns (uint) {
+    function _tasksLiveCliff(HostLib.HostStorage storage, uint, IHost.Task[] memory) internal pure returns (uint) {
         // establish and improve
         // build money markets
         // bridge to chains
         return 0;
     }
 
-    function _tasksLiveVesting(
-        HostLib.HostStorage storage,
-        uint,
-        IHost.Task[] memory
-    ) internal pure returns (uint) {
+    function _tasksLiveVesting(HostLib.HostStorage storage, uint, IHost.Task[] memory) internal pure returns (uint) {
         // distribute vesting funds to leverage token
         return 0;
     }
 
-    function _tasksLive(
-        HostLib.HostStorage storage,
-        uint,
-        IHost.Task[] memory
-    ) internal pure returns (uint) {
+    function _tasksLive(HostLib.HostStorage storage, uint, IHost.Task[] memory) internal pure returns (uint) {
         // lifetime revenue generating for DAO holders till possible absorbing
         return 0;
     }

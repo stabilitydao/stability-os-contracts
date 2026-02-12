@@ -67,6 +67,7 @@ interface IHost {
     error IncorrectVestingStart();
     error TooLateToUpdateTotalSupply();
     error NotEnoughUserPower();
+    error TooHighValue();
 
     error AlreadyAnnounced();
     error SameVersion();

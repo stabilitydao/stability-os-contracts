@@ -219,11 +219,11 @@ interface ITokenomics {
     }
 
     struct DaoChainSettings {
-        /// @notice Todo comment
-        uint bbRate;
+        /// @notice The percentage of unit revenue to swap into the DAO’s main token and distribute as xToken, [0..100]
+        uint8 bbRate;
 
         /// @notice GitHub organization (from socials) EVM multisig address
-        // todo address multisig;
+        address multisig;
     }
 
     struct GovernanceSettings {

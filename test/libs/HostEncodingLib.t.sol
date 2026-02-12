@@ -609,7 +609,7 @@ contract HostEncodingLibTest is Test {
                 xTokenBridge: makeAddr("xTokenBridge"),
                 daoTokenBridge: makeAddr("daoTokenBridge")
             }),
-            chainSettings: ITokenomics.DaoChainSettings({bbRate: 150}),
+            chainSettings: ITokenomics.DaoChainSettings({bbRate: 100, multisig: address(0)}),
             unitIds: new string[](2),
             params: ITokenomics.DaoParameters({
                 vePeriod: type(uint32).max,

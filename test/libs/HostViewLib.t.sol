@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {Test} from "forge-std/Test.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
@@ -138,6 +137,7 @@ contract HostViewLibTest is Test {
             assertEq(countItems, limit, "Number of tasks is equal to limit");
         }
     }
+
     //endregion ----------------------------------- _tasksDraft
 
     //region ----------------------------------- _tasksSeed
@@ -201,6 +201,7 @@ contract HostViewLibTest is Test {
         assertEq(countItems, 1, "1 task");
         assertEq(dest[0].name, "Need attract minimal seed funding", "Need attract minimal seed funding");
     }
+
     //endregion ----------------------------------- _tasksSeed
 
     //region ----------------------------------- _tasksDevelopment
@@ -340,6 +341,7 @@ contract HostViewLibTest is Test {
         assertEq(countItems, 1, "1 task");
         assertEq(dest[0].name, "Run revenue generating units", "Run revenue generating units");
     }
+
     //endregion ----------------------------------- _tasksDevelopment
 
     //region ----------------------------------- _tasksTge

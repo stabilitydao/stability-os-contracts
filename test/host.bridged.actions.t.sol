@@ -518,7 +518,7 @@ contract HostBridgedActionsTest is Test {
         uint32[] memory dstEids = new uint32[](1);
         dstEids[0] = avalanche.endpointId;
 
-        chainSettings = ITokenomics.DaoChainSettings({bbRate: 65773219});
+        chainSettings = ITokenomics.DaoChainSettings({bbRate: 17, multisig: address(0)});
 
         bytes[] memory actionPayloads = new bytes[](1);
         IHostCodec codec = IHostCodec(sonic.hostCodec);
@@ -603,10 +603,8 @@ contract HostBridgedActionsTest is Test {
         return IDAOMetadata.UnitPool({
             repos: new string[](0),
             label: IDAOMetadata.GithubLabel({
-            name: "protocolA",
-            description: "Unit 0 Protocol A tasks",
-            color: "0000FF"
-        }),
+                name: "protocolA", description: "Unit 0 Protocol A tasks", color: "0000FF"
+            }),
             contractorSymbol: "PA"
         });
     }
