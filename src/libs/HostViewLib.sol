@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
@@ -255,82 +256,180 @@ library HostViewLib {
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
-            if (index < limit && (bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0)) {
-                dest[index++] = IHost.Task("Need images of token and seedToken");
-            }
-            if (index < limit && $.segment3[daoUid].socials.length < 2) {
-                dest[index++] = IHost.Task("Need at least 2 socials");
-            }
-            if (index < limit && $.segment2[daoUid].unitIds.length == 0) {
-                dest[index++] = IHost.Task("Need at least 1 projected unit");
-            }
+            index = _tasksDraft($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
-            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-            if (f.fundingType == ITokenomics.FundingType.SEED_0) {
-                // todo check if funding round exists. Can SEED_0 be skipped? if yes we need different way to check if it exists
-                if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
-                    dest[index++] = IHost.Task("Need attract minimal seed funding");
-                }
-            }
+            index = _tasksSeed($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
-            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-            if (index < limit && f.fundingType != ITokenomics.FundingType.TGE_1) {
-                dest[index++] = IHost.Task("Need add pre-TGE funding");
-            }
-            ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
-            if (
-                index < limit && bytes(daoImages.tgeToken).length == 0 || bytes(daoImages.xToken).length == 0
-                    || bytes(daoImages.daoToken).length == 0
-            ) {
-                dest[index++] = IHost.Task("Need images of all DAO tokens");
-            }
-            if (index < limit && $.segment3[daoUid].countVesting == 0) {
-                dest[index++] = IHost.Task("Need vesting allocations");
-            }
-            string[] memory unitIds = $.segment2[daoUid].unitIds;
-
-            // slither-disable-next-line uninitialized-local
-            bool foundLive;
-
-            // assume that a unit is live if it has received not zero income
-            for (uint i; i < unitIds.length; i++) {
-                // todo do we need to use a threshold here?
-                if ($.unitBalances[HostLib.getUnitKey(daoUid, unitIds[i])] != 0) {
-                    foundLive = true;
-                    break;
-                }
-            }
-            if (index < limit && !foundLive) {
-                dest[index++] = IHost.Task("Run revenue generating units");
-            }
+            index = _tasksDevelopment($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
-            ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-            if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
-                dest[index++] = IHost.Task("Need attract minimal TGE funding");
-            }
+            index = _tasksTge($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
-            // establish and improve
-            // build money markets
-            // bridge to chains
+            index = _tasksLiveCliff($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
-            // distribute vesting funds to leverage token
+            index = _tasksLiveVesting($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.LIVE_7) {
-            // lifetime revenue generating for DAO holders till possible absorbing
+            index = _tasksLive($, daoUid, dest);
         }
 
-        // trim the dest array
+        // trim array
         if (index < dest.length) {
             IHost.Task[] memory temp = new IHost.Task[](index);
-
             for (uint i; i < index; ++i) {
                 temp[i] = dest[i];
             }
-
             dest = temp;
         }
 
         return dest;
+    }
+
+    /// @dev Check tasks for DRAFT phase. Return number of filled tasks in dest array
+    function _tasksDraft(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        IHost.Task[] memory dest
+    ) internal view returns (uint) {
+        ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+
+        uint limit = dest.length;
+        // slither-disable-next-line uninitialized-local
+        uint index;
+
+        if (index < limit && (bytes(daoImages.seedToken).length == 0 || bytes(daoImages.token).length == 0)) {
+            dest[index++] = IHost.Task("Need images of token and seedToken");
+        }
+        if (index < limit && $.segment3[daoUid].socials.length < 2) {
+            dest[index++] = IHost.Task("Need at least 2 socials");
+        }
+        if (index < limit && $.segment2[daoUid].unitIds.length == 0) {
+            dest[index++] = IHost.Task("Need at least 1 projected unit");
+        }
+
+        return index;
+    }
+
+    function _tasksSeed(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        IHost.Task[] memory dest
+    ) internal view returns (uint) {
+        uint limit = dest.length;
+
+        // slither-disable-next-line uninitialized-local
+        uint index;
+
+        ITokenomics.Funding memory seed =
+                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+
+        if (index < limit && seed.raised < seed.minRaise && seed.end > block.timestamp) {
+            dest[index++] = IHost.Task("Need attract minimal seed funding");
+        }
+
+        return index;
+    }
+
+    function _tasksDevelopment(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        IHost.Task[] memory dest
+    ) internal view returns (uint) {
+        uint limit = dest.length;
+
+        // slither-disable-next-line uninitialized-local
+        uint index;
+
+        ITokenomics.Funding memory tge =
+                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+
+        if (index < limit && tge.fundingType != ITokenomics.FundingType.TGE_1) {
+            dest[index++] = IHost.Task("Need add pre-TGE funding");
+        }
+
+        ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+
+        if (
+            index < limit &&
+            (
+                bytes(daoImages.tgeToken).length == 0 ||
+                bytes(daoImages.xToken).length == 0 ||
+                bytes(daoImages.daoToken).length == 0
+            )
+        ) {
+            dest[index++] = IHost.Task("Need images of all DAO tokens");
+        }
+
+        if (index < limit && $.segment3[daoUid].countVesting == 0) {
+            dest[index++] = IHost.Task("Need vesting allocations");
+        }
+
+        string[] memory unitIds = $.segment2[daoUid].unitIds;
+
+        // slither-disable-next-line uninitialized-local
+        bool foundLive;
+
+        // assume that a unit is live if it has received not zero income
+        for (uint i; i < unitIds.length; i++) {
+            // todo do we need to use a threshold here?
+            if ($.unitBalances[HostLib.getUnitKey(daoUid, unitIds[i])] != 0) {
+                foundLive = true;
+                break;
+            }
+        }
+
+        if (index < limit && !foundLive) {
+            dest[index++] = IHost.Task("Run revenue generating units");
+        }
+
+        return index;
+    }
+
+    function _tasksTge(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        IHost.Task[] memory dest
+    ) internal view returns (uint) {
+        uint limit = dest.length;
+
+        // slither-disable-next-line uninitialized-local
+        uint index;
+
+        ITokenomics.Funding memory f =
+                            $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+
+        if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
+            dest[index++] = IHost.Task("Need attract minimal TGE funding");
+        }
+
+        return index;
+    }
+
+    function _tasksLiveCliff(
+        HostLib.HostStorage storage,
+        uint,
+        IHost.Task[] memory
+    ) internal pure returns (uint) {
+        // establish and improve
+        // build money markets
+        // bridge to chains
+        return 0;
+    }
+
+    function _tasksLiveVesting(
+        HostLib.HostStorage storage,
+        uint,
+        IHost.Task[] memory
+    ) internal pure returns (uint) {
+        // distribute vesting funds to leverage token
+        return 0;
+    }
+
+    function _tasksLive(
+        HostLib.HostStorage storage,
+        uint,
+        IHost.Task[] memory
+    ) internal pure returns (uint) {
+        // lifetime revenue generating for DAO holders till possible absorbing
+        return 0;
     }
 
     //endregion -------------------------------------- Internal utils

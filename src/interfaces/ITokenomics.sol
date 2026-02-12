@@ -221,6 +221,9 @@ interface ITokenomics {
     struct DaoChainSettings {
         /// @notice Todo comment
         uint bbRate;
+
+        /// @notice GitHub organization (from socials) EVM multisig address
+        // todo address multisig;
     }
 
     struct GovernanceSettings {
