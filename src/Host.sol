@@ -154,6 +154,27 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IHost
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
+        HostProposalLib.updateDAO(symbol, action, payload, metadata);
+    }
+
+    /// @inheritdoc IHost
+    function createBridgedAction(
+        string calldata symbol,
+        uint16 actionKind,
+        uint32[] calldata dstEids,
+        bytes[] calldata actionPayloads
+    ) external {
+        // restrictions are checked below
+        HostProposalLib.updateBridgedDao(symbol, actionKind, dstEids, actionPayloads);
+    }
+
+    /// @inheritdoc IHost
+    function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external {
+        HostBridgeLib.applyBridgedAction(proposalId, actionPayload);
+    }
+
+    /// @inheritdoc IHost
     function changePhase(string calldata symbol) external {
         // no restrictions, anybody can call this
 
@@ -182,31 +203,6 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
 
     //region -------------------------------------- Restricted actions
     /// @inheritdoc IHost
-    function setSettings(IHost.HostSettings memory newSettings) external restricted {
-        HostActionsLib.setSettings(newSettings);
-    }
-
-    /// @inheritdoc IHost
-    function setChainSettings(IHost.HostChainSettings memory newSettings) external restricted {
-        HostActionsLib.setChainSettings(newSettings);
-    }
-
-    /// @inheritdoc IHost
-    function updateByAdmin(IHost.AdminUpdateActions actionIndex, bytes memory payload) external restricted {
-        HostActionsLib.updateByAdmin(actionIndex, payload);
-    }
-
-    /// @inheritdoc IHost
-    function refundFor(string calldata symbol, address[] memory users) external restricted {
-        HostFundingLib.refundFor(symbol, users);
-    }
-
-    /// @inheritdoc IHost
-    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
-        HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
-    }
-
-    /// @inheritdoc IHost
     function receiveVotingResults(bytes32 proposalId, bool succeed, bytes memory payload) external payable restricted {
         HostProposalLib.receiveVotingResults(proposalId, succeed, payload);
     }
@@ -216,48 +212,6 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
         HostProposalLib.validateProposal(proposalId, valid, payload);
     }
 
-    /// @inheritdoc IHost
-    function setContractImplementation(uint kind, address implementation) external restricted {
-        HostProxyLib.setContractImplementation(kind, implementation);
-    }
-
-    /// @inheritdoc IHost
-    function deployProxy(
-        bytes32 salt_,
-        address logic,
-        bytes memory payload
-    ) external restricted returns (address proxy) {
-        return HostProxyLib.deployProxy(salt_, logic, payload, authority());
-    }
-
-    //endregion -------------------------------------- Restricted actions
-
-    //region -------------------------------------- Update actions
-
-    /// @inheritdoc IHost
-    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        HostProposalLib.updateDAO(symbol, action, payload, metadata);
-    }
-
-    /// @inheritdoc IHost
-    function createBridgedAction(
-        string calldata symbol,
-        uint16 actionKind,
-        uint32[] calldata dstEids,
-        bytes[] calldata actionPayloads
-    ) external {
-        // restrictions are checked below
-        HostProposalLib.updateBridgedDao(symbol, actionKind, dstEids, actionPayloads);
-    }
-
-    /// @inheritdoc IHost
-    function applyBridgedAction(bytes32 proposalId, bytes calldata actionPayload) external {
-        HostBridgeLib.applyBridgedAction(proposalId, actionPayload);
-    }
-
-    //endregion -------------------------------------- Update actions
-
-    //region ---------------------------------------- Update host platform
     /// @inheritdoc IHost
     function announceUpgrade(
         string memory newVersion,
@@ -277,5 +231,43 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
         HostProxyLib.cancelUpgrade();
     }
 
-    //endregion ---------------------------------------- Update host platform
+    /// @inheritdoc IHost
+    function updateByAdmin(IHost.AdminUpdateActions actionIndex, bytes memory payload) external restricted {
+        HostActionsLib.updateByAdmin(actionIndex, payload);
+    }
+
+    /// @inheritdoc IHost
+    function refundFor(string calldata symbol, address[] memory users) external restricted {
+        HostFundingLib.refundFor(symbol, users);
+    }
+
+    /// @inheritdoc IHost
+    function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external restricted {
+        HostCrossChainLib.onReceiveCrossChainMessage(srcEid, guid_, message_);
+    }
+
+    /// @inheritdoc IHost
+    function deployProxy(
+        bytes32 salt_,
+        address logic,
+        bytes memory payload
+    ) external restricted returns (address proxy) {
+        return HostProxyLib.deployProxy(salt_, logic, payload, authority());
+    }
+
+    /// @inheritdoc IHost
+    function setSettings(IHost.HostSettings memory newSettings) external restricted {
+        HostActionsLib.setSettings(newSettings);
+    }
+
+    /// @inheritdoc IHost
+    function setChainSettings(IHost.HostChainSettings memory newSettings) external restricted {
+        HostActionsLib.setChainSettings(newSettings);
+    }
+
+    /// @inheritdoc IHost
+    function setContractImplementation(uint kind, address implementation) external restricted {
+        HostProxyLib.setContractImplementation(kind, implementation);
+    }
+    //endregion -------------------------------------- Restricted actions
 }
