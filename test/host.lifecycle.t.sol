@@ -100,7 +100,7 @@ contract HostLifeCycleTest is Test {
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
             api: new string[](0),
-            pool: SampleDataLib._getUnitPoolSample()
+            pool: SampleDataLib.getUnitPoolSample()
         });
         {
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -587,7 +587,7 @@ contract HostLifeCycleTest is Test {
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
             host_.updateDAO(
@@ -746,7 +746,7 @@ contract HostLifeCycleTest is Test {
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 emoji: "",
                 api: new string[](0),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "MACHINES:MEVBOT", developerUid: ""});
             host_.updateDAO(
@@ -967,7 +967,7 @@ contract HostLifeCycleTest is Test {
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
             api: new string[](0),
-            pool: SampleDataLib._getUnitPoolSample()
+            pool: SampleDataLib.getUnitPoolSample()
         });
 
         {

@@ -75,8 +75,8 @@ contract HostProposalLibTest is Test {
         IHost.BridgedActions[9] memory bridgedActions = [
             IHost.BridgedActions.UNKNOWN_0,
             IHost.BridgedActions.BRIDGE_DAO_1,
-            IHost.BridgedActions.SET_BRIDGED_UNIT_2,
-            IHost.BridgedActions.REMOVE_BRIDGED_UNIT_3,
+            IHost.BridgedActions.SET_BRIDGED_UNITS_2,
+            IHost.BridgedActions.RESERVED_3,
             IHost.BridgedActions.SET_DAO_PARAMS_4,
             IHost.BridgedActions.SET_SALTS_5,
             IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6,

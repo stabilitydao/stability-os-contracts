@@ -218,7 +218,7 @@ contract HostTest is Test {
                 emoji: "emoji1",
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 api: new string[](0),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
 
@@ -629,7 +629,7 @@ contract HostTest is Test {
                 emoji: "emoji1",
                 ui: notEmptyUi,
                 api: notEmptyApi,
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
             metas[1] = IDAOMetadata.UnitMetaData({
@@ -640,7 +640,7 @@ contract HostTest is Test {
                 emoji: "emoji2",
                 ui: new IDAOMetadata.UnitUiLink[](0),
                 api: new string[](0),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
             host.updateDAO(
@@ -685,7 +685,7 @@ contract HostTest is Test {
                 emoji: "emoji222",
                 ui: notEmptyUi,
                 api: notEmptyApi,
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unitAAAA", developerUid: ""});
             host.updateDAO(
@@ -1191,7 +1191,7 @@ contract HostTest is Test {
             ui: new IDAOMetadata.UnitUiLink[](0),
             emoji: "",
             api: new string[](0),
-            pool: SampleDataLib._getUnitPoolSample()
+            pool: SampleDataLib.getUnitPoolSample()
         });
 
         {

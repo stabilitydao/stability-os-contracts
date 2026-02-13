@@ -339,16 +339,9 @@ library HostEncodingLib {
         if (version == 1) {
             bytes memory daoParameters = encodeDaoParameters(data.daoParameters, version);
             bytes memory chainSettings = encodeDaoChainSettings(data.chainSettings, version);
-            return abi.encode(
-                version,
-                data.symbol,
-                data.name,
-                data.unitIds,
-                daoParameters,
-                chainSettings,
-                data.saltContractIndices,
-                data.salts
-            );
+            bytes memory encodedData =
+                abi.encode(data.symbol, data.name, data.unitIds, data.saltContractIndices, data.salts);
+            return abi.encode(version, encodedData, daoParameters, chainSettings);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
@@ -361,18 +354,11 @@ library HostEncodingLib {
     {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
-            bytes memory daoParameters;
-            bytes memory chainSettings;
-            (
-                version,
-                data.symbol,
-                data.name,
-                data.unitIds,
-                daoParameters,
-                chainSettings,
-                data.saltContractIndices,
-                data.salts
-            ) = abi.decode(payload, (uint16, string, string, string[], bytes, bytes, uint16[], bytes32[]));
+            (, bytes memory encodedData, bytes memory daoParameters, bytes memory chainSettings) =
+                abi.decode(payload, (uint16, bytes, bytes, bytes));
+
+            (data.symbol, data.name, data.unitIds, data.saltContractIndices, data.salts) =
+                abi.decode(encodedData, (string, string, string[], uint16[], bytes32[]));
             data.daoParameters = decodeDaoParameters(daoParameters);
             data.chainSettings = decodeDaoChainSettings(chainSettings);
             return data;
@@ -381,6 +367,27 @@ library HostEncodingLib {
         }
     }
 
+    /// @notice Encode BridgedUnits struct of the given version. Version is supported explicitly to simplify testing
+    function encodeBridgedUnits(
+        IBridgedActions.BridgedUnits memory data,
+        uint16 version
+    ) internal pure returns (bytes memory) {
+        if (version == 1) {
+            return abi.encode(version, data.unitIds);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeBridgedUnits(bytes memory payload) internal pure returns (IBridgedActions.BridgedUnits memory data) {
+        (uint16 version) = abi.decode(payload, (uint16));
+        if (version == 1) {
+            (, data.unitIds) = abi.decode(payload, (uint16, string[]));
+            return data;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
     //endregion ----------------------- Decode / Encode bridged-actions structs with versions
 
     //region ----------------------- Decode / Encode data without versions

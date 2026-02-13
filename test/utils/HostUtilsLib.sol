@@ -471,7 +471,7 @@ library HostUtilsLib {
                 emoji: "zzz",
                 ui: ui0,
                 api: api0,
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             data.units[0] = IDAOData.UnitDataInput({unitId: "defi:protocolA", developerUid: ""});
         }
@@ -492,7 +492,7 @@ library HostUtilsLib {
                 emoji: "aaa",
                 ui: ui1,
                 api: api1,
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             data.units[1] = IDAOData.UnitDataInput({unitId: "saas:serviceX", developerUid: ""});
         }
@@ -509,7 +509,7 @@ library HostUtilsLib {
                 emoji: "aaaaaaaa",
                 ui: ui2,
                 api: api2,
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             data.units[2] = IDAOData.UnitDataInput({unitId: "mev:botZ", developerUid: ""});
         }

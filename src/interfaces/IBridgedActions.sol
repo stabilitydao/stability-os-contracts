@@ -13,7 +13,7 @@ interface IBridgedActions {
         /// @notice Name of the DAO, used in token names. Without DAO word.
         string name;
 
-        /// @notice IDs of he units. At least one unit must be provided.
+        /// @notice IDs of the units. At least one unit must be provided.
         string[] unitIds;
 
         /// @notice Chain-related DAO settings (individual for each chain)
@@ -27,5 +27,10 @@ interface IBridgedActions {
 
         /// @notice Salts for deploying DAO contracts on bridged chain. Array should be sync with {saltContractIndices}
         bytes32[] salts;
+    }
+
+    struct BridgedUnits {
+        /// @notice IDs of the units. This is final list of units. So, all missed units should be added, and all extra units should be removed.
+        string[] unitIds;
     }
 }

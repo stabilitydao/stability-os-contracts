@@ -133,6 +133,8 @@ interface IHost {
     event VestingDescription(uint daoUid, string vestingName, string description);
     event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
 
+    event BridgedUnitsUpdated(uint daoUid, string[] unitIds);
+
     /// @notice DAO-setting common for all chains
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset
@@ -242,11 +244,11 @@ interface IHost {
         /// @notice Deploy bridged version of the DAO on another chain without deployments (stage before LIVE)
         BRIDGE_DAO_1,
 
-        /// @notice Add bridged version of the unit to another chain
-        SET_BRIDGED_UNIT_2,
+        /// @notice Set list of units bridged to another chain (add/remove/edit units)
+        SET_BRIDGED_UNITS_2,
 
-        /// @notice Remove bridged version of the unit from another chain
-        REMOVE_BRIDGED_UNIT_3,
+        /// @dev Currently not used, we can use it for any new action
+        RESERVED_3,
 
         /// @notice Update DAO parameters on another chain
         SET_DAO_PARAMS_4,

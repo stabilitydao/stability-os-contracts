@@ -37,7 +37,7 @@ library HostLib {
         ITokenomics.LifecyclePhase phase;
 
         /// @notice Ids of all units registered in the DAO.
-        /// @dev Id can be not unique, but Hash = hash of (daoUid, unitUid) is unique.
+        /// @dev Different DAO can use same unit ids, but Hash = hash of (daoUid, unitUid) is unique.
         string[] unitIds;
     }
 

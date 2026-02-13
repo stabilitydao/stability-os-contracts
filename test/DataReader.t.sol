@@ -77,7 +77,7 @@ contract DataReaderTest is Test {
                 ui: new IDAOMetadata.UnitUiLink[](1),
                 emoji: "emoji",
                 api: new string[](2),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[0] = IDAOData.UnitDataInput({unitId: "unit1", developerUid: "d1"});
             metas[1] = IDAOMetadata.UnitMetaData({
@@ -88,7 +88,7 @@ contract DataReaderTest is Test {
                 ui: new IDAOMetadata.UnitUiLink[](2),
                 emoji: "emoji",
                 api: new string[](1),
-                pool: SampleDataLib._getUnitPoolSample()
+                pool: SampleDataLib.getUnitPoolSample()
             });
             units[1] = IDAOData.UnitDataInput({unitId: "unit2", developerUid: "d2"});
             metas[1].api[0] = "https://api.aa/a";
