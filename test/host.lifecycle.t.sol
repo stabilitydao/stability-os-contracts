@@ -135,9 +135,7 @@ contract HostLifeCycleTest is Test {
             );
 
             // registered socials
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
@@ -216,10 +214,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ since seed has funds first governance proposal can be created
         {
-            string[] memory socials = new string[](3);
-            socials[0] = "https://a.aa/a1";
-            socials[1] = "https://b.bb/b2";
-            socials[2] = "https://c.cc/c3";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) =
                 HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
@@ -577,19 +572,8 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "DAO Factory",
-                status: IDAOMetadata.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-                revenueShare: 100,
-                ui: new IDAOMetadata.UnitUiLink[](0),
-                emoji: "",
-                api: new string[](0),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsSingle("aliens:os");
             host_.updateDAO(
                 daoData.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
@@ -597,9 +581,7 @@ contract HostLifeCycleTest is Test {
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
 
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
@@ -736,19 +718,8 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "MEV searcher",
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: uint16(IDAOMetadata.UnitType.MEV_3),
-                revenueShare: 100,
-                ui: new IDAOMetadata.UnitUiLink[](0),
-                emoji: "",
-                api: new string[](0),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "MACHINES:MEVBOT", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsSingle("MACHINES:MEVBOT");
             host_.updateDAO(
                 daoData.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
@@ -756,9 +727,7 @@ contract HostLifeCycleTest is Test {
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
 
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
@@ -871,9 +840,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Reject proposal
         {
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a11";
-            socials[1] = "https://b.bb/b22";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             (bytes32 proposalId, bytes memory payload,) =
                 HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
@@ -959,17 +926,6 @@ contract HostLifeCycleTest is Test {
         IDAOData.DaoData memory daoData = HostUtilsLib.createAliensDao(vm, host_, "ALIENS");
 
         // ------------------------------ solve required tasks
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
-            name: "DAO Factory",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-            revenueShare: 100,
-            ui: new IDAOMetadata.UnitUiLink[](0),
-            emoji: "",
-            api: new string[](0),
-            pool: SampleDataLib.getUnitPoolSample()
-        });
-
         {
             skip(7 days);
 
@@ -985,10 +941,8 @@ contract HostLifeCycleTest is Test {
             );
 
             // units project
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = unitMetadata0;
-            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsSingle();
 
             host_.updateDAO(
                 daoData.symbol,
@@ -998,9 +952,7 @@ contract HostLifeCycleTest is Test {
             );
 
             // registered socials
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
@@ -1199,23 +1151,8 @@ contract HostLifeCycleTest is Test {
             bytes memory metadata;
 
             {
-                IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
-                ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
-
-                IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-                IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-
-                metas[0] = IDAOMetadata.UnitMetaData({
-                    name: unitMetadata0.name,
-                    status: IDAOMetadata.UnitStatus.LIVE_2,
-                    unitType: unitMetadata0.unitType,
-                    revenueShare: unitMetadata0.revenueShare,
-                    ui: ui,
-                    emoji: unitMetadata0.emoji,
-                    api: unitMetadata0.api,
-                    pool: unitMetadata0.pool
-                });
-                units[0] = IDAOData.UnitDataInput({unitId: daoData.units[0].unitId, developerUid: ""});
+                (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                    SampleDataLib.getUnitsSingle(daoData.units[0].unitId);
 
                 input = codec_.encode(units, codec_.PAYLOAD_API_VERSION());
                 metadata = codec_.encode(metas, codec_.PAYLOAD_API_VERSION());

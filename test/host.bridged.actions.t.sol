@@ -18,6 +18,7 @@ import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
+import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
 import {console} from "forge-std/console.sol";
 
@@ -349,21 +350,8 @@ contract HostBridgedActionsTest is Test {
     }
 
     function _addUnitsToDao(IHost host, IHostCodec codec, string memory symbol) internal {
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
-            name: "DAO Factory",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-            revenueShare: 100,
-            ui: new IDAOMetadata.UnitUiLink[](0),
-            emoji: "",
-            api: new string[](0),
-            pool: _getUnitPoolSample()
-        });
-
-        IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-        IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-        metas[0] = unitMetadata0;
-        units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            SampleDataLib.getUnitsSingle("aliens:os");
         host.updateDAO(
             symbol,
             uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),

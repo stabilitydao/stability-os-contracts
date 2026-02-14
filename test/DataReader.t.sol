@@ -64,40 +64,8 @@ contract DataReaderTest is Test {
             );
 
             // units project
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](2);
-
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "abc",
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: uint16(IDAOMetadata.UnitType.PVP_0),
-                revenueShare: 100,
-                ui: new IDAOMetadata.UnitUiLink[](1),
-                emoji: "emoji",
-                api: new string[](2),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "unit1", developerUid: "d1"});
-            metas[1] = IDAOMetadata.UnitMetaData({
-                name: "abc",
-                status: IDAOMetadata.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOMetadata.UnitType.SAAS_2),
-                revenueShare: 1,
-                ui: new IDAOMetadata.UnitUiLink[](2),
-                emoji: "emoji",
-                api: new string[](1),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[1] = IDAOData.UnitDataInput({unitId: "unit2", developerUid: "d2"});
-            metas[1].api[0] = "https://api.aa/a";
-
-            metas[0].api[0] = "https://api.aa/a";
-            metas[0].api[1] = "https://api.bb/b";
-
-            metas[0].ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
-
-            metas[1].ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui1", title: "t1"});
-            metas[1].ui[1] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui2222", title: "OS MVO2"});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsTwo();
 
             host_.updateDAO(
                 daoData.symbol,
@@ -107,9 +75,7 @@ contract DataReaderTest is Test {
             );
 
             // registered socials
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 

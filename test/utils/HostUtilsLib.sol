@@ -446,67 +446,7 @@ library HostUtilsLib {
         });
 
         // ---------------- Create 3 units
-        data.units = new IDAOData.UnitDataInput[](3);
-        data.unitsMetaData = new IDAOMetadata.UnitMetaData[](3);
-
-        { // Unit 0: one UI link, two API endpoints
-            IDAOMetadata.UnitUiLink[] memory ui0 = new IDAOMetadata.UnitUiLink[](1);
-            ui0[0] = IDAOMetadata.UnitUiLink({title: "Dashboard", href: "https://unit0.example/dashboard"});
-
-            string[] memory api0 = new string[](2);
-            api0[0] = "https://api.unit0.example/v1/status";
-            api0[1] = "https://api.unit0.example/v1/metrics";
-
-            data.unitsMetaData[0] = IDAOMetadata.UnitMetaData({
-                name: "Protocol A",
-                status: IDAOMetadata.UnitStatus.RESEARCH_0,
-                unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-                revenueShare: 20000,
-                emoji: "zzz",
-                ui: ui0,
-                api: api0,
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            data.units[0] = IDAOData.UnitDataInput({unitId: "defi:protocolA", developerUid: ""});
-        }
-
-        { // Unit 1: two UI links, one API endpoint
-            IDAOMetadata.UnitUiLink[] memory ui1 = new IDAOMetadata.UnitUiLink[](2);
-            ui1[0] = IDAOMetadata.UnitUiLink({title: "App", href: "https://unit1.example/app"});
-            ui1[1] = IDAOMetadata.UnitUiLink({title: "Docs", href: "https://unit1.example/docs"});
-
-            string[] memory api1 = new string[](1);
-            api1[0] = "https://api.unit1.example/";
-
-            data.unitsMetaData[1] = IDAOMetadata.UnitMetaData({
-                name: "Service X",
-                status: IDAOMetadata.UnitStatus.BUILDING_1,
-                unitType: uint16(IDAOMetadata.UnitType.SAAS_2),
-                revenueShare: 50000,
-                emoji: "aaa",
-                ui: ui1,
-                api: api1,
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            data.units[1] = IDAOData.UnitDataInput({unitId: "saas:serviceX", developerUid: ""});
-        }
-
-        { // Unit 2: no UI links, empty api array
-            IDAOMetadata.UnitUiLink[] memory ui2 = new IDAOMetadata.UnitUiLink[](0);
-            string[] memory api2 = new string[](0);
-
-            data.unitsMetaData[2] = IDAOMetadata.UnitMetaData({
-                name: "MEV Bot Z",
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: uint16(IDAOMetadata.UnitType.MEV_3),
-                revenueShare: 80000,
-                emoji: "aaaaaaaa",
-                ui: ui2,
-                api: api2,
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            data.units[2] = IDAOData.UnitDataInput({unitId: "mev:botZ", developerUid: ""});
-        }
+        (data.units, data.unitsMetaData) = SampleDataLib.getUnitsThree();
 
         // ---------------- Dao params
         data.params = ITokenomics.DaoParameters({

@@ -303,10 +303,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeSocials() public view {
-        string[] memory socials = new string[](3);
-        socials[0] = "twitterA";
-        socials[1] = "discordA";
-        socials[2] = "telegramA";
+        string[] memory socials = SampleDataLib.getSocialsThree();
 
         bytes memory encA = hostCodec.encode(socials);
 
@@ -319,39 +316,8 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeUnits() public view {
-        IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](2);
-        notEmptyUi[0] = IDAOMetadata.UnitUiLink({title: "link1", href: "https://link1.com"});
-        notEmptyUi[1] = IDAOMetadata.UnitUiLink({title: "link2", href: "https://link2.com"});
-
-        string[] memory notEmptyApi = new string[](3);
-        notEmptyApi[0] = "https://api1.com";
-        notEmptyApi[1] = "https://api2.com";
-        notEmptyApi[2] = "https://api3.com";
-
-        IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
-        IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](2);
-        metas[0] = IDAOMetadata.UnitMetaData({
-            name: "Unit A",
-            status: IDAOMetadata.UnitStatus.LIVE_2,
-            unitType: uint16(1),
-            revenueShare: 1000,
-            emoji: "emoji1",
-            ui: notEmptyUi,
-            api: notEmptyApi,
-            pool: SampleDataLib.getUnitPoolSample()
-        });
-        units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
-        metas[1] = IDAOMetadata.UnitMetaData({
-            name: "Unit B1",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(2),
-            revenueShare: 2000,
-            emoji: "emoji2",
-            ui: new IDAOMetadata.UnitUiLink[](0),
-            api: new string[](0),
-            pool: SampleDataLib.getUnitPoolSample()
-        });
-        units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
+        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            SampleDataLib.getUnitsThree();
 
         bytes memory encA = hostCodec.encode(units, hostCodec.PAYLOAD_API_VERSION());
         bytes memory encM = hostCodec.encode(metas, hostCodec.PAYLOAD_API_VERSION());
@@ -367,19 +333,7 @@ contract HostCodecTest is Test {
         IDAOMetadata.UnitUiLink[] memory emptyUi;
         string[] memory emptyApi;
 
-        IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-        IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-        metas[0] = IDAOMetadata.UnitMetaData({
-            name: "Unit A",
-            status: IDAOMetadata.UnitStatus.LIVE_2,
-            unitType: uint16(1),
-            revenueShare: 1000,
-            emoji: "emoji1",
-            ui: emptyUi,
-            api: emptyApi,
-            pool: SampleDataLib.getUnitPoolSample()
-        });
-        units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
+        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) = SampleDataLib.getUnitsTwo();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.encode(metas, INCORRECT_VERSION);

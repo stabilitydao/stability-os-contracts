@@ -340,24 +340,8 @@ contract HostEncodingLibTest is Test {
     }
 
     function testEncodeUnitsMetaData() public view {
-        string[] memory api = new string[](2);
-        api[0] = "https://api.dao.com/v1/";
-        api[1] = "https://api2.dao.com/v2/";
-
-        IDAOMetadata.UnitUiLink[] memory uiLinks = new IDAOMetadata.UnitUiLink[](2);
-        uiLinks[0] = IDAOMetadata.UnitUiLink({href: "", title: "bbbb"});
-        uiLinks[1] = IDAOMetadata.UnitUiLink({href: "IDAOMetadata.UnitUiLinkType.DOCS_1", title: "ccccccccccccc"});
-
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
-            name: "DAO Factory",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-            revenueShare: 100,
-            ui: uiLinks,
-            emoji: "aaaa",
-            api: api,
-            pool: SampleDataLib.getUnitPoolSample()
-        });
+        (, IDAOMetadata.UnitMetaData[] memory metaDataArray) = SampleDataLib.getUnitsSingle();
+        IDAOMetadata.UnitMetaData memory unitMetadata0 = metaDataArray[0];
 
         bytes memory encA = this._encodeUnitsMetaData(unitMetadata0);
         IDAOData.UnitMetaData memory restored = this._decodeUnitsMetaData(encA);

@@ -988,10 +988,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        string[] memory socials = new string[](3);
-        socials[0] = "twitter:@aliens";
-        socials[1] = "discord:/aliens";
-        socials[2] = "website:https://aliens.example";
+        string[] memory socials = SampleDataLib.getSocialsThree();
 
         bytes memory payload = HostEncodingLib.encodeSocials(socials);
 

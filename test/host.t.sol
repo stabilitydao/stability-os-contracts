@@ -208,19 +208,8 @@ contract HostTest is Test {
 
         // ----------------------------- pay to second dao to registered unit
         {
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "Unit A",
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: uint16(1),
-                revenueShare: 1000,
-                emoji: "emoji1",
-                ui: new IDAOMetadata.UnitUiLink[](0),
-                api: new string[](0),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsThree();
 
             host.updateDAO(
                 "SYMBOL2",
@@ -231,9 +220,9 @@ contract HostTest is Test {
 
             deal(exchangeAsset, address(this), 1e18);
             IERC20(exchangeAsset).approve(address(host), 1e18);
-            host.processUnitRevenue("SYMBOL2", "unitA", 1e18);
+            host.processUnitRevenue("SYMBOL2", units[0].unitId, 1e18);
 
-            assertEq(host.unitBalance("SYMBOL2", "unitA"), 1e18, "second dao received the payment");
+            assertEq(host.unitBalance("SYMBOL2", units[0].unitId), 1e18, "second dao received the payment");
         }
 
         // ----------------------------- pay to second dao to NOT-registered unit
@@ -242,7 +231,7 @@ contract HostTest is Test {
             IERC20(exchangeAsset).approve(address(host), 1e18);
 
             vm.expectRevert(IHost.UnitNotFound.selector);
-            host.processUnitRevenue("SYMBOL2", "unitB", 1e18);
+            host.processUnitRevenue("SYMBOL2", "UnknownUnitId", 1e18);
         }
     }
 
@@ -447,8 +436,7 @@ contract HostTest is Test {
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         // ------------------------------ Create proposal to update socials
-        string[] memory socials = new string[](1);
-        socials[0] = "1";
+        string[] memory socials = SampleDataLib.getSocialsThree();
 
         vm.recordLogs();
         host.updateDAO(dao.symbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
@@ -519,10 +507,7 @@ contract HostTest is Test {
         }
 
         // ------------------------------ Update socials with proposal
-        string[] memory socials = new string[](3);
-        socials[0] = "https://a.aa/a1";
-        socials[1] = "https://b.bb/b2";
-        socials[2] = "https://c.cc/c3";
+        string[] memory socials = SampleDataLib.getSocialsThree();
 
         vm.recordLogs();
         host.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
@@ -571,9 +556,9 @@ contract HostTest is Test {
 
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(daoAfter.socials.length, 3, "socials length");
-            assertEq(daoAfter.socials[0], "https://a.aa/a1", "socials[0] updated");
-            assertEq(daoAfter.socials[1], "https://b.bb/b2", "socials[1] updated");
-            assertEq(daoAfter.socials[2], "https://c.cc/c3", "socials[2] updated");
+            assertEq(daoAfter.socials[0], socials[0], "socials[0] updated");
+            assertEq(daoAfter.socials[1], socials[1], "socials[1] updated");
+            assertEq(daoAfter.socials[2], socials[2], "socials[2] updated");
 
             vm.revertToState(snapshot);
         }
@@ -607,39 +592,9 @@ contract HostTest is Test {
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
-            IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](2);
-            notEmptyUi[0] = IDAOMetadata.UnitUiLink({title: "link1", href: "https://link1.com"});
-            notEmptyUi[1] = IDAOMetadata.UnitUiLink({title: "link2", href: "https://link2.com"});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsTwo();
 
-            string[] memory notEmptyApi = new string[](3);
-            notEmptyApi[0] = "https://api1.com";
-            notEmptyApi[1] = "https://api2.com";
-            notEmptyApi[2] = "https://api3.com";
-
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](2);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](2);
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "Unit A",
-                status: IDAOMetadata.UnitStatus.LIVE_2,
-                unitType: uint16(1),
-                revenueShare: 1000,
-                emoji: "emoji1",
-                ui: notEmptyUi,
-                api: notEmptyApi,
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "unitA", developerUid: ""});
-            metas[1] = IDAOMetadata.UnitMetaData({
-                name: "Unit B1",
-                status: IDAOMetadata.UnitStatus.BUILDING_1,
-                unitType: uint16(2),
-                revenueShare: 2000,
-                emoji: "emoji2",
-                ui: new IDAOMetadata.UnitUiLink[](0),
-                api: new string[](0),
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[1] = IDAOData.UnitDataInput({unitId: "unitB1", developerUid: "developerUid"});
             host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
@@ -666,25 +621,8 @@ contract HostTest is Test {
         }
 
         {
-            IDAOMetadata.UnitUiLink[] memory notEmptyUi = new IDAOMetadata.UnitUiLink[](1);
-            notEmptyUi[0] = IDAOMetadata.UnitUiLink({title: "link2", href: "https://link2.com"});
-
-            string[] memory notEmptyApi = new string[](1);
-            notEmptyApi[0] = "https://api1.com";
-
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = IDAOMetadata.UnitMetaData({
-                name: "Unit AAAA",
-                status: IDAOMetadata.UnitStatus.BUILDING_1,
-                unitType: uint16(2),
-                revenueShare: 2000,
-                emoji: "emoji222",
-                ui: notEmptyUi,
-                api: notEmptyApi,
-                pool: SampleDataLib.getUnitPoolSample()
-            });
-            units[0] = IDAOData.UnitDataInput({unitId: "unitAAAA", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                SampleDataLib.getUnitsThree();
             host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
@@ -693,13 +631,11 @@ contract HostTest is Test {
             );
 
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
-            assertEq(daoAfter.units.length, 1, "units length");
+            assertEq(daoAfter.units.length, 3, "units length");
 
-            // todo
-            //            assertEq(daoAfter.units[0].ui.length, 1, "ui length");
-            //            assertEq(daoAfter.units[0].api.length, 1, "api length");
             assertTrue(
-                keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)), "unitId-eq3"
+                keccak256(abi.encode(units[0].unitId)) == keccak256(abi.encode(daoAfter.units[0].unitId)),
+                "first unit id matches"
             );
         }
     }
@@ -1180,17 +1116,6 @@ contract HostTest is Test {
         IDAOData.DaoData memory daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(symbol);
         skip(7 days);
 
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
-            name: "DAO Factory",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
-            revenueShare: 100,
-            ui: new IDAOMetadata.UnitUiLink[](0),
-            emoji: "",
-            api: new string[](0),
-            pool: SampleDataLib.getUnitPoolSample()
-        });
-
         {
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGe(tasks.length, 2, "at least 2 unsolved tasks");
@@ -1206,22 +1131,18 @@ contract HostTest is Test {
             );
 
             // units project
-            IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = unitMetadata0;
-            units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
+            (IDAOData.UnitDataInput[] memory units0, IDAOMetadata.UnitMetaData[] memory metas0) =
+                SampleDataLib.getUnitsSingle();
 
             host_.updateDAO(
                 daoData.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
-                codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
-                codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
+                codec_.encode(units0, codec_.PAYLOAD_API_VERSION()),
+                codec_.encode(metas0, codec_.PAYLOAD_API_VERSION())
             );
 
             // registered socials
-            string[] memory socials = new string[](2);
-            socials[0] = "https://a.aa/a";
-            socials[1] = "https://b.bb/b";
+            string[] memory socials = SampleDataLib.getSocialsThree();
 
             vm.recordLogs();
             host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), codec_.encode(socials), "");
