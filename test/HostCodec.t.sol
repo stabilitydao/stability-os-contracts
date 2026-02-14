@@ -276,9 +276,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoImages() public view {
-        ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
-        });
+        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
 
         bytes memory encA = hostCodec.encode(a, hostCodec.PAYLOAD_API_VERSION());
 
@@ -292,9 +290,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoImagesBadPaths() public {
-        ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
-        });
+        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.encode(a, INCORRECT_VERSION);

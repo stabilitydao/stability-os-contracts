@@ -423,13 +423,7 @@ library HostUtilsLib {
         data.activity[1] = ITokenomics.Activity.BUILDER_3;
 
         // ---------------- images
-        data.images = ITokenomics.DaoImages({
-            seedToken: "images/seed.png",
-            tgeToken: "images/tge.png",
-            token: "images/token.png",
-            xToken: "images/xtoken.png",
-            daoToken: "images/daotoken.png"
-        });
+        data.images = SampleDataLib.getDaoImages();
 
         // ---------------- Deployments
         address[] memory vestings = new address[](2);

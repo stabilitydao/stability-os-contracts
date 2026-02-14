@@ -55,9 +55,7 @@ contract DataReaderTest is Test {
             skip(7 days);
 
             // deployer drew token logotypes
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
-                seedToken: "/seedAliens.png", tgeToken: "1", token: "/aliens.png", xToken: "2", daoToken: "3"
-            });
+            ITokenomics.DaoImages memory images = SampleDataLib.getDaoImages();
             host_.updateDAO(
                 daoData.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),

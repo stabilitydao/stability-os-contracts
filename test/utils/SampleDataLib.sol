@@ -60,4 +60,14 @@ library SampleDataLib {
         salt[1] = bytes32("0xabc2");
         salt[2] = bytes32("0xabc3");
     }
+
+    function getDaoImages() internal pure returns (ITokenomics.DaoImages memory) {
+        return ITokenomics.DaoImages({
+            seedToken: "images/seed.png",
+            tgeToken: "images/tge.png",
+            token: "images/token.png",
+            xToken: "images/xtoken.png",
+            daoToken: "images/daotoken.png"
+        });
+    }
 }

@@ -16,9 +16,7 @@ contract HostEncodingLibTest is Test {
 
     //region -------------------------------------- Tests for encoding/decoding of structs
     function testEncodeDaoImages() public pure {
-        ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
-        });
+        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
 
         bytes memory encA = HostEncodingLib.encodeDaoImages(a, 1);
 
@@ -32,9 +30,7 @@ contract HostEncodingLibTest is Test {
     }
 
     function testEncodeDaoImages_IncorrectVersion_Revert() public {
-        ITokenomics.DaoImages memory a = ITokenomics.DaoImages({
-            seedToken: "seedA", tgeToken: "tgeA", token: "tokenA", xToken: "xA", daoToken: "daoA"
-        });
+        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         this._encodeDaoImagesWrapper(a, INCORRECT_VERSION);
@@ -484,9 +480,7 @@ contract HostEncodingLibTest is Test {
             initialChain: 1,
             socials: new string[](3),
             activity: new ITokenomics.Activity[](4),
-            images: ITokenomics.DaoImages({
-                seedToken: "seedToken", tgeToken: "tgeToken", token: "token", xToken: "xToken", daoToken: "daoToken"
-            }),
+            images: SampleDataLib.getDaoImages(),
             units: new ITokenomics.UnitData[](2),
             funding: new ITokenomics.Funding[](2),
             vesting: new IDAOData.VestingData[](2),

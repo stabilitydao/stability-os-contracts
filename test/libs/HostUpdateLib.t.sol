@@ -16,6 +16,7 @@ import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {MockHostBridge} from "../mocks/MockHostBridge.sol";
+import {SampleDataLib} from "../utils/SampleDataLib.sol";
 
 contract HostUpdateLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -965,13 +966,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.DaoImages memory data = ITokenomics.DaoImages({
-            seedToken: "/seedALIENS.png",
-            tgeToken: "/ALIENS.png",
-            token: "/tgeALIENS.png",
-            xToken: "/xALIENS.png",
-            daoToken: "/ALIENS_DAO.png"
-        });
+        ITokenomics.DaoImages memory data = SampleDataLib.getDaoImages();
         bytes memory payload = HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
 
         vm.expectEmit(false, false, false, true);

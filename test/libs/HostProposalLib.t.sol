@@ -18,6 +18,7 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {SampleDataLib} from "../utils/SampleDataLib.sol";
 
 contract HostProposalLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -436,8 +437,7 @@ contract HostProposalLibTest is Test {
 
     //region ------------------------------------------ Internal logic
     function _getSampleProposalPayload() internal pure returns (bytes memory) {
-        ITokenomics.DaoImages memory data =
-            ITokenomics.DaoImages({seedToken: "1", tgeToken: "22", token: "333", xToken: "4444", daoToken: "55555"});
+        ITokenomics.DaoImages memory data = SampleDataLib.getDaoImages();
 
         return HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
     }

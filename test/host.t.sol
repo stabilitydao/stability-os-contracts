@@ -347,23 +347,20 @@ contract HostTest is Test {
         }
 
         {
-            ITokenomics.DaoImages memory images =
-                ITokenomics.DaoImages({seedToken: "1", tgeToken: "2", token: "3", xToken: "4", daoToken: "5"});
+            ITokenomics.DaoImages memory images = SampleDataLib.getDaoImages();
             host.updateDAO(
                 dao.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
                 codec.encode(images, codec.PAYLOAD_API_VERSION()),
                 ""
             );
-        }
 
-        {
             IDAOData.DaoData memory daoAfter = IDataReader(host.getChainSettings().dataReader).getDAO(dao.symbol);
-            assertEq(daoAfter.images.seedToken, "1", "seedToken updated");
-            assertEq(daoAfter.images.tgeToken, "2", "tgeToken updated");
-            assertEq(daoAfter.images.token, "3", "token updated");
-            assertEq(daoAfter.images.xToken, "4", "xToken updated");
-            assertEq(daoAfter.images.daoToken, "5", "daoToken updated");
+            assertEq(daoAfter.images.seedToken, images.seedToken, "seedToken updated");
+            assertEq(daoAfter.images.tgeToken, images.tgeToken, "tgeToken updated");
+            assertEq(daoAfter.images.token, images.token, "token updated");
+            assertEq(daoAfter.images.xToken, images.xToken, "xToken updated");
+            assertEq(daoAfter.images.daoToken, images.daoToken, "daoToken updated");
         }
     }
 
@@ -1200,9 +1197,7 @@ contract HostTest is Test {
             //HostUtilsLib.printTasks(tasks);
 
             // deployer drew token logotypes
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
-                seedToken: "/seedAliens.png", tgeToken: "", token: "/aliens.png", xToken: "", daoToken: ""
-            });
+            ITokenomics.DaoImages memory images = SampleDataLib.getDaoImages();
             host_.updateDAO(
                 daoData.symbol,
                 uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
