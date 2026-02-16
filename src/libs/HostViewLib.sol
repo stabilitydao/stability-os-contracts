@@ -236,6 +236,12 @@ library HostViewLib {
         HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(local.bridgedActionHeader);
         return (header.applied, header.actionKind, local.daoUid);
     }
+
+    /// @notice Get list of whitelisted assets for revenue. Revenue can be registered only in these assets.
+    function isAssetWhitelisted(address asset_) external view returns (bool) {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        return $.whitelistedAssets[asset_];
+    }
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Internal utils

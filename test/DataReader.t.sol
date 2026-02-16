@@ -224,7 +224,7 @@ contract DataReaderTest is Test {
             address exchangeAsset = host_.getChainSettings().exchangeAsset;
             deal(exchangeAsset, address(this), 1000e18);
             IERC20(exchangeAsset).approve(address(host_), 1000e18);
-            host_.processUnitRevenue(daoData.symbol, daoData.units[0].unitId, 1000e18);
+            host_.revenue(daoData.symbol, daoData.units[0].unitId, exchangeAsset, 1000e18);
         }
 
         // ------------------------------ add vesting

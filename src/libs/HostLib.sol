@@ -182,6 +182,9 @@ library HostLib {
         /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
         mapping(bytes32 salt => uint daoUid) daoUidBySalt;
 
+        /// @notice List of whitelisted assets on the current chain. Revenue can be registered for units in whitelisted assets only.
+        mapping(address asset => bool) whitelistedAssets;
+
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment2;
 

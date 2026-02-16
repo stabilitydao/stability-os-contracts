@@ -162,7 +162,7 @@ contract HostTest is Test {
         // -------------------- todo validation
     }
 
-    function testProcessUnitRevenue() public {
+    function testRevenue() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
 
@@ -220,7 +220,7 @@ contract HostTest is Test {
 
             deal(exchangeAsset, address(this), 1e18);
             IERC20(exchangeAsset).approve(address(host), 1e18);
-            host.processUnitRevenue("SYMBOL2", units[0].unitId, 1e18);
+            host.revenue("SYMBOL2", units[0].unitId, exchangeAsset, 1e18);
 
             assertEq(host.unitBalance("SYMBOL2", units[0].unitId), 1e18, "second dao received the payment");
         }
@@ -231,11 +231,11 @@ contract HostTest is Test {
             IERC20(exchangeAsset).approve(address(host), 1e18);
 
             vm.expectRevert(IHost.UnitNotFound.selector);
-            host.processUnitRevenue("SYMBOL2", "UnknownUnitId", 1e18);
+            host.revenue("SYMBOL2", "UnknownUnitId", exchangeAsset, 1e18);
         }
     }
 
-    function testProcessUnitRevenueAllowToUseZeroPriceDao() public {
+    function testRevenue_AllowToUseZeroPriceDao() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -290,7 +290,9 @@ contract HostTest is Test {
         host.createDAO("name3", "SYMBOL3", activity, params, funding);
     }
 
-    function testTasks() public {
+    function testWhitelistAsset_Success() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+
         // todo
     }
 

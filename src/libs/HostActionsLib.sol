@@ -68,6 +68,19 @@ library HostActionsLib {
         emit IHost.OsChainSettingsUpdated(st);
     }
 
+    /// @notice Whitelist asset for revenue processing
+    /// @custom:restricted Restricted through access manager (only admin)
+    /// @param assets_ Address of the assets to add to/remove from whitelist
+    /// @param whitelisted True to whitelist, false to remove from whitelist
+    function whitelistAsset(address[] memory assets_, bool whitelisted) external {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        for (uint i; i < assets_.length; i++) {
+            $.whitelistedAssets[assets_[i]] = whitelisted;
+        }
+
+        emit IHost.WhitelistAsset(assets_, whitelisted);
+    }
+
     //endregion -------------------------------------- Restricted actions
 
     //region -------------------------------------- Actions
@@ -120,12 +133,13 @@ library HostActionsLib {
     }
 
     /// @notice Process revenue for the given unit of the DAO
-    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external {
+    function processUnitRevenue(string calldata symbol, string memory unitId, address asset, uint amount) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
         require(_isUnitExist($, daoUid, unitId), IHost.UnitNotFound());
+        require(HostConfigLib.getHostChainSettings().exchangeAsset == asset, IHost.AssetNotWhitelisted()); // todo replace by whitelist
 
         HostActionsLib._processUnitRevenue($, daoUid, symbol, unitId, amount);
     }

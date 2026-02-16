@@ -138,6 +138,11 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
         return HostProxyLib.pendingUpgrade();
     }
 
+    /// @inheritdoc IHost
+    function isAssetWhitelisted(address asset_) external view returns (bool) {
+        return HostViewLib.isAssetWhitelisted(asset_);
+    }
+
     //endregion -------------------------------------- View
 
     //region -------------------------------------- Actions
@@ -194,9 +199,9 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IHost
-    function processUnitRevenue(string calldata symbol, string memory unitId, uint amount) external nonReentrant {
+    function revenue(string calldata symbol, string memory unitId, address asset, uint amount) external nonReentrant {
         // todo no restrictions?
-        HostActionsLib.processUnitRevenue(symbol, unitId, amount);
+        HostActionsLib.processUnitRevenue(symbol, unitId, asset, amount);
     }
 
     //endregion -------------------------------------- Actions
@@ -269,5 +274,11 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     function setContractImplementation(uint kind, address implementation) external restricted {
         HostProxyLib.setContractImplementation(kind, implementation);
     }
+
+    /// @inheritdoc IHost
+    function whitelistAssets(address[] memory assets_, bool whitelisted) external restricted {
+        HostActionsLib.whitelistAsset(assets_, whitelisted);
+    }
+
     //endregion -------------------------------------- Restricted actions
 }
