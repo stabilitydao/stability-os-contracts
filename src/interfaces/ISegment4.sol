@@ -1,30 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// todo rename to ISegment4
-/// @notice All DAO-related data emitted off-chain and not stored on chain
-interface IDAOMetadata {
-    /// @notice Unit status can be changed automatically on DAO lifecycle phase changes or manually by DAO holders.
+/// @notice All data emitted in events and not stored on chain
+interface ISegment4 {
+    /// @notice Unit status can be changed manually by DAO holders. Revenue of a unit matter.
     enum UnitStatus {
         /// @notice Researching state.
         RESEARCH_0,
+        BUILDING_PROTOTYPE_1,
+        PROTOTYPE_2,
         /// @notice Building / development state.
-        BUILDING_1,
+        BUILDING_3,
         /// @notice Live and earning revenue.
-        LIVE_2
+        LIVE_4
     }
-
-    //    /// @notice Supported categories of running units.
-    //    enum UnitComponentCategory {
-    //        /// @notice Chain support (blockchain integrations, relayers).
-    //        CHAIN_SUPPORT_0,
-    //        /// @notice Engine support (infrastructure and execution engine).
-    //        ENGINE_SUPPORT_1,
-    //        /// @notice DeFi strategy components.
-    //        DEFI_STRATEGY_2,
-    //        /// @notice MEV strategy components.
-    //        MEV_STRATEGY_3
-    //    }
 
     /// @notice Supported unit types.
     enum UnitType {
@@ -32,10 +21,10 @@ interface IDAOMetadata {
         PVP_0,
         /// @notice Decentralized finance protocol
         DEFI_PROTOCOL_1,
-        /// @notice Software as a Service business
-        SAAS_2,
         /// @notice Maximum Extractable Value tool
-        MEV_3
+        MEV_SEARCHER_2
+        /// @notice Software as a Service business
+        // SAAS_3
     }
 
     /// @notice Frontend endpoint link for a Unit.
@@ -62,13 +51,15 @@ interface IDAOMetadata {
     }
 
     /// @notice Off-chain data of the Unit. It's just emitted in event
-    struct UnitMetaData {
+    struct UnitEmitData {
         /// @notice Short name of the unit.
         string name;
+        /// @notice Description of the unit
+        string description;
         /// @notice Status of unit changes appear when unit starting to work and starting earning revenue.
         UnitStatus status;
         /// @notice Supported type of the Unit represented as UnitType
-        uint16 unitType;
+        UnitType unitType;
         /// @notice The share of a Unit's profit received by the DAO to which it belongs. 100_000 - 100%.
         uint revenueShare;
         /// @notice A unique emoji for the shortest possible representation of a Unit in the Stability OS.

@@ -137,13 +137,16 @@ library HostUpdateLib {
         IHost.HostSettings storage st
     ) internal view {
         if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
-            require(phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1, IHost.TooLateToUpdateSuchFunding());
+            require(
+                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1,
+                IHost.TooLateToUpdateSuchFunding()
+            );
         }
 
         if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
             require(
-                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1 || phase == ITokenomics.LifecyclePhase.SEED_2
-                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4,
+                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1
+                    || phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4,
                 IHost.TooLateToUpdateSuchFunding()
             );
         }
@@ -251,7 +254,7 @@ library HostUpdateLib {
         IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
 
         /// @dev Empty array required by updateUnits. It's not used because proposalId is not zero here
-        IDAOData.UnitMetaData[] memory metadata;
+        IDAOData.UnitEmitData[] memory metadata;
 
         updateUnits(daoUid, units, proposalId, metadata);
     }
@@ -262,7 +265,7 @@ library HostUpdateLib {
         uint daoUid,
         IDAOData.UnitDataInput[] memory units,
         bytes32 proposalId,
-        IDAOData.UnitMetaData[] memory metadata
+        IDAOData.UnitEmitData[] memory metadata
     ) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 

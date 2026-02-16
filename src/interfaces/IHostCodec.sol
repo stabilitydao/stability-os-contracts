@@ -24,9 +24,9 @@ interface IHostCodec {
 
     function decodeUnits(bytes memory encoded) external pure returns (IDAOData.UnitDataInput[] memory units);
 
-    function encode(IDAOData.UnitMetaData[] memory metadata, uint16 version) external pure returns (bytes memory);
+    function encode(IDAOData.UnitEmitData[] memory emitData, uint16 version) external pure returns (bytes memory);
 
-    function decodeUnitsMetadata(bytes memory encoded) external pure returns (IDAOData.UnitMetaData[] memory metadata);
+    function decodeUnitsEmitData(bytes memory encoded) external pure returns (IDAOData.UnitEmitData[] memory emitData);
 
     function encode(ITokenomics.Funding memory funding, uint16 version) external pure returns (bytes memory);
 

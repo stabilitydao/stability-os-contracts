@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
@@ -322,13 +323,12 @@ library HostActionsLib {
         HostLib.HostStorage storage $,
         uint daoUid
     ) internal returns (ITokenomics.LifecyclePhase phase) {
-        daoUid;
-        // todo Inception phase
-        //            // SEED can be started not later than 1 week after configured start time
-        //            require(
-        //                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
-        //                IHost.TooLateSoSetupFundingAgain()
-        //            );
+        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        // SEED can be started not later than 1 week after configured start time
+        require(
+            block.timestamp + HostConfigLib.getHostGlobalSettings().minInceptionDuration <= seed.start,
+            IHost.TooLateSoSetupFundingAgain()
+        );
         return ITokenomics.LifecyclePhase.INCEPTION_1;
     }
 
@@ -338,6 +338,8 @@ library HostActionsLib {
         address authority
     ) internal returns (ITokenomics.LifecyclePhase phase) {
         ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        console.log("block.timestamp", block.timestamp);
+        console.log("seed.start", seed.start);
         require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
         $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);

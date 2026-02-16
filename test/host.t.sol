@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
-import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
@@ -208,7 +209,7 @@ contract HostTest is Test {
 
         // ----------------------------- pay to second dao to registered unit
         {
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                 SampleDataLib.getUnitsThree();
 
             host.updateDAO(
@@ -592,8 +593,7 @@ contract HostTest is Test {
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
         {
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
-                SampleDataLib.getUnitsTwo();
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) = SampleDataLib.getUnitsTwo();
 
             host.updateDAO(
                 dao.symbol,
@@ -621,7 +621,7 @@ contract HostTest is Test {
         }
 
         {
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                 SampleDataLib.getUnitsThree();
             host.updateDAO(
                 dao.symbol,
@@ -1114,7 +1114,6 @@ contract HostTest is Test {
 
     function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory symbol) internal {
         IDAOData.DaoData memory daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(symbol);
-        skip(7 days);
 
         {
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -1131,7 +1130,7 @@ contract HostTest is Test {
             );
 
             // units project
-            (IDAOData.UnitDataInput[] memory units0, IDAOMetadata.UnitMetaData[] memory metas0) =
+            (IDAOData.UnitDataInput[] memory units0, ISegment4.UnitEmitData[] memory metas0) =
                 SampleDataLib.getUnitsSingle();
 
             host_.updateDAO(
@@ -1174,12 +1173,12 @@ contract HostTest is Test {
             );
         }
 
-        skip(24 days);
-
         // ------------------------------ change phase to inception
         host_.changePhase(daoData.symbol);
+        skip(7 days);
 
         // ------------------------------ change phase to seed
+        skip(24 days);
         host_.changePhase(daoData.symbol);
 
         // ------------------------------ setup seed token, refresh daoData

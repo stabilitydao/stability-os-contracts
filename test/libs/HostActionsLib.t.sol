@@ -64,11 +64,30 @@ contract HostActionsLibTest is Test {
 
     function testChangePhaseDraft_Success_ReturnInception() public {
         uint daoUid = 97;
-        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        st.minInceptionDuration = 1 days;
 
-        assertEq(uint(this.changePhaseDraft(daoUid)), uint(ITokenomics.LifecyclePhase.INCEPTION_1), "next phase is inception");
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        seed.start = uint64(block.timestamp + 1 days);
+
+        assertEq(
+            uint(this.changePhaseDraft(daoUid)), uint(ITokenomics.LifecyclePhase.INCEPTION_1), "next phase is inception"
+        );
     }
 
+    function testChangePhaseDraft_InceptionPhaseDurationTooSmall_Revert() public {
+        uint daoUid = 97;
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        st.minInceptionDuration = 1 days;
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        seed.start = uint64(block.timestamp + 1 days - 1);
+
+        vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
+        this.changePhaseDraft(daoUid);
+    }
 
     function testChangePhaseInception_Success_ReturnSeed() public {
         uint daoUid = 97;

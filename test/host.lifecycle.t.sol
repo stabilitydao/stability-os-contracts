@@ -6,7 +6,7 @@ import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
-import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
@@ -92,12 +92,13 @@ contract HostLifeCycleTest is Test {
         }
 
         // ------------------------------ check what aliens need to do
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = IDAOMetadata.UnitMetaData({
+        ISegment4.UnitEmitData memory unitMetadata0 = ISegment4.UnitEmitData({
             name: "DAO Factory",
-            status: IDAOMetadata.UnitStatus.BUILDING_1,
-            unitType: uint16(IDAOMetadata.UnitType.DEFI_PROTOCOL_1),
+            description: "description of DAO Factory unit",
+            status: ISegment4.UnitStatus.BUILDING_3,
+            unitType: ISegment4.UnitType.DEFI_PROTOCOL_1,
             revenueShare: 100,
-            ui: new IDAOMetadata.UnitUiLink[](0),
+            ui: new ISegment4.UnitUiLink[](0),
             emoji: "",
             api: new string[](0),
             pool: SampleDataLib.getUnitPoolSample()
@@ -124,7 +125,7 @@ contract HostLifeCycleTest is Test {
 
             // units project
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
+            ISegment4.UnitEmitData[] memory metas = new ISegment4.UnitEmitData[](1);
             metas[0] = unitMetadata0;
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
             host_.updateDAO(
@@ -168,8 +169,10 @@ contract HostLifeCycleTest is Test {
         {
             host_.changePhase(daoData.symbol);
             IDAOData.DaoData memory daoDataAfter =
-                                    IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION");
+                IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
+            assertEq(
+                uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION"
+            );
         }
 
         // ------------------------------ phase cant be changed right now
@@ -324,14 +327,15 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ fix units
         {
-            IDAOMetadata.UnitUiLink[] memory ui = new IDAOMetadata.UnitUiLink[](1);
-            ui[0] = IDAOMetadata.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
+            ISegment4.UnitUiLink[] memory ui = new ISegment4.UnitUiLink[](1);
+            ui[0] = ISegment4.UnitUiLink({href: "https://mvp.ui", title: "OS MVO"});
 
             IDAOData.UnitDataInput[] memory units = new IDAOData.UnitDataInput[](1);
-            IDAOMetadata.UnitMetaData[] memory metas = new IDAOMetadata.UnitMetaData[](1);
-            metas[0] = IDAOMetadata.UnitMetaData({
+            ISegment4.UnitEmitData[] memory metas = new ISegment4.UnitEmitData[](1);
+            metas[0] = ISegment4.UnitEmitData({
                 name: unitMetadata0.name,
-                status: IDAOMetadata.UnitStatus.BUILDING_1, // (!) any status is allowed here, we don't check it
+                description: unitMetadata0.description,
+                status: ISegment4.UnitStatus.BUILDING_3, // (!) any status is allowed here, we don't check it
                 unitType: unitMetadata0.unitType,
                 revenueShare: unitMetadata0.revenueShare,
                 ui: unitMetadata0.ui,
@@ -580,7 +584,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                 SampleDataLib.getUnitsSingle("aliens:os");
             host_.updateDAO(
                 daoData.symbol,
@@ -729,7 +733,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                 SampleDataLib.getUnitsSingle("MACHINES:MEVBOT");
             host_.updateDAO(
                 daoData.symbol,
@@ -775,7 +779,9 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "machines phase should be SEED");
+            assertEq(
+                uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "machines phase should be SEED"
+            );
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             // setup seed token
@@ -955,7 +961,7 @@ contract HostLifeCycleTest is Test {
             );
 
             // units project
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                 SampleDataLib.getUnitsSingle();
 
             host_.updateDAO(
@@ -1169,7 +1175,7 @@ contract HostLifeCycleTest is Test {
             bytes memory metadata;
 
             {
-                (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+                (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
                     SampleDataLib.getUnitsSingle(daoData.units[0].unitId);
 
                 input = codec_.encode(units, codec_.PAYLOAD_API_VERSION());

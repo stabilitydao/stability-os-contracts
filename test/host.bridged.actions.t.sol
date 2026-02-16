@@ -13,7 +13,7 @@ import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
-import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
@@ -350,7 +350,7 @@ contract HostBridgedActionsTest is Test {
     }
 
     function _addUnitsToDao(IHost host, IHostCodec codec, string memory symbol) internal {
-        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
+        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
             SampleDataLib.getUnitsSingle("aliens:os");
         host.updateDAO(
             symbol,
@@ -588,11 +588,9 @@ contract HostBridgedActionsTest is Test {
     }
 
     function _getUnitPoolSample() internal pure returns (IDAOData.UnitPool memory) {
-        return IDAOMetadata.UnitPool({
+        return ISegment4.UnitPool({
             repos: new string[](0),
-            label: IDAOMetadata.GithubLabel({
-                name: "protocolA", description: "Unit 0 Protocol A tasks", color: "0000FF"
-            }),
+            label: ISegment4.GithubLabel({name: "protocolA", description: "Unit 0 Protocol A tasks", color: "0000FF"}),
             contractorSymbol: "PA"
         });
     }

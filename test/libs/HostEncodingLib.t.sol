@@ -8,7 +8,7 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../../src/interfaces/ISegment4.sol";
 import {HostUtilsLib} from "../utils/HostUtilsLib.sol";
 
 contract HostEncodingLibTest is Test {
@@ -340,11 +340,11 @@ contract HostEncodingLibTest is Test {
     }
 
     function testEncodeUnitsMetaData() public view {
-        (, IDAOMetadata.UnitMetaData[] memory metaDataArray) = SampleDataLib.getUnitsSingle();
-        IDAOMetadata.UnitMetaData memory unitMetadata0 = metaDataArray[0];
+        (, ISegment4.UnitEmitData[] memory metaDataArray) = SampleDataLib.getUnitsSingle();
+        ISegment4.UnitEmitData memory unitMetadata0 = metaDataArray[0];
 
         bytes memory encA = this._encodeUnitsMetaData(unitMetadata0);
-        IDAOData.UnitMetaData memory restored = this._decodeUnitsMetaData(encA);
+        IDAOData.UnitEmitData memory restored = this._decodeUnitsMetaData(encA);
 
         assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(unitMetadata0)), "unitMetadata");
     }
@@ -674,11 +674,11 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.decodeBridgedUnits(payload);
     }
 
-    function _encodeUnitsMetaData(IDAOData.UnitMetaData memory data) public pure returns (bytes memory dest) {
+    function _encodeUnitsMetaData(IDAOData.UnitEmitData memory data) public pure returns (bytes memory dest) {
         dest = HostEncodingLib.encodeUnitsMetaData(data);
     }
 
-    function _decodeUnitsMetaData(bytes memory payload) public pure returns (IDAOData.UnitMetaData memory data) {
+    function _decodeUnitsMetaData(bytes memory payload) public pure returns (IDAOData.UnitEmitData memory data) {
         data = HostEncodingLib.decodeUnitsMetaData(payload);
     }
 

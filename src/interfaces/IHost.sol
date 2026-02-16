@@ -51,7 +51,7 @@ interface IHost {
     error WrongAction();
     error AlreadyBridged();
     error IncorrectInputData();
-    error InvalidMetadataForAction();
+    error InvalidEmitDataForAction();
     error UnknownRestrictedAction();
     error NotInitialChain();
     error InvalidActivityCombination();
@@ -84,14 +84,14 @@ interface IHost {
 
     /// @notice Units are updated via proposal or instantly
     event ProposalToUpdateDaoUnits(
-        bytes32 proposalUid, uint daoUid, IDAOData.UnitDataInput[] units, IDAOData.UnitMetaData[] metaData
+        bytes32 proposalUid, uint daoUid, IDAOData.UnitDataInput[] units, IDAOData.UnitEmitData[] emitData
     );
 
     /// @notice Unit is inserted or updated
     /// @param proposalUid Zero if updated instantly
     event DaoUnitUpdatedByProposal(uint daoUid, string unitId, bytes32 proposalUid);
 
-    event DaoUnitUpdatedInstantly(uint daoUid, string unitId, IDAOData.UnitMetaData metaData);
+    event DaoUnitUpdatedInstantly(uint daoUid, string unitId, IDAOData.UnitEmitData metaData);
 
     /// @notice Unit is deleted
     /// @param proposalUid Zero if updated instantly
@@ -177,9 +177,9 @@ interface IHost {
 
         /// @notice Min allowed interval (seconds) between vesting.start and tge.claim
         uint minCliff;
-        // todo Inception phase
-        //        /// @notice Seed start delay interval, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
-        //        uint maxSeedStartDelay;
+
+        /// @notice Min allowed duration of inception phase, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
+        uint minInceptionDuration;
     }
 
     /// @notice Chain-dependent data of the DAO
@@ -410,8 +410,8 @@ interface IHost {
     /// @param action Action kind, see ITokenomics.DAOAction
     /// @param payload Data of the action. Use HostCodec.encode to create it. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
-    /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external; // todo calldata(?)
+    /// @param emitData Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory emitData) external;
 
     /// @notice Create proposal to update bridged DAO version of the DAO on other {chains}
     /// @param symbol DAO symbol

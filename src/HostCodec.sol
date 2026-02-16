@@ -66,13 +66,13 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(IDAOData.UnitMetaData[] memory metadata, uint16 version) external pure returns (bytes memory) {
-        return HostEncodingLib.encodeUnitsMetadata(metadata, version);
+    function encode(IDAOData.UnitEmitData[] memory metadata, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeUnitsEmitData(metadata, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeUnitsMetadata(bytes memory encoded) external pure returns (IDAOData.UnitMetaData[] memory metadata) {
-        return HostEncodingLib.decodeUnitsMetadata(encoded);
+    function decodeUnitsEmitData(bytes memory encoded) external pure returns (IDAOData.UnitEmitData[] memory metadata) {
+        return HostEncodingLib.decodeUnitsEmitData(encoded);
     }
 
     /// @inheritdoc IHostCodec

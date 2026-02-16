@@ -5,7 +5,7 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
-import {IDAOMetadata} from "../interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../interfaces/ISegment4.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// There are several uses cases for encoding/decoding:
@@ -72,28 +72,29 @@ library HostEncodingLib {
         }
     }
 
-    function encodeUnitsMetadata(
-        IDAOData.UnitMetaData[] memory unitsMetadata,
+    function encodeUnitsEmitData(
+        IDAOData.UnitEmitData[] memory emitData,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
-            uint len = unitsMetadata.length;
+            uint len = emitData.length;
             bytes[] memory items = new bytes[](len);
             for (uint i; i < len; ++i) {
                 bytes memory pool = abi.encode(
-                    unitsMetadata[i].pool.repos,
-                    unitsMetadata[i].pool.label.name,
-                    unitsMetadata[i].pool.label.description,
-                    unitsMetadata[i].pool.label.color,
-                    unitsMetadata[i].pool.contractorSymbol
+                    emitData[i].pool.repos,
+                    emitData[i].pool.label.name,
+                    emitData[i].pool.label.description,
+                    emitData[i].pool.label.color,
+                    emitData[i].pool.contractorSymbol
                 );
                 bytes memory itemData1 = abi.encode(
-                    unitsMetadata[i].name,
-                    uint8(unitsMetadata[i].status),
-                    unitsMetadata[i].unitType,
-                    unitsMetadata[i].revenueShare
+                    emitData[i].name,
+                    emitData[i].description,
+                    uint8(emitData[i].status),
+                    uint8(emitData[i].unitType),
+                    emitData[i].revenueShare
                 );
-                bytes memory itemData2 = abi.encode(unitsMetadata[i].emoji, unitsMetadata[i].ui, unitsMetadata[i].api);
+                bytes memory itemData2 = abi.encode(emitData[i].emoji, emitData[i].ui, emitData[i].api);
                 items[i] = abi.encode(itemData1, itemData2, pool);
             }
             return abi.encode(version, items);
@@ -102,10 +103,10 @@ library HostEncodingLib {
         }
     }
 
-    function decodeUnitsMetadata(bytes memory payload)
+    function decodeUnitsEmitData(bytes memory payload)
         internal
         pure
-        returns (IDAOData.UnitMetaData[] memory unitsMetadata)
+        returns (IDAOData.UnitEmitData[] memory emitData)
     {
         {
             (uint16 version) = abi.decode(payload, (uint16));
@@ -113,30 +114,32 @@ library HostEncodingLib {
         }
 
         (, bytes[] memory item) = abi.decode(payload, (uint16, bytes[]));
-        unitsMetadata = new IDAOData.UnitMetaData[](item.length);
+        emitData = new IDAOData.UnitEmitData[](item.length);
         for (uint i; i < item.length; ++i) {
             bytes[3] memory data;
             (data[0], data[1], data[2]) = abi.decode(item[i], (bytes, bytes, bytes));
 
             {
                 uint8 status;
-                (unitsMetadata[i].name, status, unitsMetadata[i].unitType, unitsMetadata[i].revenueShare) =
-                    abi.decode(data[0], (string, uint8, uint16, uint));
-                unitsMetadata[i].status = IDAOMetadata.UnitStatus(status);
+                uint8 unitType;
+                (emitData[i].name, emitData[i].description, status, unitType, emitData[i].revenueShare) =
+                    abi.decode(data[0], (string, string, uint8, uint8, uint));
+                emitData[i].status = ISegment4.UnitStatus(status);
+                emitData[i].unitType = ISegment4.UnitType(unitType);
             }
 
-            (unitsMetadata[i].emoji, unitsMetadata[i].ui, unitsMetadata[i].api) =
-                abi.decode(data[1], (string, IDAOMetadata.UnitUiLink[], string[]));
+            (emitData[i].emoji, emitData[i].ui, emitData[i].api) =
+                abi.decode(data[1], (string, ISegment4.UnitUiLink[], string[]));
 
             (
-                unitsMetadata[i].pool.repos,
-                unitsMetadata[i].pool.label.name,
-                unitsMetadata[i].pool.label.description,
-                unitsMetadata[i].pool.label.color,
-                unitsMetadata[i].pool.contractorSymbol
+                emitData[i].pool.repos,
+                emitData[i].pool.label.name,
+                emitData[i].pool.label.description,
+                emitData[i].pool.label.color,
+                emitData[i].pool.contractorSymbol
             ) = abi.decode(data[2], (string[], string, string, string, string));
         }
-        return unitsMetadata;
+        return emitData;
     }
 
     /// @notice Encode Funding struct of the given version. Version is supported explicitly to simplify testing
@@ -424,7 +427,7 @@ library HostEncodingLib {
         (rest, unitsMetaDataEncoded) = abi.decode(rest, (bytes, bytes[]));
 
         uint len = unitsMetaDataEncoded.length;
-        dao.unitsMetaData = new IDAOData.UnitMetaData[](len);
+        dao.unitsMetaData = new IDAOData.UnitEmitData[](len);
         for (uint i; i < len; ++i) {
             dao.unitsMetaData[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
         }
@@ -458,8 +461,8 @@ library HostEncodingLib {
         return dao;
     }
 
-    function encodeUnitsMetaData(IDAOData.UnitMetaData memory data) internal pure returns (bytes memory dest) {
-        dest = abi.encode(data.name, uint8(data.status), data.unitType, data.revenueShare, data.emoji);
+    function encodeUnitsMetaData(IDAOData.UnitEmitData memory data) internal pure returns (bytes memory dest) {
+        dest = abi.encode(data.name, data.description, uint8(data.status), data.unitType, data.revenueShare, data.emoji);
         uint len = data.ui.length;
         bytes[] memory ui = new bytes[](len);
         for (uint i; i < len; ++i) {
@@ -477,7 +480,7 @@ library HostEncodingLib {
         );
     }
 
-    function decodeUnitsMetaData(bytes memory payload) internal pure returns (IDAOData.UnitMetaData memory data) {
+    function decodeUnitsMetaData(bytes memory payload) internal pure returns (IDAOData.UnitEmitData memory data) {
         bytes memory rest = payload;
 
         bytes[] memory uiEncoded;
@@ -493,16 +496,18 @@ library HostEncodingLib {
         ) = abi.decode(rest, (bytes, bytes[], string[], string[], string, string, string, string));
 
         uint len = uiEncoded.length;
-        data.ui = new IDAOMetadata.UnitUiLink[](len);
+        data.ui = new ISegment4.UnitUiLink[](len);
         for (uint i; i < len; ++i) {
             (data.ui[i].href, data.ui[i].title) = abi.decode(uiEncoded[i], (string, string));
         }
 
         {
             uint8 status;
-            (data.name, status, data.unitType, data.revenueShare, data.emoji) =
-                abi.decode(rest, (string, uint8, uint16, uint, string));
-            data.status = IDAOMetadata.UnitStatus(status);
+            uint8 unitType;
+            (data.name, data.description, status, unitType, data.revenueShare, data.emoji) =
+                abi.decode(rest, (string, string, uint8, uint8, uint, string));
+            data.status = ISegment4.UnitStatus(status);
+            data.unitType = ISegment4.UnitType(unitType);
         }
 
         return data;
@@ -524,7 +529,9 @@ library HostEncodingLib {
             bytes memory b2 = abi.encode(data.chainSettings, data.unitIds, data.unitRevenue, data.unitRevenueAssets);
             bytes memory b3 = abi.encode(data.params, data.initialChain, data.socials);
             bytes memory b4 = abi.encode(activityRaw, data.images, data.units, data.funding, data.vesting);
-            bytes memory b5 = abi.encode(data.governanceSettings, data.deployer, data.saltContractIndices, data.salts, data.metaDataLocation);
+            bytes memory b5 = abi.encode(
+                data.governanceSettings, data.deployer, data.saltContractIndices, data.salts, data.metaDataLocation
+            );
 
             dest = abi.encode(version, b1, b2, b3, b4, b5);
         } else {
@@ -556,8 +563,7 @@ library HostEncodingLib {
             (dest.chainSettings, dest.unitIds, dest.unitRevenue, dest.unitRevenueAssets) =
                 abi.decode(b2, (ITokenomics.DaoChainSettings, string[], uint[], address[]));
 
-            (dest.params, dest.initialChain, dest.socials) =
-                abi.decode(b3, (ITokenomics.DaoParameters, uint, string[]));
+            (dest.params, dest.initialChain, dest.socials) = abi.decode(b3, (ITokenomics.DaoParameters, uint, string[]));
 
             {
                 uint8[] memory activityRaw;

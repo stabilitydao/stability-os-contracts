@@ -154,8 +154,8 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IHost
-    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
-        HostProposalLib.updateDAO(symbol, action, payload, metadata);
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory emitData) external {
+        HostProposalLib.updateDAO(symbol, action, payload, emitData);
     }
 
     /// @inheritdoc IHost

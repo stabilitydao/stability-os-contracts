@@ -182,13 +182,21 @@ library HostBridgeLib {
             IHost.IncorrectInputData()
         );
 
-        // todo do we need to check if all unitIds are registered on initial chain?
+        _checkAllUnitsRegistered($, daoUid, p.unitIds);
     }
 
     function _verifyBridgedUnits(uint daoUid, IBridgedActions.BridgedUnits memory p) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
-        // todo ensure that all units are registered in segment2
+
+        _checkAllUnitsRegistered($, daoUid, p.unitIds);
+    }
+
+    function _checkAllUnitsRegistered(HostLib.HostStorage storage $, uint daoUid, string[] memory unitIds) internal view {
+        // ensure that all units are registered in segment2
+        for (uint i; i < unitIds.length; i++) {
+            require($.units[HostLib.getUnitKey(daoUid, unitIds[i])].daoUid == daoUid, IHost.UnitNotFound());
+        }
     }
 
     //endregion ----------------------------------------- Verify payload logic

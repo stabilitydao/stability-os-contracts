@@ -559,8 +559,9 @@ contract HostUpdateLibTest is Test {
         }
         tests[n++] =
             TestCaseFunding({phase: ITokenomics.LifecyclePhase.DRAFT_0, fundingType: ITokenomics.FundingType.TGE_1});
-        tests[n++] =
-             TestCaseFunding({phase: ITokenomics.LifecyclePhase.INCEPTION_1, fundingType: ITokenomics.FundingType.TGE_1});
+        tests[n++] = TestCaseFunding({
+            phase: ITokenomics.LifecyclePhase.INCEPTION_1, fundingType: ITokenomics.FundingType.TGE_1
+        });
         tests[n++] =
             TestCaseFunding({phase: ITokenomics.LifecyclePhase.SEED_2, fundingType: ITokenomics.FundingType.TGE_1});
         tests[n++] = TestCaseFunding({
@@ -1194,7 +1195,7 @@ contract HostUpdateLibTest is Test {
         units[1].unitId = "unitB";
         units[1].developerUid = "20";
 
-        IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](2);
+        IDAOData.UnitEmitData[] memory metadata = new IDAOData.UnitEmitData[](2);
         metadata[0].name = "aaa";
         metadata[1].name = "bbb";
 
@@ -1242,7 +1243,7 @@ contract HostUpdateLibTest is Test {
         units[0].unitId = "unitX";
         units[0].developerUid = "99";
 
-        IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](1);
+        IDAOData.UnitEmitData[] memory metadata = new IDAOData.UnitEmitData[](1);
         metadata[0].name = "aaa";
 
         // expect single instant update event
@@ -1289,7 +1290,7 @@ contract HostUpdateLibTest is Test {
 
         // call with empty units -> all should be deleted
         IDAOData.UnitDataInput[] memory units;
-        IDAOData.UnitMetaData[] memory metadata;
+        IDAOData.UnitEmitData[] memory metadata;
 
         HostUpdateLib.updateUnits(117, units, bytes32(0), metadata);
 
@@ -1334,7 +1335,7 @@ contract HostUpdateLibTest is Test {
         units[2].unitId = "e";
         units[2].developerUid = "55"; // new
 
-        IDAOData.UnitMetaData[] memory metadata = new IDAOData.UnitMetaData[](3);
+        IDAOData.UnitEmitData[] memory metadata = new IDAOData.UnitEmitData[](3);
         metadata[0].name = "meta b";
         metadata[1].name = "meta d";
         metadata[2].name = "meta e";

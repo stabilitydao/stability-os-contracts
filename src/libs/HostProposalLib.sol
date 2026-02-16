@@ -142,14 +142,14 @@ library HostProposalLib {
     /// @param action Action kind, see ITokenomics.DAOAction
     /// @param payload Data of the action. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
-    /// @param metadata Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
-    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory metadata) external {
+    /// @param emitData Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
+    function updateDAO(string calldata symbol, uint16 action, bytes memory payload, bytes memory emitData) external {
         LocalInitData memory init = _beforeUpdate(symbol);
 
         /// @dev Currently metadata is required by units-update only
         require(
-            metadata.length == 0 || action == uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
-            IHost.InvalidMetadataForAction()
+            emitData.length == 0 || action == uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+            IHost.InvalidEmitDataForAction()
         );
 
         if (action == uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0)) {
@@ -159,7 +159,7 @@ library HostProposalLib {
         } else if (action == uint16(ITokenomics.DAOAction.UPDATE_NAMING_2)) {
             _updateNaming(init, payload);
         } else if (action == uint16(ITokenomics.DAOAction.UPDATE_UNITS_3)) {
-            _updateUnits(init, payload, metadata);
+            _updateUnits(init, payload, emitData);
         } else if (action == uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4)) {
             _updateFunding(init, payload);
         } else if (action == uint16(ITokenomics.DAOAction.UPDATE_VESTING_5)) {
@@ -274,10 +274,10 @@ library HostProposalLib {
     }
 
     /// @notice Update/create proposal to update tokenomics units of the DAO
-    function _updateUnits(LocalInitData memory d_, bytes memory payload, bytes memory metadata_) internal {
+    function _updateUnits(LocalInitData memory d_, bytes memory payload, bytes memory emitData_) internal {
         /// @dev Ensure that provided payload is in correct format
         IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
-        IDAOData.UnitMetaData[] memory unitsMetadata = HostEncodingLib.decodeUnitsMetadata(metadata_);
+        IDAOData.UnitEmitData[] memory emitData = HostEncodingLib.decodeUnitsEmitData(emitData_);
 
         require(HostConfigLib.getHostGlobalSettings().priceUnit == 0, IHost.NotImplemented());
 
@@ -286,12 +286,12 @@ library HostProposalLib {
         // todo on initial chain: update list of chains on which the unit is bridged, see UnitData.chainIds
 
         if (d_.instant) {
-            HostUpdateLib.updateUnits(d_.daoUid, units, 0, unitsMetadata); // 0 - instant update
+            HostUpdateLib.updateUnits(d_.daoUid, units, 0, emitData); // 0 - instant update
         } else {
             ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_UNITS_3, d_.instant, false);
             proposalId = _proposeAction(d_.daoUid, payload, p);
 
-            emit IHost.ProposalToUpdateDaoUnits(proposalId, d_.daoUid, units, unitsMetadata);
+            emit IHost.ProposalToUpdateDaoUnits(proposalId, d_.daoUid, units, emitData);
         }
     }
 
@@ -476,7 +476,7 @@ library HostProposalLib {
             // it doesn't require voting, only validation
         } else if (
             phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.SEED_FAILED_3
-            || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4 || phase == ITokenomics.LifecyclePhase.TGE_5
+                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4 || phase == ITokenomics.LifecyclePhase.TGE_5
         ) {
             ISeedToken seedToken = ISeedToken($.deployments[daoUid].seedToken);
             uint power = seedToken.balanceOf(msg.sender);

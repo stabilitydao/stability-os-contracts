@@ -6,7 +6,7 @@ import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
-import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
@@ -64,8 +64,7 @@ contract DataReaderTest is Test {
             );
 
             // units project
-            (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
-                SampleDataLib.getUnitsTwo();
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) = SampleDataLib.getUnitsTwo();
 
             host_.updateDAO(
                 daoData.symbol,

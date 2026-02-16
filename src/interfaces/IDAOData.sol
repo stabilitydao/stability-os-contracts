@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDAOMetadata} from "./IDAOMetadata.sol";
+import {ISegment4} from "./ISegment4.sol";
 import {ITokenomics} from "./ITokenomics.sol";
 
 /// @notice Various variants of DAO data
-interface IDAOData is ITokenomics, IDAOMetadata {
+interface IDAOData is ITokenomics, ISegment4 {
     /// @notice Vesting allocation data available on-chain for users
     struct VestingData {
         /// @notice Short name of vesting allocation
@@ -166,7 +166,7 @@ interface IDAOData is ITokenomics, IDAOMetadata {
         // ---------------------------- SEGMENT 4: OFF-CHAIN emitted data
 
         // @notice All emitted data (not stored on chain)
-        UnitMetaData[] unitsMetaData;
+        UnitEmitData[] unitsMetaData;
     }
 
     /// @notice On-chain data of the Unit.

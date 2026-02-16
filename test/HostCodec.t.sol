@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostCodec} from "../src/HostCodec.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
-import {IDAOMetadata} from "../src/interfaces/IDAOMetadata.sol";
+import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 
 contract HostCodecTest is Test {
@@ -316,27 +317,23 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeUnits() public view {
-        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) =
-            SampleDataLib.getUnitsThree();
+        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory emitted) = SampleDataLib.getUnitsThree();
 
         bytes memory encA = hostCodec.encode(units, hostCodec.PAYLOAD_API_VERSION());
-        bytes memory encM = hostCodec.encode(metas, hostCodec.PAYLOAD_API_VERSION());
+        bytes memory encM = hostCodec.encode(emitted, hostCodec.PAYLOAD_API_VERSION());
 
         IDAOData.UnitDataInput[] memory decA = hostCodec.decodeUnits(encA);
-        IDAOData.UnitMetaData[] memory decM = hostCodec.decodeUnitsMetadata(encM);
+        IDAOData.UnitEmitData[] memory decM = hostCodec.decodeUnitsEmitData(encM);
 
         assertEq(keccak256(abi.encode(decA)), keccak256(abi.encode(units)), "units");
-        assertEq(keccak256(abi.encode(decM)), keccak256(abi.encode(metas)), "metas");
+        assertEq(keccak256(abi.encode(decM)), keccak256(abi.encode(emitted)), "emitted data");
     }
 
     function testEncodeUnitsBadPath() public {
-        IDAOMetadata.UnitUiLink[] memory emptyUi;
-        string[] memory emptyApi;
-
-        (IDAOData.UnitDataInput[] memory units, IDAOMetadata.UnitMetaData[] memory metas) = SampleDataLib.getUnitsTwo();
+        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory emitted) = SampleDataLib.getUnitsTwo();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
-        hostCodec.encode(metas, INCORRECT_VERSION);
+        hostCodec.encode(emitted, INCORRECT_VERSION);
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.encode(units, INCORRECT_VERSION);
@@ -345,8 +342,8 @@ contract HostCodecTest is Test {
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.decodeUnits(payloadUnknownVersion);
 
-        payloadUnknownVersion = abi.encode(INCORRECT_VERSION, metas);
+        payloadUnknownVersion = abi.encode(INCORRECT_VERSION, emitted);
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
-        hostCodec.decodeUnitsMetadata(payloadUnknownVersion);
+        hostCodec.decodeUnitsEmitData(payloadUnknownVersion);
     }
 }

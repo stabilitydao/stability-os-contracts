@@ -135,19 +135,24 @@ contract HostBridgeLibTest is Test {
     //region ------------------------------------------ Tests for validation
 
     function testVerifyBridgedActionBridgeDao_Normal_Success() public {
+        uint daoUid = 97;
+
         IBridgedActions.BridgeDaoParams memory p;
         p.symbol = "a";
         p.name = "b";
         p.unitIds = new string[](1);
+        p.unitIds[0] = "unitId";
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.DaoDataSegment2 storage segment2 = $.segment2[1];
+        HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
         segment2.symbol = "a";
         segment2.name = "b";
 
+        $.units[HostLib.getUnitKey(daoUid, "unitId")].daoUid = 97;
+
         for (uint i; i < uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6); ++i) {
             segment2.phase = ITokenomics.LifecyclePhase(i);
-            this.verifyBridgedActionBridgeDaoPublic(1, p);
+            this.verifyBridgedActionBridgeDaoPublic(daoUid, p);
         }
     }
 
@@ -210,6 +215,28 @@ contract HostBridgeLibTest is Test {
 
         vm.expectRevert(IHost.UnitsRequired.selector);
         this.verifyBridgedActionBridgeDaoPublic(1, p);
+    }
+
+    function testVerifyBridgedActionBridgeDao_NotRegisteredUnit_Revert() public {
+        uint daoUid = 97;
+
+        IBridgedActions.BridgeDaoParams memory p;
+        p.symbol = "a";
+        p.name = "b";
+        p.unitIds = new string[](2);
+        p.unitIds[0] = "unitId1";
+        p.unitIds[1] = "unitId2";
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
+        segment2.symbol = "a";
+        segment2.name = "b";
+        segment2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
+
+        $.units[HostLib.getUnitKey(daoUid, "unitId1")].daoUid = 97; // only unit1 is registered, unit2 is not registered
+
+        vm.expectRevert(IHost.UnitNotFound.selector);
+        this.verifyBridgedActionBridgeDaoPublic(daoUid, p);
     }
     //endregion ------------------------------------------ Tests for validation
 
