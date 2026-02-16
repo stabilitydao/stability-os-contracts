@@ -55,7 +55,7 @@ interface IHost {
     error UnknownRestrictedAction();
     error NotInitialChain();
     error InvalidActivityCombination();
-    error SingleBuilderActivityNotAllowed();
+    error ZeroActivityNotAllowed();
     error InvalidFundingPeriod();
     error InvalidFundingRaise();
     error InvalidFundingArray();

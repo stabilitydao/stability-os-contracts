@@ -140,6 +140,17 @@ contract HostViewLibTest is Test {
 
     //endregion ----------------------------------- _tasksDraft
 
+    //region ----------------------------------- _tasksInception
+    function testTasksDraft_AnyInputData_ReturnEmptyArray() public {
+        uint daoUid = 97;
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+
+        IHost.Task[] memory dest = new IHost.Task[](25);
+        uint countItems = HostViewLib._tasksInception($, daoUid, dest);
+        assertEq(countItems, 0, "no tasks");
+    }
+    //endregion ----------------------------------- _tasksInception
+
     //region ----------------------------------- _tasksSeed
     function testTasksSeed_MinRequiredData_ReturnEmptyArray() public view {
         uint daoUid = 97;

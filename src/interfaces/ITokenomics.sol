@@ -172,7 +172,7 @@ interface ITokenomics {
         /// @notice Short name of vesting allocation
         string name;
 
-        /// @notice How must be spent (emit only)
+        /// @notice How must be spent
         string description;
 
         /// @notice Vesting supply, in percents. Decimals 1e5, i.e. 20_000 = 20%

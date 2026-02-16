@@ -50,14 +50,12 @@ library HostUpdateLib {
 
         uint len = activity.length;
         for (uint i; i < len; ++i) {
-            /// @dev Check that activity are not repeat
+            /// @dev Check that activities are not repeat
             require(!foundActivity[uint(activity[i])], IHost.InvalidActivityCombination());
             foundActivity[uint(activity[i])] = true;
         }
 
-        require(
-            len > 1 || !foundActivity[uint(ITokenomics.Activity.BUILDER_3)], IHost.SingleBuilderActivityNotAllowed()
-        );
+        require(len != 0, IHost.ZeroActivityNotAllowed());
     }
 
     /// @dev Check length of name and symbol, uppercase requirement for symbol and uniqueness of symbol

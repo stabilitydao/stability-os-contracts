@@ -256,6 +256,8 @@ library HostViewLib {
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             index = _tasksDraft($, daoUid, dest);
+        } else if (phase == ITokenomics.LifecyclePhase.INCEPTION_1) {
+            index = _tasksInception($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.SEED_2) {
             index = _tasksSeed($, daoUid, dest);
         } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
@@ -305,6 +307,18 @@ library HostViewLib {
         }
 
         return index;
+    }
+
+    /// @dev Check tasks for INCEPTION phase. Return number of filled tasks in dest array
+    function _tasksInception(
+        HostLib.HostStorage storage /*$*/,
+        uint /*daoUid*/,
+        IHost.Task[] memory dest
+    ) internal view returns (uint) {
+
+        // there are no on-chain tasks
+
+        return 0;
     }
 
     function _tasksSeed(

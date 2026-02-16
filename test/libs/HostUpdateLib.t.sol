@@ -158,19 +158,13 @@ contract HostUpdateLibTest is Test {
             this.validateActivityPublic(activity);
         }
 
-        { // empty activity
-            ITokenomics.Activity[] memory activity;
+        // any single activity
+        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
+            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+            activity[0] = ITokenomics.Activity(i);
             this.validateActivityPublic(activity);
         }
 
-        // single activity (not builder)
-        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
-            if (i != uint(ITokenomics.Activity.BUILDER_3)) {
-                ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-                activity[0] = ITokenomics.Activity(i);
-                this.validateActivityPublic(activity);
-            }
-        }
         { // builder + one more activity
             ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
             activity[0] = ITokenomics.Activity.BUILDER_3;
@@ -180,10 +174,9 @@ contract HostUpdateLibTest is Test {
     }
 
     function testValidateActivityNegative() public {
-        { // builder alone
-            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-            activity[0] = ITokenomics.Activity.BUILDER_3;
-            vm.expectRevert(abi.encodeWithSelector(IHost.SingleBuilderActivityNotAllowed.selector));
+        { // no activities
+            ITokenomics.Activity[] memory activity;
+            vm.expectRevert(abi.encodeWithSelector(IHost.ZeroActivityNotAllowed.selector));
             this.validateActivityPublic(activity);
         }
 
@@ -305,8 +298,9 @@ contract HostUpdateLibTest is Test {
     //endregion ------------------------------------------ Tests for validation
 
     //region ------------------------------------------ Tests for Activity validation
-    function testValidateActivityEmpty() public view {
+    function testValidateActivityEmpty() public {
         ITokenomics.Activity[] memory activity;
+        vm.expectRevert(IHost.ZeroActivityNotAllowed.selector);
         this.validateActivityPublic(activity);
     }
 
@@ -325,14 +319,6 @@ contract HostUpdateLibTest is Test {
         activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
         vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
-        this.validateActivityPublic(activity);
-    }
-
-    function testValidateActivity_BuilderAlone_Throws() public {
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.BUILDER_3;
-
-        vm.expectRevert(abi.encodeWithSelector(IHost.SingleBuilderActivityNotAllowed.selector));
         this.validateActivityPublic(activity);
     }
 
