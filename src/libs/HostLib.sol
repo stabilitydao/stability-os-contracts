@@ -109,21 +109,6 @@ library HostLib {
         bytes32 payloadHash;
     }
 
-    /// @notice Vesting data to store on cnain. It doesn't store description (description is only emitted).
-    struct VestingLocal {
-        /// @notice Short name of vesting allocation
-        string name;
-
-        /// @notice Vesting supply, in percents. Decimals 1e5, i.e. 20_000 = 20%
-        uint allocation;
-
-        /// @notice Start timestamp
-        uint64 start;
-
-        /// @notice End timestamp
-        uint64 end;
-    }
-
     /// @notice Unit data stored in the storage
     struct UnitLocal {
         uint daoUid;
@@ -214,7 +199,7 @@ library HostLib {
         mapping(bytes32 fundingId => ITokenomics.Funding) funding;
 
         /// @notice Vesting allocations. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => VestingLocal) vesting;
+        mapping(bytes32 key => ITokenomics.Vesting) vesting;
 
         /// @notice Settings of DAO Governance
         mapping(uint daoUid => ITokenomics.GovernanceSettings) governanceSettings;

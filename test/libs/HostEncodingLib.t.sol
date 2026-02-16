@@ -469,12 +469,13 @@ contract HostEncodingLibTest is Test {
             images: SampleDataLib.getDaoImages(),
             units: new ITokenomics.UnitData[](2),
             funding: new ITokenomics.Funding[](2),
-            vesting: new IDAOData.VestingData[](2),
+            vesting: new ITokenomics.Vesting[](2),
             governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: 1111, ttBribe: type(uint).max - 1}),
             deployer: makeAddr("deployer"),
             salts: new bytes32[](2),
             saltContractIndices: new uint16[](2),
-            metaDataLocation: "daoMetaDataLocation"
+            metaDataLocation: "daoMetaDataLocation",
+            vestingContracts: new address[](2)
         });
 
         data.unitIds[0] = "unit1";
@@ -523,6 +524,12 @@ contract HostEncodingLibTest is Test {
         data.salts[1] = "0x222";
         data.saltContractIndices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
         data.saltContractIndices[1] = uint16(ITokenomics.ContractIndices.TOKEN_3);
+
+        data.vesting[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+        data.vesting[1] = ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
+
+        data.vestingContracts[0] = makeAddr("vestingContract1");
+        data.vestingContracts[1] = makeAddr("vestingContract2");
 
         bytes memory encA = this._encodeDAOData(data, HostEncodingLib.PAYLOAD_API_VERSION);
         IDAOData.DaoData memory restored = this._decodeDAOData(encA);

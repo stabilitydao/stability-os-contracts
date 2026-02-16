@@ -1056,8 +1056,9 @@ contract HostUpdateLibTest is Test {
 
         for (uint i = 0; i < vesting.length; i++) {
             bytes32 key = HostLib.getIndexKey(117, i);
-            HostLib.VestingLocal memory stored = $.vesting[key];
+            ITokenomics.Vesting memory stored = $.vesting[key];
             assertEq(stored.name, vesting[i].name);
+            assertEq(stored.description, vesting[i].description);
             assertEq(stored.allocation, vesting[i].allocation);
             assertEq(stored.start, vesting[i].start);
             assertEq(stored.end, vesting[i].end);

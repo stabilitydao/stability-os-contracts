@@ -303,13 +303,7 @@ library HostActionsLib {
             segment3.countVesting = countVesting;
 
             for (uint i; i < dao.vesting.length; i++) {
-                $.vesting[HostLib.getIndexKey(daoUid, i)] = HostLib.VestingLocal({
-                    name: dao.vesting[i].name,
-                    allocation: dao.vesting[i].allocation,
-                    start: dao.vesting[i].start,
-                    end: dao.vesting[i].end
-                });
-                emit IHost.VestingDescription(daoUid, dao.vesting[i].name, dao.vesting[i].description);
+                $.vesting[HostLib.getIndexKey(daoUid, i)] = dao.vesting[i];
             }
         }
 
@@ -322,7 +316,7 @@ library HostActionsLib {
     function _changePhaseDraft(
         HostLib.HostStorage storage $,
         uint daoUid
-    ) internal returns (ITokenomics.LifecyclePhase phase) {
+    ) internal view returns (ITokenomics.LifecyclePhase phase) {
         ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
         // SEED can be started not later than 1 week after configured start time
         require(

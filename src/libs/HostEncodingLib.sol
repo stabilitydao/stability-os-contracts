@@ -525,15 +525,17 @@ library HostEncodingLib {
                 activityRaw[i] = uint8(data.activity[i]);
             }
 
-            bytes memory b1 = abi.encode(data.symbol, data.uid, data.name, uint8(data.phase), data.deployments);
-            bytes memory b2 = abi.encode(data.chainSettings, data.unitIds, data.unitRevenue, data.unitRevenueAssets);
-            bytes memory b3 = abi.encode(data.params, data.initialChain, data.socials);
-            bytes memory b4 = abi.encode(activityRaw, data.images, data.units, data.funding, data.vesting);
-            bytes memory b5 = abi.encode(
+            bytes[6] memory b;
+            b[0] = abi.encode(data.symbol, data.uid, data.name, uint8(data.phase), data.deployments);
+            b[1] = abi.encode(data.chainSettings, data.unitIds, data.unitRevenue, data.unitRevenueAssets);
+            b[2] = abi.encode(data.params, data.initialChain, data.socials);
+            b[3] = abi.encode(activityRaw, data.images, data.units, data.funding, data.vesting);
+            b[4] = abi.encode(
                 data.governanceSettings, data.deployer, data.saltContractIndices, data.salts, data.metaDataLocation
             );
+            b[5] = abi.encode(data.vestingContracts);
 
-            dest = abi.encode(version, b1, b2, b3, b4, b5);
+            dest = abi.encode(version, b);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
@@ -543,39 +545,33 @@ library HostEncodingLib {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
-            bytes memory b1;
-            bytes memory b2;
-            bytes memory b3;
-            bytes memory b4;
-            bytes memory b5;
-
-            (, b1, b2, b3, b4, b5) = abi.decode(payload, (uint16, bytes, bytes, bytes, bytes, bytes));
+            (, bytes[6] memory b) = abi.decode(payload, (uint16, bytes[6]));
 
             {
                 uint8 phaseRaw;
 
                 (dest.symbol, dest.uid, dest.name, phaseRaw, dest.deployments) =
-                    abi.decode(b1, (string, uint, string, uint8, ITokenomics.DaoDeploymentInfo));
+                    abi.decode(b[0], (string, uint, string, uint8, ITokenomics.DaoDeploymentInfo));
 
                 dest.phase = ITokenomics.LifecyclePhase(phaseRaw);
             }
 
             (dest.chainSettings, dest.unitIds, dest.unitRevenue, dest.unitRevenueAssets) =
-                abi.decode(b2, (ITokenomics.DaoChainSettings, string[], uint[], address[]));
+                abi.decode(b[1], (ITokenomics.DaoChainSettings, string[], uint[], address[]));
 
-            (dest.params, dest.initialChain, dest.socials) = abi.decode(b3, (ITokenomics.DaoParameters, uint, string[]));
+            (dest.params, dest.initialChain, dest.socials) = abi.decode(b[2], (ITokenomics.DaoParameters, uint, string[]));
 
             {
                 uint8[] memory activityRaw;
 
                 (activityRaw, dest.images, dest.units, dest.funding, dest.vesting) = abi.decode(
-                    b4,
+                    b[3],
                     (
                         uint8[],
                         ITokenomics.DaoImages,
                         ITokenomics.UnitData[],
                         ITokenomics.Funding[],
-                        IDAOData.VestingData[]
+                        ITokenomics.Vesting[]
                     )
                 );
 
@@ -587,7 +583,10 @@ library HostEncodingLib {
             }
 
             (dest.governanceSettings, dest.deployer, dest.saltContractIndices, dest.salts, dest.metaDataLocation) =
-                abi.decode(b5, (ITokenomics.GovernanceSettings, address, uint16[], bytes32[], string));
+                abi.decode(b[4], (ITokenomics.GovernanceSettings, address, uint16[], bytes32[], string));
+
+
+            (dest.vestingContracts) = abi.decode(b[5], (address[]));
 
             return dest;
         } else {

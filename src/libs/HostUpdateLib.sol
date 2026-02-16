@@ -391,9 +391,7 @@ library HostUpdateLib {
 
         for (uint i = 0; i < countVesting; i++) {
             bytes32 key = HostLib.getIndexKey(daoUid, i);
-            $.vesting[key] = HostLib.VestingLocal({
-                name: vesting[i].name, allocation: vesting[i].allocation, start: vesting[i].start, end: vesting[i].end
-            });
+            $.vesting[key] = vesting[i];
         }
 
         emit IHost.DaoVestingUpdated(daoUid, vesting);

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostCodec} from "../src/HostCodec.sol";

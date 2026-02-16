@@ -141,7 +141,7 @@ contract HostViewLibTest is Test {
     //endregion ----------------------------------- _tasksDraft
 
     //region ----------------------------------- _tasksInception
-    function testTasksDraft_AnyInputData_ReturnEmptyArray() public {
+    function testTasksDraft_AnyInputData_ReturnEmptyArray() public pure {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 

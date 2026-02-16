@@ -354,7 +354,7 @@ contract HostActionsLibTest is Test {
         HostActionsLib.changePhase(symbol, authority_);
     }
 
-    function changePhaseDraft(uint daoUid) public returns (ITokenomics.LifecyclePhase) {
+    function changePhaseDraft(uint daoUid) public view returns (ITokenomics.LifecyclePhase) {
         return HostActionsLib._changePhaseDraft(HostLib.getHostStorage(), daoUid);
     }
 

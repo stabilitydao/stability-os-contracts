@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
@@ -959,10 +958,8 @@ contract HostTest is Test {
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
-    function _same(IDAOData.VestingData memory a, ITokenomics.Vesting memory b) internal pure returns (bool) {
-        return a.vestingContract == address(0) // todo check contract address correctly when it will be filled
-            && keccak256(abi.encode(a.name)) == keccak256(abi.encode(b.name)) && a.allocation == b.allocation
-            && a.start == b.start && a.end == b.end;
+    function _same(ITokenomics.Vesting memory a, ITokenomics.Vesting memory b) internal pure returns (bool) {
+        return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
     }
 
     function _assertDaoEqual(IDAOData.DaoDataInput memory expected, IDAOData.DaoData memory actual) internal pure {
@@ -1063,9 +1060,10 @@ contract HostTest is Test {
         assertEq(expected.vesting.length, actual.vesting.length, "tokenomics.vesting.length");
         for (uint i = 0; i < expected.vesting.length; i++) {
             ITokenomics.Vesting memory ev = expected.vesting[i];
-            IDAOData.VestingData memory av = actual.vesting[i];
+            ITokenomics.Vesting memory av = actual.vesting[i];
 
             assertEq(ev.name, av.name, "vesting.name");
+            assertEq(ev.description, av.description, "vesting.description");
             assertEq(ev.allocation, av.allocation, "vesting.allocation");
             assertEq(ev.start, av.start, "vesting.start");
             assertEq(ev.end, av.end, "vesting.end");

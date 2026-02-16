@@ -187,8 +187,6 @@ library HostBridgeLib {
 
     function _verifyBridgedUnits(uint daoUid, IBridgedActions.BridgedUnits memory p) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
-
         _checkAllUnitsRegistered($, daoUid, p.unitIds);
     }
 

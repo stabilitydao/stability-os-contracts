@@ -130,7 +130,6 @@ interface IHost {
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
-    event VestingDescription(uint daoUid, string vestingName, string description);
     event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
 
     event BridgedUnitsUpdated(uint daoUid, string[] unitIds);
