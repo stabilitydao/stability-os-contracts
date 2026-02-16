@@ -128,23 +128,23 @@ contract HostUpdateLibTest is Test {
 
         // ------------------ Change total supply in SEED
         data.totalSupply = 110_000_000e18;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.SEED_1, data);
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.SEED_2, data);
         $.daoParameters[117] = data;
 
         // ------------------ Change total supply in DEVELOPMENT
         data.totalSupply = 120_000_000e18;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DEVELOPMENT_3, data);
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DEVELOPMENT_4, data);
         $.daoParameters[117] = data;
 
         // ------------------ Fail to change total supply after TGE started
         data.totalSupply = 130_000_000e18;
         vm.expectRevert(IHost.TooLateToUpdateTotalSupply.selector);
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_4, data);
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_5, data);
 
         // ------------------ Other parameters can be updated after TGE started
         data.totalSupply = 120_000_000e18;
         data.proposalThreshold = 2;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_4, data);
+        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_5, data);
         $.daoParameters[117] = data;
     }
 
@@ -546,23 +546,25 @@ contract HostUpdateLibTest is Test {
             funding.maxRaise = 100e18;
             funding.fundingType = ITokenomics.FundingType.TGE_1;
 
-            this.validateFundingPublic(ITokenomics.LifecyclePhase.DEVELOPMENT_3, funding);
+            this.validateFundingPublic(ITokenomics.LifecyclePhase.DEVELOPMENT_4, funding);
         }
     }
 
     function fixtureGoodFundingPhase() public pure returns (TestCaseFunding[] memory tests) {
-        tests = new TestCaseFunding[](uint(ITokenomics.LifecyclePhase.SEED_1) + 3);
+        tests = new TestCaseFunding[](uint(ITokenomics.LifecyclePhase.SEED_2) + 4);
         uint n;
-        for (uint i = 0; i < uint(ITokenomics.LifecyclePhase.SEED_1); i++) {
+        for (uint i = 0; i < uint(ITokenomics.LifecyclePhase.SEED_2); i++) {
             tests[n++] =
                 TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.SEED_0});
         }
         tests[n++] =
             TestCaseFunding({phase: ITokenomics.LifecyclePhase.DRAFT_0, fundingType: ITokenomics.FundingType.TGE_1});
         tests[n++] =
-            TestCaseFunding({phase: ITokenomics.LifecyclePhase.SEED_1, fundingType: ITokenomics.FundingType.TGE_1});
+             TestCaseFunding({phase: ITokenomics.LifecyclePhase.INCEPTION_1, fundingType: ITokenomics.FundingType.TGE_1});
+        tests[n++] =
+            TestCaseFunding({phase: ITokenomics.LifecyclePhase.SEED_2, fundingType: ITokenomics.FundingType.TGE_1});
         tests[n++] = TestCaseFunding({
-            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_3, fundingType: ITokenomics.FundingType.TGE_1
+            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_4, fundingType: ITokenomics.FundingType.TGE_1
         });
     }
 
@@ -642,17 +644,17 @@ contract HostUpdateLibTest is Test {
         uint countPhases = uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
 
         tests = new TestCaseFunding[](
-            2 * countPhases - uint(ITokenomics.LifecyclePhase.SEED_1) - uint(ITokenomics.LifecyclePhase.TGE_4) + 1
+            2 * countPhases - uint(ITokenomics.LifecyclePhase.SEED_2) - uint(ITokenomics.LifecyclePhase.TGE_5) + 1
         );
         uint n;
-        for (uint i = uint(ITokenomics.LifecyclePhase.SEED_1); i < countPhases; i++) {
+        for (uint i = uint(ITokenomics.LifecyclePhase.SEED_2); i < countPhases; i++) {
             tests[n++] =
                 TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.SEED_0});
         }
         tests[n++] = TestCaseFunding({
-            phase: ITokenomics.LifecyclePhase.SEED_FAILED_2, fundingType: ITokenomics.FundingType.TGE_1
+            phase: ITokenomics.LifecyclePhase.SEED_FAILED_3, fundingType: ITokenomics.FundingType.TGE_1
         });
-        for (uint i = uint(ITokenomics.LifecyclePhase.TGE_4); i < countPhases; i++) {
+        for (uint i = uint(ITokenomics.LifecyclePhase.TGE_5); i < countPhases; i++) {
             tests[n++] =
                 TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.TGE_1});
         }
@@ -688,8 +690,8 @@ contract HostUpdateLibTest is Test {
         for (uint i; i < countPhases - 3; i++) {
             ITokenomics.LifecyclePhase phase = ITokenomics.LifecyclePhase(i);
             if (
-                phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
-                    && phase != ITokenomics.LifecyclePhase.LIVE_7
+                phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_6 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_7
+                    && phase != ITokenomics.LifecyclePhase.LIVE_8
             ) {
                 phases[n++] = ITokenomics.LifecyclePhase(i);
             }
@@ -809,9 +811,9 @@ contract HostUpdateLibTest is Test {
     /// @dev Source data for tableVestingListPositiveBadPhase
     function fixtureVestingBadPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
         phases = new ITokenomics.LifecyclePhase[](3);
-        phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
-        phases[1] = ITokenomics.LifecyclePhase.LIVE_VESTING_6;
-        phases[2] = ITokenomics.LifecyclePhase.LIVE_7;
+        phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
+        phases[1] = ITokenomics.LifecyclePhase.LIVE_VESTING_7;
+        phases[2] = ITokenomics.LifecyclePhase.LIVE_8;
     }
 
     function tableVestingListPositiveBadPhase(ITokenomics.LifecyclePhase vestingBadPhase) public {

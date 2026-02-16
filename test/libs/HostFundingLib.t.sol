@@ -47,7 +47,7 @@ contract HostFundingLibTest is Test {
     function testFundSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_1;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_2;
         $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.SEED_0))] = ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.SEED_0,
             start: 0,
@@ -76,7 +76,7 @@ contract HostFundingLibTest is Test {
     function testFundTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_4;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_5;
         $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.TGE_1))] = ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.TGE_1,
             start: 0,
@@ -105,7 +105,7 @@ contract HostFundingLibTest is Test {
     function testFundSeedMaxRaiseExceeded() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_1;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_2;
         $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.SEED_0))] = ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.SEED_0,
             start: 0,
@@ -129,7 +129,7 @@ contract HostFundingLibTest is Test {
     function testFundTgeMaxRaiseExceeded() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_4;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_5;
         $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.TGE_1))] = ITokenomics.Funding({
             fundingType: ITokenomics.FundingType.TGE_1,
             start: 0,
@@ -168,7 +168,7 @@ contract HostFundingLibTest is Test {
     function testFundNotFundingPhase() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
 
         exchangeAsset.mint(user, 1e18);
         vm.prank(user);
@@ -185,17 +185,17 @@ contract HostFundingLibTest is Test {
 
     function testNotRefundPhases() public {
         _testNotRefundPhase(ITokenomics.LifecyclePhase.DRAFT_0);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.SEED_1);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.TGE_4);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_CLIFF_5);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_VESTING_6);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_7);
+        _testNotRefundPhase(ITokenomics.LifecyclePhase.SEED_2);
+        _testNotRefundPhase(ITokenomics.LifecyclePhase.TGE_5);
+        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_CLIFF_6);
+        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_VESTING_7);
+        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_8);
     }
 
     function testRefundSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_3;
         $.deployments[1].seedToken = address(seedToken);
 
         exchangeAsset.mint(address(seedToken), 900e18);
@@ -226,7 +226,7 @@ contract HostFundingLibTest is Test {
     function testRefundTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
         $.deployments[1].tgeToken = address(tgeToken);
 
         exchangeAsset.mint(address(tgeToken), 900e18);
@@ -255,7 +255,7 @@ contract HostFundingLibTest is Test {
     function testRefundForTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
         $.deployments[1].tgeToken = address(tgeToken);
 
         exchangeAsset.mint(address(tgeToken), 1900e18);
@@ -289,7 +289,7 @@ contract HostFundingLibTest is Test {
     function testRefundForSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_2;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_3;
         $.deployments[1].seedToken = address(seedToken);
 
         exchangeAsset.mint(address(seedToken), 1900e18);

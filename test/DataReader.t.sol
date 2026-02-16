@@ -118,6 +118,9 @@ contract DataReaderTest is Test {
             );
         }
 
+        // ------------------------------ change phase to inception
+        host_.changePhase(daoData.symbol);
+
         // ------------------------------ change phase to seed
         {
             skip(24 days);
@@ -255,7 +258,7 @@ contract DataReaderTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = dataReader.getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }

@@ -11,7 +11,6 @@ import {Host} from "../../src/Host.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {IDAOMetadata} from "../../src/interfaces/IDAOMetadata.sol";
 import {IDataReader} from "../../src/interfaces/IDataReader.sol";
 import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
@@ -406,7 +405,7 @@ library HostUtilsLib {
 
     function createTestDaoData() internal pure returns (IDAOData.DaoDataInput memory data) {
         // ---------------- base fields
-        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
         data.symbol = "TESTDAO";
         data.name = "Test DAO";
         data.deployer = address(0x123);
@@ -559,7 +558,7 @@ library HostUtilsLib {
             console.log(" ", i, uint8(data.funding[i].fundingType), data.funding[i].raised);
         }
 
-        console.log("daoMetaDataLocation", data.daoMetaDataLocation);
+        console.log("daoMetaDataLocation", data.metaDataLocation);
 
         console.log("GovernanceSettings:");
         console.log("  proposalThreshold:", data.governanceSettings.proposalThreshold);

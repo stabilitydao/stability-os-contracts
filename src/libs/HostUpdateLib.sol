@@ -92,7 +92,7 @@ library HostUpdateLib {
     ) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IHost.PvPFee(params.pvpFee));
         require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
-        if (phase >= ITokenomics.LifecyclePhase.TGE_4) {
+        if (phase >= ITokenomics.LifecyclePhase.TGE_5) {
             require(
                 params.totalSupply == HostLib.getHostStorage().daoParameters[daoUid].totalSupply,
                 IHost.TooLateToUpdateTotalSupply()
@@ -137,13 +137,13 @@ library HostUpdateLib {
         IHost.HostSettings storage st
     ) internal view {
         if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
-            require(phase == ITokenomics.LifecyclePhase.DRAFT_0, IHost.TooLateToUpdateSuchFunding());
+            require(phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1, IHost.TooLateToUpdateSuchFunding());
         }
 
         if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
             require(
-                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.SEED_1
-                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1 || phase == ITokenomics.LifecyclePhase.SEED_2
+                    || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4,
                 IHost.TooLateToUpdateSuchFunding()
             );
         }
@@ -159,8 +159,8 @@ library HostUpdateLib {
         uint tgeClaim
     ) internal view {
         require(
-            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_5 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_6
-                && phase != ITokenomics.LifecyclePhase.LIVE_7,
+            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_6 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_7
+                && phase != ITokenomics.LifecyclePhase.LIVE_8,
             IHost.TooLateToUpdateVesting()
         );
 

@@ -142,16 +142,18 @@ library HostActionsLib {
         ITokenomics.LifecyclePhase newPhase = phase;
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
-            newPhase = _changePhaseDraft($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
+            newPhase = _changePhaseDraft($, daoUid);
+        } else if (phase == ITokenomics.LifecyclePhase.INCEPTION_1) {
+            newPhase = _changePhaseInception($, daoUid, authority);
+        } else if (phase == ITokenomics.LifecyclePhase.SEED_2) {
             newPhase = _changePhaseSeed($, daoUid);
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
             newPhase = _changePhaseDevelopment($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
+        } else if (phase == ITokenomics.LifecyclePhase.TGE_5) {
             newPhase = _changePhaseTge($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_6) {
             newPhase = _changePhaseLiveCliff($, daoUid);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_7) {
             newPhase = _changePhaseLiveVesting($, daoUid);
         }
 
@@ -318,22 +320,29 @@ library HostActionsLib {
     //region -------------------------------------- Internal utils
     function _changePhaseDraft(
         HostLib.HostStorage storage $,
-        uint daoUid,
-        address authority
+        uint daoUid
     ) internal returns (ITokenomics.LifecyclePhase phase) {
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        require(seed.start < block.timestamp, IHost.WaitFundingStart());
-
+        daoUid;
         // todo Inception phase
         //            // SEED can be started not later than 1 week after configured start time
         //            require(
         //                block.timestamp <= seed.start + HostConfigLib.getHostGlobalSettings().maxSeedStartDelay,
         //                IHost.TooLateSoSetupFundingAgain()
         //            );
+        return ITokenomics.LifecyclePhase.INCEPTION_1;
+    }
+
+    function _changePhaseInception(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        address authority
+    ) internal returns (ITokenomics.LifecyclePhase phase) {
+        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
         $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
 
-        return ITokenomics.LifecyclePhase.SEED_1;
+        return ITokenomics.LifecyclePhase.SEED_2;
     }
 
     function _changePhaseSeed(
@@ -345,7 +354,7 @@ library HostActionsLib {
 
         bool success = seed.raised >= seed.minRaise;
 
-        return success ? ITokenomics.LifecyclePhase.DEVELOPMENT_3 : ITokenomics.LifecyclePhase.SEED_FAILED_2; // now refund can be called
+        return success ? ITokenomics.LifecyclePhase.DEVELOPMENT_4 : ITokenomics.LifecyclePhase.SEED_FAILED_3; // now refund can be called
     }
 
     function _changePhaseDevelopment(
@@ -359,7 +368,7 @@ library HostActionsLib {
 
         $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken($, daoUid, authority);
 
-        return ITokenomics.LifecyclePhase.TGE_4;
+        return ITokenomics.LifecyclePhase.TGE_5;
     }
 
     function _changePhaseTge(
@@ -387,9 +396,9 @@ library HostActionsLib {
             // todo seedToken holders became xToken holders by predefined rate
 
             // todo deploy v2 liquidity from TGE funds at predefined price
-            return ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
+            return ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
         } else {
-            return ITokenomics.LifecyclePhase.DEVELOPMENT_3;
+            return ITokenomics.LifecyclePhase.DEVELOPMENT_4;
             // now refund can be called
             // refunding is available up to the start of next TGE
         }
@@ -413,7 +422,7 @@ library HostActionsLib {
 
         require(isVestingStarted, IHost.WaitVestingStart());
 
-        return ITokenomics.LifecyclePhase.LIVE_VESTING_6;
+        return ITokenomics.LifecyclePhase.LIVE_VESTING_7;
     }
 
     /// @dev if all vesting ended then phase changed
@@ -434,7 +443,7 @@ library HostActionsLib {
 
         require(!isVestingActive, IHost.WaitVestingEnd());
 
-        return ITokenomics.LifecyclePhase.LIVE_7;
+        return ITokenomics.LifecyclePhase.LIVE_8;
     }
     //endregion -------------------------------------- Internal utils
 }

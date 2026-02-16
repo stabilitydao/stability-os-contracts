@@ -1176,6 +1176,9 @@ contract HostTest is Test {
 
         skip(24 days);
 
+        // ------------------------------ change phase to inception
+        host_.changePhase(daoData.symbol);
+
         // ------------------------------ change phase to seed
         host_.changePhase(daoData.symbol);
 

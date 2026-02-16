@@ -164,6 +164,14 @@ contract HostLifeCycleTest is Test {
             );
         }
 
+        // ------------------------------ change phase to inception
+        {
+            host_.changePhase(daoData.symbol);
+            IDAOData.DaoData memory daoDataAfter =
+                                    IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION");
+        }
+
         // ------------------------------ phase cant be changed right now
         {
             vm.expectRevert(IHost.WaitFundingStart.selector);
@@ -178,7 +186,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "phase should be SEED");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "at least 1 unsolved tasks");
@@ -276,7 +284,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -421,7 +429,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
@@ -480,7 +488,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5), "phase should be LIVE_CLIFF");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6), "phase should be LIVE_CLIFF");
         }
 
         // ------------------------------ LIVE VESTING, refresh daoData
@@ -494,7 +502,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_6), "phase should be VESTING");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_7), "phase should be VESTING");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE_VESTING phase"); // todo add task "distribute vesting funds to leverage token"
@@ -511,7 +519,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_7), "phase should be LIVE");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_8), "phase should be LIVE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE phase");
         }
@@ -598,7 +606,10 @@ contract HostLifeCycleTest is Test {
             //            );
         }
 
-        // ------------------------------ apes forgot they created DRAFT
+        // ------------------------------ change phase to inception
+        host_.changePhase(daoData.symbol);
+
+        // ------------------------------ apes forgot they created INCEPTION
         {
             skip(15 days);
 
@@ -628,7 +639,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "apes phase should be SEED");
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             // setup seed token
@@ -651,7 +662,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_2), "phase should be SEED_FAILED"
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_3), "phase should be SEED_FAILED"
             );
 
             assertEq(
@@ -755,13 +766,16 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ change phase to SEED, refresh daoData
         {
+            // change phase to inception
+            host_.changePhase(daoData.symbol);
+
             skip(7 days + 1); // todo why do we need +1 second here?
 
             host_.changePhase(daoData.symbol);
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_1), "phase should be SEED");
+            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "machines phase should be SEED");
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             // setup seed token
@@ -784,7 +798,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
             assertEq(
                 IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
@@ -800,7 +814,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+            assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
 
             // setup TGE token
             HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
@@ -833,7 +847,7 @@ contract HostLifeCycleTest is Test {
 
             assertEq(
                 uint8(daoData.phase),
-                uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3),
+                uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4),
                 "phase should be DEVELOPMENT again"
             );
         }
@@ -995,8 +1009,12 @@ contract HostLifeCycleTest is Test {
             );
         }
 
+        // ------------------------------ change phase to inception
+        host_.changePhase(daoData.symbol);
+
         // ------------------------------ change phase to seed
         {
+
             skip(24 days);
 
             host_.changePhase(daoData.symbol);
@@ -1107,7 +1125,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_3), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -1205,7 +1223,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_4), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }

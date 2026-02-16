@@ -24,7 +24,7 @@ library HostFundingLib {
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
-        if (phase == ITokenomics.LifecyclePhase.SEED_1) {
+        if (phase == ITokenomics.LifecyclePhase.SEED_2) {
             ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
 
             require(seed.raised + amount < seed.maxRaise, IHost.RaiseMaxExceed());
@@ -38,7 +38,7 @@ library HostFundingLib {
             IMintedERC20(seedToken).mint(msg.sender, amount);
 
             emit IHost.DaoFunded(daoUid, msg.sender, amount, uint8(ITokenomics.FundingType.SEED_0));
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
+        } else if (phase == ITokenomics.LifecyclePhase.TGE_5) {
             ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
 
             require(tge.raised + amount < tge.maxRaise, IHost.RaiseMaxExceed());
@@ -67,12 +67,12 @@ library HostFundingLib {
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
-        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
+        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_3) {
             address seedToken = $.deployments[daoUid].seedToken;
             ITokenomics.Funding storage funding =
                 $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             _refundFunding(funding, daoUid, msg.sender, seedToken, asset);
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
             address tgeToken = $.deployments[daoUid].tgeToken;
             ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
             _refundFunding(funding, daoUid, msg.sender, tgeToken, asset);
@@ -91,14 +91,14 @@ library HostFundingLib {
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
 
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
-        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_2) {
+        if (phase == ITokenomics.LifecyclePhase.SEED_FAILED_3) {
             address seedToken = $.deployments[daoUid].seedToken;
             ITokenomics.Funding storage funding =
                 $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
             for (uint i; i < users.length; i++) {
                 _refundFunding(funding, daoUid, users[i], seedToken, asset);
             }
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
             address tgeToken = $.deployments[daoUid].tgeToken;
             ITokenomics.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
             for (uint i; i < users.length; i++) {

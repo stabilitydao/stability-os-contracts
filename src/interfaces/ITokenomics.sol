@@ -6,26 +6,29 @@ interface ITokenomics {
         /// @notice Created (draft).
         DRAFT_0,
 
+        /// @notice DAO ready to attract initial community
+        INCEPTION_1,
+
         /// @notice Initial funding. Project met requirements; after SEED the DAO becomes real: non-custodial, tokenized shares, collective governance through voting.
-        SEED_1,
+        SEED_2,
 
         /// @notice Unsuccessful SEED campaign; collected funds are returned.
-        SEED_FAILED_2,
+        SEED_FAILED_3,
 
         /// @notice Use of SEED funds to launch MVP / generate units.
-        DEVELOPMENT_3,
+        DEVELOPMENT_4,
 
         /// @notice TGE — token generation event for token liquidity and DAO development (optional).
-        TGE_4,
+        TGE_5,
 
         /// @notice Waiting period before vesting begins.
-        LIVE_CLIFF_5,
+        LIVE_CLIFF_6,
 
         /// @notice Vesting period active.
-        LIVE_VESTING_6,
+        LIVE_VESTING_7,
 
         /// @notice Vesting completed — tokens fully distributed.
-        LIVE_7,
+        LIVE_8,
 
         COUNT_LIFECYCLE_PHASES
     }

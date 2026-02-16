@@ -471,12 +471,12 @@ library HostProposalLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+        if (phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1) {
             // Proposal created at DRAFT phase doesn't require any power
             // it doesn't require voting, only validation
         } else if (
-            phase == ITokenomics.LifecyclePhase.SEED_1 || phase == ITokenomics.LifecyclePhase.SEED_FAILED_2
-                || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3 || phase == ITokenomics.LifecyclePhase.TGE_4
+            phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.SEED_FAILED_3
+            || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4 || phase == ITokenomics.LifecyclePhase.TGE_5
         ) {
             ISeedToken seedToken = ISeedToken($.deployments[daoUid].seedToken);
             uint power = seedToken.balanceOf(msg.sender);

@@ -173,19 +173,29 @@ contract HostProposalLibTest is Test {
         this._checkUserPowerPublic(1); // no revert
     }
 
+    function testCheckUserPower_Inception_Success() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.INCEPTION_1;
+
+        // Proposal that requires voting cannot be created on INCEPTION stage
+        // Anyway, proposal that requires validation only can be created
+        // No user power is required in that case, anybody can create such proposal
+        this._checkUserPowerPublic(1); // no revert
+    }
+
     // todo: implement _checkUserPowerPublic for LIVE_CLIFF_5 and other phases
     function testCheckUserPower_LiveCliff_NotImplemented() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_5;
+        $.segment2[1].phase = ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
 
         vm.expectRevert(IHost.NotImplemented.selector);
         this._checkUserPowerPublic(1); // no revert
     }
 
     function fixtureSeedPowerPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        phases = new ITokenomics.LifecyclePhase[](4);
-        for (uint i = 0; i < 4; i++) {
-            phases[i] = ITokenomics.LifecyclePhase(i + 1);
+        phases = new ITokenomics.LifecyclePhase[](uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6) - 2);
+        for (uint i = 2; i < uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6); i++) {
+            phases[i - 2] = ITokenomics.LifecyclePhase(i);
         }
     }
 

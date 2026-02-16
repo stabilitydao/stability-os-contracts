@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {HostBridgeLib} from "../../src/libs/HostBridgeLib.sol";
 import {Authority} from "../../src/Authority.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
-import {HostUpdateLib} from "../../src/libs/HostUpdateLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
-import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
@@ -147,7 +145,7 @@ contract HostBridgeLibTest is Test {
         segment2.symbol = "a";
         segment2.name = "b";
 
-        for (uint i; i < uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5); ++i) {
+        for (uint i; i < uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6); ++i) {
             segment2.phase = ITokenomics.LifecyclePhase(i);
             this.verifyBridgedActionBridgeDaoPublic(1, p);
         }
@@ -165,7 +163,7 @@ contract HostBridgeLibTest is Test {
         segment2.name = "b";
 
         for (
-            uint i = uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_5);
+            uint i = uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6);
             i < uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
             ++i
         ) {
@@ -455,7 +453,7 @@ contract HostBridgeLibTest is Test {
     //endregion ------------------------------------------ Tests for applying bridged actions
 
     //region ------------------------------------------ External access to library functions
-    function verifyBridgedActionBridgeDaoPublic(uint daoUid, IBridgedActions.BridgeDaoParams memory p) public {
+    function verifyBridgedActionBridgeDaoPublic(uint daoUid, IBridgedActions.BridgeDaoParams memory p) public view {
         HostBridgeLib._verifyBridgedActionBridgeDao(daoUid, p);
     }
 

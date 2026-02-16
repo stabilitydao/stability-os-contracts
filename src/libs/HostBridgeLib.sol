@@ -173,7 +173,7 @@ library HostBridgeLib {
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
 
         /// @dev Action bridgeDao is intended for drafts only. Live phase requires to use BRIDGE_DAO_WITH_DEPLOYMENTS_7
-        require(segment2.phase < ITokenomics.LifecyclePhase.LIVE_CLIFF_5, IHost.WrongAction());
+        require(segment2.phase < ITokenomics.LifecyclePhase.LIVE_CLIFF_6, IHost.WrongAction());
 
         /// @dev Ensure that user set correct DAO symbol in payload
         require(

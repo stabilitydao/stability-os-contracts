@@ -435,7 +435,7 @@ contract HostEncodingLibTest is Test {
             symbol: "symbol",
             uid: 0x672027567634233,
             name: "DAO name",
-            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_3,
+            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_4,
             deployments: ITokenomics.DaoDeploymentInfo({
                 seedToken: makeAddr("seedToken"),
                 tgeToken: makeAddr("tgeToken"),
@@ -452,6 +452,8 @@ contract HostEncodingLibTest is Test {
             }),
             chainSettings: ITokenomics.DaoChainSettings({bbRate: 100, multisig: address(0)}),
             unitIds: new string[](2),
+            unitRevenue: new uint[](2),
+            unitRevenueAssets: new address[](2),
             params: ITokenomics.DaoParameters({
                 vePeriod: type(uint32).max,
                 pvpFee: type(uint16).max,
@@ -470,7 +472,9 @@ contract HostEncodingLibTest is Test {
             vesting: new IDAOData.VestingData[](2),
             governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: 1111, ttBribe: type(uint).max - 1}),
             deployer: makeAddr("deployer"),
-            daoMetaDataLocation: "daoMetaDataLocation"
+            salts: new bytes32[](2),
+            saltContractIndices: new uint16[](2),
+            metaDataLocation: "daoMetaDataLocation"
         });
 
         data.unitIds[0] = "unit1";
@@ -510,6 +514,15 @@ contract HostEncodingLibTest is Test {
             raised: 0,
             claim: type(uint).max
         });
+
+        data.unitRevenue[0] = 1e18;
+        data.unitRevenue[1] = 2e18;
+        data.unitRevenueAssets[0] = makeAddr("USDC");
+        data.unitRevenueAssets[1] = makeAddr("USDT");
+        data.salts[0] = "0x111";
+        data.salts[1] = "0x222";
+        data.saltContractIndices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
+        data.saltContractIndices[1] = uint16(ITokenomics.ContractIndices.TOKEN_3);
 
         bytes memory encA = this._encodeDAOData(data, HostEncodingLib.PAYLOAD_API_VERSION);
         IDAOData.DaoData memory restored = this._decodeDAOData(encA);

@@ -131,8 +131,8 @@ library HostViewLib {
         }
 
         if (
-            phase == ITokenomics.LifecyclePhase.SEED_1 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3
-                || phase == ITokenomics.LifecyclePhase.TGE_4
+            phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4
+                || phase == ITokenomics.LifecyclePhase.TGE_5
         ) {
             return $.deployments[daoUid].seedToken;
         }
@@ -256,17 +256,17 @@ library HostViewLib {
 
         if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
             index = _tasksDraft($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_1) {
+        } else if (phase == ITokenomics.LifecyclePhase.SEED_2) {
             index = _tasksSeed($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_3) {
+        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
             index = _tasksDevelopment($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_4) {
+        } else if (phase == ITokenomics.LifecyclePhase.TGE_5) {
             index = _tasksTge($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_5) {
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_6) {
             index = _tasksLiveCliff($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_6) {
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_7) {
             index = _tasksLiveVesting($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_7) {
+        } else if (phase == ITokenomics.LifecyclePhase.LIVE_8) {
             index = _tasksLive($, daoUid, dest);
         }
 
