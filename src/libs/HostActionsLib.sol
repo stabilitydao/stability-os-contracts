@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
-import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
-import {IDAOData} from "../interfaces/IDAOData.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
-import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {HostUpdateLib} from "./HostUpdateLib.sol";
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {HostProxyLib} from "./HostProxyLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostDeployLib} from "./HostDeployLib.sol";
 import {HostViewLib} from "./HostViewLib.sol";
+import {IHost} from "../interfaces/IHost.sol";
+import {IHosted} from "../interfaces/IHosted.sol";
+import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 
 library HostActionsLib {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
 
     //region -------------------------------------- Initialization
 
@@ -138,10 +140,12 @@ library HostActionsLib {
         uint daoUid = HostLib.getDaoUid($, symbol);
 
         require(daoUid != 0, IHost.IncorrectDao());
+        /// @dev Zero amount are not allowed to be able to check if any revenue registered by reading length of registered assets
+        require(amount != 0, IHosted.ZeroAmount());
         require(_isUnitExist($, daoUid, unitId), IHost.UnitNotFound());
-        require(HostConfigLib.getHostChainSettings().exchangeAsset == asset, IHost.AssetNotWhitelisted()); // todo replace by whitelist
+        require($.whitelistedAssets[asset], IHost.AssetNotWhitelisted());
 
-        HostActionsLib._processUnitRevenue($, daoUid, symbol, unitId, amount);
+        HostActionsLib._processUnitRevenue($, daoUid, symbol, unitId, asset, amount);
     }
 
     /// @notice Change lifecycle phase of a DAO
@@ -205,13 +209,21 @@ library HostActionsLib {
         // we don't check if HOST_UNIT exists in host-dao because it's (only) virtual unit
 
         // DAO creation fee is put to host-unit of the host-dao
-        _processUnitRevenue(
-            $,
-            hostDaoUid,
-            $.segment2[hostDaoUid].symbol,
-            HostLib.HOST_UNIT,
-            HostConfigLib.getHostGlobalSettings().priceDao
-        );
+        uint amount = HostConfigLib.getHostGlobalSettings().priceDao;
+        if (amount != 0) {
+            address exchangeAsset = HostConfigLib.getHostChainSettings().exchangeAsset;
+            // we don't check if exchange asset is whitelisted, assume it's configured correctly
+            require(exchangeAsset != address(0), IHost.IncorrectConfiguration());
+
+            _processUnitRevenue(
+                $,
+                hostDaoUid,
+                $.segment2[hostDaoUid].symbol,
+                HostLib.HOST_UNIT,
+                exchangeAsset,
+                HostConfigLib.getHostGlobalSettings().priceDao
+            );
+        }
 
         $.daoUids[symbol] = daoUid;
 
@@ -237,18 +249,17 @@ library HostActionsLib {
         uint daoUid,
         string memory symbol,
         string memory unitId,
+        address asset,
         uint amount
     ) internal {
-        if (amount != 0) {
-            address exchangeAsset = HostConfigLib.getHostChainSettings().exchangeAsset;
-            require(exchangeAsset != address(0), IHost.IncorrectConfiguration());
+        // currently assume that all revenues should be put on the Host balance
+        IERC20(asset).safeTransferFrom(msg.sender, address(this), amount);
+        EnumerableMap.AddressToUintMap storage values = $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
+        (, uint currentBalance) = values.tryGet(asset);
 
-            // currently assume that all revenues should be put on the Host balance
-            IERC20(exchangeAsset).safeTransferFrom(msg.sender, address(this), amount);
-            $.unitBalances[HostLib.getUnitKey(daoUid, unitId)] += amount;
+        values.set(asset, currentBalance + amount);
 
-            emit IHost.ProcessUnitRevenue(daoUid, symbol, unitId, amount);
-        }
+        emit IHost.ProcessUnitRevenue(daoUid, symbol, unitId, amount);
     }
 
     /// @notice Add live DAO verified off-chain into the system
@@ -346,8 +357,6 @@ library HostActionsLib {
         address authority
     ) internal returns (ITokenomics.LifecyclePhase phase) {
         ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        console.log("block.timestamp", block.timestamp);
-        console.log("seed.start", seed.start);
         require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
         $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);

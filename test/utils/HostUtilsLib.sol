@@ -2,13 +2,21 @@
 pragma solidity ^0.8.28;
 
 // import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
-import {SampleDataLib} from "./SampleDataLib.sol";
+import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {Vm} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {Authority} from "../../src/Authority.sol";
 import {DataReader} from "../../src/DataReader.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
 import {Host} from "../../src/Host.sol";
-import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
+import {MockERC20} from "../mocks/MockERC20.sol";
+import {MockHostBridge} from "../mocks/MockHostBridge.sol";
+import {ProxyFactory} from "../../src/ProxyFactory.sol";
+import {SampleDataLib} from "./SampleDataLib.sol";
+import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
+import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
+import {HostSetupUtils} from "../intents/access/HostSetupUtils.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDataReader} from "../../src/interfaces/IDataReader.sol";
@@ -17,13 +25,6 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
-import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockHostBridge} from "../mocks/MockHostBridge.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
-import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
-import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
-import {Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
 
 library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
@@ -179,6 +180,11 @@ library HostUtilsLib {
         setHostSettings(vm, host, multisig);
 
         setChainSettings(vm, host, multisig, address(dataReader));
+
+        {
+            address exchangeAsset = host.getChainSettings().exchangeAsset;
+            HostSetupUtils.whitelistAsset(vm, multisig, host, exchangeAsset);
+        }
     }
 
     function createDaoInstance(

@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostLib} from "./HostLib.sol";
@@ -14,6 +15,7 @@ import {ITokenomics} from "../interfaces/ITokenomics.sol";
 library HostViewLib {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
 
     //region -------------------------------------- View
     function getDataReaderItem(
@@ -219,10 +221,11 @@ library HostViewLib {
     }
 
     /// @notice Get balance of the given unit for the given DAO
-    function unitBalance(string calldata symbol, string calldata unitId) external view returns (uint) {
+    function unitBalance(string calldata symbol, address asset, string calldata unitId) external view returns (uint) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
-        return $.unitBalances[HostLib.getUnitKey(daoUid, unitId)];
+        (, uint dest) = $.unitBalances[HostLib.getUnitKey(daoUid, unitId)].tryGet(asset);
+        return dest;
     }
 
     function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32) {
@@ -380,14 +383,14 @@ library HostViewLib {
         // assume that a unit is live if it has received not zero income
         for (uint i; i < unitIds.length; i++) {
             // todo do we need to use a threshold here?
-            if ($.unitBalances[HostLib.getUnitKey(daoUid, unitIds[i])] != 0) {
+            if ($.unitBalances[HostLib.getUnitKey(daoUid, unitIds[i])].length() != 0) {
                 foundLive = true;
                 break;
             }
         }
 
         if (index < limit && !foundLive) {
-            dest[index++] = IHost.Task("Run revenue generating units");
+            dest[index++] = IHost.Task("Start generate revenue");
         }
 
         return index;

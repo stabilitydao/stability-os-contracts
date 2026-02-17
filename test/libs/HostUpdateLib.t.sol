@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {MockHost} from "../mocks/MockHost.sol";
@@ -341,7 +340,6 @@ contract HostUpdateLibTest is Test {
         st.minFundingRaise = 0.1e18;
         st.maxFundingRaise = 1000e18;
         {
-            console.log("block.timestamp", block.timestamp);
             ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
             funding[0].start = uint64(block.timestamp + 1 days);
             funding[0].end = uint64(block.timestamp + 10 days);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
@@ -171,8 +172,8 @@ library HostLib {
         /// @notice Parameters of each DAO
         mapping(uint daoUid => ITokenomics.DaoParameters) daoParameters;
 
-        /// @notice Balance belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
-        mapping(bytes32 hashUnit => uint) unitBalances;
+        /// @notice Balances of assets belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
+        mapping(bytes32 hashUnit => EnumerableMap.AddressToUintMap) unitBalances;
 
         /// @notice Salt configured for DAO contracts.
         /// @dev Key is generated as hash of (daoUid, ContractIndex)

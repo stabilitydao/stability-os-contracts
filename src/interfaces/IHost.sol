@@ -341,7 +341,7 @@ interface IHost {
     function proposalIds(string calldata symbol, uint index, uint count) external view returns (bytes32[] memory);
 
     /// @notice Get balance belonging to the given unit
-    function unitBalance(string calldata symbol, string calldata unitUid) external view returns (uint);
+    function unitBalance(string calldata symbol, address asset, string calldata unitUid) external view returns (uint);
 
     /// @notice Get salt to create contract with given index
     /// @param symbol DAO symbol

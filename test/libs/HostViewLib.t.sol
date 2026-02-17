@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {Test} from "forge-std/Test.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
@@ -8,6 +9,8 @@ import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 
 contract HostViewLibTest is Test {
+    using EnumerableMap for EnumerableMap.AddressToUintMap;
+
     function testGetTokenName() public pure {
         string memory name = "abc";
         assertEq(HostViewLib.getTokenName(name, uint(IHost.NamingTokenKind.SEED_0)), "abc SEED");
@@ -233,7 +236,7 @@ contract HostViewLibTest is Test {
         $.segment2[daoUid].unitIds[0] = "unit1";
         $.segment2[daoUid].unitIds[1] = "unit2";
 
-        $.unitBalances[HostLib.getUnitKey(daoUid, "unit2")] = 1; // only single unit has not zero balance
+        $.unitBalances[HostLib.getUnitKey(daoUid, "unit2")].set(makeAddr("exchangeAsset"), 1); // only single unit has not zero balance
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         uint countItems = HostViewLib._tasksDevelopment($, daoUid, dest);
@@ -253,7 +256,7 @@ contract HostViewLibTest is Test {
         $.segment2[daoUid].unitIds = new string[](1);
         $.segment2[daoUid].unitIds[0] = "unit1";
 
-        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")] = 1;
+        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")].set(makeAddr("exchangeAsset"), 1);
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         uint countItems = HostViewLib._tasksDevelopment($, daoUid, dest);
@@ -271,7 +274,7 @@ contract HostViewLibTest is Test {
         $.segment3[daoUid].countVesting = 1;
         $.segment2[daoUid].unitIds = new string[](1);
         $.segment2[daoUid].unitIds[0] = "unit1";
-        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")] = 1;
+        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")].set(makeAddr("exchangeAsset"), 1);
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         for (uint i; i < 3; ++i) {
@@ -301,7 +304,7 @@ contract HostViewLibTest is Test {
         $.segment2[daoUid].unitIds = new string[](1);
         $.segment2[daoUid].unitIds[0] = "unit1";
 
-        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")] = 1;
+        $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")].set(makeAddr("exchangeAsset"), 1);
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         uint countItems = HostViewLib._tasksDevelopment($, daoUid, dest);
@@ -325,12 +328,12 @@ contract HostViewLibTest is Test {
         $.segment2[daoUid].unitIds = new string[](1);
         $.segment2[daoUid].unitIds[0] = "unit1";
 
-        // $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")] = 1;
+        // $.unitBalances[HostLib.getUnitKey(daoUid, "unit1")].set(makeAddr("exchangeAsset"), 1);
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         uint countItems = HostViewLib._tasksDevelopment($, daoUid, dest);
         assertEq(countItems, 1, "1 task");
-        assertEq(dest[0].name, "Run revenue generating units", "Run revenue generating units");
+        assertEq(dest[0].name, "Start generate revenue", "Start generate revenue");
     }
 
     function testTasksDevelopment_NoUnits_Return1() public {
@@ -350,7 +353,7 @@ contract HostViewLibTest is Test {
         IHost.Task[] memory dest = new IHost.Task[](25);
         uint countItems = HostViewLib._tasksDevelopment($, daoUid, dest);
         assertEq(countItems, 1, "1 task");
-        assertEq(dest[0].name, "Run revenue generating units", "Run revenue generating units");
+        assertEq(dest[0].name, "Start generate revenue", "Start generate revenue");
     }
 
     //endregion ----------------------------------- _tasksDevelopment

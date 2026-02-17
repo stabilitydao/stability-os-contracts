@@ -16,6 +16,7 @@ import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {HostSetupUtils} from "./intents/access/HostSetupUtils.sol";
 
 contract DataReaderTest is Test {
     string internal constant DAO_SYMBOL = "ALIENS";

@@ -93,8 +93,8 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IHost
-    function unitBalance(string calldata symbol, string calldata unitId) external view returns (uint) {
-        return HostViewLib.unitBalance(symbol, unitId);
+    function unitBalance(string calldata symbol, address asset, string calldata unitId) external view returns (uint) {
+        return HostViewLib.unitBalance(symbol, asset, unitId);
     }
 
     /// @inheritdoc IHost

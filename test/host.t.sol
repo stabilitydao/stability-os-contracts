@@ -4,24 +4,31 @@ pragma solidity ^0.8.28;
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
+import {MockERC20} from "@solady/../test/utils/mocks/MockERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
+import {IHosted} from "../src/interfaces/IHosted.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {HostLib} from "../src/libs/HostLib.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {ISeedToken} from "../src/interfaces/ISeedToken.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
+import {AuthorityAccessUtils} from "./intents/access/AuthorityAccessUtils.sol";
+import {HostSetupUtils} from "./intents/access/HostSetupUtils.sol";
 
 contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
 
     string internal constant DAO_SYMBOL = "SPACE";
     string internal constant DAO_NAME = "SpaceSwap";
+
+    string internal constant DAO_SYMBOL2 = "SPACE2";
 
     address internal immutable MULTISIG;
 
@@ -162,80 +169,7 @@ contract HostTest is Test {
         // -------------------- todo validation
     }
 
-    function testRevenue() public {
-        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
-
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = HostUtilsLib.generateSeedFunding(
-            HostUtilsLib.DEFAULT_SEED_DELAY,
-            HostUtilsLib.DEFAULT_SEED_DURATION,
-            HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
-            HostUtilsLib.DEFAULT_SEED_MAX_RAISE
-        );
-
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
-
-        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
-
-        // ----------------------------- prepare to pay creation fee
-        address exchangeAsset = host.getChainSettings().exchangeAsset;
-        uint amount = host.getSettings().priceDao;
-
-        deal(exchangeAsset, address(this), amount * 3);
-
-        IERC20(exchangeAsset).approve(address(host), amount * 3);
-
-        // ----------------------------- create first (host) dao
-        host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount, "host dao paid creation fee to itself");
-        assertEq(
-            IERC20(exchangeAsset).balanceOf(address(this)), amount * 2, "user has paid for creation of the first dao"
-        );
-        assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
-
-        // ----------------------------- create second-dao
-        host.createDAO("name2", "SYMBOL2", activity, params, funding);
-        assertEq(
-            host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao"
-        );
-        assertEq(host.unitBalance("SYMBOL2", HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
-        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), amount, "user has paid for creation of the second dao");
-        assertEq(
-            IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host"
-        );
-
-        // ----------------------------- pay to second dao to registered unit
-        {
-            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
-                SampleDataLib.getUnitsThree();
-
-            host.updateDAO(
-                "SYMBOL2",
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
-                codec.encode(units, codec.PAYLOAD_API_VERSION()),
-                codec.encode(metas, codec.PAYLOAD_API_VERSION())
-            );
-
-            deal(exchangeAsset, address(this), 1e18);
-            IERC20(exchangeAsset).approve(address(host), 1e18);
-            host.revenue("SYMBOL2", units[0].unitId, exchangeAsset, 1e18);
-
-            assertEq(host.unitBalance("SYMBOL2", units[0].unitId), 1e18, "second dao received the payment");
-        }
-
-        // ----------------------------- pay to second dao to NOT-registered unit
-        {
-            deal(exchangeAsset, address(this), 1e18);
-            IERC20(exchangeAsset).approve(address(host), 1e18);
-
-            vm.expectRevert(IHost.UnitNotFound.selector);
-            host.revenue("SYMBOL2", "UnknownUnitId", exchangeAsset, 1e18);
-        }
-    }
-
-    function testRevenue_AllowToUseZeroPriceDao() public {
+    function testSetPriceDao() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
@@ -270,12 +204,14 @@ contract HostTest is Test {
         }
 
         // ----------------------------- create first (host) dao
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+
         host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao");
+        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao");
 
         // ----------------------------- create second-dao
         host.createDAO("name2", "SYMBOL2", activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao");
+        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao");
 
         // ----------------------------- Bad paths: Set priceDao to NOT zero
         {
@@ -289,14 +225,237 @@ contract HostTest is Test {
         vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
         host.createDAO("name3", "SYMBOL3", activity, params, funding);
     }
+    //endregion ----------------------------------- Unit tests
+
+    //region ----------------------------------- Revenue and whitelist
+    function testRevenue_CreateTwoDaoExchangeAssetNotWhitelisted_PricesArePaidForDaoCreation() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        // IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+        uint amount = host.getSettings().priceDao;
+
+        // ------------------------------ create first (host) dao
+        _createDAO(host, DAO_SYMBOL);
+        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), amount, "host dao paid creation fee to itself");
+        assertEq(
+            IERC20(exchangeAsset).balanceOf(address(this)), 0, "user has paid for creation of the first dao"
+        );
+        assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
+
+        // ------------------------------ create second dao
+        _createDAO(host, DAO_SYMBOL2);
+
+        assertEq(
+            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao"
+        );
+        assertEq(host.unitBalance(DAO_SYMBOL2, exchangeAsset, HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
+        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), 0, "user has paid for creation of the second dao");
+        assertEq(
+            IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host"
+        );
+    }
+
+    function testRevenue_PayToRegisteredUnitInExchangeAsset_Success() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        // ------------------------------ create host dao
+        _createDAO(host, DAO_SYMBOL);
+
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+
+        // ------------------------------ setup whitelisted assets
+        IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+
+        HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
+
+        // ----------------------------- pay to second dao to registered unit
+        {
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
+                                SampleDataLib.getUnitsThree();
+
+            host.updateDAO(
+                DAO_SYMBOL,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec.encode(units, codec.PAYLOAD_API_VERSION()),
+                codec.encode(metas, codec.PAYLOAD_API_VERSION())
+            );
+
+            deal(exchangeAsset, address(this), 1e18);
+            IERC20(exchangeAsset).approve(address(host), 1e18);
+            host.revenue(DAO_SYMBOL, units[0].unitId, exchangeAsset, 1e18);
+
+            assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, units[0].unitId), 1e18, "second dao received the payment");
+        }
+    }
+
+    function testRevenue_PayToRegisteredUnitInNotExchangeAsset_Success() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        // ------------------------------ create host dao
+        _createDAO(host, DAO_SYMBOL);
+
+        // ------------------------------ setup whitelisted assets
+        IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
+
+        HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
+
+        // ----------------------------- pay to second dao to registered unit
+        {
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
+                                SampleDataLib.getUnitsThree();
+
+            host.updateDAO(
+                DAO_SYMBOL,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec.encode(units, codec.PAYLOAD_API_VERSION()),
+                codec.encode(metas, codec.PAYLOAD_API_VERSION())
+            );
+
+            deal(mockAsset, address(this), 1e18);
+            IERC20(mockAsset).approve(address(host), 1e18);
+            host.revenue(DAO_SYMBOL, units[0].unitId, mockAsset, 1e18);
+
+            assertEq(host.unitBalance(DAO_SYMBOL, mockAsset, units[0].unitId), 1e18, "second dao received the payment");
+        }
+    }
+
+    function testRevenue_PayToUnRegisteredUnits_Revert() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        // IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        // ------------------------------ create host dao
+        _createDAO(host, DAO_SYMBOL);
+
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+
+        // ------------------------------ setup whitelisted assets
+        IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+
+        HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
+
+        // ----------------------------- pay to second dao to NOT-registered unit
+        {
+            deal(exchangeAsset, address(this), 1e18);
+            IERC20(exchangeAsset).approve(address(host), 1e18);
+
+            vm.expectRevert(IHost.UnitNotFound.selector);
+            host.revenue(DAO_SYMBOL, "UnknownUnitId", exchangeAsset, 1e18);
+        }
+    }
+
+    function testRevenue_TryToUseNotWhitelistedAsset_Revert() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        _createDAO(host, DAO_SYMBOL);
+
+        address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
+        // mockAsset is not whitelisted in the host (!)
+
+        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
+                            SampleDataLib.getUnitsThree();
+
+        host.updateDAO(
+            DAO_SYMBOL,
+            uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+            codec.encode(units, codec.PAYLOAD_API_VERSION()),
+            codec.encode(metas, codec.PAYLOAD_API_VERSION())
+        );
+
+        deal(mockAsset, address(this), 1e18);
+
+        IERC20(mockAsset).approve(address(host), 1e18);
+
+        vm.expectRevert(IHost.AssetNotWhitelisted.selector);
+        host.revenue(DAO_SYMBOL, units[0].unitId, mockAsset, 1e18);
+    }
+
+    function testRevenue_ZeroAmount_Revert() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+        IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
+
+        // ------------------------------ create host dao
+        _createDAO(host, DAO_SYMBOL);
+
+        // ------------------------------ setup whitelisted assets
+        IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
+
+        HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
+
+        // ----------------------------- pay to second dao to registered unit
+        {
+            (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
+                                SampleDataLib.getUnitsThree();
+
+            host.updateDAO(
+                DAO_SYMBOL,
+                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                codec.encode(units, codec.PAYLOAD_API_VERSION()),
+                codec.encode(metas, codec.PAYLOAD_API_VERSION())
+            );
+
+            deal(mockAsset, address(this), 1e18);
+            IERC20(mockAsset).approve(address(host), 1e18);
+
+            vm.expectRevert(IHosted.ZeroAmount.selector);
+            host.revenue(DAO_SYMBOL, units[0].unitId, mockAsset, 0);
+
+        }
+    }
 
     function testWhitelistAsset_Success() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
-        // todo
+        IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+
+        {
+            address[] memory assets = new address[](2);
+            assets[0] = address(0x123);
+            assets[1] = address(0x456);
+
+            assertFalse(host.isAssetWhitelisted(assets[0]), "not whitelisted 0x123");
+            assertFalse(host.isAssetWhitelisted(assets[1]), "not whitelisted 0x456");
+
+            host.whitelistAssets(assets, true);
+
+            assertTrue(host.isAssetWhitelisted(assets[0]), "whitelisted 0x123");
+            assertTrue(host.isAssetWhitelisted(assets[1]), "whitelisted 0x456");
+        }
+
+        {
+            address[] memory assets = new address[](1);
+            assets[0] = address(0x123);
+
+            host.whitelistAssets(assets, false);
+
+            assertFalse(host.isAssetWhitelisted(assets[0]), "not whitelisted 0x123 again");
+            assertTrue(host.isAssetWhitelisted(address(0x456)), "whitelisted 0x456");
+        }
+
     }
 
-    //endregion ----------------------------------- Unit tests
+    function testWhitelistAsset_NotPermitted_Revert() public {
+        IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
+
+        address[] memory assets = new address[](2);
+        assets[0] = address(0x123);
+        assets[1] = address(0x456);
+
+        vm.expectRevert(); // restricted
+        host.whitelistAssets(assets, true);
+    }
+
+    //endregion ----------------------------------- Revenue and whitelist
 
     //region ----------------------------------- Change life phase
     function testChangePhase() public {
@@ -960,6 +1119,31 @@ contract HostTest is Test {
     //endregion ----------------------------------- Update dao parameters
 
     //region ----------------------------------- Internal logic
+    function _createDAO(IHost host, string memory symbol_) internal {
+        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        funding[0] = HostUtilsLib.generateSeedFunding(
+            HostUtilsLib.DEFAULT_SEED_DELAY,
+            HostUtilsLib.DEFAULT_SEED_DURATION,
+            HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
+            HostUtilsLib.DEFAULT_SEED_MAX_RAISE
+        );
+
+        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
+        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+
+        ITokenomics.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
+
+        // ----------------------------- prepare to pay creation fee
+        address exchangeAsset = host.getChainSettings().exchangeAsset;
+        uint amount = host.getSettings().priceDao;
+
+        deal(exchangeAsset, address(this), amount);
+
+        IERC20(exchangeAsset).approve(address(host), amount);
+
+        host.createDAO(DAO_NAME, symbol_, activity, params, funding);
+    }
+
     function _same(ITokenomics.Vesting memory a, ITokenomics.Vesting memory b) internal pure returns (bool) {
         return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
     }
