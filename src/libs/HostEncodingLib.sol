@@ -407,11 +407,11 @@ library HostEncodingLib {
         dest = abi.encode(dest, dao.chainSettings, dao.unitIds, dao.params);
         dest = abi.encode(dest, dao.socials, dao.activity, dao.images);
         dest = abi.encode(dest, dao.units, dao.funding, dao.vesting, dao.governanceSettings);
-        dest = abi.encode(dest, dao.deployer, dao.daoMetaDataLocation);
-        uint len = dao.unitsMetaData.length;
+        dest = abi.encode(dest, dao.deployer, dao.metaDataLocation);
+        uint len = dao.unitDataToEmit.length;
         bytes[] memory unitsMetaData = new bytes[](len);
         for (uint i; i < len; ++i) {
-            unitsMetaData[i] = encodeUnitsMetaData(dao.unitsMetaData[i]);
+            unitsMetaData[i] = encodeUnitsMetaData(dao.unitDataToEmit[i]);
         }
         dest = abi.encode(dest, unitsMetaData);
     }
@@ -423,12 +423,12 @@ library HostEncodingLib {
         (rest, unitsMetaDataEncoded) = abi.decode(rest, (bytes, bytes[]));
 
         uint len = unitsMetaDataEncoded.length;
-        dao.unitsMetaData = new IDAOData.UnitEmitData[](len);
+        dao.unitDataToEmit = new IDAOData.UnitEmitData[](len);
         for (uint i; i < len; ++i) {
-            dao.unitsMetaData[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
+            dao.unitDataToEmit[i] = decodeUnitsMetaData(unitsMetaDataEncoded[i]);
         }
 
-        (rest, dao.deployer, dao.daoMetaDataLocation) = abi.decode(rest, (bytes, address, string));
+        (rest, dao.deployer, dao.metaDataLocation) = abi.decode(rest, (bytes, address, string));
 
         (rest, dao.units, dao.funding, dao.vesting, dao.governanceSettings) = abi.decode(
             rest,

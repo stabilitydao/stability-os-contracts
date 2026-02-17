@@ -120,10 +120,12 @@ library HostViewLib {
     function getDAOOwner(string calldata symbol) external view returns (address) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
-        require(daoUid != 0, IHost.IncorrectDao());
 
         ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+        if (
+            phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1
+                || phase == ITokenomics.LifecyclePhase.SEED_FAILED_3
+        ) {
             return $.segment3[daoUid].deployer;
         }
 
@@ -170,7 +172,7 @@ library HostViewLib {
         uint len = $.daoProposals[HostLib.getDaoUid($, symbol)].length;
         uint size = index + count > len ? index > len ? 0 : len - index : count;
         dest = new bytes32[](size);
-        for (uint i = 0; i < size; i++) {
+        for (uint i; i < size; i++) {
             dest[i] = $.daoProposals[daoUid][index + i];
         }
     }

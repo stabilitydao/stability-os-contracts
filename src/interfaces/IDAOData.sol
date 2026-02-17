@@ -146,12 +146,12 @@ interface IDAOData is ITokenomics, ISegment4 {
         address deployer;
 
         /// @notice DAO custom metadata stored off-chain
-        string daoMetaDataLocation;
+        string metaDataLocation;
 
         // ---------------------------- SEGMENT 4: OFF-CHAIN emitted data
 
         // @notice All emitted data (not stored on chain)
-        UnitEmitData[] unitsMetaData;
+        UnitEmitData[] unitDataToEmit;
     }
 
     /// @notice On-chain data of the Unit.

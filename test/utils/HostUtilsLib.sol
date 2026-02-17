@@ -275,9 +275,7 @@ library HostUtilsLib {
         host_.setSettings(
             IHost.HostSettings({
                 priceDao: 1000,
-                priceUnit: 0, // todo implement not zero prices, 1000,
-                priceOracle: 1000,
-                priceBridge: 1000,
+                fundingFee: 50,
                 minNameLength: 1,
                 maxNameLength: 20,
                 minSymbolLength: 1,
@@ -423,7 +421,7 @@ library HostUtilsLib {
         });
 
         // ---------------- Create 3 units
-        (data.units, data.unitsMetaData) = SampleDataLib.getUnitsThree();
+        (data.units, data.unitDataToEmit) = SampleDataLib.getUnitsThree();
 
         // ---------------- Dao params
         data.params = ITokenomics.DaoParameters({

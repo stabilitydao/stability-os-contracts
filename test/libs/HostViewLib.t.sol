@@ -11,6 +11,77 @@ import {HostLib} from "../../src/libs/HostLib.sol";
 contract HostViewLibTest is Test {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
 
+    //region ----------------------------------- getDAOOwner
+
+    /// @dev All phases where segment3.developer is owner
+    function fixturePhaseDeployer() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
+        phases = new ITokenomics.LifecyclePhase[](3);
+        phases[0] = ITokenomics.LifecyclePhase.DRAFT_0;
+        phases[1] = ITokenomics.LifecyclePhase.INCEPTION_1;
+        phases[2] = ITokenomics.LifecyclePhase.SEED_FAILED_3;
+    }
+
+    function tableGetDAOOwner_PhaseDeployer_ReturnSegment3Deployer(ITokenomics.LifecyclePhase phaseDeployer) public {
+        uint daoUid = 97;
+        address owner = makeAddr("owner");
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.segment3[daoUid].deployer = owner;
+
+        $.segment2[daoUid].phase = phaseDeployer;
+        $.segment2[daoUid].symbol = "a";
+        $.daoUids["a"] = daoUid;
+
+        assertEq(HostViewLib.getDAOOwner("a"), owner, "owner is segment3.developer");
+    }
+
+    /// @dev All phases where seed token is owner
+    function fixturePhaseSeed() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
+        phases = new ITokenomics.LifecyclePhase[](3);
+        phases[0] = ITokenomics.LifecyclePhase.SEED_2;
+        phases[1] = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+        phases[2] = ITokenomics.LifecyclePhase.TGE_5;
+    }
+
+    function tableGetDAOOwner_PhaseSeed_ReturnSeedToken(ITokenomics.LifecyclePhase phaseSeed) public {
+        uint daoUid = 97;
+        address owner = makeAddr("owner");
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.deployments[daoUid].seedToken = owner;
+
+        $.segment2[daoUid].phase = phaseSeed;
+        $.segment2[daoUid].symbol = "a";
+        $.daoUids["a"] = daoUid;
+
+        assertEq(HostViewLib.getDAOOwner("a"), owner, "owner is seed token");
+    }
+
+    /// @dev All phases where DAO token is owner
+    function fixturePhaseDao() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
+        phases = new ITokenomics.LifecyclePhase[](3);
+        phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
+        phases[1] = ITokenomics.LifecyclePhase.LIVE_VESTING_7;
+        phases[2] = ITokenomics.LifecyclePhase.LIVE_8;
+    }
+
+    function tableGetDAOOwner_PhaseDao_ReturnDaoToken(ITokenomics.LifecyclePhase phaseDao) public {
+        uint daoUid = 97;
+        address owner = makeAddr("owner");
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.deployments[daoUid].daoToken = owner;
+
+        $.segment2[daoUid].phase = phaseDao;
+        $.segment2[daoUid].symbol = "a";
+        $.daoUids["a"] = daoUid;
+
+        assertEq(HostViewLib.getDAOOwner("a"), owner, "owner is TGE token");
+    }
+
+    //endregion ----------------------------------- getDAOOwner
+
+    //region ----------------------------------- getTokenName, getTokenSymbol
     function testGetTokenName() public pure {
         string memory name = "abc";
         assertEq(HostViewLib.getTokenName(name, uint(IHost.NamingTokenKind.SEED_0)), "abc SEED");
@@ -18,6 +89,7 @@ contract HostViewLibTest is Test {
         assertEq(HostViewLib.getTokenName(name, uint(IHost.NamingTokenKind.TOKEN_2)), "abc");
         assertEq(HostViewLib.getTokenName(name, uint(IHost.NamingTokenKind.XTOKEN_3)), "xabc");
         assertEq(HostViewLib.getTokenName(name, uint(IHost.NamingTokenKind.DAO_4)), "abc DAO");
+        assertEq(HostViewLib.getTokenName(name, 255), "", "unknown kind");
     }
 
     function testGetTokenSymbol() public pure {
@@ -27,7 +99,10 @@ contract HostViewLibTest is Test {
         assertEq(HostViewLib.getTokenSymbol(name, uint(IHost.NamingTokenKind.TOKEN_2)), "ABC");
         assertEq(HostViewLib.getTokenSymbol(name, uint(IHost.NamingTokenKind.XTOKEN_3)), "xABC");
         assertEq(HostViewLib.getTokenSymbol(name, uint(IHost.NamingTokenKind.DAO_4)), "ABC_DAO");
+        assertEq(HostViewLib.getTokenName(name, 255), "", "unknown kind");
     }
+
+    //endregion ----------------------------------- getTokenName, getTokenSymbol
 
     //region ----------------------------------- _tasksDraft
     function testTasksDraft_MinRequiredData_ReturnEmptyArray() public {

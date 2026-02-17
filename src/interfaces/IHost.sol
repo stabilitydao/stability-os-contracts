@@ -93,7 +93,7 @@ interface IHost {
     /// @param proposalUid Zero if updated instantly
     event DaoUnitUpdatedByProposal(uint daoUid, string unitId, bytes32 proposalUid);
 
-    event DaoUnitUpdatedInstantly(uint daoUid, string unitId, IDAOData.UnitEmitData metaData);
+    event DaoUnitUpdatedInstantly(uint daoUid, string unitId, IDAOData.UnitEmitData emitData);
 
     /// @notice Unit is deleted
     /// @param proposalUid Zero if updated instantly
@@ -140,9 +140,10 @@ interface IHost {
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset
         uint priceDao;
-        uint priceUnit;
-        uint priceOracle;
-        uint priceBridge;
+        /// @notice Percent of amount received in funding round that Host dao takes, decimals 1e4 // todo 1e4 or 1e5?
+        uint fundingFee;
+
+        // todo reduce sizes
         uint minNameLength;
         uint maxNameLength;
         uint minSymbolLength;

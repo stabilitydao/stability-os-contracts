@@ -279,8 +279,6 @@ library HostProposalLib {
         IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
         IDAOData.UnitEmitData[] memory emitData = HostEncodingLib.decodeUnitsEmitData(emitData_);
 
-        require(HostConfigLib.getHostGlobalSettings().priceUnit == 0, IHost.NotImplemented());
-
         bytes32 proposalId;
 
         // todo on initial chain: update list of chains on which the unit is bridged, see UnitData.chainIds

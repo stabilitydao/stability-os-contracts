@@ -279,7 +279,7 @@ library HostActionsLib {
         HostUpdateLib.validate(daoUid, dao.phase, daoData2, dao.params, dao.funding, dao.activity);
 
         // ------------------------- Prepare units data
-        require(dao.units.length == dao.unitsMetaData.length, IHost.IncorrectArrayLengths());
+        require(dao.units.length == dao.unitDataToEmit.length, IHost.IncorrectArrayLengths());
 
         for (uint i; i < dao.units.length; i++) {
             bytes32 hashUnitId = HostLib.getUnitKey(daoUid, dao.units[i].unitId);
@@ -293,7 +293,7 @@ library HostActionsLib {
             unit.developerUid = dao.units[i].developerUid;
             unit.chainIds.add(block.chainid);
 
-            emit IHost.DaoUnitUpdatedInstantly(daoUid, dao.units[i].unitId, dao.unitsMetaData[i]);
+            emit IHost.DaoUnitUpdatedInstantly(daoUid, dao.units[i].unitId, dao.unitDataToEmit[i]);
         }
 
         $.segment2[daoUid] = daoData2;
