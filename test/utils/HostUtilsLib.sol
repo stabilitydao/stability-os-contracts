@@ -27,8 +27,8 @@ import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 
 library HostUtilsLib {
-    uint64 internal constant ADMIN_ROLE = AccessRolesLib.OS_ADMIN;
-    uint64 internal constant MINTER_ROLE = AccessRolesLib.OS_TOKEN_MINTER;
+    uint64 internal constant ADMIN_ROLE = AccessRolesLib.HOST_ADMIN;
+    uint64 internal constant MINTER_ROLE = AccessRolesLib.HOST_TOKEN_MINTER;
 
     uint64 internal constant DEFAULT_SEED_DELAY = 30 days;
     uint64 internal constant DEFAULT_SEED_DURATION = 90 days;
@@ -312,36 +312,6 @@ library HostUtilsLib {
                 exchangeAsset: address(usdc), hostBridge: address(bridge), timelock: 30 minutes, dataReader: dataReader
             })
         );
-    }
-
-    function setupSeedToken(Vm vm, IHost os, address multisig, address seedToken) internal {
-        IAuthority accessManager = IAuthority(IHosted(address(os)).authority());
-
-        // set up OS as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = bytes4(SeedToken.mint.selector);
-        selectors[1] = bytes4(SeedToken.refund.selector);
-
-        vm.prank(multisig);
-        accessManager.setTargetFunctionRole(seedToken, selectors, MINTER_ROLE);
-
-        vm.prank(multisig);
-        accessManager.grantRole(MINTER_ROLE, address(os), 0);
-    }
-
-    function setupTgeToken(Vm vm, IHost os, address multisig, address tgeToken) internal {
-        IAuthority accessManager = IAuthority(IHosted(address(os)).authority());
-
-        // set up OS as operator for all restricted functions
-        bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = bytes4(TgeToken.mint.selector);
-        selectors[1] = bytes4(TgeToken.refund.selector);
-
-        vm.prank(multisig);
-        accessManager.setTargetFunctionRole(tgeToken, selectors, MINTER_ROLE);
-
-        vm.prank(multisig);
-        accessManager.grantRole(MINTER_ROLE, address(os), 0);
     }
 
     //endregion ----------------------------- Settings

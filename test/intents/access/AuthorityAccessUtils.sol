@@ -2,12 +2,14 @@
 pragma solidity ^0.8.28;
 
 import {Vm} from "forge-std/Test.sol";
+import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
 import {MockHost} from "../../mocks/MockHost.sol";
 import {ProxyFactory} from "../../../src/ProxyFactory.sol";
 import {Authority} from "../../../src/Authority.sol";
+import {AccessRolesLib} from "../../../src/libs/AccessRolesLib.sol";
 
 library AuthorityAccessUtils {
     /// @dev Get Authority from Host
@@ -97,5 +99,36 @@ library AuthorityAccessUtils {
 
         vm.prank(multisig);
         authority.grantRole(role, user, 0);
+    }
+
+    /// @dev todo Functions below should use several different roles instead of AccessRolesLib.HOST_ADMIN
+    function setupHostMultisigAccess(Vm vm, IHost host, address multisig) internal {
+        address authority = IAccessManaged(address(host)).authority();
+
+        // --------------------------------- For simplicity use same role 5555 for ALL restricted functions in this set of tests
+        bytes4[] memory selectors = new bytes4[](9);
+        selectors[0] = bytes4(IHost.setSettings.selector);
+        selectors[1] = bytes4(IHost.setChainSettings.selector);
+        selectors[2] = bytes4(IHost.updateByAdmin.selector);
+        selectors[3] = bytes4(IHost.refundFor.selector);
+        selectors[4] = bytes4(IHost.onReceiveCrossChainMessage.selector);
+        selectors[5] = bytes4(IHost.receiveVotingResults.selector);
+        selectors[6] = bytes4(IHost.validateProposal.selector);
+        selectors[7] = bytes4(IHost.setContractImplementation.selector);
+        selectors[8] = bytes4(IHost.deployProxy.selector);
+
+        vm.prank(multisig);
+        IAccessManager(address(authority)).setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_ADMIN);
+
+        vm.prank(multisig);
+        IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_ADMIN, multisig, 0);
+    }
+
+    /// @dev Host should be able to set up seed, tge tokens which it deploys
+    function setupHostAsAuthorityAdmin(Vm vm, IHost host, address multisig) internal {
+        address authority = IAccessManaged(address(host)).authority();
+
+        vm.prank(multisig);
+        IAccessManager(address(authority)).grantRole(0, address(host), 0);
     }
 }

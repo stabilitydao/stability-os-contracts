@@ -15,9 +15,6 @@ import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
-import {MockHost} from "../mocks/MockHost.sol";
-import {Authority} from "../../src/Authority.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 // import {console} from "forge-std/console.sol";
 

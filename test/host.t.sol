@@ -545,7 +545,7 @@ contract HostTest is Test {
     function testUpdateDaoSocialsWithoutVoting() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
-        _setupAccessManager(host);
+        _setupAuthority(host);
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
@@ -614,7 +614,7 @@ contract HostTest is Test {
     function testUpdateDaoSocialsWithoutVotingBadPaths() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
-        _setupAccessManager(host);
+        _setupAuthority(host);
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
 
@@ -673,7 +673,7 @@ contract HostTest is Test {
         // ------------------------------ Create HOST
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
-        _setupAccessManager(host);
+        _setupAuthority(host);
 
         // ------------------------------ Create DAO
         _dealAndApprove(host);
@@ -986,7 +986,7 @@ contract HostTest is Test {
     /// @dev Instant update is not possible. Admin must validate proposal to avoid any collision with other updates
     function testUpdateNamingWith_ValidationNoVoting() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        _setupAccessManager(host);
+        _setupAuthority(host);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
@@ -1016,7 +1016,7 @@ contract HostTest is Test {
 
     function testUpdateNamingWith_ValidationVoting() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        _setupAccessManager(host);
+        _setupAuthority(host);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         _dealAndApprove(host);
         IDAOData.DaoData memory dao = HostUtilsLib.createDaoInstance(host, DAO_SYMBOL, DAO_NAME);
@@ -1110,7 +1110,7 @@ contract HostTest is Test {
 
     function testUpdateDaoChainSettingsProposal() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
-        _setupAccessManager(host);
+        _setupAuthority(host);
         IHostCodec codec = HostUtilsLib.createHostCodec(vm, MULTISIG, host);
         _dealAndApprove(host);
 
@@ -1296,26 +1296,9 @@ contract HostTest is Test {
         _dealAndApprove(os_, address(this));
     }
 
-    function _setupAccessManager(IHost host) internal {
-        address authority = IAccessManaged(address(host)).authority();
-
-        // --------------------------------- For simplicity use same role 5555 for ALL restricted functions in this set of tests
-        bytes4[] memory selectors = new bytes4[](9);
-        selectors[0] = bytes4(IHost.setSettings.selector);
-        selectors[1] = bytes4(IHost.setChainSettings.selector);
-        selectors[2] = bytes4(IHost.updateByAdmin.selector);
-        selectors[3] = bytes4(IHost.refundFor.selector);
-        selectors[4] = bytes4(IHost.onReceiveCrossChainMessage.selector);
-        selectors[5] = bytes4(IHost.receiveVotingResults.selector);
-        selectors[6] = bytes4(IHost.validateProposal.selector);
-        selectors[7] = bytes4(IHost.setContractImplementation.selector);
-        selectors[8] = bytes4(IHost.deployProxy.selector);
-
-        vm.prank(MULTISIG);
-        IAccessManager(address(authority)).setTargetFunctionRole(address(host), selectors, 5555);
-
-        vm.prank(MULTISIG);
-        IAccessManager(address(authority)).grantRole(5555, MULTISIG, 0);
+    function _setupAuthority(IHost host) internal {
+        AuthorityAccessUtils.setupHostMultisigAccess(vm, host, MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
     }
 
     function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory symbol) internal {
@@ -1387,11 +1370,8 @@ contract HostTest is Test {
         skip(24 days);
         host_.changePhase(daoData.symbol);
 
-        // ------------------------------ setup seed token, refresh daoData
-        {
-            daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
-        }
+        // ------------------------------ refresh daoData
+        daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
     }
 
     /// @dev A function to modify i-th byte in payload for test purpose

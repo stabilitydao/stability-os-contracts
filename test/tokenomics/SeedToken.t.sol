@@ -3,10 +3,8 @@ pragma solidity ^0.8.28;
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {console} from "forge-std/console.sol";
-import {Authority} from "../../src/Authority.sol";
 import {MockDataReader} from "../mocks/MockDataReader.sol";
 import {MockHost} from "../mocks/MockHost.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {Test} from "forge-std/Test.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";

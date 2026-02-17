@@ -16,7 +16,7 @@ import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
 import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {HostSetupUtils} from "./intents/access/HostSetupUtils.sol";
+import {AuthorityAccessUtils} from "./intents/access/AuthorityAccessUtils.sol";
 
 contract DataReaderTest is Test {
     string internal constant DAO_SYMBOL = "ALIENS";
@@ -34,6 +34,8 @@ contract DataReaderTest is Test {
     function testReadDaoWithFullFilledData() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host);
+
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
 
         lifeCycleUpToTGE(host, codec);
 
@@ -126,12 +128,6 @@ contract DataReaderTest is Test {
             skip(24 days);
 
             host_.changePhase(daoData.symbol);
-        }
-
-        // ------------------------------ setup seed token, refresh daoData
-        {
-            daoData = dataReader.getDAO(daoData.symbol);
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
         }
 
         // ------------------------------ SEED started. First seeder
@@ -263,8 +259,6 @@ contract DataReaderTest is Test {
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
 
-        // ------------------------------ setup TGE token
-        HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
 

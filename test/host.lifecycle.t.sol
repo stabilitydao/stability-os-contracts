@@ -17,6 +17,7 @@ import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {MockHostBridge} from "./mocks/MockHostBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {AuthorityAccessUtils} from "./intents/access/AuthorityAccessUtils.sol";
 
 contract HostLifeCycleTest is Test {
     address internal immutable MULTISIG;
@@ -37,6 +38,8 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ First DAO is Aliens community
         IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host56);
+
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host56, MULTISIG);
 
         lifeCycleDaoAlien56(host56, codec);
 
@@ -64,6 +67,7 @@ contract HostLifeCycleTest is Test {
     function testLifeCycleWithSalt() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
         lifeCycleWithSalt(host, codec);
     }
 
@@ -195,11 +199,9 @@ contract HostLifeCycleTest is Test {
             assertGt(tasks.length, 0, "at least 1 unsolved tasks");
         }
 
-        // ------------------------------ setup seed token, refresh daoData
+        // ------------------------------ refresh daoData
         {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-            //OsUtilsLib.printDaoData(daoData);
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
 
             assertEq(IERC20Metadata(daoData.deployments.seedToken).name(), "Aliens Community SEED", "seed name");
             assertEq(IERC20Metadata(daoData.deployments.seedToken).symbol(), "seedALIENS", "seed symbol");
@@ -438,8 +440,6 @@ contract HostLifeCycleTest is Test {
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
 
-        // ------------------------------ setup TGE token
-        HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
 
@@ -645,9 +645,6 @@ contract HostLifeCycleTest is Test {
 
             assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "apes phase should be SEED");
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-
-            // setup seed token
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
         }
 
         // ------------------------------ Fund small amount - funding is failed, refresh daoData
@@ -783,9 +780,6 @@ contract HostLifeCycleTest is Test {
                 uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "machines phase should be SEED"
             );
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-
-            // setup seed token
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
         }
 
         // ------------------------------ Fund enough amount, refresh daoData
@@ -821,9 +815,6 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
-
-            // setup TGE token
-            HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
         }
 
         // ------------------------------ Fund NOT enough amount, TGE failed, refresh daoData
@@ -1026,10 +1017,9 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
         }
 
-        // ------------------------------ setup seed token, refresh daoData
+        // ------------------------------ refresh daoData
         {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-            HostUtilsLib.setupSeedToken(vm, host_, MULTISIG, daoData.deployments.seedToken);
 
             assertEq(daoData.deployments.seedToken, predictedSeedAddress, "seed token address matches predicted");
 
@@ -1234,8 +1224,6 @@ contract HostLifeCycleTest is Test {
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
 
-        // ------------------------------ setup TGE token
-        HostUtilsLib.setupTgeToken(vm, host_, MULTISIG, daoData.deployments.tgeToken);
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).name(), "Aliens Community PRESALE", "tge name");
         assertEq(IERC20Metadata(daoData.deployments.tgeToken).symbol(), "saleALIENS", "tge symbol");
     }

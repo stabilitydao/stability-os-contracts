@@ -3,12 +3,12 @@ pragma solidity ^0.8.28;
 
 library AccessRolesLib {
     /// @notice Access role for OS admin.
-    uint64 internal constant OS_ADMIN = 1;
+    uint64 internal constant HOST_ADMIN = 1;
 
-    /// @notice Access role to mint SEED and TGE tokens. Only OS itself should have this role
-    uint64 internal constant OS_TOKEN_MINTER = 2;
+    /// @notice Access role to mint SEED and TGE tokens. Only Host itself should have this role
+    uint64 internal constant HOST_TOKEN_MINTER = 2;
 
-    /// @notice Access role to use OS Bridge functionality. Only OS itself should have this role
+    /// @notice Access role to use OS Bridge functionality. Only Host itself should have this role
     uint64 internal constant HOST_BRIDGE_USER = 3;
 
     /// @notice OS Bridge contract
@@ -20,7 +20,7 @@ library AccessRolesLib {
     /// @notice Deployer of HostProxyFactory (it's Host typically)
     uint64 internal constant HOST_PROXY_FACTORY_DEPLOYER = 6;
 
-    /// @notice Allow to upgrade proxy implementations
+    /// @notice Allow to upgrade proxy implementations (it's Host typically)
     uint64 internal constant CONTRACTS_UPGRADER = 7;
 
     /// @notice Allow to deploy proxy using fabrics

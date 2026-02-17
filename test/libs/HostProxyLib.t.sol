@@ -12,7 +12,6 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";

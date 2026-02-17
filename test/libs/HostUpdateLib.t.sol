@@ -3,9 +3,6 @@ pragma solidity ^0.8.28;
 
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
-import {MockHost} from "../mocks/MockHost.sol";
-import {Authority} from "../../src/Authority.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {HostUpdateLib} from "../../src/libs/HostUpdateLib.sol";

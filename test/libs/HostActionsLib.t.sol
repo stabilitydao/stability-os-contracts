@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {Test} from "forge-std/Test.sol";
@@ -14,9 +15,6 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {HostActionsLib} from "../../src/libs/HostActionsLib.sol";
-import {Authority} from "../../src/Authority.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
-import {MockHost} from "../mocks/MockHost.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostProxyLib} from "../../src/libs/HostProxyLib.sol";
@@ -110,6 +108,8 @@ contract HostActionsLibTest is Test {
         ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp - 1);
 
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
+
         // allow to deploy seed token
         $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1))] = "0x9743733";
         HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
@@ -188,10 +188,12 @@ contract HostActionsLibTest is Test {
         );
     }
 
-    function testChangePhaseDevelopment_Success_ReturnDevelopment() public {
+    function testChangePhaseDevelopment_Success_ReturnTge() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
 
         // allow to deploy TGE token
         $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2))] = "0x34";

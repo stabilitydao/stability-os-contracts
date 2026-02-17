@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
 import {HostBridgeLib} from "../../src/libs/HostBridgeLib.sol";
-import {Authority} from "../../src/Authority.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
@@ -12,8 +11,6 @@ import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
-import {MockHost} from "../mocks/MockHost.sol";
-import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {Test} from "forge-std/Test.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
 import {HostCrossChainLib} from "../../src/libs/HostCrossChainLib.sol";
