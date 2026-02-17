@@ -18,6 +18,7 @@ import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MockHost} from "../mocks/MockHost.sol";
 import {Authority} from "../../src/Authority.sol";
 import {ProxyFactory} from "../../src/ProxyFactory.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 // import {console} from "forge-std/console.sol";
 
 contract HostFundingLibTest is Test {
@@ -40,7 +41,21 @@ contract HostFundingLibTest is Test {
 
         seedToken = address(_deploySeedToken(1));
         tgeToken = address(_deployTgeToken(1));
-        _setupAuthority(authority, seedToken, tgeToken);
+
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm,
+            multisig,
+            authority,
+            address(this),
+            65871739,
+            seedToken,
+            SeedToken.mint.selector,
+            SeedToken.refund.selector,
+            SeedToken.transferTo.selector
+        );
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, multisig, authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
+        );
     }
 
     //region ------------------------------------------ Fund tests
@@ -379,29 +394,6 @@ contract HostFundingLibTest is Test {
         proxyFactory.setWhitelisted(address(_authority), true);
 
         return _authority;
-    }
-
-    function _setupAuthority(IAuthority authority_, address seedToken_, address tgeToken_) internal {
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = bytes4(SeedToken.mint.selector);
-        selectors[1] = bytes4(SeedToken.refund.selector);
-        selectors[2] = bytes4(SeedToken.transferTo.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(seedToken_, selectors, 65871739); // 65871739 = random role uid
-
-        selectors = new bytes4[](2);
-        selectors[0] = bytes4(TgeToken.mint.selector);
-        selectors[1] = bytes4(TgeToken.refund.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(tgeToken_, selectors, 65871739);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, multisig, 0);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, address(this), 0);
     }
 
     //endregion ------------------------------------------ Internal logic

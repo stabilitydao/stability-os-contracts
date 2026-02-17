@@ -20,6 +20,7 @@ import {MockHost} from "../mocks/MockHost.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostProxyLib} from "../../src/libs/HostProxyLib.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract HostActionsLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -41,7 +42,21 @@ contract HostActionsLibTest is Test {
 
         seedToken = address(_deploySeedToken(1));
         tgeToken = address(_deployTgeToken(1));
-        _setupAuthority(authority, seedToken, tgeToken);
+
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm,
+            multisig,
+            authority,
+            address(this),
+            65871739,
+            seedToken,
+            SeedToken.mint.selector,
+            SeedToken.refund.selector,
+            SeedToken.transferTo.selector
+        );
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, multisig, authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
+        );
     }
 
     //region ---------------------------- ChangePhase
@@ -431,29 +446,6 @@ contract HostActionsLibTest is Test {
         proxyFactory.setWhitelisted(address(this), true);
 
         return _authority;
-    }
-
-    function _setupAuthority(IAuthority authority_, address seedToken_, address tgeToken_) internal {
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = bytes4(SeedToken.mint.selector);
-        selectors[1] = bytes4(SeedToken.refund.selector);
-        selectors[2] = bytes4(SeedToken.transferTo.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(seedToken_, selectors, 65871739); // 65871739 = random role uid
-
-        selectors = new bytes4[](2);
-        selectors[0] = bytes4(TgeToken.mint.selector);
-        selectors[1] = bytes4(TgeToken.refund.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(tgeToken_, selectors, 65871739);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, multisig, 0);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, address(this), 0);
     }
 
     //endregion ------------------------------------------ Internal logic

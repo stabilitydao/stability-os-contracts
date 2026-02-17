@@ -525,8 +525,10 @@ contract HostEncodingLibTest is Test {
         data.saltContractIndices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
         data.saltContractIndices[1] = uint16(ITokenomics.ContractIndices.TOKEN_3);
 
-        data.vesting[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
-        data.vesting[1] = ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
+        data.vesting[0] =
+            ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+        data.vesting[1] =
+            ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
 
         data.vestingContracts[0] = makeAddr("vestingContract1");
         data.vestingContracts[1] = makeAddr("vestingContract2");

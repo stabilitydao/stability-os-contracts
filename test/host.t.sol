@@ -207,11 +207,15 @@ contract HostTest is Test {
         address exchangeAsset = host.getChainSettings().exchangeAsset;
 
         host.createDAO(DAO_NAME, DAO_SYMBOL, activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao");
+        assertEq(
+            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for first dao"
+        );
 
         // ----------------------------- create second-dao
         host.createDAO("name2", "SYMBOL2", activity, params, funding);
-        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao");
+        assertEq(
+            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), 0, "no creation fee was paid for second dao"
+        );
 
         // ----------------------------- Bad paths: Set priceDao to NOT zero
         {
@@ -225,6 +229,7 @@ contract HostTest is Test {
         vm.expectRevert(IHost.IncorrectConfiguration.selector); // exchange asset cannot be zero
         host.createDAO("name3", "SYMBOL3", activity, params, funding);
     }
+
     //endregion ----------------------------------- Unit tests
 
     //region ----------------------------------- Revenue and whitelist
@@ -237,19 +242,27 @@ contract HostTest is Test {
 
         // ------------------------------ create first (host) dao
         _createDAO(host, DAO_SYMBOL);
-        assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), amount, "host dao paid creation fee to itself");
         assertEq(
-            IERC20(exchangeAsset).balanceOf(address(this)), 0, "user has paid for creation of the first dao"
+            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT),
+            amount,
+            "host dao paid creation fee to itself"
         );
+        assertEq(IERC20(exchangeAsset).balanceOf(address(this)), 0, "user has paid for creation of the first dao");
         assertEq(IERC20(exchangeAsset).balanceOf(address(host)), amount, "creation fee is on balance of the host");
 
         // ------------------------------ create second dao
         _createDAO(host, DAO_SYMBOL2);
 
         assertEq(
-            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT), amount * 2, "second dao paid creation fee to host dao"
+            host.unitBalance(DAO_SYMBOL, exchangeAsset, HostLib.HOST_UNIT),
+            amount * 2,
+            "second dao paid creation fee to host dao"
         );
-        assertEq(host.unitBalance(DAO_SYMBOL2, exchangeAsset, HostLib.HOST_UNIT), 0, "second dao has not received any fees yet");
+        assertEq(
+            host.unitBalance(DAO_SYMBOL2, exchangeAsset, HostLib.HOST_UNIT),
+            0,
+            "second dao has not received any fees yet"
+        );
         assertEq(IERC20(exchangeAsset).balanceOf(address(this)), 0, "user has paid for creation of the second dao");
         assertEq(
             IERC20(exchangeAsset).balanceOf(address(host)), amount * 2, "both creation fees are on balance of the host"
@@ -267,14 +280,16 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
-        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+        );
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
 
         // ----------------------------- pay to second dao to registered unit
         {
             (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
-                                SampleDataLib.getUnitsThree();
+                SampleDataLib.getUnitsThree();
 
             host.updateDAO(
                 DAO_SYMBOL,
@@ -287,7 +302,9 @@ contract HostTest is Test {
             IERC20(exchangeAsset).approve(address(host), 1e18);
             host.revenue(DAO_SYMBOL, units[0].unitId, exchangeAsset, 1e18);
 
-            assertEq(host.unitBalance(DAO_SYMBOL, exchangeAsset, units[0].unitId), 1e18, "second dao received the payment");
+            assertEq(
+                host.unitBalance(DAO_SYMBOL, exchangeAsset, units[0].unitId), 1e18, "second dao received the payment"
+            );
         }
     }
 
@@ -300,7 +317,9 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
-        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+        );
         address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
@@ -308,7 +327,7 @@ contract HostTest is Test {
         // ----------------------------- pay to second dao to registered unit
         {
             (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
-                                SampleDataLib.getUnitsThree();
+                SampleDataLib.getUnitsThree();
 
             host.updateDAO(
                 DAO_SYMBOL,
@@ -336,7 +355,9 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
-        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+        );
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
 
@@ -359,8 +380,7 @@ contract HostTest is Test {
         address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
         // mockAsset is not whitelisted in the host (!)
 
-        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
-                            SampleDataLib.getUnitsThree();
+        (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) = SampleDataLib.getUnitsThree();
 
         host.updateDAO(
             DAO_SYMBOL,
@@ -386,7 +406,9 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
-        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+        );
         address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
@@ -394,7 +416,7 @@ contract HostTest is Test {
         // ----------------------------- pay to second dao to registered unit
         {
             (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory metas) =
-                                SampleDataLib.getUnitsThree();
+                SampleDataLib.getUnitsThree();
 
             host.updateDAO(
                 DAO_SYMBOL,
@@ -408,7 +430,6 @@ contract HostTest is Test {
 
             vm.expectRevert(IHosted.ZeroAmount.selector);
             host.revenue(DAO_SYMBOL, units[0].unitId, mockAsset, 0);
-
         }
     }
 
@@ -416,7 +437,9 @@ contract HostTest is Test {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
-        AuthorityAccessUtils.setRestrictedAccess(vm, MULTISIG, authority, address(host), IHost.whitelistAssets.selector, address(this), 555);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+        );
 
         {
             address[] memory assets = new address[](2);
@@ -441,7 +464,6 @@ contract HostTest is Test {
             assertFalse(host.isAssetWhitelisted(assets[0]), "not whitelisted 0x123 again");
             assertTrue(host.isAssetWhitelisted(address(0x456)), "whitelisted 0x456");
         }
-
     }
 
     function testWhitelistAsset_NotPermitted_Revert() public {

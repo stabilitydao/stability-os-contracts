@@ -223,7 +223,9 @@ library HostUtilsLib {
 
     function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-        funding[0] = generateSeedFunding(DEFAULT_MIN_INCEPTION_DURATION, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE);
+        funding[0] = generateSeedFunding(
+            DEFAULT_MIN_INCEPTION_DURATION, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+        );
 
         ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
         activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;

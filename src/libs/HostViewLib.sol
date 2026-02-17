@@ -315,11 +315,12 @@ library HostViewLib {
 
     /// @dev Check tasks for INCEPTION phase. Return number of filled tasks in dest array
     function _tasksInception(
-        HostLib.HostStorage storage /*$*/,
-        uint /*daoUid*/,
+        HostLib.HostStorage storage,
+        /*$*/
+        uint,
+        /*daoUid*/
         IHost.Task[] memory /*dest*/
     ) internal pure returns (uint) {
-
         // there are no on-chain tasks
 
         return 0;

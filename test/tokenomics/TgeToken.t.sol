@@ -15,6 +15,7 @@ import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract TgeTokenTest is Test {
     using SafeERC20 for IERC20;
@@ -72,14 +73,19 @@ contract TgeTokenTest is Test {
         ITgeToken tgeToken = _deployTgeToken(1);
         _setupAuthority(authority, address(tgeToken));
 
-        vm.prank(makeAddr("not authorized"));
-        vm.expectRevert(); // restricted
-        tgeToken.mint(address(this), 1e18);
-
         assertEq(tgeToken.balanceOf(address(this)), 0, "balance before");
 
         tgeToken.mint(address(this), 1e18);
         assertEq(tgeToken.balanceOf(address(this)), 1e18, "balance after");
+    }
+
+    function testMint_NotAuthorized_Revert() public {
+        ITgeToken tgeToken = _deployTgeToken(1);
+        _setupAuthority(authority, address(tgeToken));
+
+        vm.prank(makeAddr("not authorized"));
+        vm.expectRevert(); // restricted
+        tgeToken.mint(address(this), 1e18);
     }
 
     function testRefund() public {
@@ -98,6 +104,21 @@ contract TgeTokenTest is Test {
         assertEq(tgeToken.balanceOf(address(this)), 80e18, "tge token balance after refund");
         assertEq(asset.balanceOf(receiver), 20e18, "asset balance of receiver after refund");
         assertEq(asset.balanceOf(address(tgeToken)), 30e18, "asset balance of tge token");
+    }
+
+    function testRefund_NotAuthorized_Revert() public {
+        ITgeToken tgeToken = _deployTgeToken(1);
+        _setupAuthority(authority, address(tgeToken));
+
+        // --------------------- add asset on tge token balance and tge token on user's balance
+        MockERC20 asset = new MockERC20("Mock Asset", "MA", 18);
+        asset.mint(address(tgeToken), 50e18);
+        tgeToken.mint(address(this), 100e18);
+
+        // --------------------- refund
+        vm.prank(makeAddr("not authorized"));
+        vm.expectRevert(); // restricted
+        tgeToken.refund(address(this), 20e18, address(asset), makeAddr("receiver"));
     }
 
     function testTransferable() public {
@@ -146,18 +167,16 @@ contract TgeTokenTest is Test {
     }
 
     function _setupAuthority(IAuthority authority_, address tgeToken_) internal {
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = bytes4(TgeToken.mint.selector);
-        selectors[1] = bytes4(TgeToken.refund.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(tgeToken_, selectors, 65871739); // 65871739 = random role uid
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, multisig, 0);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, address(this), 0);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm,
+            multisig,
+            authority_,
+            address(this),
+            65871739,
+            tgeToken_,
+            TgeToken.mint.selector,
+            TgeToken.refund.selector
+        );
     }
 
     //endregion ------------------------------------------ Internal logic

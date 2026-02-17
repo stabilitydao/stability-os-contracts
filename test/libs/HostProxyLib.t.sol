@@ -21,6 +21,7 @@ import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract HostProxyLibTest is Test {
     address public multisig;
@@ -40,7 +41,15 @@ contract HostProxyLibTest is Test {
         vm.prank(owner);
         IProxyFactory(proxyFactory).setWhitelisted(address(this), true);
 
-        _setupAuthority();
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm,
+            multisig,
+            authority,
+            address(this),
+            AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER,
+            address(host),
+            IHost.deployProxy.selector
+        );
     }
 
     function testStorageLocation() public pure {
@@ -172,21 +181,6 @@ contract HostProxyLibTest is Test {
         assertEq(newHost.hostDaoUid(), 12345, "CCC uid");
 
         assertEq(address(newHost), predictedProxyAddress, "Predicted address matches deployed");
-    }
-
-    function _setupAuthority() internal {
-        bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = bytes4(IHost.deployProxy.selector);
-
-        vm.prank(multisig);
-        IAccessManager(address(authority))
-            .setTargetFunctionRole(address(host), selectors, AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER);
-
-        vm.prank(multisig);
-        IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_ADMIN, multisig, 0);
-
-        vm.prank(multisig);
-        IAccessManager(address(authority)).grantRole(AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER, address(this), 0);
     }
 
     //endregion ------------------------------------- Deploy tests

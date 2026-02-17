@@ -15,6 +15,7 @@ import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract SeedTokenTest is Test {
     using SafeERC20 for IERC20;
@@ -72,14 +73,18 @@ contract SeedTokenTest is Test {
         ISeedToken seedToken = _deploySeedToken(1);
         _setupAuthority(authority, address(seedToken));
 
-        vm.prank(makeAddr("not authorized"));
-        vm.expectRevert(); // restricted
-        seedToken.mint(address(this), 1e18);
-
         assertEq(seedToken.balanceOf(address(this)), 0, "balance before");
 
         seedToken.mint(address(this), 1e18);
         assertEq(seedToken.balanceOf(address(this)), 1e18, "balance after");
+    }
+
+    function testMint_NotAuthorized_Revert() public {
+        ISeedToken seedToken = _deploySeedToken(1);
+
+        vm.prank(makeAddr("not authorized"));
+        vm.expectRevert(); // restricted
+        seedToken.mint(address(this), 1e18);
     }
 
     function testGetVotes() public {
@@ -110,6 +115,19 @@ contract SeedTokenTest is Test {
         assertEq(asset.balanceOf(address(seedToken)), 30e18, "asset balance of seed token");
     }
 
+    function testRefund_NotAuthorized_Revert() public {
+        ISeedToken seedToken = _deploySeedToken(1);
+        _setupAuthority(authority, address(seedToken));
+
+        MockERC20 asset = new MockERC20("Mock Asset", "MA", 18);
+        asset.mint(address(seedToken), 50e18);
+        seedToken.mint(address(this), 100e18);
+
+        vm.prank(makeAddr("not authorized"));
+        vm.expectRevert(); // AccessManagedUnauthorized
+        seedToken.refund(address(this), 20e18, address(asset), makeAddr("receiver"));
+    }
+
     function testTransferTo() public {
         address receiver = makeAddr("receiver");
 
@@ -118,10 +136,6 @@ contract SeedTokenTest is Test {
 
         MockERC20 asset = new MockERC20("Mock Asset", "MA", 18);
         asset.mint(address(seedToken), 50e18);
-
-        vm.prank(makeAddr("not authorized"));
-        vm.expectRevert(); // restricted
-        seedToken.transferTo(address(asset), address(receiver), 10e18);
 
         vm.expectRevert(IHosted.ZeroAmount.selector);
         seedToken.transferTo(address(asset), address(receiver), 0);
@@ -145,7 +159,21 @@ contract SeedTokenTest is Test {
         assertEq(asset.balanceOf(address(seedToken)), 0, "asset balance of seed token after full transfer");
     }
 
-    function testNotTransferable() public {
+    function testTransferTo_NotAuthorized_Revert() public {
+        address receiver = makeAddr("receiver");
+
+        ISeedToken seedToken = _deploySeedToken(1);
+        _setupAuthority(authority, address(seedToken));
+
+        MockERC20 asset = new MockERC20("Mock Asset", "MA", 18);
+        asset.mint(address(seedToken), 50e18);
+
+        vm.prank(makeAddr("not authorized"));
+        vm.expectRevert(); // restricted
+        seedToken.transferTo(address(asset), address(receiver), 10e18);
+    }
+
+    function testNotTransferable_TryToTransfer_Revert() public {
         address receiver = makeAddr("receiver");
 
         ISeedToken seedToken = _deploySeedToken(1);
@@ -190,19 +218,17 @@ contract SeedTokenTest is Test {
     }
 
     function _setupAuthority(IAuthority authority_, address seedToken_) internal {
-        bytes4[] memory selectors = new bytes4[](3);
-        selectors[0] = bytes4(SeedToken.mint.selector);
-        selectors[1] = bytes4(SeedToken.refund.selector);
-        selectors[2] = bytes4(SeedToken.transferTo.selector);
-
-        vm.prank(multisig);
-        authority_.setTargetFunctionRole(seedToken_, selectors, 65871739); // 65871739 = random role uid
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, multisig, 0);
-
-        vm.prank(multisig);
-        authority_.grantRole(65871739, address(this), 0);
+        AuthorityAccessUtils.setRestrictedAccess(
+            vm,
+            multisig,
+            authority_,
+            address(this),
+            65871739,
+            seedToken_,
+            SeedToken.mint.selector,
+            SeedToken.refund.selector,
+            SeedToken.transferTo.selector
+        );
     }
 
     //endregion ------------------------------------------ Internal logic

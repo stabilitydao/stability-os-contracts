@@ -190,7 +190,11 @@ library HostBridgeLib {
         _checkAllUnitsRegistered($, daoUid, p.unitIds);
     }
 
-    function _checkAllUnitsRegistered(HostLib.HostStorage storage $, uint daoUid, string[] memory unitIds) internal view {
+    function _checkAllUnitsRegistered(
+        HostLib.HostStorage storage $,
+        uint daoUid,
+        string[] memory unitIds
+    ) internal view {
         // ensure that all units are registered in segment2
         for (uint i; i < unitIds.length; i++) {
             require($.units[HostLib.getUnitKey(daoUid, unitIds[i])].daoUid == daoUid, IHost.UnitNotFound());

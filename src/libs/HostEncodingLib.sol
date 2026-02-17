@@ -103,11 +103,7 @@ library HostEncodingLib {
         }
     }
 
-    function decodeUnitsEmitData(bytes memory payload)
-        internal
-        pure
-        returns (IDAOData.UnitEmitData[] memory emitData)
-    {
+    function decodeUnitsEmitData(bytes memory payload) internal pure returns (IDAOData.UnitEmitData[] memory emitData) {
         {
             (uint16 version) = abi.decode(payload, (uint16));
             require(version == 1, IHost.UnsupportedStructVersion());
@@ -559,7 +555,8 @@ library HostEncodingLib {
             (dest.chainSettings, dest.unitIds, dest.unitRevenue, dest.unitRevenueAssets) =
                 abi.decode(b[1], (ITokenomics.DaoChainSettings, string[], uint[], address[]));
 
-            (dest.params, dest.initialChain, dest.socials) = abi.decode(b[2], (ITokenomics.DaoParameters, uint, string[]));
+            (dest.params, dest.initialChain, dest.socials) =
+                abi.decode(b[2], (ITokenomics.DaoParameters, uint, string[]));
 
             {
                 uint8[] memory activityRaw;
@@ -584,7 +581,6 @@ library HostEncodingLib {
 
             (dest.governanceSettings, dest.deployer, dest.saltContractIndices, dest.salts, dest.metaDataLocation) =
                 abi.decode(b[4], (ITokenomics.GovernanceSettings, address, uint16[], bytes32[], string));
-
 
             (dest.vestingContracts) = abi.decode(b[5], (address[]));
 
