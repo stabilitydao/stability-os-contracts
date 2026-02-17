@@ -153,7 +153,7 @@ library HostEncodingLib {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
             (, dest.fundingType, dest.start, dest.end, dest.minRaise, dest.maxRaise, dest.raised, dest.claim) =
-                abi.decode(payload, (uint16, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint));
+                abi.decode(payload, (uint16, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint64));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -218,7 +218,7 @@ library HostEncodingLib {
                 dest.recoveryShare,
                 dest.proposalThreshold,
                 dest.totalSupply
-            ) = abi.decode(payload, (uint16, uint32, uint16, uint, uint16, uint16, uint, uint));
+            ) = abi.decode(payload, (uint16, uint32, uint32, uint, uint32, uint32, uint, uint));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -326,6 +326,31 @@ library HostEncodingLib {
         }
     }
 
+    /// @notice Encode DaoParameters struct of the given version. Version is supported explicitly to simplify testing
+    function encodeGovernanceSettings(
+        ITokenomics.GovernanceSettings memory data,
+        uint16 version
+    ) internal pure returns (bytes memory) {
+        if (version == 1) {
+            return abi.encode(version, data.proposalThreshold, data.ttBribe);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeGovernanceSettings(bytes memory payload)
+    internal
+    pure
+    returns (ITokenomics.GovernanceSettings memory dest) {
+        (uint16 version) = abi.decode(payload, (uint16));
+
+        if (version == 1) {
+            (, dest.proposalThreshold, dest.ttBribe) = abi.decode(payload, (uint16, uint32, uint32));
+            return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
     //endregion ----------------------- Decode / Encode update-actions structs with versions
 
     //region ----------------------- Decode / Encode bridged-actions structs with versions

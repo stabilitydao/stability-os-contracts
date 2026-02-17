@@ -811,7 +811,7 @@ contract HostUpdateLibTest is Test {
         ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
         vesting[0].name = "vesting name";
         vesting[0].description = "vesting description";
-        vesting[0].allocation = 1e18;
+        vesting[0].allocation = 10_000;
         vesting[0].start = uint64(block.timestamp + 10 days);
         vesting[0].end = uint64(block.timestamp + 50 days);
 
@@ -891,59 +891,6 @@ contract HostUpdateLibTest is Test {
     }
 
     //endregion ------------------------------------------ Tests for Salt validation
-
-    //region ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
-    function validateNamingPublic(string memory name, string memory symbol) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateNaming(name, symbol, st);
-    }
-
-    function validateDaoDataPublic(HostLib.DaoDataSegment2 memory dao) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateDaoData(dao, st);
-    }
-
-    function validateDaoParametersPublic(
-        uint daoUid,
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.DaoParameters memory params
-    ) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateDaoParameters(daoUid, phase, params, st);
-    }
-
-    function validateActivityPublic(ITokenomics.Activity[] memory activity_) public pure {
-        HostUpdateLib._validateActivity(activity_);
-    }
-
-    function validateFundingListPublic(ITokenomics.Funding[] memory funding) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateFundingList(funding, st);
-    }
-
-    function validateFundingPublic(ITokenomics.LifecyclePhase phase, ITokenomics.Funding memory funding) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateFunding(phase, funding, st);
-    }
-
-    function validateVestingListPublic(
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.Vesting[] memory vesting,
-        uint tgeClaim
-    ) public view {
-        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
-        HostUpdateLib._validateVestingList(phase, vesting, st, tgeClaim);
-    }
-
-    function validateSaltPublic(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) public view {
-        HostUpdateLib._validateSalt(daoUid, contractIndices, salt_);
-    }
-
-    function validateChainSettingsPublic(ITokenomics.DaoChainSettings memory st) public pure {
-        HostUpdateLib._validateDaoChainSettings(st);
-    }
-
-    //endregion ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
 
     //region ------------------------------------------ Tests for updating logic (except units updating)
     function testUpdateImage() public {
@@ -1030,13 +977,13 @@ contract HostUpdateLibTest is Test {
         ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
         vesting[0].name = "vesting name";
         vesting[0].description = "vesting description";
-        vesting[0].allocation = 1e18;
+        vesting[0].allocation = 99_000;
         vesting[0].start = uint64(block.timestamp + 1 days);
         vesting[0].end = uint64(block.timestamp + 50 days);
 
         vesting[1].name = "vesting 1";
         vesting[1].description = "vesting 2";
-        vesting[1].allocation = 2e18;
+        vesting[1].allocation = 37_521;
         vesting[1].start = uint64(block.timestamp + 2 days);
         vesting[1].end = uint64(block.timestamp + 60 days);
 
@@ -1161,6 +1108,31 @@ contract HostUpdateLibTest is Test {
         assertEq(storedHash, expectedHash);
 
         assertEq($.chainSettings[117].bbRate, settings.bbRate);
+    }
+
+    function testGovernanceSettings() public {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.daoUids["ABC"] = 117;
+        $.segment2[117].symbol = "ABC";
+
+        ITokenomics.GovernanceSettings memory settings = ITokenomics.GovernanceSettings({
+            proposalThreshold: 90_000,
+            ttBribe: 85_501
+        });
+
+        bytes memory payload = HostEncodingLib.encodeGovernanceSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
+
+        vm.expectEmit(false, false, false, true);
+        emit IHost.GovernanceSettingsUpdated(117, settings);
+
+        HostUpdateLib.updateGovernanceSettings(117, payload);
+
+        bytes32 storedHash = keccak256(abi.encode($.governanceSettings[117]));
+        bytes32 expectedHash = keccak256(abi.encode(settings));
+        assertEq(storedHash, expectedHash);
+
+        assertEq($.governanceSettings[117].proposalThreshold, settings.proposalThreshold);
+        assertEq($.governanceSettings[117].ttBribe, settings.ttBribe);
     }
 
     //endregion ------------------------------------------ Tests for updating logic (except units updating)
@@ -1373,4 +1345,58 @@ contract HostUpdateLibTest is Test {
     }
 
     //endregion ------------------------------------------ Tests for updating list of units
+
+    //region ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
+    function validateNamingPublic(string memory name, string memory symbol) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib.validateNaming(name, symbol, st);
+    }
+
+    function validateDaoDataPublic(HostLib.DaoDataSegment2 memory dao) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib.validateDaoData(dao, st);
+    }
+
+    function validateDaoParametersPublic(
+        uint daoUid,
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.DaoParameters memory params
+    ) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib.validateDaoParameters(daoUid, phase, params, st);
+    }
+
+    function validateActivityPublic(ITokenomics.Activity[] memory activity_) public pure {
+        HostUpdateLib.validateActivity(activity_);
+    }
+
+    function validateFundingListPublic(ITokenomics.Funding[] memory funding) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib._validateFundingList(funding, st);
+    }
+
+    function validateFundingPublic(ITokenomics.LifecyclePhase phase, ITokenomics.Funding memory funding) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib.validateFunding(phase, funding, st);
+    }
+
+    function validateVestingListPublic(
+        ITokenomics.LifecyclePhase phase,
+        ITokenomics.Vesting[] memory vesting,
+        uint tgeClaim
+    ) public view {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+        HostUpdateLib.validateVestingList(phase, vesting, st, tgeClaim);
+    }
+
+    function validateSaltPublic(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) public view {
+        HostUpdateLib.validateSalt(daoUid, contractIndices, salt_);
+    }
+
+    function validateChainSettingsPublic(ITokenomics.DaoChainSettings memory st) public pure {
+        HostUpdateLib.validateDaoChainSettings(st);
+    }
+
+    //endregion ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
+
 }

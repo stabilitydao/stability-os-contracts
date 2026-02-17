@@ -28,10 +28,10 @@ library HostUpdateLib {
     ) internal view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
-        _validateDaoData(daoData2, st);
-        _validateDaoParameters(daoUid, phase, params, st);
+        validateDaoData(daoData2, st);
+        validateDaoParameters(daoUid, phase, params, st);
         _validateFundingList(funding, st);
-        _validateActivity(activity);
+        validateActivity(activity);
     }
 
     //endregion -------------------------------------- Actions
@@ -39,12 +39,12 @@ library HostUpdateLib {
     //region -------------------------------------- Validation logic
 
     /// @notice Ensure that DAO name is in the range [minNameLength, maxNameLength]
-    function _validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
-        _validateNaming(dao.name, dao.symbol, st);
+    function validateDaoData(HostLib.DaoDataSegment2 memory dao, IHost.HostSettings storage st) internal view {
+        validateNaming(dao.name, dao.symbol, st);
     }
 
     /// @dev activity contains only valid enum values - decoder reverts automatically if it contains invalid value
-    function _validateActivity(ITokenomics.Activity[] memory activity) internal pure {
+    function validateActivity(ITokenomics.Activity[] memory activity) internal pure {
         uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
         bool[] memory foundActivity = new bool[](count);
 
@@ -59,7 +59,7 @@ library HostUpdateLib {
     }
 
     /// @dev Check length of name and symbol, uppercase requirement for symbol and uniqueness of symbol
-    function _validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
+    function validateNaming(string memory name, string memory symbol, IHost.HostSettings storage st) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         {
@@ -82,7 +82,7 @@ library HostUpdateLib {
     }
 
     /// @notice Validate DAO params according to OS settings
-    function _validateDaoParameters(
+    function validateDaoParameters(
         uint daoUid,
         ITokenomics.LifecyclePhase phase,
         ITokenomics.DaoParameters memory params,
@@ -98,7 +98,7 @@ library HostUpdateLib {
         }
     }
 
-    function _validateDaoChainSettings(ITokenomics.DaoChainSettings memory settings) internal pure {
+    function validateDaoChainSettings(ITokenomics.DaoChainSettings memory settings) internal pure {
         require(settings.bbRate <= 100, IHost.TooHighValue());
     }
 
@@ -112,12 +112,12 @@ library HostUpdateLib {
             require(!foundFunding[uint(funding[i].fundingType)], IHost.InvalidFundingArray());
             foundFunding[uint(funding[i].fundingType)] = true;
 
-            _validateFunding(funding[i], st);
+            validateFunding(funding[i], st);
         }
     }
 
     /// @dev Check funding params according to Host settings
-    function _validateFunding(ITokenomics.Funding memory funding, IHost.HostSettings storage st) internal view {
+    function validateFunding(ITokenomics.Funding memory funding, IHost.HostSettings storage st) internal view {
         uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
         require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
 
@@ -129,7 +129,7 @@ library HostUpdateLib {
     }
 
     /// @dev Check funding before updating. Funding can be updated on proper phase only.
-    function _validateFunding(
+    function validateFunding(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Funding memory funding,
         IHost.HostSettings storage st
@@ -149,11 +149,11 @@ library HostUpdateLib {
             );
         }
 
-        _validateFunding(funding, st);
+        validateFunding(funding, st);
     }
 
     /// @param tgeClaim Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
-    function _validateVestingList(
+    function validateVestingList(
         ITokenomics.LifecyclePhase phase,
         ITokenomics.Vesting[] memory vesting,
         IHost.HostSettings storage st,
@@ -170,14 +170,14 @@ library HostUpdateLib {
 
         uint totalAllocation;
         for (uint i; i < len; ++i) {
-            _validateVesting(vesting[i], st, tgeClaim);
+            validateVesting(vesting[i], st, tgeClaim);
             totalAllocation += vesting[i].allocation;
         }
 
         require(totalAllocation < 100_000, IHost.TotalAllocationTooHigh());
     }
 
-    function _validateVesting(
+    function validateVesting(
         ITokenomics.Vesting memory vesting,
         IHost.HostSettings storage st,
         uint claim
@@ -193,7 +193,7 @@ library HostUpdateLib {
     }
 
     /// @notice Validate salts: salts is not used OR used by the given DAO
-    function _validateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal view {
+    function validateSalt(uint daoUid, uint16[] memory contractIndices, bytes32[] memory salt_) internal view {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint len = contractIndices.length;
@@ -468,6 +468,17 @@ library HostUpdateLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.chainSettings[daoUid] = settings_;
         emit IHost.DaoChainSettingsUpdated(daoUid, settings_);
+    }
+
+    function updateGovernanceSettings(uint daoUid, bytes memory payload) internal {
+        ITokenomics.GovernanceSettings memory _settings = HostEncodingLib.decodeGovernanceSettings(payload);
+        updateGovernanceSettings(daoUid, _settings);
+    }
+
+    function updateGovernanceSettings(uint daoUid, ITokenomics.GovernanceSettings memory settings_) internal {
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        $.governanceSettings[daoUid] = settings_;
+        emit IHost.GovernanceSettingsUpdated(daoUid, settings_);
     }
     //endregion -------------------------------------- Update logic
 }

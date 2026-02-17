@@ -44,7 +44,8 @@ interface ITokenomics {
         UPDATE_SALT_7,
         UPDATE_DAO_CHAIN_SETTINGS_8,
         /// @notice Some action that should be approved as proposal and performed on another chain, see BridgedActions
-        UPDATE_BRIDGED_DAO_9
+        UPDATE_BRIDGED_DAO_9,
+        UPDATE_GOVERNANCE_SETTINGS_10
     }
 
     /// @notice Funding types.
@@ -123,16 +124,16 @@ interface ITokenomics {
         uint32 vePeriod;
 
         /// @notice Instant exit fee, decimals 1e4 (!), i.e. 50_00 = 50%             todo we have different decimals here, probably we should change implementation in xSTBL !!!!
-        uint16 pvpFee;
+        uint32 pvpFee;
 
         /// @notice Minimal power in chain to have voting rights, amount of staked tokens
         uint minPower;
 
         /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent. Decimals 1e5, i.e. 20_000 = 20%
-        uint16 ttBribe;
+        uint32 ttBribe;
 
         /// @notice Share of total DAO revenue going to accidents compensations, percent. Decimals 1e5, i.e. 20_000 = 20%
-        uint16 recoveryShare;
+        uint32 recoveryShare;
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint proposalThreshold;
@@ -153,6 +154,9 @@ interface ITokenomics {
         /// @notice End timestamp (seconds since unix epoch).
         uint64 end;
 
+        /// @notice Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
+        uint64 claim;
+
         /// @notice Minimum raise amount, USD decimals 18
         uint minRaise;
 
@@ -162,8 +166,6 @@ interface ITokenomics {
         /// @notice Amount already raised, USD decimals 18
         uint raised;
 
-        /// @notice Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
-        uint claim;
         // Attention: Don't forget to increment OsEncodingLib.FUNDING_STRUCT_VERSION if you add new fields here
     }
 
@@ -176,7 +178,7 @@ interface ITokenomics {
         string description;
 
         /// @notice Vesting supply, in percents. Decimals 1e5, i.e. 20_000 = 20%
-        uint allocation;
+        uint32 allocation;
 
         /// @notice Start timestamp
         uint64 start;
@@ -206,16 +208,16 @@ interface ITokenomics {
         /// @dev Status of proposal validation by admin
         ITokenomics.ValidationStatus validationStatus;
 
-        bytes32 id; // todo do we really need string id?
-        string symbol; // todo rename back to symbol
+        /// @dev Symbol of DAO to which the proposal is related
+        string symbol;
+
         /// @notice Proposal creation timestamp
         uint64 created;
+
         VotingStatus status;
 
-        // We don't store proposal payload on chain, we just emit it. Hash is stored instead
-        //        /// @notice Proposal data as bytes
-        //        /// @dev Actual data depends on {action}
-        //        bytes payload;
+        /// @dev Proposal UID (unique per all DAOs)
+        bytes32 id;
 
         /// @notice Hash of proposal payload
         bytes32 payloadHash;
@@ -230,11 +232,11 @@ interface ITokenomics {
     }
 
     struct GovernanceSettings {
-        /// @notice Minimal total voting power (self and delegated) need to create a proposal
-        uint proposalThreshold;
+        /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent, decimals 1e5, i.e. 20_000 = 20%
+        uint32 proposalThreshold;
 
         /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent  todo decimals?
-        uint ttBribe;
+        uint32 ttBribe;
     }
 
     /// @notice On-chain data of the Unit.

@@ -7,10 +7,21 @@ import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 interface IHost {
+    //region ---------------------------------------- Errors
+    error ZeroBalance();
+    error IncorrectArrayLengths();
+    error AlreadyValidated();
+    error AlreadyReceived();
+    error TooHighValue();
+    error TooLowValue();
+    error ZeroValueNotAllowed();
+
     error NameLength(uint length);
     error SymbolLength(uint length);
     error SymbolNotUnique(string symbol);
     error UpperCaseRequired(string symbol);
+    error IncorrectConfiguration();
+
     error PvPFee(uint value);
     error TooLateToUpdateSuchFunding();
     error TooLateToUpdateVesting();
@@ -24,17 +35,13 @@ interface IHost {
     error WaitVestingEnd();
     error NotFundingPhase();
     error RaiseMaxExceed();
-    error AlreadyReceived();
     error IncorrectProposal();
     error NotImplemented();
     error YouAreNotOwnerOf(string symbol);
     error IncorrectDao();
-    error ZeroBalance();
     error NotRefundPhase();
     error UnsupportedStructVersion();
-    error IncorrectConfiguration();
     error UnitNotFound();
-    error IncorrectArrayLengths();
     error TooHighContractIndex(uint16 index);
     error SaltAlreadyUsed(bytes32 salt);
     error UnitAlreadyRegistered();
@@ -42,7 +49,6 @@ interface IHost {
     error InstantExecuteNotAllowed();
     error ProposalNotValidated();
     error ValidationNotRequired();
-    error AlreadyValidated();
     error UnknownBridgedActionHash();
     error UnknownBridgedActionKind();
     error VotingNotRequired();
@@ -60,25 +66,24 @@ interface IHost {
     error InvalidFundingRaise();
     error InvalidFundingArray();
     error IncorrectVestingPeriod();
-    error TooLowValue();
-    error ZeroValueNotAllowed();
     error TotalAllocationTooHigh();
     error VestingNotAllowed();
     error IncorrectVestingStart();
     error TooLateToUpdateTotalSupply();
     error NotEnoughUserPower();
-    error TooHighValue();
     error AssetNotWhitelisted();
-
     error AlreadyAnnounced();
     error SameVersion();
     error NoNewVersion();
     error UpgradeTimerIsNotOver(uint TimerTimestamp);
     error LogicNotFound(uint kind);
+    error NotEnoughNativeProvided(uint requiredValue);
+    //endregion ---------------------------------------- Errors
 
+    //region ---------------------------------------- Events
     event DaoCreated(string name, string symbol, uint daoUid);
-    event OsSettingsUpdated(IHost.HostSettings st);
-    event OsChainSettingsUpdated(IHost.HostChainSettings st);
+    event HostSettingsUpdated(IHost.HostSettings st);
+    event HostChainSettingsUpdated(IHost.HostChainSettings st);
     event WhitelistAsset(address[] assets, bool whitelisted);
     event DaoImagesUpdated(string symbol, ITokenomics.DaoImages images);
     event DaoSocialsUpdated(string symbol, string[] socials);
@@ -112,12 +117,10 @@ interface IHost {
     event SaltUpdated(uint daoUid, uint16[] contractIndices, bytes32[] saltValues);
     event ProcessUnitRevenue(uint daoUid, string symbol, string unitId, uint amount);
     event OnBridgedDaoAction(bytes32 actionHash, uint16 actionKind, uint32 srcEid, bytes32 guid_);
-
-    error NotEnoughNativeProvided(uint requiredValue);
     event ProposalValidated(bytes32 proposalId, bool valid);
     event BridgedActionSent(uint daoUid, uint16 actionKind, uint32 dstEid, bytes32 hash);
-
     event BridgeDao(uint daoUid, IBridgedActions.BridgeDaoParams params, string[] unitIds);
+    event BridgedUnitsUpdated(uint daoUid, string[] unitIds);
 
     event HostVersion(string version);
     event UpgradeAnnounce(
@@ -127,32 +130,40 @@ interface IHost {
     event ProxyUpgraded(
         address indexed proxy, address implementation, string oldContractVersion, string newContractVersion
     );
-
     event NewContractImplementation(uint kind, address seedToken);
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
     event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
+    event GovernanceSettingsUpdated(uint daoUid, ITokenomics.GovernanceSettings settings);
+    //endregion ---------------------------------------- Events
 
-    event BridgedUnitsUpdated(uint daoUid, string[] unitIds);
-
+    //region ---------------------------------------- Data types
     /// @notice DAO-setting common for all chains
     struct HostSettings {
         /// @notice Price of adding/creating DAO in exchange asset
         uint priceDao;
+
         /// @notice Percent of amount received in funding round that Host dao takes, decimals 1e4 // todo 1e4 or 1e5?
         uint fundingFee;
 
-        // todo reduce sizes
-        uint minNameLength;
-        uint maxNameLength;
-        uint minSymbolLength;
-        uint maxSymbolLength;
+        /// @notice Min allowed length of DAO name in characters
+        uint16 minNameLength;
+
+        /// @notice Max allowed length of DAO name in characters
+        uint16 maxNameLength;
+
+        /// @notice Min allowed length of DAO symbol in characters
+        uint16 minSymbolLength;
+
+        /// @notice Max allowed length of DAO symbol in characters
+        uint16 maxSymbolLength;
 
         /// @notice min VE period in days
-        uint minVePeriod;
+        uint24 minVePeriod;
+
         /// @notice max VE period in days
-        uint maxVePeriod;
+        uint24 maxVePeriod;
 
         uint minPvPFee;
         uint maxPvPFee;
@@ -161,9 +172,10 @@ interface IHost {
         uint minFunding;
 
         /// @notice Minimal funding duration, seconds
-        uint minFundingDuration;
+        uint64 minFundingDuration;
+
         /// @notice Max funding duration, seconds
-        uint maxFundingDuration;
+        uint64 maxFundingDuration;
 
         /// @notice Minimum allowed funding amount to raise
         uint minFundingRaise;
@@ -172,16 +184,16 @@ interface IHost {
         uint maxFundingRaise;
 
         /// @notice Min length of a vesting name
-        uint minVestingNameLen;
+        uint16 minVestingNameLen;
 
         /// @notice Max length of a vesting name
-        uint maxVestingNameLen;
+        uint16 maxVestingNameLen;
 
         /// @notice Min allowed interval (seconds) between vesting.start and tge.claim
-        uint minCliff;
+        uint64 minCliff;
 
         /// @notice Min allowed duration of inception phase, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
-        uint minInceptionDuration;
+        uint64 minInceptionDuration;
     }
 
     /// @notice Chain-dependent data of the DAO
@@ -193,7 +205,7 @@ interface IHost {
         address hostBridge;
 
         /// @notice Timelock duration for host platform upgrades, sec
-        uint timelock;
+        uint64 timelock;
 
         /// @notice Data reader provides access to any DAO-related complex data in human-readable format
         address dataReader;
@@ -270,11 +282,13 @@ interface IHost {
 
     /// @notice Data items that can be requested from DataReader
     enum DataReaderItem {
-        /// @notice Full DAO data
+        /// @notice Full data of DAO with given uid
         DAO_DATA_0,
-        /// @notice Full proposal data
+        /// @notice Full proposal data of the data with given proposal_id
         PROPOSAL_1,
+        /// @notice Name of the dao with the given uid
         DAO_NAME_2,
+        /// @notice Symbol of the dao with the given uid
         DAO_SYMBOL_3
     }
 
@@ -301,6 +315,7 @@ interface IHost {
         /// @notice validateProposal(valid=true)
         VALIDATION_1
     }
+    //endregion ---------------------------------------- Data types
 
     //region ---------------------------------------- View
 

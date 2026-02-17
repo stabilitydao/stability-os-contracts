@@ -470,7 +470,7 @@ contract HostEncodingLibTest is Test {
             units: new ITokenomics.UnitData[](2),
             funding: new ITokenomics.Funding[](2),
             vesting: new ITokenomics.Vesting[](2),
-            governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: 1111, ttBribe: type(uint).max - 1}),
+            governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: type(uint32).max, ttBribe: type(uint32).max}),
             deployer: makeAddr("deployer"),
             salts: new bytes32[](2),
             saltContractIndices: new uint16[](2),
@@ -513,7 +513,7 @@ contract HostEncodingLibTest is Test {
             minRaise: type(uint).max,
             maxRaise: type(uint).max / 2,
             raised: 0,
-            claim: type(uint).max
+            claim: type(uint64).max
         });
 
         data.unitRevenue[0] = 1e18;

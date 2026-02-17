@@ -34,7 +34,7 @@ library HostUtilsLib {
     uint64 internal constant DEFAULT_SEED_DURATION = 90 days;
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
-    uint internal constant DEFAULT_MIN_INCEPTION_DURATION = 7 days;
+    uint64 internal constant DEFAULT_MIN_INCEPTION_DURATION = 7 days;
 
     function deployHost(
         Vm vm,
@@ -347,7 +347,7 @@ library HostUtilsLib {
             minRaise: minRaise,
             maxRaise: maxRaise,
             raised: 0,
-            claim: block.timestamp + 1 days
+            claim: uint64(block.timestamp + 1 days)
         });
     }
 
@@ -369,7 +369,7 @@ library HostUtilsLib {
     function generateVesting(string memory name, uint tgeEnd) internal pure returns (ITokenomics.Vesting memory) {
         uint64 cliff = 180 days;
         uint64 duration = 365 days;
-        uint64 allocation = 100;
+        uint32 allocation = 100;
         return ITokenomics.Vesting({
             name: name,
             description: "Vesting for testing",
@@ -443,21 +443,21 @@ library HostUtilsLib {
                 minRaise: uint(1 ether),
                 maxRaise: uint(100 ether),
                 raised: uint(10 ether),
-                claim: uint(0)
+                claim: uint64(0)
             });
 
             ITokenomics.Vesting[] memory vest = new ITokenomics.Vesting[](2);
             vest[0] = ITokenomics.Vesting({
                 name: "Founders",
                 description: "Founders allocation",
-                allocation: uint(10 ether),
+                allocation: uint32(90_000),
                 start: uint64(1650000000),
                 end: uint64(1650000000 + 365 days)
             });
             vest[1] = ITokenomics.Vesting({
                 name: "Team",
                 description: "Team allocation",
-                allocation: uint(5 ether),
+                allocation: uint32(80_000),
                 start: uint64(1650000000 + 30 days),
                 end: uint64(1650000000 + 730 days)
             });

@@ -259,7 +259,7 @@ library HostProposalLib {
 
         ActionParams memory p = _getActionParams(ITokenomics.DAOAction.UPDATE_NAMING_2, d_.instant, true);
 
-        HostUpdateLib._validateNaming(daoNames.name, daoNames.symbol, HostConfigLib.getHostGlobalSettings());
+        HostUpdateLib.validateNaming(daoNames.name, daoNames.symbol, HostConfigLib.getHostGlobalSettings());
         _proposeAction(d_.daoUid, payload, p);
     }
 
@@ -298,7 +298,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.Funding memory funding = HostEncodingLib.decodeFunding(payload);
 
-        HostUpdateLib._validateFunding(d_.phase, funding, HostConfigLib.getHostGlobalSettings());
+        HostUpdateLib.validateFunding(d_.phase, funding, HostConfigLib.getHostGlobalSettings());
 
         if (d_.instant) {
             HostUpdateLib.updateFunding(d_.daoUid, funding);
@@ -316,7 +316,7 @@ library HostProposalLib {
         ITokenomics.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
 
         uint tgeClaim = $.funding[HostLib.getKey(d_.daoUid, uint(ITokenomics.FundingType.TGE_1))].claim;
-        HostUpdateLib._validateVestingList(d_.phase, vesting, HostConfigLib.getHostGlobalSettings(), tgeClaim);
+        HostUpdateLib.validateVestingList(d_.phase, vesting, HostConfigLib.getHostGlobalSettings(), tgeClaim);
 
         if (d_.instant) {
             HostUpdateLib.updateVesting(d_.daoUid, vesting);
@@ -331,7 +331,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoParameters memory _daoParameters = HostEncodingLib.decodeDaoParameters(payload);
 
-        HostUpdateLib._validateDaoParameters(d_.daoUid, d_.phase, _daoParameters, HostConfigLib.getHostGlobalSettings());
+        HostUpdateLib.validateDaoParameters(d_.daoUid, d_.phase, _daoParameters, HostConfigLib.getHostGlobalSettings());
 
         if (d_.instant) {
             HostUpdateLib.updateDaoParameters(d_.daoUid, _daoParameters);
@@ -346,7 +346,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         (uint16[] memory contractIndices, bytes32[] memory salt_) = HostEncodingLib.decodeSalt(payload);
 
-        HostUpdateLib._validateSalt(d_.daoUid, contractIndices, salt_);
+        HostUpdateLib.validateSalt(d_.daoUid, contractIndices, salt_);
 
         if (d_.instant) {
             HostUpdateLib.updateSalt(d_.daoUid, contractIndices, salt_);
@@ -361,7 +361,7 @@ library HostProposalLib {
         /// @dev Ensure that provided payload is in correct format
         ITokenomics.DaoChainSettings memory settings = HostEncodingLib.decodeDaoChainSettings(payload);
 
-        HostUpdateLib._validateDaoChainSettings(settings);
+        HostUpdateLib.validateDaoChainSettings(settings);
 
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);

@@ -60,14 +60,14 @@ library HostActionsLib {
         HostConfigLib.HostGlobalStorage storage $ = HostConfigLib.getHostGlobalStorage();
         $.globalSettings = st;
 
-        emit IHost.OsSettingsUpdated(st);
+        emit IHost.HostSettingsUpdated(st);
     }
 
     function setChainSettings(IHost.HostChainSettings memory st) external {
         HostConfigLib.HostChainStorage storage $ = HostConfigLib.getHostChainStorage();
         $.chainSettings = st;
 
-        emit IHost.OsChainSettingsUpdated(st);
+        emit IHost.HostChainSettingsUpdated(st);
     }
 
     /// @notice Whitelist asset for revenue processing
@@ -337,7 +337,7 @@ library HostActionsLib {
 
     //endregion -------------------------------------- Internal logic
 
-    //region -------------------------------------- Internal utils
+    //region -------------------------------------- Change phase utils
     function _changePhaseDraft(
         HostLib.HostStorage storage $,
         uint daoUid
@@ -464,5 +464,5 @@ library HostActionsLib {
 
         return ITokenomics.LifecyclePhase.LIVE_8;
     }
-    //endregion -------------------------------------- Internal utils
+    //endregion -------------------------------------- Change phase utils
 }
