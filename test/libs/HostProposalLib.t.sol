@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 //import {console} from "forge-std/console.sol";
-import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solady/../test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {MockHost} from "../mocks/MockHost.sol";
 import {Authority} from "../../src/Authority.sol";
@@ -19,6 +19,7 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract HostProposalLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -32,7 +33,7 @@ contract HostProposalLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = _createAuthority();
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -450,20 +451,6 @@ contract HostProposalLibTest is Test {
         ITokenomics.DaoImages memory data = SampleDataLib.getDaoImages();
 
         return HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
-    }
-
-    function _createAuthority() internal returns (IAuthority) {
-        vm.prank(multisig);
-        ProxyFactory proxyFactory = new ProxyFactory();
-
-        MockHost _host = new MockHost();
-
-        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
-
-        vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(_authority), true);
-
-        return _authority;
     }
 
     function _setupSeedTokenMinter(address minter, address seedToken) internal {

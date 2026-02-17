@@ -28,8 +28,9 @@ contract TgeTokenTest is Test {
     constructor() {
         dataReader = new MockDataReader();
         multisig = makeAddr("multisig");
-        authority = _createAuthorityWithMocks(address(dataReader));
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
         host = authority.HOST();
+        MockHost(host).setDataReader(address(dataReader));
     }
 
     function testStorageLocation() internal pure {
@@ -149,21 +150,6 @@ contract TgeTokenTest is Test {
                 ("0x62436", logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(daoUid))))
             )
         );
-    }
-
-    function _createAuthorityWithMocks(address dataReader_) internal returns (IAuthority) {
-        vm.prank(multisig);
-        ProxyFactory proxyFactory = new ProxyFactory();
-
-        MockHost _host = new MockHost();
-        _host.setDataReader(dataReader_);
-
-        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
-
-        vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(_authority), true);
-
-        return _authority;
     }
 
     function _setupAuthority(IAuthority authority_, address tgeToken_) internal {

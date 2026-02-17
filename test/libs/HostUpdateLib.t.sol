@@ -16,6 +16,7 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {MockHostBridge} from "../mocks/MockHostBridge.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract HostUpdateLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -35,7 +36,7 @@ contract HostUpdateLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = _createAuthority();
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -1375,21 +1376,4 @@ contract HostUpdateLibTest is Test {
     }
 
     //endregion ------------------------------------------ Tests for updating list of units
-
-    //region ------------------------------------------ Internal logic
-    function _createAuthority() internal returns (IAuthority) {
-        vm.prank(multisig);
-        ProxyFactory proxyFactory = new ProxyFactory();
-
-        MockHost _host = new MockHost();
-
-        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
-
-        vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(_authority), true);
-
-        return _authority;
-    }
-
-    //endregion ------------------------------------------ Internal logic
 }

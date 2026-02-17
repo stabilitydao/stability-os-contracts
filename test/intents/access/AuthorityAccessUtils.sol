@@ -5,11 +5,32 @@ import {Vm} from "forge-std/Test.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
+import {MockHost} from "../../mocks/MockHost.sol";
+import {ProxyFactory} from "../../../src/ProxyFactory.sol";
+import {Authority} from "../../../src/Authority.sol";
 
 library AuthorityAccessUtils {
     /// @dev Get Authority from Host
     function getAuthority(IHost host) internal view returns (IAuthority) {
         return IAuthority(IAccessManaged(address(host)).authority());
+    }
+
+    /// @dev Create Authority for tests where host doesn't matter, whitelist address(this) and authority in ProxyFactory
+    function createAuthorityMockedHostWhitelistThis(Vm vm, address multisig) internal returns (IAuthority) {
+        vm.prank(multisig);
+        ProxyFactory proxyFactory = new ProxyFactory();
+
+        MockHost _host = new MockHost();
+
+        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
+
+        vm.prank(multisig);
+        proxyFactory.setWhitelisted(address(_authority), true);
+
+        vm.prank(multisig);
+        proxyFactory.setWhitelisted(address(this), true);
+
+        return _authority;
     }
 
     /// @dev Provide assess to restricted target function for user by setting role permissions in Authority

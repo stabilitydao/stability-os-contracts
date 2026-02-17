@@ -31,7 +31,7 @@ contract HostFundingLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = _createAuthority();
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -380,20 +380,6 @@ contract HostFundingLibTest is Test {
                 ("0x62436", logic, abi.encodeCall(IHosted.initialize, (address(authority), abi.encode(daoUid))))
             )
         );
-    }
-
-    function _createAuthority() internal returns (IAuthority) {
-        vm.prank(multisig);
-        ProxyFactory proxyFactory = new ProxyFactory();
-
-        MockHost _host = new MockHost();
-
-        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
-
-        vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(_authority), true);
-
-        return _authority;
     }
 
     //endregion ------------------------------------------ Internal logic

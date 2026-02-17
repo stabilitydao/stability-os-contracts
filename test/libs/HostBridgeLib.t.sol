@@ -17,6 +17,7 @@ import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {Test} from "forge-std/Test.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
 import {HostCrossChainLib} from "../../src/libs/HostCrossChainLib.sol";
+import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
 
 contract HostBridgeLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -31,7 +32,7 @@ contract HostBridgeLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = _createAuthority();
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -513,21 +514,4 @@ contract HostBridgeLibTest is Test {
     }
 
     //endregion ------------------------------------------ External access to library functions
-
-    //region ------------------------------------------ Internal logic
-    function _createAuthority() internal returns (IAuthority) {
-        vm.prank(multisig);
-        ProxyFactory proxyFactory = new ProxyFactory();
-
-        MockHost _host = new MockHost();
-
-        Authority _authority = new Authority(multisig, address(_host), address(proxyFactory));
-
-        vm.prank(multisig);
-        proxyFactory.setWhitelisted(address(_authority), true);
-
-        return _authority;
-    }
-
-    //endregion ------------------------------------------ Internal logic
 }
