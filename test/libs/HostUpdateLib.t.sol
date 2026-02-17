@@ -13,7 +13,7 @@ import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {MockHostBridge} from "../mocks/MockHostBridge.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract HostUpdateLibTest is Test {
     MockERC20 internal exchangeAsset;
@@ -1115,10 +1115,8 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.GovernanceSettings memory settings = ITokenomics.GovernanceSettings({
-            proposalThreshold: 90_000,
-            ttBribe: 85_501
-        });
+        ITokenomics.GovernanceSettings memory settings =
+            ITokenomics.GovernanceSettings({proposalThreshold: 90_000, ttBribe: 85_501});
 
         bytes memory payload = HostEncodingLib.encodeGovernanceSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
 
@@ -1398,5 +1396,4 @@ contract HostUpdateLibTest is Test {
     }
 
     //endregion ------------------------------------------ Public wrappers for library functions to be able to use vm.expectRevert
-
 }

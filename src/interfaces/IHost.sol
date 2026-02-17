@@ -136,6 +136,7 @@ interface IHost {
 
     event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
     event GovernanceSettingsUpdated(uint daoUid, ITokenomics.GovernanceSettings settings);
+
     //endregion ---------------------------------------- Events
 
     //region ---------------------------------------- Data types

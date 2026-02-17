@@ -16,7 +16,7 @@ import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {SampleDataLib} from "./SampleDataLib.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
-import {HostSetupUtils} from "../intents/access/HostSetupUtils.sol";
+import {HostSetupUtils} from "../scenario/access/HostSetupUtils.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDataReader} from "../../src/interfaces/IDataReader.sol";

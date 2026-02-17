@@ -20,7 +20,7 @@ import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IProxy} from "../../src/interfaces/IProxy.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract HostProxyLibTest is Test {
     address public multisig;

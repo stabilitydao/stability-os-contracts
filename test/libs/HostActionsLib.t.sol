@@ -17,7 +17,7 @@ import {HostActionsLib} from "../../src/libs/HostActionsLib.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostProxyLib} from "../../src/libs/HostProxyLib.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract HostActionsLibTest is Test {
     MockERC20 internal exchangeAsset;

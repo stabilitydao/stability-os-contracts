@@ -14,6 +14,8 @@ import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
 import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {EngineLib} from "./scenario/engine/EngineLib.sol";
+import {LayerZeroUtils} from "./scenario/engine/LayerZeroUtils.sol";
 
 contract HostBridgeTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -22,9 +24,9 @@ contract HostBridgeTest is Test {
 
     address private constant TEST_DELEGATOR = address(0x9999);
 
-    BridgeTestLib.ChainConfig internal sonic;
-    BridgeTestLib.ChainConfig internal avalanche;
-    BridgeTestLib.ChainConfig internal plasma;
+    EngineLib.ChainConfig internal sonic;
+    EngineLib.ChainConfig internal avalanche;
+    EngineLib.ChainConfig internal plasma;
 
     constructor() {
         {
@@ -134,11 +136,11 @@ contract HostBridgeTest is Test {
 
     function _processCrossChainMessages(
         Vm.Log[] memory logs,
-        BridgeTestLib.ChainConfig memory from,
-        BridgeTestLib.ChainConfig memory to
+        EngineLib.ChainConfig memory from,
+        EngineLib.ChainConfig memory to
     ) internal {
         vm.selectFork(to.fork);
-        (bytes memory message,) = BridgeTestLib._extractSendMessage(logs);
+        (bytes memory message,) = LayerZeroUtils.extractSendMessage(logs);
         Origin memory origin =
             Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
 

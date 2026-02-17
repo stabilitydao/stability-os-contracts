@@ -16,7 +16,7 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract HostProposalLibTest is Test {
     MockERC20 internal exchangeAsset;

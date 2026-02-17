@@ -13,7 +13,7 @@ import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract TgeTokenTest is Test {
     using SafeERC20 for IERC20;

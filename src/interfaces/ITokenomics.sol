@@ -165,7 +165,6 @@ interface ITokenomics {
 
         /// @notice Amount already raised, USD decimals 18
         uint raised;
-
         // Attention: Don't forget to increment OsEncodingLib.FUNDING_STRUCT_VERSION if you add new fields here
     }
 

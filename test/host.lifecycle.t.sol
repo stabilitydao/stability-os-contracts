@@ -17,7 +17,7 @@ import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {MockHostBridge} from "./mocks/MockHostBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {AuthorityAccessUtils} from "./intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
 
 contract HostLifeCycleTest is Test {
     address internal immutable MULTISIG;

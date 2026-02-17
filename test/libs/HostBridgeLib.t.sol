@@ -14,7 +14,7 @@ import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
 import {HostCrossChainLib} from "../../src/libs/HostCrossChainLib.sol";
-import {AuthorityAccessUtils} from "../intents/access/AuthorityAccessUtils.sol";
+import {AuthorityAccessUtils} from "../scenario/access/AuthorityAccessUtils.sol";
 
 contract HostBridgeLibTest is Test {
     MockERC20 internal exchangeAsset;

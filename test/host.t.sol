@@ -18,8 +18,8 @@ import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
-import {AuthorityAccessUtils} from "./intents/access/AuthorityAccessUtils.sol";
-import {HostSetupUtils} from "./intents/access/HostSetupUtils.sol";
+import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
+import {HostSetupUtils} from "./scenario/access/HostSetupUtils.sol";
 
 contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC

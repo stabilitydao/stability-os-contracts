@@ -339,9 +339,10 @@ library HostEncodingLib {
     }
 
     function decodeGovernanceSettings(bytes memory payload)
-    internal
-    pure
-    returns (ITokenomics.GovernanceSettings memory dest) {
+        internal
+        pure
+        returns (ITokenomics.GovernanceSettings memory dest)
+    {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
@@ -351,6 +352,7 @@ library HostEncodingLib {
             revert IHost.UnsupportedStructVersion();
         }
     }
+
     //endregion ----------------------- Decode / Encode update-actions structs with versions
 
     //region ----------------------- Decode / Encode bridged-actions structs with versions

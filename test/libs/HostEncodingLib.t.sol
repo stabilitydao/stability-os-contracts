@@ -470,7 +470,9 @@ contract HostEncodingLibTest is Test {
             units: new ITokenomics.UnitData[](2),
             funding: new ITokenomics.Funding[](2),
             vesting: new ITokenomics.Vesting[](2),
-            governanceSettings: ITokenomics.GovernanceSettings({proposalThreshold: type(uint32).max, ttBribe: type(uint32).max}),
+            governanceSettings: ITokenomics.GovernanceSettings({
+                proposalThreshold: type(uint32).max, ttBribe: type(uint32).max
+            }),
             deployer: makeAddr("deployer"),
             salts: new bytes32[](2),
             saltContractIndices: new uint16[](2),
