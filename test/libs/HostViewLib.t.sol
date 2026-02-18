@@ -7,9 +7,82 @@ import {IHost} from "../../src/interfaces/IHost.sol";
 import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
+import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 
 contract HostViewLibTest is Test {
     using EnumerableMap for EnumerableMap.AddressToUintMap;
+
+    //region ----------------------------------- Settings and ChainSettings
+    function testWriteReadSettings_MaxValues_ReadSameValues() public {
+        HostConfigLib.HostGlobalStorage storage $ = HostConfigLib.getHostGlobalStorage();
+        IHost.HostSettings memory src = IHost.HostSettings({
+            priceDao: type(uint).max,
+            fundingFee: type(uint).max,
+            minNameLength: type(uint16).max,
+            maxNameLength: type(uint16).max,
+            minSymbolLength: type(uint16).max,
+            maxSymbolLength: type(uint16).max,
+            minVePeriod: type(uint24).max,
+            maxVePeriod: type(uint24).max,
+            minPvPFee: type(uint).max,
+            maxPvPFee: type(uint).max,
+            minFunding: type(uint).max,
+            minFundingDuration: type(uint64).max,
+            maxFundingDuration: type(uint64).max,
+            minFundingRaise: type(uint).max,
+            maxFundingRaise: type(uint).max,
+            minVestingNameLen: type(uint16).max,
+            maxVestingNameLen: type(uint16).max,
+            minCliff: type(uint64).max,
+            minInceptionDuration: type(uint64).max
+        });
+        $.globalSettings = src;
+        IHost.HostSettings memory read = HostViewLib.getSettings();
+        assertEq(keccak256(abi.encode(read)), keccak256(abi.encode(src)), "read data is same to written data");
+    }
+
+    function testWriteReadSettings_TypicalValues_ReadSameValues() public {
+        HostConfigLib.HostGlobalStorage storage $ = HostConfigLib.getHostGlobalStorage();
+        IHost.HostSettings memory src = IHost.HostSettings({
+            priceDao: 1000e27,
+            fundingFee: 1001e27,
+            minNameLength: 20000,
+            maxNameLength: 20001,
+            minSymbolLength: 20002,
+            maxSymbolLength: 20003,
+            minVePeriod: 100_000,
+            maxVePeriod: 100_000 * 4,
+            minPvPFee: 1002e27,
+            maxPvPFee: 1003e27,
+            minFunding: 1004e27,
+            minFundingDuration: 100_001 days,
+            maxFundingDuration: 100_002 days,
+            minFundingRaise: 1003e27,
+            maxFundingRaise: 1004e27,
+            minVestingNameLen: 20004,
+            maxVestingNameLen: 20005,
+            minCliff: 100_003 days,
+            minInceptionDuration: 100_004 days
+        });
+        $.globalSettings = src;
+        IHost.HostSettings memory read = HostViewLib.getSettings();
+        assertEq(keccak256(abi.encode(read)), keccak256(abi.encode(src)), "read data is same to written data");
+    }
+
+    function testWriteReadChainSettings_TypicalValues_ReadSameValues() public {
+        HostConfigLib.HostChainStorage storage $ = HostConfigLib.getHostChainStorage();
+        IHost.HostChainSettings memory src = IHost.HostChainSettings({
+            exchangeAsset: makeAddr("asset"),
+            hostBridge: makeAddr("host"),
+            timelock: 100_000 days,
+            dataReader: makeAddr("reader")
+        });
+        $.chainSettings = src;
+        IHost.HostChainSettings memory read = HostViewLib.getChainSettings();
+        assertEq(keccak256(abi.encode(read)), keccak256(abi.encode(src)), "read data is same to written data");
+    }
+
+    //endregion ----------------------------------- Settings and ChainSettings
 
     //region ----------------------------------- getDAOOwner
 

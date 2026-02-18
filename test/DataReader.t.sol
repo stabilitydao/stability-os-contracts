@@ -37,7 +37,7 @@ contract DataReaderTest is Test {
 
         AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
 
-        lifeCycleUpToTGE(host, codec);
+        _lifeCycleUpToTGE(host, codec);
 
         IDataReader dataReader = IDataReader(host.getChainSettings().dataReader);
         IDAOData.DaoData memory daoData = dataReader.getDAO(DAO_SYMBOL);
@@ -45,7 +45,7 @@ contract DataReaderTest is Test {
     }
 
     //region ------------------------------ Internal logic
-    function lifeCycleUpToTGE(IHost host_, IHostCodec codec_) internal {
+    function _lifeCycleUpToTGE(IHost host_, IHostCodec codec_) internal {
         address asset = host_.getChainSettings().exchangeAsset;
         IDataReader dataReader = IDataReader(host_.getChainSettings().dataReader);
 

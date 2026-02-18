@@ -148,6 +148,19 @@ interface IHost {
         /// @notice Percent of amount received in funding round that Host dao takes, decimals 1e4 // todo 1e4 or 1e5?
         uint fundingFee;
 
+        uint minPvPFee;
+        uint maxPvPFee;
+
+        /// @notice Min amount allowed to fund the DAO in exchange asset.
+        uint minFunding;
+
+        /// @notice Minimum allowed funding amount to raise
+        uint minFundingRaise;
+
+        /// @notice Maximum allowed funding amount to raise.
+        uint maxFundingRaise;
+
+
         /// @notice Min allowed length of DAO name in characters
         uint16 minNameLength;
 
@@ -160,35 +173,23 @@ interface IHost {
         /// @notice Max allowed length of DAO symbol in characters
         uint16 maxSymbolLength;
 
+        /// @notice Min length of a vesting name
+        uint16 minVestingNameLen;
+
+        /// @notice Max length of a vesting name
+        uint16 maxVestingNameLen;
+
         /// @notice min VE period in days
         uint24 minVePeriod;
 
         /// @notice max VE period in days
         uint24 maxVePeriod;
 
-        uint minPvPFee;
-        uint maxPvPFee;
-
-        /// @notice Min amount allowed to fund the DAO in exchange asset.
-        uint minFunding;
-
         /// @notice Minimal funding duration, seconds
         uint64 minFundingDuration;
 
         /// @notice Max funding duration, seconds
         uint64 maxFundingDuration;
-
-        /// @notice Minimum allowed funding amount to raise
-        uint minFundingRaise;
-
-        /// @notice Maximum allowed funding amount to raise.
-        uint maxFundingRaise;
-
-        /// @notice Min length of a vesting name
-        uint16 minVestingNameLen;
-
-        /// @notice Max length of a vesting name
-        uint16 maxVestingNameLen;
 
         /// @notice Min allowed interval (seconds) between vesting.start and tge.claim
         uint64 minCliff;
