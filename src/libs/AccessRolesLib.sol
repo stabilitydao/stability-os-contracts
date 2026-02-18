@@ -13,7 +13,7 @@ library AccessRolesLib {
     /// @notice Access role to use OS Bridge functionality. Only Host itself should have this role
     uint64 internal constant HOST_BRIDGE_USER = 3;
 
-    /// @notice OS Bridge contract
+    /// @notice Host Bridge contract
     uint64 internal constant HOST_BRIDGE = 4;
 
     /// @notice Admin of HostProxyFactory
@@ -36,4 +36,7 @@ library AccessRolesLib {
 
     /// @notice Allow to register voting results
     uint64 internal constant HOST_VOTING_RESULTS_PROVIDER = 11;
+
+    /// @notice Admin of Host Bridge contract
+    uint64 internal constant HOST_BRIDGE_ADMIN = 5;
 }
