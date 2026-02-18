@@ -2,6 +2,8 @@
 pragma solidity ^0.8.28;
 
 library AccessRolesLib {
+    uint64 internal constant DEFAULT_AUTHORITY_ADMIN = 0;
+
     /// @notice Access role for OS admin.
     uint64 internal constant HOST_ADMIN = 1;
 
@@ -28,4 +30,10 @@ library AccessRolesLib {
 
     /// @notice Allow to call upgrade-related functions on Host
     uint64 internal constant HOST_UPGRADER = 9;
+
+    /// @notice Allow to validate proposals
+    uint64 internal constant HOST_VALIDATOR = 10;
+
+    /// @notice Allow to register voting results
+    uint64 internal constant HOST_VOTING_RESULTS_PROVIDER = 11;
 }
