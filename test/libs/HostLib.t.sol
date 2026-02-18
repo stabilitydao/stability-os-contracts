@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 //import {console} from "forge-std/console.sol";
 
 contract HostLibTest is Test {
@@ -180,11 +180,11 @@ contract HostLibTest is Test {
     function testPackProposalHeader() public view {
         {
             HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
-                action: ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6,
+                action: IDAOData.DAOAction.UPDATE_DAO_PARAMETERS_6,
                 validationRequired: true,
                 votingRequired: false,
-                validationStatus: ITokenomics.ValidationStatus.REJECTED_2,
-                status: ITokenomics.VotingStatus.APPROVED_1,
+                validationStatus: IDAOData.ValidationStatus.REJECTED_2,
+                status: IDAOData.VotingStatus.APPROVED_1,
                 created: type(uint64).max - 1
             });
 
@@ -205,11 +205,11 @@ contract HostLibTest is Test {
 
         {
             HostLib.ProposalHeader memory header = HostLib.ProposalHeader({
-                action: ITokenomics.DAOAction.UPDATE_SOCIALS_1,
+                action: IDAOData.DAOAction.UPDATE_SOCIALS_1,
                 validationRequired: false,
                 votingRequired: true,
-                validationStatus: ITokenomics.ValidationStatus.APPROVED_1,
-                status: ITokenomics.VotingStatus.VOTING_0,
+                validationStatus: IDAOData.ValidationStatus.APPROVED_1,
+                status: IDAOData.VotingStatus.VOTING_0,
                 created: 1
             });
 

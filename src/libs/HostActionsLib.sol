@@ -14,7 +14,6 @@ import {HostDeployLib} from "./HostDeployLib.sol";
 import {HostViewLib} from "./HostViewLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IHosted} from "../interfaces/IHosted.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 
 library HostActionsLib {
@@ -96,9 +95,9 @@ library HostActionsLib {
     function createDAO(
         string calldata name,
         string calldata symbol,
-        ITokenomics.Activity[] memory activity,
-        ITokenomics.DaoParameters memory params,
-        ITokenomics.Funding[] memory funding
+        IDAOData.Activity[] memory activity,
+        IDAOData.DaoParameters memory params,
+        IDAOData.Funding[] memory funding
     ) external {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
@@ -111,9 +110,9 @@ library HostActionsLib {
         HostLib.DaoDataSegment2 memory daoData2;
         daoData2.name = name;
         daoData2.symbol = symbol;
-        daoData2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
+        daoData2.phase = IDAOData.LifecyclePhase.DRAFT_0;
 
-        HostUpdateLib.validate(daoUid, ITokenomics.LifecyclePhase.DRAFT_0, daoData2, params, funding, activity);
+        HostUpdateLib.validate(daoUid, IDAOData.LifecyclePhase.DRAFT_0, daoData2, params, funding, activity);
 
         // ------------------------- Save DAO data to the storage
         $.segment2[daoUid] = daoData2;
@@ -157,22 +156,22 @@ library HostActionsLib {
         require(daoUid != 0, IHost.IncorrectDao());
         require(HostViewLib._tasks(1, daoUid).length == 0, IHost.SolveTasksFirst());
 
-        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
-        ITokenomics.LifecyclePhase newPhase = phase;
+        IDAOData.LifecyclePhase phase = $.segment2[daoUid].phase;
+        IDAOData.LifecyclePhase newPhase = phase;
 
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+        if (phase == IDAOData.LifecyclePhase.DRAFT_0) {
             newPhase = _changePhaseDraft($, daoUid);
-        } else if (phase == ITokenomics.LifecyclePhase.INCEPTION_1) {
+        } else if (phase == IDAOData.LifecyclePhase.INCEPTION_1) {
             newPhase = _changePhaseInception($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_2) {
+        } else if (phase == IDAOData.LifecyclePhase.SEED_2) {
             newPhase = _changePhaseSeed($, daoUid);
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
+        } else if (phase == IDAOData.LifecyclePhase.DEVELOPMENT_4) {
             newPhase = _changePhaseDevelopment($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_5) {
+        } else if (phase == IDAOData.LifecyclePhase.TGE_5) {
             newPhase = _changePhaseTge($, daoUid, authority);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_6) {
+        } else if (phase == IDAOData.LifecyclePhase.LIVE_CLIFF_6) {
             newPhase = _changePhaseLiveCliff($, daoUid);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_7) {
+        } else if (phase == IDAOData.LifecyclePhase.LIVE_VESTING_7) {
             newPhase = _changePhaseLiveVesting($, daoUid);
         }
 
@@ -341,61 +340,61 @@ library HostActionsLib {
     function _changePhaseDraft(
         HostLib.HostStorage storage $,
         uint daoUid
-    ) internal view returns (ITokenomics.LifecyclePhase phase) {
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+    ) internal view returns (IDAOData.LifecyclePhase phase) {
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         // SEED can be started not later than 1 week after configured start time
         require(
             block.timestamp + HostConfigLib.getHostGlobalSettings().minInceptionDuration <= seed.start,
             IHost.TooLateSoSetupFundingAgain()
         );
-        return ITokenomics.LifecyclePhase.INCEPTION_1;
+        return IDAOData.LifecyclePhase.INCEPTION_1;
     }
 
     function _changePhaseInception(
         HostLib.HostStorage storage $,
         uint daoUid,
         address authority
-    ) internal returns (ITokenomics.LifecyclePhase phase) {
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+    ) internal returns (IDAOData.LifecyclePhase phase) {
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         require(seed.start < block.timestamp, IHost.WaitFundingStart());
 
         $.deployments[daoUid].seedToken = HostDeployLib.deploySeedToken($, daoUid, authority);
 
-        return ITokenomics.LifecyclePhase.SEED_2;
+        return IDAOData.LifecyclePhase.SEED_2;
     }
 
     function _changePhaseSeed(
         HostLib.HostStorage storage $,
         uint daoUid
-    ) internal view returns (ITokenomics.LifecyclePhase) {
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+    ) internal view returns (IDAOData.LifecyclePhase) {
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         require(seed.end <= block.timestamp, IHost.WaitFundingEnd());
 
         bool success = seed.raised >= seed.minRaise;
 
-        return success ? ITokenomics.LifecyclePhase.DEVELOPMENT_4 : ITokenomics.LifecyclePhase.SEED_FAILED_3; // now refund can be called
+        return success ? IDAOData.LifecyclePhase.DEVELOPMENT_4 : IDAOData.LifecyclePhase.SEED_FAILED_3; // now refund can be called
     }
 
     function _changePhaseDevelopment(
         HostLib.HostStorage storage $,
         uint daoUid,
         address authority
-    ) internal returns (ITokenomics.LifecyclePhase) {
-        ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+    ) internal returns (IDAOData.LifecyclePhase) {
+        IDAOData.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         require(tge.start <= block.timestamp, IHost.WaitFundingStart());
 
         $.deployments[daoUid].tgeToken = HostDeployLib.deployTgeToken($, daoUid, authority);
 
-        return ITokenomics.LifecyclePhase.TGE_5;
+        return IDAOData.LifecyclePhase.TGE_5;
     }
 
     function _changePhaseTge(
         HostLib.HostStorage storage $,
         uint daoUid,
         address authority
-    ) internal returns (ITokenomics.LifecyclePhase) {
-        ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+    ) internal returns (IDAOData.LifecyclePhase) {
+        IDAOData.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         require(tge.end <= block.timestamp, IHost.WaitFundingEnd());
 
@@ -415,9 +414,9 @@ library HostActionsLib {
             // todo seedToken holders became xToken holders by predefined rate
 
             // todo deploy v2 liquidity from TGE funds at predefined price
-            return ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
+            return IDAOData.LifecyclePhase.LIVE_CLIFF_6;
         } else {
-            return ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+            return IDAOData.LifecyclePhase.DEVELOPMENT_4;
             // now refund can be called
             // refunding is available up to the start of next TGE
         }
@@ -427,7 +426,7 @@ library HostActionsLib {
     function _changePhaseLiveCliff(
         HostLib.HostStorage storage $,
         uint daoUid
-    ) internal view returns (ITokenomics.LifecyclePhase) {
+    ) internal view returns (IDAOData.LifecyclePhase) {
         // slither-disable-next-line uninitialized-local
         bool isVestingStarted;
 
@@ -441,14 +440,14 @@ library HostActionsLib {
 
         require(isVestingStarted, IHost.WaitVestingStart());
 
-        return ITokenomics.LifecyclePhase.LIVE_VESTING_7;
+        return IDAOData.LifecyclePhase.LIVE_VESTING_7;
     }
 
     /// @dev if all vesting ended then phase changed
     function _changePhaseLiveVesting(
         HostLib.HostStorage storage $,
         uint daoUid
-    ) internal view returns (ITokenomics.LifecyclePhase) {
+    ) internal view returns (IDAOData.LifecyclePhase) {
         // slither-disable-next-line uninitialized-local
         bool isVestingActive;
 
@@ -462,7 +461,7 @@ library HostActionsLib {
 
         require(!isVestingActive, IHost.WaitVestingEnd());
 
-        return ITokenomics.LifecyclePhase.LIVE_8;
+        return IDAOData.LifecyclePhase.LIVE_8;
     }
     //endregion -------------------------------------- Change phase utils
 }

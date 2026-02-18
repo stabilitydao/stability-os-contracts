@@ -6,7 +6,7 @@ import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
 import {HostFundingLib} from "../../src/libs/HostFundingLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
@@ -59,9 +59,9 @@ contract HostFundingLibTest is Test {
     function testFundSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_2;
-        $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.SEED_0))] = ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.SEED_0,
+        $.segment2[1].phase = IDAOData.LifecyclePhase.SEED_2;
+        $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.SEED_0))] = IDAOData.Funding({
+            fundingType: IDAOData.FundingType.SEED_0,
             start: 0,
             end: 0,
             minRaise: 0,
@@ -78,7 +78,7 @@ contract HostFundingLibTest is Test {
         vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
         HostFundingLib.fund("abc", 11e18);
 
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.SEED_0))];
         assertEq(seed.raised, 20e18, "raised amount");
 
         assertEq(exchangeAsset.balanceOf(address(seedToken)), 11e18, "all tokens transferred to seed token contract");
@@ -88,9 +88,9 @@ contract HostFundingLibTest is Test {
     function testFundTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_5;
-        $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.TGE_1))] = ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.TGE_1,
+        $.segment2[1].phase = IDAOData.LifecyclePhase.TGE_5;
+        $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.TGE_1))] = IDAOData.Funding({
+            fundingType: IDAOData.FundingType.TGE_1,
             start: 0,
             end: 0,
             minRaise: 0,
@@ -107,7 +107,7 @@ contract HostFundingLibTest is Test {
         vm.prank(user); // just for clarification; internal msg.sender is not replaced in library call
         HostFundingLib.fund("abc", 11e18);
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.TGE_1))];
         assertEq(tge.raised, 20e18, "raised amount");
 
         assertEq(exchangeAsset.balanceOf(address(tgeToken)), 11e18, "all tokens transferred to tge token contract");
@@ -117,9 +117,9 @@ contract HostFundingLibTest is Test {
     function testFundSeedMaxRaiseExceeded() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_2;
-        $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.SEED_0))] = ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.SEED_0,
+        $.segment2[1].phase = IDAOData.LifecyclePhase.SEED_2;
+        $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.SEED_0))] = IDAOData.Funding({
+            fundingType: IDAOData.FundingType.SEED_0,
             start: 0,
             end: 0,
             minRaise: 0,
@@ -141,9 +141,9 @@ contract HostFundingLibTest is Test {
     function testFundTgeMaxRaiseExceeded() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.TGE_5;
-        $.funding[HostLib.getKey(1, uint(ITokenomics.FundingType.TGE_1))] = ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.TGE_1,
+        $.segment2[1].phase = IDAOData.LifecyclePhase.TGE_5;
+        $.funding[HostLib.getKey(1, uint(IDAOData.FundingType.TGE_1))] = IDAOData.Funding({
+            fundingType: IDAOData.FundingType.TGE_1,
             start: 0,
             end: 0,
             minRaise: 0,
@@ -180,7 +180,7 @@ contract HostFundingLibTest is Test {
     function testFundNotFundingPhase() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+        $.segment2[1].phase = IDAOData.LifecyclePhase.DEVELOPMENT_4;
 
         exchangeAsset.mint(user, 1e18);
         vm.prank(user);
@@ -196,18 +196,18 @@ contract HostFundingLibTest is Test {
     //region ------------------------------------------ Refund tests
 
     function testNotRefundPhases() public {
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.DRAFT_0);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.SEED_2);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.TGE_5);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_CLIFF_6);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_VESTING_7);
-        _testNotRefundPhase(ITokenomics.LifecyclePhase.LIVE_8);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.DRAFT_0);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.SEED_2);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.TGE_5);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.LIVE_CLIFF_6);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.LIVE_VESTING_7);
+        _testNotRefundPhase(IDAOData.LifecyclePhase.LIVE_8);
     }
 
     function testRefundSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_3;
+        $.segment2[1].phase = IDAOData.LifecyclePhase.SEED_FAILED_3;
         $.deployments[1].seedToken = address(seedToken);
 
         exchangeAsset.mint(address(seedToken), 900e18);
@@ -238,7 +238,7 @@ contract HostFundingLibTest is Test {
     function testRefundTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+        $.segment2[1].phase = IDAOData.LifecyclePhase.DEVELOPMENT_4;
         $.deployments[1].tgeToken = address(tgeToken);
 
         exchangeAsset.mint(address(tgeToken), 900e18);
@@ -267,7 +267,7 @@ contract HostFundingLibTest is Test {
     function testRefundForTgeNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+        $.segment2[1].phase = IDAOData.LifecyclePhase.DEVELOPMENT_4;
         $.deployments[1].tgeToken = address(tgeToken);
 
         exchangeAsset.mint(address(tgeToken), 1900e18);
@@ -301,7 +301,7 @@ contract HostFundingLibTest is Test {
     function testRefundForSeedNormal() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;
-        $.segment2[1].phase = ITokenomics.LifecyclePhase.SEED_FAILED_3;
+        $.segment2[1].phase = IDAOData.LifecyclePhase.SEED_FAILED_3;
         $.deployments[1].seedToken = address(seedToken);
 
         exchangeAsset.mint(address(seedToken), 1900e18);
@@ -332,7 +332,7 @@ contract HostFundingLibTest is Test {
         );
     }
 
-    function _testNotRefundPhase(ITokenomics.LifecyclePhase notRefundPhases) internal {
+    function _testNotRefundPhase(IDAOData.LifecyclePhase notRefundPhases) internal {
         uint snapshot = vm.snapshotState();
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoUids["abc"] = 1;

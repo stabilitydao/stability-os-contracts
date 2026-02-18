@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "./ITokenomics.sol";
+import {IDAOData} from "./IDAOData.sol";
 
 /// @notice All data types related to bridged actions
 interface IBridgedActions {
@@ -17,12 +17,12 @@ interface IBridgedActions {
         string[] unitIds;
 
         /// @notice Chain-related DAO settings (individual for each chain)
-        ITokenomics.DaoChainSettings chainSettings;
+        IDAOData.DaoChainSettings chainSettings;
 
         /// @notice DAO parameters (same for all chains where DAO is bridged)
-        ITokenomics.DaoParameters daoParameters;
+        IDAOData.DaoParameters daoParameters;
 
-        /// @notice ITokenomicsAddons.ContractIndices - list of contract for which {salts} are provided
+        /// @notice IDAODataAddons.ContractIndices - list of contract for which {salts} are provided
         uint16[] saltContractIndices;
 
         /// @notice Salts for deploying DAO contracts on bridged chain. Array should be sync with {saltContractIndices}

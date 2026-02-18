@@ -5,7 +5,6 @@ import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {HostCodec} from "../src/HostCodec.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
 import {IBridgedActions} from "../src/interfaces/IBridgedActions.sol";
 import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
@@ -20,7 +19,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoParameters() public view {
-        ITokenomics.DaoParameters memory a;
+        IDAOData.DaoParameters memory a;
         a.vePeriod = 100;
         a.pvpFee = 10;
         a.minPower = 1000;
@@ -30,7 +29,7 @@ contract HostCodecTest is Test {
 
         bytes memory encA = hostCodec.encode(a, 1);
 
-        ITokenomics.DaoParameters memory decA = hostCodec.decodeDaoParameters(encA);
+        IDAOData.DaoParameters memory decA = hostCodec.decodeDaoParameters(encA);
 
         assertEq(decA.vePeriod, a.vePeriod);
         assertEq(decA.pvpFee, a.pvpFee);
@@ -41,7 +40,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoParametersBadPaths() public {
-        ITokenomics.DaoParameters memory a;
+        IDAOData.DaoParameters memory a;
         a.vePeriod = 100;
         a.pvpFee = 10;
         a.minPower = 1000;
@@ -62,18 +61,18 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoChainSettings() public view {
-        ITokenomics.DaoChainSettings memory a;
+        IDAOData.DaoChainSettings memory a;
         a.bbRate = 101;
 
         bytes memory encA = hostCodec.encode(a, hostCodec.PAYLOAD_API_VERSION());
 
-        ITokenomics.DaoChainSettings memory decA = hostCodec.decodeDaoChainSettings(encA);
+        IDAOData.DaoChainSettings memory decA = hostCodec.decodeDaoChainSettings(encA);
 
         assertEq(decA.bbRate, 101);
     }
 
     function testEncodeDaoChainSettingsBadPaths() public {
-        ITokenomics.DaoChainSettings memory a;
+        IDAOData.DaoChainSettings memory a;
         a.bbRate = 101;
 
         // encode with unsupported version should revert
@@ -168,8 +167,8 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeFunding() public view {
-        ITokenomics.Funding memory a;
-        a.fundingType = ITokenomics.FundingType.SEED_0;
+        IDAOData.Funding memory a;
+        a.fundingType = IDAOData.FundingType.SEED_0;
         a.start = 100;
         a.end = 200;
         a.minRaise = 1000;
@@ -179,7 +178,7 @@ contract HostCodecTest is Test {
 
         bytes memory encA = hostCodec.encode(a, 1);
 
-        ITokenomics.Funding memory decA = hostCodec.decodeFunding(encA);
+        IDAOData.Funding memory decA = hostCodec.decodeFunding(encA);
 
         assertEq(uint8(decA.fundingType), uint8(a.fundingType));
         assertEq(uint64(decA.start), uint64(a.start));
@@ -191,8 +190,8 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeFundingBadPaths() public {
-        ITokenomics.Funding memory a;
-        a.fundingType = ITokenomics.FundingType(uint8(0));
+        IDAOData.Funding memory a;
+        a.fundingType = IDAOData.FundingType(uint8(0));
         a.start = 100;
         a.end = 200;
         a.minRaise = 1000;
@@ -213,13 +212,13 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeVesting() public view {
-        ITokenomics.Vesting[] memory a = new ITokenomics.Vesting[](1);
-        ITokenomics.Vesting[] memory b = new ITokenomics.Vesting[](2);
-        ITokenomics.Vesting[] memory c = new ITokenomics.Vesting[](0);
+        IDAOData.Vesting[] memory a = new IDAOData.Vesting[](1);
+        IDAOData.Vesting[] memory b = new IDAOData.Vesting[](2);
+        IDAOData.Vesting[] memory c = new IDAOData.Vesting[](0);
 
-        a[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
-        b[0] = ITokenomics.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
-        b[1] = ITokenomics.Vesting({
+        a[0] = IDAOData.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+        b[0] = IDAOData.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
+        b[1] = IDAOData.Vesting({
             name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300
         });
 
@@ -227,9 +226,9 @@ contract HostCodecTest is Test {
         bytes memory encB = hostCodec.encode(b, 1);
         bytes memory encC = hostCodec.encode(c, 1);
 
-        ITokenomics.Vesting[] memory decA = hostCodec.decodeVesting(encA);
-        ITokenomics.Vesting[] memory decB = hostCodec.decodeVesting(encB);
-        ITokenomics.Vesting[] memory decC = hostCodec.decodeVesting(encC);
+        IDAOData.Vesting[] memory decA = hostCodec.decodeVesting(encA);
+        IDAOData.Vesting[] memory decB = hostCodec.decodeVesting(encB);
+        IDAOData.Vesting[] memory decC = hostCodec.decodeVesting(encC);
 
         // ensure that decoded data are equal to original
         assertTrue(keccak256(abi.encode(decA)) == keccak256(abi.encode(a)));
@@ -238,8 +237,8 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeVestingBadPaths() public {
-        ITokenomics.Vesting[] memory a = new ITokenomics.Vesting[](1);
-        a[0] = ITokenomics.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
+        IDAOData.Vesting[] memory a = new IDAOData.Vesting[](1);
+        a[0] = IDAOData.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
 
         // encode with unsupported version should revert
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
@@ -252,18 +251,18 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoNames() public view {
-        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({symbol: "NA", name: "NameA"});
+        IDAOData.DaoNames memory a = IDAOData.DaoNames({symbol: "NA", name: "NameA"});
 
         bytes memory encA = hostCodec.encode(a, 1);
 
-        ITokenomics.DaoNames memory decA = hostCodec.decodeDaoNames(encA);
+        IDAOData.DaoNames memory decA = hostCodec.decodeDaoNames(encA);
 
         assertEq(decA.name, a.name);
         assertEq(decA.symbol, a.symbol);
     }
 
     function testEncodeDaoNamesBadPaths() public {
-        ITokenomics.DaoNames memory a = ITokenomics.DaoNames({symbol: "NA", name: "NameA"});
+        IDAOData.DaoNames memory a = IDAOData.DaoNames({symbol: "NA", name: "NameA"});
 
         // encode with unsupported version should revert
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
@@ -276,11 +275,11 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoImages() public view {
-        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
+        IDAOData.DaoImages memory a = SampleDataLib.getDaoImages();
 
         bytes memory encA = hostCodec.encode(a, hostCodec.PAYLOAD_API_VERSION());
 
-        ITokenomics.DaoImages memory decA = hostCodec.decodeImages(encA);
+        IDAOData.DaoImages memory decA = hostCodec.decodeImages(encA);
 
         assertEq(decA.seedToken, a.seedToken);
         assertEq(decA.tgeToken, a.tgeToken);
@@ -290,7 +289,7 @@ contract HostCodecTest is Test {
     }
 
     function testEncodeDaoImagesBadPaths() public {
-        ITokenomics.DaoImages memory a = SampleDataLib.getDaoImages();
+        IDAOData.DaoImages memory a = SampleDataLib.getDaoImages();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.encode(a, INCORRECT_VERSION);

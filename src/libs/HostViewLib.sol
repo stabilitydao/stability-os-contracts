@@ -7,9 +7,8 @@ import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap
 import {HostEncodingLib} from "./HostEncodingLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {HostLib} from "./HostLib.sol";
-import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 
 /// @notice Library with view functions for Host contract
 library HostViewLib {
@@ -29,7 +28,7 @@ library HostViewLib {
             return HostEncodingLib.encodeDAOData(daoData, version);
         } else if (itemIndex == IHost.DataReaderItem.PROPOSAL_1) {
             (bytes32 proposalId) = abi.decode(input, (bytes32));
-            ITokenomics.Proposal memory proposalData = proposal(proposalId);
+            IDAOData.Proposal memory proposalData = proposal(proposalId);
             return HostEncodingLib.encodeProposal(proposalData, version);
         } else if (itemIndex == IHost.DataReaderItem.DAO_NAME_2) {
             HostLib.HostStorage storage $ = HostLib.getHostStorage();
@@ -84,12 +83,12 @@ library HostViewLib {
         { // ------------------- tokenomics
             dest.initialChain = segment3.initialChain;
 
-            dest.funding = new ITokenomics.Funding[](segment3.funding.length);
+            dest.funding = new IDAOData.Funding[](segment3.funding.length);
             for (uint i; i < dest.funding.length; i++) {
                 dest.funding[i] = $.funding[HostLib.getKey(dest.uid, uint(segment3.funding[i]))];
             }
 
-            dest.vesting = new ITokenomics.Vesting[](segment3.countVesting);
+            dest.vesting = new IDAOData.Vesting[](segment3.countVesting);
             dest.vestingContracts = new address[](dest.vesting.length);
             for (uint i; i < dest.vesting.length; i++) {
                 dest.vesting[i] = $.vesting[HostLib.getIndexKey(dest.uid, i)];
@@ -121,17 +120,17 @@ library HostViewLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = HostLib.getDaoUid($, symbol);
 
-        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
+        IDAOData.LifecyclePhase phase = $.segment2[daoUid].phase;
         if (
-            phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1
-                || phase == ITokenomics.LifecyclePhase.SEED_FAILED_3
+            phase == IDAOData.LifecyclePhase.DRAFT_0 || phase == IDAOData.LifecyclePhase.INCEPTION_1
+                || phase == IDAOData.LifecyclePhase.SEED_FAILED_3
         ) {
             return $.segment3[daoUid].deployer;
         }
 
         if (
-            phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4
-                || phase == ITokenomics.LifecyclePhase.TGE_5
+            phase == IDAOData.LifecyclePhase.SEED_2 || phase == IDAOData.LifecyclePhase.DEVELOPMENT_4
+                || phase == IDAOData.LifecyclePhase.TGE_5
         ) {
             return $.deployments[daoUid].seedToken;
         }
@@ -144,11 +143,11 @@ library HostViewLib {
         return $.daoUids[symbol] != 0;
     }
 
-    function proposal(bytes32 proposalId) public view returns (ITokenomics.Proposal memory) {
+    function proposal(bytes32 proposalId) public view returns (IDAOData.Proposal memory) {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.ProposalData memory local = $.proposals[proposalId];
         HostLib.ProposalHeader memory header = HostLib.unpackProposalHeader(local.proposalHeader);
-        return ITokenomics.Proposal({
+        return IDAOData.Proposal({
             action: header.action,
             id: proposalId,
             symbol: $.segment2[local.daoUid].symbol,
@@ -258,23 +257,23 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.LifecyclePhase phase = $.segment2[daoUid].phase;
+        IDAOData.LifecyclePhase phase = $.segment2[daoUid].phase;
 
-        if (phase == ITokenomics.LifecyclePhase.DRAFT_0) {
+        if (phase == IDAOData.LifecyclePhase.DRAFT_0) {
             index = _tasksDraft($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.INCEPTION_1) {
+        } else if (phase == IDAOData.LifecyclePhase.INCEPTION_1) {
             index = _tasksInception($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.SEED_2) {
+        } else if (phase == IDAOData.LifecyclePhase.SEED_2) {
             index = _tasksSeed($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4) {
+        } else if (phase == IDAOData.LifecyclePhase.DEVELOPMENT_4) {
             index = _tasksDevelopment($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.TGE_5) {
+        } else if (phase == IDAOData.LifecyclePhase.TGE_5) {
             index = _tasksTge($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_CLIFF_6) {
+        } else if (phase == IDAOData.LifecyclePhase.LIVE_CLIFF_6) {
             index = _tasksLiveCliff($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_VESTING_7) {
+        } else if (phase == IDAOData.LifecyclePhase.LIVE_VESTING_7) {
             index = _tasksLiveVesting($, daoUid, dest);
-        } else if (phase == ITokenomics.LifecyclePhase.LIVE_8) {
+        } else if (phase == IDAOData.LifecyclePhase.LIVE_8) {
             index = _tasksLive($, daoUid, dest);
         }
 
@@ -296,7 +295,7 @@ library HostViewLib {
         uint daoUid,
         IHost.Task[] memory dest
     ) internal view returns (uint) {
-        ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages memory daoImages = $.daoImages[daoUid];
 
         uint limit = dest.length;
         // slither-disable-next-line uninitialized-local
@@ -338,7 +337,7 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
 
         if (index < limit && seed.raised < seed.minRaise && seed.end > block.timestamp) {
             dest[index++] = IHost.Task("Need attract minimal seed funding");
@@ -357,13 +356,13 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding memory tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
-        if (index < limit && tge.fundingType != ITokenomics.FundingType.TGE_1) {
+        if (index < limit && tge.fundingType != IDAOData.FundingType.TGE_1) {
             dest[index++] = IHost.Task("Need add pre-TGE funding");
         }
 
-        ITokenomics.DaoImages memory daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages memory daoImages = $.daoImages[daoUid];
 
         if (
             index < limit
@@ -409,7 +408,7 @@ library HostViewLib {
         // slither-disable-next-line uninitialized-local
         uint index;
 
-        ITokenomics.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding memory f = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         if (index < limit && f.raised < f.minRaise && f.end > block.timestamp) {
             dest[index++] = IHost.Task("Need attract minimal TGE funding");

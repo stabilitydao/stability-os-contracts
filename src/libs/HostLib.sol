@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 
@@ -35,7 +35,7 @@ library HostLib {
 
         /// @notice DAO lifecycle phase. Changes permissionless when next phase start timestamp reached.
         /// @dev This value is updated on bridged chains only after passing LIVE_CLIFF_5
-        ITokenomics.LifecyclePhase phase;
+        IDAOData.LifecyclePhase phase;
 
         /// @notice Ids of all units registered in the DAO.
         /// @dev Different DAO can use same unit ids, but Hash = hash of (daoUid, unitUid) is unique.
@@ -51,11 +51,11 @@ library HostLib {
         string[] socials;
 
         /// @notice List of activities of the DAO
-        ITokenomics.Activity[] activity;
+        IDAOData.Activity[] activity;
 
         /// @notice Fundraising. Only funding types.
         /// @dev Actual funding data are stored in the mapping (to be able to extend list of Funding fields)
-        ITokenomics.FundingType[] funding;
+        IDAOData.FundingType[] funding;
 
         /// @notice Vesting allocations (optional — may be empty). Count of registered vesting items.
         /// @dev Actual vesting data are stored in the mapping (to be able to extend list of Vesting fields)
@@ -71,7 +71,7 @@ library HostLib {
     /// @notice All "small" fields of the proposal. We store them packed as a single slot.
     struct ProposalHeader {
         /// @dev Action to update DAO data
-        ITokenomics.DAOAction action;
+        IDAOData.DAOAction action;
 
         /// @dev True if proposal requires validation by Host DAO before voting
         /// Typical rejection case: proposal contains invalid data that have collisions with exist data on other chains
@@ -82,10 +82,10 @@ library HostLib {
         bool votingRequired;
 
         /// @dev Status of proposal validation by admin
-        ITokenomics.ValidationStatus validationStatus;
+        IDAOData.ValidationStatus validationStatus;
 
         /// @dev Current voting status
-        ITokenomics.VotingStatus status;
+        IDAOData.VotingStatus status;
 
         /// @notice Proposal creation timestamp
         uint64 created;
@@ -164,20 +164,20 @@ library HostLib {
         mapping(uint daoUid => DaoDataSegment2) segment2;
 
         /// @notice All deployments of DAOs on different chains. Deployment ID is generated as hash of (daoUid, chainId)
-        mapping(uint daoUid => ITokenomics.DaoDeploymentInfo) deployments;
+        mapping(uint daoUid => IDAOData.DaoDeploymentInfo) deployments;
 
         /// @notice Settings of DAO for current chain. This is the only place to save settings of DAO for chains.
-        mapping(uint daoUid => ITokenomics.DaoChainSettings) chainSettings;
+        mapping(uint daoUid => IDAOData.DaoChainSettings) chainSettings;
 
         /// @notice Parameters of each DAO
-        mapping(uint daoUid => ITokenomics.DaoParameters) daoParameters;
+        mapping(uint daoUid => IDAOData.DaoParameters) daoParameters;
 
         /// @notice Balances of assets belonging to the given unit. Key is generated as hash of (daoUid, unitUid)
         mapping(bytes32 hashUnit => EnumerableMap.AddressToUintMap) unitBalances;
 
         /// @notice Salt configured for DAO contracts.
         /// @dev Key is generated as hash of (daoUid, ContractIndex)
-        /// @dev ContractIndex is specified by enum ITokenomicsAddons.ContractIndices
+        /// @dev ContractIndex is specified by enum IDAODataAddons.ContractIndices
         mapping(bytes32 key => bytes32 salt) salt;
 
         /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain
@@ -194,19 +194,19 @@ library HostLib {
         mapping(uint daoUid => DaoDataSegment3) segment3;
 
         /// @notice Images (logo/banner) of each DAO
-        mapping(uint daoUid => ITokenomics.DaoImages) daoImages;
+        mapping(uint daoUid => IDAOData.DaoImages) daoImages;
 
         /// @notice Revenue generating units owned by the organization. Key is generated as hash of (daoUid, unitUid)
         mapping(bytes32 hashUnit => UnitLocal) units;
 
         /// @notice Fundraising. FundingId is generated as hash of (daoUid, funding type)
-        mapping(bytes32 fundingId => ITokenomics.Funding) funding;
+        mapping(bytes32 fundingId => IDAOData.Funding) funding;
 
         /// @notice Vesting allocations. Key is generated as hash of (daoUid, 0-index)
-        mapping(bytes32 key => ITokenomics.Vesting) vesting;
+        mapping(bytes32 key => IDAOData.Vesting) vesting;
 
         /// @notice Settings of DAO Governance
-        mapping(uint daoUid => ITokenomics.GovernanceSettings) governanceSettings;
+        mapping(uint daoUid => IDAOData.GovernanceSettings) governanceSettings;
 
         // todo probably it's more safe to add all data at the end always
         uint[50] __gap_segment3;
@@ -301,11 +301,11 @@ library HostLib {
     /// @notice Unpack ProposalHeader from single uint
     function unpackProposalHeader(uint h) internal pure returns (ProposalHeader memory header) {
         return ProposalHeader({
-            action: ITokenomics.DAOAction(uint8(h)),
+            action: IDAOData.DAOAction(uint8(h)),
             validationRequired: ((h >> 8) & 1) != 0,
             votingRequired: ((h >> 9) & 1) != 0,
-            validationStatus: ITokenomics.ValidationStatus(uint8(h >> 10)),
-            status: ITokenomics.VotingStatus(uint8(h >> 18)),
+            validationStatus: IDAOData.ValidationStatus(uint8(h >> 10)),
+            status: IDAOData.VotingStatus(uint8(h >> 18)),
             created: uint64(h >> 26)
         });
     }

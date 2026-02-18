@@ -5,7 +5,6 @@ import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
-import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,7 +12,7 @@ import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {MockHostBridge} from "./mocks/MockHostBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
@@ -112,12 +111,12 @@ contract HostLifeCycleTest is Test {
             assertGe(tasks.length, 2, "at least 2 unsolved tasks");
 
             // deployer drew token logotypes
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+            IDAOData.DaoImages memory images = IDAOData.DaoImages({
                 seedToken: "/seedAliens.png", tgeToken: "", token: "/aliens.png", xToken: "", daoToken: ""
             });
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -134,7 +133,7 @@ contract HostLifeCycleTest is Test {
             units[0] = IDAOData.UnitDataInput({unitId: "aliens:os", developerUid: ""});
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -152,7 +151,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ fix funding
         {
-            ITokenomics.Funding memory funding = ITokenomics.Funding({
+            IDAOData.Funding memory funding = IDAOData.Funding({
                 fundingType: daoData.funding[0].fundingType,
                 start: daoData.funding[0].start,
                 end: daoData.funding[0].end,
@@ -163,7 +162,7 @@ contract HostLifeCycleTest is Test {
             });
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -175,7 +174,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
-                uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION"
+                uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION"
             );
         }
 
@@ -193,7 +192,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "phase should be SEED");
+            assertEq(uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.SEED_2), "phase should be SEED");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "at least 1 unsolved tasks");
@@ -289,7 +288,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -299,17 +298,17 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ fill TGE funding, refresh daoData
         {
             assertEq(
-                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
+                HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1),
                 type(uint).max,
                 "TGE funding should not exist yet"
             );
 
-            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
+            IDAOData.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -323,7 +322,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
-                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
+                HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1), 1, "TGE funding should be added"
             );
         }
 
@@ -350,7 +349,7 @@ contract HostLifeCycleTest is Test {
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -371,7 +370,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ fix images
         {
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+            IDAOData.DaoImages memory images = IDAOData.DaoImages({
                 seedToken: "/seedALIENS.png",
                 tgeToken: "/ALIENS.png",
                 token: "/tgeALIENS.png",
@@ -381,7 +380,7 @@ contract HostLifeCycleTest is Test {
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -395,16 +394,16 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ add vesting
         {
-            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
-            ITokenomics.Funding memory tgeFunding = daoData.funding[fundingIndex];
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1);
+            IDAOData.Funding memory tgeFunding = daoData.funding[fundingIndex];
 
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                uint16(IDAOData.DAOAction.UPDATE_VESTING_5),
                 codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -435,7 +434,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }
@@ -492,7 +491,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6), "phase should be LIVE_CLIFF");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6), "phase should be LIVE_CLIFF");
         }
 
         // ------------------------------ LIVE VESTING, refresh daoData
@@ -506,7 +505,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_VESTING_7), "phase should be VESTING");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.LIVE_VESTING_7), "phase should be VESTING");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE_VESTING phase"); // todo add task "distribute vesting funds to leverage token"
@@ -523,7 +522,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.LIVE_8), "phase should be LIVE");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.LIVE_8), "phase should be LIVE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertEq(tasks.length, 0, "all tasks should be solved on LIVE phase");
         }
@@ -531,7 +530,7 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ Try to update funding, vesting - bad paths
         {
             for (uint i = 0; i < daoData.funding.length; i++) {
-                ITokenomics.Funding memory funding = ITokenomics.Funding({
+                IDAOData.Funding memory funding = IDAOData.Funding({
                     fundingType: daoData.funding[i].fundingType,
                     start: daoData.funding[i].start,
                     end: daoData.funding[i].end,
@@ -543,16 +542,16 @@ contract HostLifeCycleTest is Test {
 
                 bytes memory payload = codec_.encode(funding, codec_.PAYLOAD_API_VERSION());
                 vm.expectRevert(IHost.TooLateToUpdateSuchFunding.selector);
-                host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4), payload, "");
+                host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_FUNDING_4), payload, "");
             }
 
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", 1);
 
             {
                 bytes memory payload = codec_.encode(vesting, codec_.PAYLOAD_API_VERSION());
                 vm.expectRevert(IHost.TooLateToUpdateVesting.selector);
-                host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_VESTING_5), payload, "");
+                host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_VESTING_5), payload, "");
             }
         }
     }
@@ -574,12 +573,12 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Update images, units, socials, vesting
         {
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+            IDAOData.DaoImages memory images = IDAOData.DaoImages({
                 seedToken: "/seedApes.png", tgeToken: "", token: "/apes.png", xToken: "", daoToken: ""
             });
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -588,7 +587,7 @@ contract HostLifeCycleTest is Test {
                 SampleDataLib.getUnitsSingle("aliens:os");
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -598,13 +597,13 @@ contract HostLifeCycleTest is Test {
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
             // todo we cannot add vesting here because tge.claim is 0
-            //            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
-            //            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            //            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.SEED_0);
+            //            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             //            vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
             //
             //            host_.updateDAO(
             //                daoData.symbol,
-            //                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+            //                uint16(IDAOData.DAOAction.UPDATE_VESTING_5),
             //                codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
             //                ""
             //            );
@@ -621,7 +620,7 @@ contract HostLifeCycleTest is Test {
             //            vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
             //            host_.changePhase(daoData.symbol);
 
-            ITokenomics.Funding memory funding = HostUtilsLib.generateSeedFunding(
+            IDAOData.Funding memory funding = HostUtilsLib.generateSeedFunding(
                 7 days,
                 HostUtilsLib.DEFAULT_SEED_DURATION,
                 HostUtilsLib.DEFAULT_SEED_MIN_RAISE,
@@ -629,7 +628,7 @@ contract HostLifeCycleTest is Test {
             );
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -643,7 +642,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "apes phase should be SEED");
+            assertEq(uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.SEED_2), "apes phase should be SEED");
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
         }
 
@@ -663,7 +662,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.SEED_FAILED_3), "phase should be SEED_FAILED"
+                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.SEED_FAILED_3), "phase should be SEED_FAILED"
             );
 
             assertEq(
@@ -716,7 +715,7 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ Update images, units, socials, vesting
         {
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+            IDAOData.DaoImages memory images = IDAOData.DaoImages({
                 seedToken: "/seedMACHINE.png",
                 tgeToken: "/MACHINE.png",
                 token: "/saleMACHINE.png",
@@ -725,7 +724,7 @@ contract HostLifeCycleTest is Test {
             });
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -734,7 +733,7 @@ contract HostLifeCycleTest is Test {
                 SampleDataLib.getUnitsSingle("MACHINES:MEVBOT");
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -743,13 +742,13 @@ contract HostLifeCycleTest is Test {
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
-            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.SEED_0);
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.SEED_0);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", daoData.funding[fundingIndex].end);
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                uint16(IDAOData.DAOAction.UPDATE_VESTING_5),
                 codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -777,7 +776,7 @@ contract HostLifeCycleTest is Test {
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoDataAfter.phase), uint8(ITokenomics.LifecyclePhase.SEED_2), "machines phase should be SEED"
+                uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.SEED_2), "machines phase should be SEED"
             );
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
         }
@@ -798,7 +797,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
             assertEq(
                 IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
@@ -814,7 +813,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
+            assertEq(uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.TGE_5), "phase should be TGE");
         }
 
         // ------------------------------ Fund NOT enough amount, TGE failed, refresh daoData
@@ -844,7 +843,7 @@ contract HostLifeCycleTest is Test {
 
             assertEq(
                 uint8(daoData.phase),
-                uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4),
+                uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4),
                 "phase should be DEVELOPMENT again"
             );
         }
@@ -895,10 +894,10 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ Update Dao Parameters
         {
             vm.recordLogs();
-            ITokenomics.DaoParameters memory daoParameters = HostUtilsLib.generateDaoParams(777, 40);
+            IDAOData.DaoParameters memory daoParameters = HostUtilsLib.generateDaoParams(777, 40);
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_DAO_PARAMETERS_6),
+                uint16(IDAOData.DAOAction.UPDATE_DAO_PARAMETERS_6),
                 codec_.encode(daoParameters, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -941,12 +940,12 @@ contract HostLifeCycleTest is Test {
             skip(7 days);
 
             // deployer drew token logotypes
-            ITokenomics.DaoImages memory images = ITokenomics.DaoImages({
+            IDAOData.DaoImages memory images = IDAOData.DaoImages({
                 seedToken: "/seedAliens.png", tgeToken: "1", token: "/aliens.png", xToken: "2", daoToken: "3"
             });
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -957,7 +956,7 @@ contract HostLifeCycleTest is Test {
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -967,7 +966,7 @@ contract HostLifeCycleTest is Test {
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
-            ITokenomics.Funding memory funding = ITokenomics.Funding({
+            IDAOData.Funding memory funding = IDAOData.Funding({
                 fundingType: daoData.funding[0].fundingType,
                 start: daoData.funding[0].start,
                 end: daoData.funding[0].end,
@@ -979,7 +978,7 @@ contract HostLifeCycleTest is Test {
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -996,11 +995,11 @@ contract HostLifeCycleTest is Test {
             predictedSeedAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
             uint16[] memory indices = new uint16[](1);
-            indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
+            indices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1);
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_SALT_7),
+                uint16(IDAOData.DAOAction.UPDATE_SALT_7),
                 codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -1024,7 +1023,7 @@ contract HostLifeCycleTest is Test {
             assertEq(daoData.deployments.seedToken, predictedSeedAddress, "seed token address matches predicted");
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+                host_.salt(daoData.symbol, uint16(IDAOData.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
@@ -1062,14 +1061,14 @@ contract HostLifeCycleTest is Test {
                 predictedTgeAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
                 uint16[] memory indices = new uint16[](2);
-                indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
-                indices[1] = uint16(ITokenomics.ContractIndices.TGE_TOKEN_2);
+                indices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
+                indices[1] = uint16(IDAOData.ContractIndices.TGE_TOKEN_2);
 
                 input = codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION());
             }
 
             vm.recordLogs();
-            host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_SALT_7), input, "");
+            host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), input, "");
 
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
@@ -1079,12 +1078,12 @@ contract HostLifeCycleTest is Test {
             host_.receiveVotingResults(proposalId, true, payload);
 
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+                host_.salt(daoData.symbol, uint16(IDAOData.ContractIndices.SEED_TOKEN_1)),
                 "0x0101",
                 "SEED salt should not change after proposal"
             );
             assertEq(
-                host_.salt(daoData.symbol, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2)),
+                host_.salt(daoData.symbol, uint16(IDAOData.ContractIndices.TGE_TOKEN_2)),
                 "0x0202",
                 "TGE salt should be updated after proposal"
             );
@@ -1121,7 +1120,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase), uint8(ITokenomics.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
+                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
             );
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
@@ -1131,17 +1130,17 @@ contract HostLifeCycleTest is Test {
         // ------------------------------ fill TGE funding, refresh daoData
         {
             assertEq(
-                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1),
+                HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1),
                 type(uint).max,
                 "TGE funding should not exist yet"
             );
 
-            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
+            IDAOData.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -1155,7 +1154,7 @@ contract HostLifeCycleTest is Test {
 
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
             assertEq(
-                HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1), 1, "TGE funding should be added"
+                HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1), 1, "TGE funding should be added"
             );
         }
 
@@ -1173,7 +1172,7 @@ contract HostLifeCycleTest is Test {
             }
 
             vm.recordLogs();
-            host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_UNITS_3), input, metadata);
+            host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_UNITS_3), input, metadata);
 
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
@@ -1191,16 +1190,16 @@ contract HostLifeCycleTest is Test {
 
         // ------------------------------ add vesting
         {
-            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
-            ITokenomics.Funding memory tgeFunding = daoData.funding[fundingIndex];
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1);
+            IDAOData.Funding memory tgeFunding = daoData.funding[fundingIndex];
 
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                uint16(IDAOData.DAOAction.UPDATE_VESTING_5),
                 codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -1219,7 +1218,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }

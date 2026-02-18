@@ -13,7 +13,7 @@ import {HostConfigLib} from "./libs/HostConfigLib.sol";
 import {Hosted} from "./base/Hosted.sol";
 import {IHosted} from "./interfaces/IHosted.sol";
 import {IHost} from "./interfaces/IHost.sol";
-import {ITokenomics} from "./interfaces/ITokenomics.sol";
+import {IDAOData} from "./interfaces/IDAOData.sol";
 
 /// @notice Allow to create DAO and update its state according to life cycle
 /// DAO must manage properties itself via voting by executing Operating proposals.
@@ -150,9 +150,9 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     function createDAO(
         string calldata name,
         string calldata symbol,
-        ITokenomics.Activity[] memory activity,
-        ITokenomics.DaoParameters memory params,
-        ITokenomics.Funding[] memory funding
+        IDAOData.Activity[] memory activity,
+        IDAOData.DaoParameters memory params,
+        IDAOData.Funding[] memory funding
     ) external payable {
         // no restrictions, anybody can create a DAO
         HostActionsLib.createDAO(name, symbol, activity, params, funding);

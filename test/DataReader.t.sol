@@ -5,7 +5,6 @@ import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../src/interfaces/IAuthority.sol";
-import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -13,7 +12,7 @@ import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../src/interfaces/IProxyFactory.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
@@ -58,10 +57,10 @@ contract DataReaderTest is Test {
             skip(7 days);
 
             // deployer drew token logotypes
-            ITokenomics.DaoImages memory images = SampleDataLib.getDaoImages();
+            IDAOData.DaoImages memory images = SampleDataLib.getDaoImages();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_IMAGES_0),
+                uint16(IDAOData.DAOAction.UPDATE_IMAGES_0),
                 codec_.encode(images, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -71,7 +70,7 @@ contract DataReaderTest is Test {
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+                uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
                 codec_.encode(units, codec_.PAYLOAD_API_VERSION()),
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
@@ -81,7 +80,7 @@ contract DataReaderTest is Test {
 
             HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
 
-            ITokenomics.Funding memory funding = ITokenomics.Funding({
+            IDAOData.Funding memory funding = IDAOData.Funding({
                 fundingType: daoData.funding[0].fundingType,
                 start: daoData.funding[0].start,
                 end: daoData.funding[0].end,
@@ -93,7 +92,7 @@ contract DataReaderTest is Test {
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -110,11 +109,11 @@ contract DataReaderTest is Test {
             predictedSeedAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
             uint16[] memory indices = new uint16[](1);
-            indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
+            indices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1);
 
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_SALT_7),
+                uint16(IDAOData.DAOAction.UPDATE_SALT_7),
                 codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -155,14 +154,14 @@ contract DataReaderTest is Test {
                 predictedTgeAddress = IProxyFactory(proxyFactory).predictAddress(salts[0]);
 
                 uint16[] memory indices = new uint16[](2);
-                indices[0] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
-                indices[1] = uint16(ITokenomics.ContractIndices.TGE_TOKEN_2);
+                indices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1); // we can update seed token salt even if the token is already created
+                indices[1] = uint16(IDAOData.ContractIndices.TGE_TOKEN_2);
 
                 input = codec_.encode(indices, salts, codec_.PAYLOAD_API_VERSION());
             }
 
             vm.recordLogs();
-            host_.updateDAO(daoData.symbol, uint16(ITokenomics.DAOAction.UPDATE_SALT_7), input, "");
+            host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), input, "");
 
             bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
@@ -195,12 +194,12 @@ contract DataReaderTest is Test {
 
         // ------------------------------ fill TGE funding, refresh daoData
         {
-            ITokenomics.Funding memory funding = HostUtilsLib.generateTGEFunding();
+            IDAOData.Funding memory funding = HostUtilsLib.generateTGEFunding();
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_FUNDING_4),
+                uint16(IDAOData.DAOAction.UPDATE_FUNDING_4),
                 codec_.encode(funding, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -226,16 +225,16 @@ contract DataReaderTest is Test {
 
         // ------------------------------ add vesting
         {
-            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, ITokenomics.FundingType.TGE_1);
-            ITokenomics.Funding memory tgeFunding = daoData.funding[fundingIndex];
+            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.TGE_1);
+            IDAOData.Funding memory tgeFunding = daoData.funding[fundingIndex];
 
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0] = HostUtilsLib.generateVesting("Development", tgeFunding.end);
 
             vm.recordLogs();
             host_.updateDAO(
                 daoData.symbol,
-                uint16(ITokenomics.DAOAction.UPDATE_VESTING_5),
+                uint16(IDAOData.DAOAction.UPDATE_VESTING_5),
                 codec_.encode(vesting, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
@@ -254,7 +253,7 @@ contract DataReaderTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = dataReader.getDAO(daoData.symbol);
 
-            assertEq(uint(daoData.phase), uint(ITokenomics.LifecyclePhase.TGE_5), "phase should be TGE");
+            assertEq(uint(daoData.phase), uint(IDAOData.LifecyclePhase.TGE_5), "phase should be TGE");
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on TGE phase");
         }

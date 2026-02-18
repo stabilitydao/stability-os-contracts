@@ -9,7 +9,6 @@ import {HostUpdateLib} from "../../src/libs/HostUpdateLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {MockHostBridge} from "../mocks/MockHostBridge.sol";
 import {SampleDataLib} from "../utils/SampleDataLib.sol";
@@ -27,8 +26,8 @@ contract HostUpdateLibTest is Test {
     uint public constant DEFAULT_CLAIM_OFFSET = 2 days;
 
     struct TestCaseFunding {
-        ITokenomics.LifecyclePhase phase;
-        ITokenomics.FundingType fundingType;
+        IDAOData.LifecyclePhase phase;
+        IDAOData.FundingType fundingType;
     }
 
     constructor() {
@@ -115,74 +114,74 @@ contract HostUpdateLibTest is Test {
     function testValidateDaoParameters_ChangeTotalSupplyAfterTgeStarted_Throws() public {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoParameters memory data;
+        IDAOData.DaoParameters memory data;
         data.proposalThreshold = 1;
 
         // ------------------ Set initial version of total supply
         data.totalSupply = 100_000_000e18;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DRAFT_0, data);
+        this.validateDaoParametersPublic(117, IDAOData.LifecyclePhase.DRAFT_0, data);
         $.daoParameters[117] = data;
 
         // ------------------ Change total supply in SEED
         data.totalSupply = 110_000_000e18;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.SEED_2, data);
+        this.validateDaoParametersPublic(117, IDAOData.LifecyclePhase.SEED_2, data);
         $.daoParameters[117] = data;
 
         // ------------------ Change total supply in DEVELOPMENT
         data.totalSupply = 120_000_000e18;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.DEVELOPMENT_4, data);
+        this.validateDaoParametersPublic(117, IDAOData.LifecyclePhase.DEVELOPMENT_4, data);
         $.daoParameters[117] = data;
 
         // ------------------ Fail to change total supply after TGE started
         data.totalSupply = 130_000_000e18;
         vm.expectRevert(IHost.TooLateToUpdateTotalSupply.selector);
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_5, data);
+        this.validateDaoParametersPublic(117, IDAOData.LifecyclePhase.TGE_5, data);
 
         // ------------------ Other parameters can be updated after TGE started
         data.totalSupply = 120_000_000e18;
         data.proposalThreshold = 2;
-        this.validateDaoParametersPublic(117, ITokenomics.LifecyclePhase.TGE_5, data);
+        this.validateDaoParametersPublic(117, IDAOData.LifecyclePhase.TGE_5, data);
         $.daoParameters[117] = data;
     }
 
     function testValidateActivity_Success() public view {
-        uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
+        uint count = uint(IDAOData.Activity.COUNT_ACTIVITY);
         { // all activity
-            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](count);
+            IDAOData.Activity[] memory activity = new IDAOData.Activity[](count);
             for (uint i = 0; i < count; i++) {
-                activity[i] = ITokenomics.Activity(i);
+                activity[i] = IDAOData.Activity(i);
             }
             this.validateActivityPublic(activity);
         }
 
         // any single activity
-        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
-            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-            activity[0] = ITokenomics.Activity(i);
+        for (uint i = 0; i < uint(IDAOData.Activity.COUNT_ACTIVITY); i++) {
+            IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
+            activity[0] = IDAOData.Activity(i);
             this.validateActivityPublic(activity);
         }
 
         { // builder + one more activity
-            ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
-            activity[0] = ITokenomics.Activity.BUILDER_3;
-            activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+            IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
+            activity[0] = IDAOData.Activity.BUILDER_3;
+            activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
             this.validateActivityPublic(activity);
         }
     }
 
     function testValidateActivityNegative() public {
         { // no activities
-            ITokenomics.Activity[] memory activity;
+            IDAOData.Activity[] memory activity;
             vm.expectRevert(abi.encodeWithSelector(IHost.ZeroActivityNotAllowed.selector));
             this.validateActivityPublic(activity);
         }
 
         // activity repeat
-        for (uint i = 0; i < uint(ITokenomics.Activity.COUNT_ACTIVITY); i++) {
-            if (i != uint(ITokenomics.Activity.BUILDER_3)) {
-                ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
-                activity[0] = ITokenomics.Activity(i);
-                activity[1] = ITokenomics.Activity(i);
+        for (uint i = 0; i < uint(IDAOData.Activity.COUNT_ACTIVITY); i++) {
+            if (i != uint(IDAOData.Activity.BUILDER_3)) {
+                IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
+                activity[0] = IDAOData.Activity(i);
+                activity[1] = IDAOData.Activity(i);
                 vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
                 this.validateActivityPublic(activity);
             }
@@ -199,24 +198,24 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 500;
             params.vePeriod = 30;
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 100;
             params.vePeriod = 14;
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 1000;
             params.vePeriod = 365;
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
     }
 
@@ -228,55 +227,55 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 99;
             params.vePeriod = 30;
             vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(99)));
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 1001;
             params.vePeriod = 30;
             vm.expectRevert(abi.encodeWithSelector(IHost.PvPFee.selector, uint(1001)));
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 500;
             params.vePeriod = 13;
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(13)));
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
 
         {
-            ITokenomics.DaoParameters memory params;
+            IDAOData.DaoParameters memory params;
             params.pvpFee = 500;
             params.vePeriod = 366;
             vm.expectRevert(abi.encodeWithSelector(IHost.VePeriod.selector, uint(366)));
-            this.validateDaoParametersPublic(1, ITokenomics.LifecyclePhase.DRAFT_0, params);
+            this.validateDaoParametersPublic(1, IDAOData.LifecyclePhase.DRAFT_0, params);
         }
     }
 
     function testValidateChainSettings_Success() public {
         {
-            ITokenomics.DaoChainSettings memory st;
+            IDAOData.DaoChainSettings memory st;
             st.bbRate = 0;
             st.multisig = address(0);
             this.validateChainSettingsPublic(st);
         }
 
         {
-            ITokenomics.DaoChainSettings memory st;
+            IDAOData.DaoChainSettings memory st;
             st.bbRate = 100;
             st.multisig = makeAddr("multisig");
             this.validateChainSettingsPublic(st);
         }
 
         {
-            ITokenomics.DaoChainSettings memory st;
+            IDAOData.DaoChainSettings memory st;
             st.bbRate = 35;
             st.multisig = address(0);
             this.validateChainSettingsPublic(st);
@@ -284,7 +283,7 @@ contract HostUpdateLibTest is Test {
     }
 
     function testValidateChainSettings_BbRateOutOfRange_Revert() public {
-        ITokenomics.DaoChainSettings memory st;
+        IDAOData.DaoChainSettings memory st;
         st.bbRate = 101;
         st.multisig = address(0);
 
@@ -296,24 +295,24 @@ contract HostUpdateLibTest is Test {
 
     //region ------------------------------------------ Tests for Activity validation
     function testValidateActivityEmpty() public {
-        ITokenomics.Activity[] memory activity;
+        IDAOData.Activity[] memory activity;
         vm.expectRevert(IHost.ZeroActivityNotAllowed.selector);
         this.validateActivityPublic(activity);
     }
 
     function testValidateActivityNormal() public view {
-        uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](count);
+        uint count = uint(IDAOData.Activity.COUNT_ACTIVITY);
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](count);
         for (uint i = 0; i < count; i++) {
-            activity[i] = ITokenomics.Activity(i);
+            activity[i] = IDAOData.Activity(i);
         }
         this.validateActivityPublic(activity);
     }
 
     function testValidateActivity_DuplicateActivity_Throws() public {
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
-        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
-        activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
+        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
         vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
         this.validateActivityPublic(activity);
@@ -322,15 +321,15 @@ contract HostUpdateLibTest is Test {
     //endregion ------------------------------------------ Tests for Activity validation
 
     //region ------------------------------------------ Tests for Funding validation
-    function fixtureFundingType() public pure returns (ITokenomics.FundingType[] memory) {
-        ITokenomics.FundingType[] memory fundingTypes = new ITokenomics.FundingType[](2);
-        fundingTypes[0] = ITokenomics.FundingType.TGE_1;
-        fundingTypes[1] = ITokenomics.FundingType.SEED_0;
+    function fixtureFundingType() public pure returns (IDAOData.FundingType[] memory) {
+        IDAOData.FundingType[] memory fundingTypes = new IDAOData.FundingType[](2);
+        fundingTypes[0] = IDAOData.FundingType.TGE_1;
+        fundingTypes[1] = IDAOData.FundingType.SEED_0;
 
         return fundingTypes;
     }
 
-    function tableValidateFundingListPositive(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListPositive(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -338,7 +337,7 @@ contract HostUpdateLibTest is Test {
         st.minFundingRaise = 0.1e18;
         st.maxFundingRaise = 1000e18;
         {
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+            IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
             funding[0].start = uint64(block.timestamp + 1 days);
             funding[0].end = uint64(block.timestamp + 10 days);
             funding[0].minRaise = 1e18;
@@ -349,7 +348,7 @@ contract HostUpdateLibTest is Test {
         }
 
         {
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+            IDAOData.Funding[] memory funding = new IDAOData.Funding[](2);
             funding[0].start = uint64(block.timestamp + 1 days);
             funding[0].end = uint64(block.timestamp + 10 days);
             funding[0].minRaise = 1e18;
@@ -360,15 +359,15 @@ contract HostUpdateLibTest is Test {
             funding[1].end = uint64(block.timestamp + 10 days);
             funding[1].minRaise = 1e18;
             funding[1].maxRaise = 100e18;
-            funding[1].fundingType = fundingType == ITokenomics.FundingType.SEED_0
-                ? ITokenomics.FundingType.TGE_1
-                : ITokenomics.FundingType.SEED_0;
+            funding[1].fundingType = fundingType == IDAOData.FundingType.SEED_0
+                ? IDAOData.FundingType.TGE_1
+                : IDAOData.FundingType.SEED_0;
 
             this.validateFundingListPublic(funding);
         }
     }
 
-    function tableValidateFundingListNegative_NotUniqueFundingTypes_Throws(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_NotUniqueFundingTypes_Throws(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -377,7 +376,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ----------------- funding array has not unique funding types
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](2);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = uint64(block.timestamp + 10 days);
         funding[0].minRaise = 1e18;
@@ -394,7 +393,7 @@ contract HostUpdateLibTest is Test {
         this.validateFundingListPublic(funding);
     }
 
-    function tableValidateFundingListNegative_EndLessStart_Throws(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_EndLessStart_Throws(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -403,7 +402,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ------------------ end < start
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = 0; // (!)
         funding[0].minRaise = 1e18;
@@ -414,7 +413,7 @@ contract HostUpdateLibTest is Test {
         this.validateFundingListPublic(funding);
     }
 
-    function tableValidateFundingListNegative_DurationLessMin_Throws(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_DurationLessMin_Throws(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -423,7 +422,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ------------------ duration < minFundingDuration
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = uint64(block.timestamp + 7 days);
         funding[0].minRaise = 1e18;
@@ -434,7 +433,7 @@ contract HostUpdateLibTest is Test {
         this.validateFundingListPublic(funding);
     }
 
-    function tableValidateFundingListNegative_DurationGreaterMax_Throws(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_DurationGreaterMax_Throws(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -443,7 +442,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ------------------ duration > maxFundingDuration
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = uint64(block.timestamp + 91 days + 1);
         funding[0].minRaise = 1e18;
@@ -454,7 +453,7 @@ contract HostUpdateLibTest is Test {
         this.validateFundingListPublic(funding);
     }
 
-    function tableValidateFundingListNegative_MaxRaiseLessMinRaise_Throws(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_MaxRaiseLessMinRaise_Throws(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -463,7 +462,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ------------------ maxRaise < minRaise
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = uint64(block.timestamp + 45 days);
         funding[0].minRaise = 100e18;
@@ -474,7 +473,7 @@ contract HostUpdateLibTest is Test {
         this.validateFundingListPublic(funding);
     }
 
-    function tableValidateFundingListNegative_MinRaiseLessMinFundingRaise(ITokenomics.FundingType fundingType) public {
+    function tableValidateFundingListNegative_MinRaiseLessMinFundingRaise(IDAOData.FundingType fundingType) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minFundingDuration = 7 days;
@@ -483,7 +482,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         // ------------------ minRaise < minFunding
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0].start = uint64(block.timestamp + 1 days);
         funding[0].end = uint64(block.timestamp + 45 days);
         funding[0].minRaise = st.minFundingRaise - 1;
@@ -502,14 +501,14 @@ contract HostUpdateLibTest is Test {
         st.minFundingRaise = 0.1e18;
         st.maxFundingRaise = 1000e18;
         {
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 10 days);
             funding.minRaise = 1e18;
             funding.maxRaise = 100e18;
-            funding.fundingType = ITokenomics.FundingType.SEED_0;
+            funding.fundingType = IDAOData.FundingType.SEED_0;
 
-            this.validateFundingPublic(ITokenomics.LifecyclePhase.DRAFT_0, funding);
+            this.validateFundingPublic(IDAOData.LifecyclePhase.DRAFT_0, funding);
         }
     }
 
@@ -521,33 +520,33 @@ contract HostUpdateLibTest is Test {
         st.minFundingRaise = 0.1e18;
         st.maxFundingRaise = 1000e18;
         {
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 10 days);
             funding.minRaise = 1e18;
             funding.maxRaise = 100e18;
-            funding.fundingType = ITokenomics.FundingType.TGE_1;
+            funding.fundingType = IDAOData.FundingType.TGE_1;
 
-            this.validateFundingPublic(ITokenomics.LifecyclePhase.DEVELOPMENT_4, funding);
+            this.validateFundingPublic(IDAOData.LifecyclePhase.DEVELOPMENT_4, funding);
         }
     }
 
     function fixtureGoodFundingPhase() public pure returns (TestCaseFunding[] memory tests) {
-        tests = new TestCaseFunding[](uint(ITokenomics.LifecyclePhase.SEED_2) + 4);
+        tests = new TestCaseFunding[](uint(IDAOData.LifecyclePhase.SEED_2) + 4);
         uint n;
-        for (uint i = 0; i < uint(ITokenomics.LifecyclePhase.SEED_2); i++) {
+        for (uint i = 0; i < uint(IDAOData.LifecyclePhase.SEED_2); i++) {
             tests[n++] =
-                TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.SEED_0});
+                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
         }
         tests[n++] =
-            TestCaseFunding({phase: ITokenomics.LifecyclePhase.DRAFT_0, fundingType: ITokenomics.FundingType.TGE_1});
+            TestCaseFunding({phase: IDAOData.LifecyclePhase.DRAFT_0, fundingType: IDAOData.FundingType.TGE_1});
         tests[n++] = TestCaseFunding({
-            phase: ITokenomics.LifecyclePhase.INCEPTION_1, fundingType: ITokenomics.FundingType.TGE_1
+            phase: IDAOData.LifecyclePhase.INCEPTION_1, fundingType: IDAOData.FundingType.TGE_1
         });
         tests[n++] =
-            TestCaseFunding({phase: ITokenomics.LifecyclePhase.SEED_2, fundingType: ITokenomics.FundingType.TGE_1});
+            TestCaseFunding({phase: IDAOData.LifecyclePhase.SEED_2, fundingType: IDAOData.FundingType.TGE_1});
         tests[n++] = TestCaseFunding({
-            phase: ITokenomics.LifecyclePhase.DEVELOPMENT_4, fundingType: ITokenomics.FundingType.TGE_1
+            phase: IDAOData.LifecyclePhase.DEVELOPMENT_4, fundingType: IDAOData.FundingType.TGE_1
         });
     }
 
@@ -560,7 +559,7 @@ contract HostUpdateLibTest is Test {
         st.maxFundingRaise = 1000e18;
 
         { // ------------------ end < start
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = 0; // (!)
             funding.minRaise = 1e18;
@@ -572,7 +571,7 @@ contract HostUpdateLibTest is Test {
         }
 
         { // ------------------ duration < minFundingDuration
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 7 days);
             funding.minRaise = 1e18;
@@ -584,7 +583,7 @@ contract HostUpdateLibTest is Test {
         }
 
         { // ------------------ duration > maxFundingDuration
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 91 days + 1);
             funding.minRaise = 1e18;
@@ -599,7 +598,7 @@ contract HostUpdateLibTest is Test {
         // todo add dao creation date
 
         { // ------------------ minRaise < maxRaise
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 45 days);
             funding.minRaise = 100e18;
@@ -611,7 +610,7 @@ contract HostUpdateLibTest is Test {
         }
 
         { // ------------------ minRaise < minFunding
-            ITokenomics.Funding memory funding;
+            IDAOData.Funding memory funding;
             funding.start = uint64(block.timestamp + 1 days);
             funding.end = uint64(block.timestamp + 45 days);
             funding.minRaise = st.minFundingRaise - 1;
@@ -624,22 +623,22 @@ contract HostUpdateLibTest is Test {
     }
 
     function fixtureBadFundingPhase() public pure returns (TestCaseFunding[] memory tests) {
-        uint countPhases = uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
+        uint countPhases = uint(IDAOData.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
 
         tests = new TestCaseFunding[](
-            2 * countPhases - uint(ITokenomics.LifecyclePhase.SEED_2) - uint(ITokenomics.LifecyclePhase.TGE_5) + 1
+            2 * countPhases - uint(IDAOData.LifecyclePhase.SEED_2) - uint(IDAOData.LifecyclePhase.TGE_5) + 1
         );
         uint n;
-        for (uint i = uint(ITokenomics.LifecyclePhase.SEED_2); i < countPhases; i++) {
+        for (uint i = uint(IDAOData.LifecyclePhase.SEED_2); i < countPhases; i++) {
             tests[n++] =
-                TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.SEED_0});
+                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
         }
         tests[n++] = TestCaseFunding({
-            phase: ITokenomics.LifecyclePhase.SEED_FAILED_3, fundingType: ITokenomics.FundingType.TGE_1
+            phase: IDAOData.LifecyclePhase.SEED_FAILED_3, fundingType: IDAOData.FundingType.TGE_1
         });
-        for (uint i = uint(ITokenomics.LifecyclePhase.TGE_5); i < countPhases; i++) {
+        for (uint i = uint(IDAOData.LifecyclePhase.TGE_5); i < countPhases; i++) {
             tests[n++] =
-                TestCaseFunding({phase: ITokenomics.LifecyclePhase(i), fundingType: ITokenomics.FundingType.TGE_1});
+                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.TGE_1});
         }
     }
 
@@ -651,7 +650,7 @@ contract HostUpdateLibTest is Test {
         st.minFundingRaise = 0.1e18;
         st.maxFundingRaise = 1000e18;
 
-        ITokenomics.Funding memory funding;
+        IDAOData.Funding memory funding;
         funding.start = uint64(block.timestamp + 1 days);
         funding.end = uint64(block.timestamp + 10 days);
         funding.minRaise = 1e18;
@@ -666,22 +665,22 @@ contract HostUpdateLibTest is Test {
 
     //region ------------------------------------------ Tests for Vesting validation
     /// @dev Source data for tableVestingListGoodPhase_XXX
-    function fixtureVestingGoodPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        uint countPhases = uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
+    function fixtureVestingGoodPhase() public pure returns (IDAOData.LifecyclePhase[] memory phases) {
+        uint countPhases = uint(IDAOData.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
         uint n;
-        phases = new ITokenomics.LifecyclePhase[](countPhases - 3);
+        phases = new IDAOData.LifecyclePhase[](countPhases - 3);
         for (uint i; i < countPhases - 3; i++) {
-            ITokenomics.LifecyclePhase phase = ITokenomics.LifecyclePhase(i);
+            IDAOData.LifecyclePhase phase = IDAOData.LifecyclePhase(i);
             if (
-                phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_6 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_7
-                    && phase != ITokenomics.LifecyclePhase.LIVE_8
+                phase != IDAOData.LifecyclePhase.LIVE_CLIFF_6 && phase != IDAOData.LifecyclePhase.LIVE_VESTING_7
+                    && phase != IDAOData.LifecyclePhase.LIVE_8
             ) {
-                phases[n++] = ITokenomics.LifecyclePhase(i);
+                phases[n++] = IDAOData.LifecyclePhase(i);
             }
         }
     }
 
-    function tableVestingListGoodPhase_LenNameInRange_Ok(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+    function tableVestingListGoodPhase_LenNameInRange_Ok(IDAOData.LifecyclePhase vestingGoodPhase) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minVestingNameLen = 5;
@@ -690,7 +689,7 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
         st.minCliff = 7;
 
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](2);
         vesting[0].name = "12345";
         vesting[0].description = "vesting description";
         vesting[0].allocation = 45_000;
@@ -706,7 +705,7 @@ contract HostUpdateLibTest is Test {
         this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
     }
 
-    function tableVestingListGoodPhase_LenNameOutOfRange_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+    function tableVestingListGoodPhase_LenNameOutOfRange_Throws(IDAOData.LifecyclePhase vestingGoodPhase) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minVestingNameLen = 5;
@@ -716,7 +715,7 @@ contract HostUpdateLibTest is Test {
         st.minCliff = 7;
 
         {
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0].name = "1234";
             vesting[0].description = "vesting description";
             vesting[0].allocation = 50_000;
@@ -727,7 +726,7 @@ contract HostUpdateLibTest is Test {
             this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
         }
         {
-            ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+            IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
             vesting[0].name = "12345678";
             vesting[0].description = "vesting description";
             vesting[0].allocation = 45_000;
@@ -739,7 +738,7 @@ contract HostUpdateLibTest is Test {
         }
     }
 
-    function tableVestingListGoodPhase_ZeroAllocation_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+    function tableVestingListGoodPhase_ZeroAllocation_Throws(IDAOData.LifecyclePhase vestingGoodPhase) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minVestingNameLen = 5;
@@ -748,7 +747,7 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
         st.minCliff = 7;
 
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
         vesting[0].name = "12345";
         vesting[0].description = "vesting description";
         vesting[0].allocation = 0;
@@ -759,7 +758,7 @@ contract HostUpdateLibTest is Test {
         this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
     }
 
-    function tableVestingListGoodPhase_TotalAllocationGe100_Throws(ITokenomics.LifecyclePhase vestingGoodPhase) public {
+    function tableVestingListGoodPhase_TotalAllocationGe100_Throws(IDAOData.LifecyclePhase vestingGoodPhase) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minVestingNameLen = 5;
@@ -768,7 +767,7 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
         st.minCliff = 7;
 
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](2);
         vesting[0].name = "123456";
         vesting[0].description = "vesting description";
         vesting[0].allocation = 99_000;
@@ -792,14 +791,14 @@ contract HostUpdateLibTest is Test {
     }
 
     /// @dev Source data for tableVestingListPositiveBadPhase
-    function fixtureVestingBadPhase() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        phases = new ITokenomics.LifecyclePhase[](3);
-        phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
-        phases[1] = ITokenomics.LifecyclePhase.LIVE_VESTING_7;
-        phases[2] = ITokenomics.LifecyclePhase.LIVE_8;
+    function fixtureVestingBadPhase() public pure returns (IDAOData.LifecyclePhase[] memory phases) {
+        phases = new IDAOData.LifecyclePhase[](3);
+        phases[0] = IDAOData.LifecyclePhase.LIVE_CLIFF_6;
+        phases[1] = IDAOData.LifecyclePhase.LIVE_VESTING_7;
+        phases[2] = IDAOData.LifecyclePhase.LIVE_8;
     }
 
-    function tableVestingListPositiveBadPhase(ITokenomics.LifecyclePhase vestingBadPhase) public {
+    function tableVestingListPositiveBadPhase(IDAOData.LifecyclePhase vestingBadPhase) public {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
         st.minVestingNameLen = 5;
@@ -808,7 +807,7 @@ contract HostUpdateLibTest is Test {
         st.maxVePeriod = 365;
         st.minCliff = 7;
 
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](1);
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
         vesting[0].name = "vesting name";
         vesting[0].description = "vesting description";
         vesting[0].allocation = 10_000;
@@ -826,7 +825,7 @@ contract HostUpdateLibTest is Test {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         uint daoUid = 7;
 
-        uint16[] memory contractIndices = new uint16[](uint(ITokenomics.ContractIndices.COUNT_CONTRACT_INDICES));
+        uint16[] memory contractIndices = new uint16[](uint(IDAOData.ContractIndices.COUNT_CONTRACT_INDICES));
         bytes32[] memory salt = new bytes32[](contractIndices.length);
         for (uint i; i < contractIndices.length; i++) {
             contractIndices[i] = uint16(i);
@@ -882,7 +881,7 @@ contract HostUpdateLibTest is Test {
         {
             uint16[] memory contractIndices = new uint16[](1);
             bytes32[] memory salt = new bytes32[](1);
-            contractIndices[0] = uint16(ITokenomics.ContractIndices.COUNT_CONTRACT_INDICES);
+            contractIndices[0] = uint16(IDAOData.ContractIndices.COUNT_CONTRACT_INDICES);
             salt[0] = "0x345";
 
             vm.expectRevert(abi.encodeWithSelector(IHost.TooHighContractIndex.selector, contractIndices[0]));
@@ -898,7 +897,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.DaoImages memory data = SampleDataLib.getDaoImages();
+        IDAOData.DaoImages memory data = SampleDataLib.getDaoImages();
         bytes memory payload = HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
 
         vm.expectEmit(false, false, false, true);
@@ -906,7 +905,7 @@ contract HostUpdateLibTest is Test {
 
         HostUpdateLib.updateImages(117, payload);
 
-        ITokenomics.DaoImages memory stored = $.daoImages[117];
+        IDAOData.DaoImages memory stored = $.daoImages[117];
 
         assertEq(stored.seedToken, data.seedToken);
         assertEq(stored.tgeToken, data.tgeToken);
@@ -941,12 +940,12 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.Funding memory data;
+        IDAOData.Funding memory data;
         data.start = uint64(block.timestamp + 1 days);
         data.end = uint64(block.timestamp + 10 days);
         data.minRaise = 1e18;
         data.maxRaise = 100e18;
-        data.fundingType = ITokenomics.FundingType.TGE_1;
+        data.fundingType = IDAOData.FundingType.TGE_1;
 
         bytes memory payload = HostEncodingLib.encodeFunding(data, HostEncodingLib.PAYLOAD_API_VERSION);
 
@@ -956,7 +955,7 @@ contract HostUpdateLibTest is Test {
         HostUpdateLib.updateFunding(117, payload);
 
         bytes32 fundingId = HostLib.getKey(117, uint(data.fundingType));
-        ITokenomics.Funding memory stored = $.funding[fundingId];
+        IDAOData.Funding memory stored = $.funding[fundingId];
 
         assertEq(stored.start, data.start);
         assertEq(stored.end, data.end);
@@ -964,7 +963,7 @@ contract HostUpdateLibTest is Test {
         assertEq(stored.maxRaise, data.maxRaise);
         assertEq(uint(stored.fundingType), uint(data.fundingType));
 
-        ITokenomics.FundingType[] memory list = $.segment3[117].funding;
+        IDAOData.FundingType[] memory list = $.segment3[117].funding;
         assertEq(list.length, 1);
         assertEq(uint(list[0]), uint(data.fundingType));
     }
@@ -974,7 +973,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.Vesting[] memory vesting = new ITokenomics.Vesting[](2);
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](2);
         vesting[0].name = "vesting name";
         vesting[0].description = "vesting description";
         vesting[0].allocation = 99_000;
@@ -999,7 +998,7 @@ contract HostUpdateLibTest is Test {
 
         for (uint i = 0; i < vesting.length; i++) {
             bytes32 key = HostLib.getIndexKey(117, i);
-            ITokenomics.Vesting memory stored = $.vesting[key];
+            IDAOData.Vesting memory stored = $.vesting[key];
             assertEq(stored.name, vesting[i].name);
             assertEq(stored.description, vesting[i].description);
             assertEq(stored.allocation, vesting[i].allocation);
@@ -1020,7 +1019,7 @@ contract HostUpdateLibTest is Test {
         $.segment2[117].symbol = "ABC";
         $.segment2[117].name = "Old Name";
 
-        ITokenomics.DaoNames memory data;
+        IDAOData.DaoNames memory data;
         data.name = "New DAO Name";
         data.symbol = "XYZ";
 
@@ -1046,7 +1045,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.DaoParameters memory data;
+        IDAOData.DaoParameters memory data;
         data.pvpFee = 500;
         data.vePeriod = 30;
 
@@ -1057,7 +1056,7 @@ contract HostUpdateLibTest is Test {
 
         HostUpdateLib.updateDaoParameters(117, payload);
 
-        ITokenomics.DaoParameters memory stored = $.daoParameters[117];
+        IDAOData.DaoParameters memory stored = $.daoParameters[117];
         assertEq(stored.pvpFee, data.pvpFee);
         assertEq(stored.vePeriod, data.vePeriod);
     }
@@ -1093,7 +1092,7 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.DaoChainSettings memory settings;
+        IDAOData.DaoChainSettings memory settings;
         settings.bbRate = 100;
 
         bytes memory payload = HostEncodingLib.encodeDaoChainSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
@@ -1115,8 +1114,8 @@ contract HostUpdateLibTest is Test {
         $.daoUids["ABC"] = 117;
         $.segment2[117].symbol = "ABC";
 
-        ITokenomics.GovernanceSettings memory settings =
-            ITokenomics.GovernanceSettings({proposalThreshold: 90_000, ttBribe: 85_501});
+        IDAOData.GovernanceSettings memory settings =
+            IDAOData.GovernanceSettings({proposalThreshold: 90_000, ttBribe: 85_501});
 
         bytes memory payload = HostEncodingLib.encodeGovernanceSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
 
@@ -1357,30 +1356,30 @@ contract HostUpdateLibTest is Test {
 
     function validateDaoParametersPublic(
         uint daoUid,
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.DaoParameters memory params
+        IDAOData.LifecyclePhase phase,
+        IDAOData.DaoParameters memory params
     ) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         HostUpdateLib.validateDaoParameters(daoUid, phase, params, st);
     }
 
-    function validateActivityPublic(ITokenomics.Activity[] memory activity_) public pure {
+    function validateActivityPublic(IDAOData.Activity[] memory activity_) public pure {
         HostUpdateLib.validateActivity(activity_);
     }
 
-    function validateFundingListPublic(ITokenomics.Funding[] memory funding) public view {
+    function validateFundingListPublic(IDAOData.Funding[] memory funding) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         HostUpdateLib._validateFundingList(funding, st);
     }
 
-    function validateFundingPublic(ITokenomics.LifecyclePhase phase, ITokenomics.Funding memory funding) public view {
+    function validateFundingPublic(IDAOData.LifecyclePhase phase, IDAOData.Funding memory funding) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
         HostUpdateLib.validateFunding(phase, funding, st);
     }
 
     function validateVestingListPublic(
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.Vesting[] memory vesting,
+        IDAOData.LifecyclePhase phase,
+        IDAOData.Vesting[] memory vesting,
         uint tgeClaim
     ) public view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
@@ -1391,7 +1390,7 @@ contract HostUpdateLibTest is Test {
         HostUpdateLib.validateSalt(daoUid, contractIndices, salt_);
     }
 
-    function validateChainSettingsPublic(ITokenomics.DaoChainSettings memory st) public pure {
+    function validateChainSettingsPublic(IDAOData.DaoChainSettings memory st) public pure {
         HostUpdateLib.validateDaoChainSettings(st);
     }
 

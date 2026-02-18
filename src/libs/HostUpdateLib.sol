@@ -11,7 +11,6 @@ import {HostLib} from "./HostLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
 
 /// @notice Data validation, updating logic
 library HostUpdateLib {
@@ -20,11 +19,11 @@ library HostUpdateLib {
     //region -------------------------------------- Actions
     function validate(
         uint daoUid,
-        ITokenomics.LifecyclePhase phase,
+        IDAOData.LifecyclePhase phase,
         HostLib.DaoDataSegment2 memory daoData2,
-        ITokenomics.DaoParameters memory params,
-        ITokenomics.Funding[] memory funding,
-        ITokenomics.Activity[] memory activity
+        IDAOData.DaoParameters memory params,
+        IDAOData.Funding[] memory funding,
+        IDAOData.Activity[] memory activity
     ) internal view {
         IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
 
@@ -44,8 +43,8 @@ library HostUpdateLib {
     }
 
     /// @dev activity contains only valid enum values - decoder reverts automatically if it contains invalid value
-    function validateActivity(ITokenomics.Activity[] memory activity) internal pure {
-        uint count = uint(ITokenomics.Activity.COUNT_ACTIVITY);
+    function validateActivity(IDAOData.Activity[] memory activity) internal pure {
+        uint count = uint(IDAOData.Activity.COUNT_ACTIVITY);
         bool[] memory foundActivity = new bool[](count);
 
         uint len = activity.length;
@@ -84,13 +83,13 @@ library HostUpdateLib {
     /// @notice Validate DAO params according to OS settings
     function validateDaoParameters(
         uint daoUid,
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.DaoParameters memory params,
+        IDAOData.LifecyclePhase phase,
+        IDAOData.DaoParameters memory params,
         IHost.HostSettings storage st
     ) internal view {
         require(params.pvpFee >= st.minPvPFee && params.pvpFee <= st.maxPvPFee, IHost.PvPFee(params.pvpFee));
         require(params.vePeriod >= st.minVePeriod && params.vePeriod <= st.maxVePeriod, IHost.VePeriod(params.vePeriod));
-        if (phase >= ITokenomics.LifecyclePhase.TGE_5) {
+        if (phase >= IDAOData.LifecyclePhase.TGE_5) {
             require(
                 params.totalSupply == HostLib.getHostStorage().daoParameters[daoUid].totalSupply,
                 IHost.TooLateToUpdateTotalSupply()
@@ -98,15 +97,15 @@ library HostUpdateLib {
         }
     }
 
-    function validateDaoChainSettings(ITokenomics.DaoChainSettings memory settings) internal pure {
+    function validateDaoChainSettings(IDAOData.DaoChainSettings memory settings) internal pure {
         require(settings.bbRate <= 100, IHost.TooHighValue());
     }
 
     /// @notice Check funding list before creation
-    function _validateFundingList(ITokenomics.Funding[] memory funding, IHost.HostSettings storage st) internal view {
+    function _validateFundingList(IDAOData.Funding[] memory funding, IHost.HostSettings storage st) internal view {
         require(funding.length != 0, IHost.NeedFunding());
 
-        bool[] memory foundFunding = new bool[](uint(ITokenomics.FundingType.COUNT_FUNDING_TYPES));
+        bool[] memory foundFunding = new bool[](uint(IDAOData.FundingType.COUNT_FUNDING_TYPES));
         uint len = funding.length;
         for (uint i; i < len; ++i) {
             require(!foundFunding[uint(funding[i].fundingType)], IHost.InvalidFundingArray());
@@ -117,7 +116,7 @@ library HostUpdateLib {
     }
 
     /// @dev Check funding params according to Host settings
-    function validateFunding(ITokenomics.Funding memory funding, IHost.HostSettings storage st) internal view {
+    function validateFunding(IDAOData.Funding memory funding, IHost.HostSettings storage st) internal view {
         uint duration = funding.end > funding.start ? funding.end - funding.start : 0;
         require(duration >= st.minFundingDuration && duration <= st.maxFundingDuration, IHost.InvalidFundingPeriod());
 
@@ -130,21 +129,21 @@ library HostUpdateLib {
 
     /// @dev Check funding before updating. Funding can be updated on proper phase only.
     function validateFunding(
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.Funding memory funding,
+        IDAOData.LifecyclePhase phase,
+        IDAOData.Funding memory funding,
         IHost.HostSettings storage st
     ) internal view {
-        if (funding.fundingType == ITokenomics.FundingType.SEED_0) {
+        if (funding.fundingType == IDAOData.FundingType.SEED_0) {
             require(
-                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1,
+                phase == IDAOData.LifecyclePhase.DRAFT_0 || phase == IDAOData.LifecyclePhase.INCEPTION_1,
                 IHost.TooLateToUpdateSuchFunding()
             );
         }
 
-        if (funding.fundingType == ITokenomics.FundingType.TGE_1) {
+        if (funding.fundingType == IDAOData.FundingType.TGE_1) {
             require(
-                phase == ITokenomics.LifecyclePhase.DRAFT_0 || phase == ITokenomics.LifecyclePhase.INCEPTION_1
-                    || phase == ITokenomics.LifecyclePhase.SEED_2 || phase == ITokenomics.LifecyclePhase.DEVELOPMENT_4,
+                phase == IDAOData.LifecyclePhase.DRAFT_0 || phase == IDAOData.LifecyclePhase.INCEPTION_1
+                    || phase == IDAOData.LifecyclePhase.SEED_2 || phase == IDAOData.LifecyclePhase.DEVELOPMENT_4,
                 IHost.TooLateToUpdateSuchFunding()
             );
         }
@@ -154,14 +153,14 @@ library HostUpdateLib {
 
     /// @param tgeClaim Date of DAO launching (after TGE finishing, DAO token is deployed, etc)
     function validateVestingList(
-        ITokenomics.LifecyclePhase phase,
-        ITokenomics.Vesting[] memory vesting,
+        IDAOData.LifecyclePhase phase,
+        IDAOData.Vesting[] memory vesting,
         IHost.HostSettings storage st,
         uint tgeClaim
     ) internal view {
         require(
-            phase != ITokenomics.LifecyclePhase.LIVE_CLIFF_6 && phase != ITokenomics.LifecyclePhase.LIVE_VESTING_7
-                && phase != ITokenomics.LifecyclePhase.LIVE_8,
+            phase != IDAOData.LifecyclePhase.LIVE_CLIFF_6 && phase != IDAOData.LifecyclePhase.LIVE_VESTING_7
+                && phase != IDAOData.LifecyclePhase.LIVE_8,
             IHost.TooLateToUpdateVesting()
         );
 
@@ -178,7 +177,7 @@ library HostUpdateLib {
     }
 
     function validateVesting(
-        ITokenomics.Vesting memory vesting,
+        IDAOData.Vesting memory vesting,
         IHost.HostSettings storage st,
         uint claim
     ) internal view {
@@ -201,7 +200,7 @@ library HostUpdateLib {
 
         for (uint i; i < len; ++i) {
             require(
-                contractIndices[i] < uint16(ITokenomics.ContractIndices.COUNT_CONTRACT_INDICES),
+                contractIndices[i] < uint16(IDAOData.ContractIndices.COUNT_CONTRACT_INDICES),
                 IHost.TooHighContractIndex(contractIndices[i])
             );
 
@@ -218,13 +217,13 @@ library HostUpdateLib {
 
     /// @notice Update images (logo/banner) of the DAO
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded ITokenomics.DaoImages struct
+    /// @param payload Encoded IDAOData.DaoImages struct
     function updateImages(uint daoUid, bytes memory payload) internal {
-        ITokenomics.DaoImages memory images = HostEncodingLib.decodeDaoImages(payload);
+        IDAOData.DaoImages memory images = HostEncodingLib.decodeDaoImages(payload);
         updateImages(daoUid, images);
     }
 
-    function updateImages(uint daoUid, ITokenomics.DaoImages memory images) internal {
+    function updateImages(uint daoUid, IDAOData.DaoImages memory images) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoImages[daoUid] = images;
         emit IHost.DaoImagesUpdated($.segment2[daoUid].symbol, images);
@@ -246,7 +245,7 @@ library HostUpdateLib {
 
     /// @notice Update revenue generating units of the DAO
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded ITokenomics.UnitInfo[] array
+    /// @param payload Encoded IDAOData.UnitInfo[] array
     /// @param proposalId Id of the proposal that triggered this update. Not zero here
     function updateUnitsForProposal(uint daoUid, bytes memory payload, bytes32 proposalId) internal {
         IDAOData.UnitDataInput[] memory units = HostEncodingLib.decodeUnits(payload);
@@ -345,16 +344,16 @@ library HostUpdateLib {
 
     /// @notice Replace array of funding of the DAO by new one
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded ITokenomics.Funding[] array
+    /// @param payload Encoded IDAOData.Funding[] array
     function updateFunding(uint daoUid, bytes memory payload) internal {
-        ITokenomics.Funding memory newFunding = HostEncodingLib.decodeFunding(payload);
+        IDAOData.Funding memory newFunding = HostEncodingLib.decodeFunding(payload);
         updateFunding(daoUid, newFunding);
     }
 
-    function updateFunding(uint daoUid, ITokenomics.Funding memory newFunding) internal {
+    function updateFunding(uint daoUid, IDAOData.Funding memory newFunding) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.FundingType[] memory listFunding = $.segment3[daoUid].funding;
+        IDAOData.FundingType[] memory listFunding = $.segment3[daoUid].funding;
 
         // slither-disable-next-line uninitialized-local
         bool updated;
@@ -377,13 +376,13 @@ library HostUpdateLib {
 
     /// @notice Update vesting allocations of the DAO
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded ITokenomics.Vesting[] array
+    /// @param payload Encoded IDAOData.Vesting[] array
     function updateVesting(uint daoUid, bytes memory payload) internal {
-        ITokenomics.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
+        IDAOData.Vesting[] memory vesting = HostEncodingLib.decodeVesting(payload);
         updateVesting(daoUid, vesting);
     }
 
-    function updateVesting(uint daoUid, ITokenomics.Vesting[] memory vesting) internal {
+    function updateVesting(uint daoUid, IDAOData.Vesting[] memory vesting) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         uint countVesting = vesting.length;
@@ -399,17 +398,17 @@ library HostUpdateLib {
 
     /// @notice Update DAO naming (name and symbol)
     /// @param daoUid Unique id of the DAO
-    /// @param payload Encoded ITokenomics.DaoNames struct
+    /// @param payload Encoded IDAOData.DaoNames struct
     function updateNaming(uint daoUid, bytes memory payload) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
+        IDAOData.DaoNames memory _daoNames = HostEncodingLib.decodeDaoNames(payload);
 
         require($.daoUids[_daoNames.symbol] == 0, IHost.SymbolNotUnique(_daoNames.symbol));
 
         updateNaming(daoUid, _daoNames);
     }
 
-    function updateNaming(uint daoUid, ITokenomics.DaoNames memory daoNames_) internal {
+    function updateNaming(uint daoUid, IDAOData.DaoNames memory daoNames_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // We assume here that new symbol cannot be changed by any other DAO on any chain
@@ -432,11 +431,11 @@ library HostUpdateLib {
     }
 
     function updateDaoParameters(uint daoUid, bytes memory payload) internal {
-        ITokenomics.DaoParameters memory _daoParameters = HostEncodingLib.decodeDaoParameters(payload);
+        IDAOData.DaoParameters memory _daoParameters = HostEncodingLib.decodeDaoParameters(payload);
         updateDaoParameters(daoUid, _daoParameters);
     }
 
-    function updateDaoParameters(uint daoUid, ITokenomics.DaoParameters memory daoParameters_) internal {
+    function updateDaoParameters(uint daoUid, IDAOData.DaoParameters memory daoParameters_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoParameters[daoUid] = daoParameters_;
         emit IHost.DaoParametersUpdated(daoUid, daoParameters_);
@@ -460,22 +459,22 @@ library HostUpdateLib {
     }
 
     function updateDaoChainSettings(uint daoUid, bytes memory payload) internal {
-        ITokenomics.DaoChainSettings memory settings_ = HostEncodingLib.decodeDaoChainSettings(payload);
+        IDAOData.DaoChainSettings memory settings_ = HostEncodingLib.decodeDaoChainSettings(payload);
         updateDaoChainSettings(daoUid, settings_);
     }
 
-    function updateDaoChainSettings(uint daoUid, ITokenomics.DaoChainSettings memory settings_) internal {
+    function updateDaoChainSettings(uint daoUid, IDAOData.DaoChainSettings memory settings_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.chainSettings[daoUid] = settings_;
         emit IHost.DaoChainSettingsUpdated(daoUid, settings_);
     }
 
     function updateGovernanceSettings(uint daoUid, bytes memory payload) internal {
-        ITokenomics.GovernanceSettings memory _settings = HostEncodingLib.decodeGovernanceSettings(payload);
+        IDAOData.GovernanceSettings memory _settings = HostEncodingLib.decodeGovernanceSettings(payload);
         updateGovernanceSettings(daoUid, _settings);
     }
 
-    function updateGovernanceSettings(uint daoUid, ITokenomics.GovernanceSettings memory settings_) internal {
+    function updateGovernanceSettings(uint daoUid, IDAOData.GovernanceSettings memory settings_) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.governanceSettings[daoUid] = settings_;
         emit IHost.GovernanceSettingsUpdated(daoUid, settings_);

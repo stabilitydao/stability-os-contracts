@@ -13,7 +13,7 @@ import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {MinHostedNoReceiveV2} from "../mocks/MinHostedNoReceiveV2.sol";
 import {MinHostedNoReceive} from "../mocks/MinHostedNoReceive.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IOwnable} from "../../src/interfaces/IOwnable.sol";
 import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
@@ -67,35 +67,35 @@ contract HostProxyLibTest is Test {
 
         vm.expectRevert(); // AccessManagedUnauthorized
         vm.prank(address(1111));
-        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+        host.setContractImplementation(uint(IDAOData.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+        host.setContractImplementation(uint(IDAOData.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
+        host.setContractImplementation(uint(IDAOData.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
 
         assertEq(
-            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+            host.contractImplementation(uint(IDAOData.ContractIndices.SEED_TOKEN_1)),
             seedTokenImplementation,
             "Seed token implementation set"
         );
         assertEq(
-            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
+            host.contractImplementation(uint(IDAOData.ContractIndices.TGE_TOKEN_2)),
             tgeTokenImplementation,
             "Tge token implementation set"
         );
 
         vm.prank(multisig);
-        host.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), address(0));
+        host.setContractImplementation(uint(IDAOData.ContractIndices.TGE_TOKEN_2), address(0));
 
         assertEq(
-            host.contractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1)),
+            host.contractImplementation(uint(IDAOData.ContractIndices.SEED_TOKEN_1)),
             seedTokenImplementation,
             "Seed token implementation not changed"
         );
         assertEq(
-            host.contractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2)),
+            host.contractImplementation(uint(IDAOData.ContractIndices.TGE_TOKEN_2)),
             address(0),
             "Tge token implementation is zero"
         );
@@ -105,7 +105,7 @@ contract HostProxyLibTest is Test {
         // ------------------------ Setup implementations
         address seedTokenImplementation = address(new SeedToken());
 
-        HostProxyLib.setContractImplementation(uint(ITokenomics.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
+        HostProxyLib.setContractImplementation(uint(IDAOData.ContractIndices.SEED_TOKEN_1), seedTokenImplementation);
 
         // ------------------------ Deploy seed token
 
@@ -131,7 +131,7 @@ contract HostProxyLibTest is Test {
         // ------------------------ Setup implementations
         address tgeTokenImplementation = address(new TgeToken());
 
-        HostProxyLib.setContractImplementation(uint(ITokenomics.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
+        HostProxyLib.setContractImplementation(uint(IDAOData.ContractIndices.TGE_TOKEN_2), tgeTokenImplementation);
 
         // ------------------------ Deploy seed token
 

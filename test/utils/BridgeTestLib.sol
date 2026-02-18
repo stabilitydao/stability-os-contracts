@@ -4,7 +4,6 @@ pragma solidity ^0.8.23;
 import {console, Vm} from "forge-std/Test.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
-// import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
@@ -488,7 +487,7 @@ library BridgeTestLib {
 
     function extractProposalPayload(Vm
                 .Log[] memory logs) internal pure returns (bytes memory payload, bytes32 payloadHash) {
-        // extract event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
+        // extract event Proposal(uint daoUid, IDAOData.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
         bytes32 sig = keccak256("Proposal(uint256,uint8,bytes32,bytes32,bytes)");
 
         for (uint i; i < logs.length; ++i) {

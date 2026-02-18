@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {HostLib} from "./HostLib.sol";
 import {IAuthority} from "../interfaces/IAuthority.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {ISeedToken} from "../interfaces/ISeedToken.sol";
 import {IRefundableToken} from "../interfaces/IRefundableToken.sol";
 import {IMintedERC20} from "../interfaces/IMintedERC20.sol";
@@ -20,7 +20,7 @@ library HostDeployLib {
         uint daoUid,
         address authority_
     ) internal returns (address seedToken) {
-        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1))];
+        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.SEED_TOKEN_1))];
         seedToken =
             HostProxyLib.deployContract(seed, uint(IHost.ContractKinds.SEED_TOKEN_1), abi.encode(daoUid), authority_);
         _setupSeedToken(seedToken, authority_);
@@ -33,7 +33,7 @@ library HostDeployLib {
         uint daoUid,
         address authority_
     ) internal returns (address tgeToken) {
-        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2))];
+        bytes32 seed = $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.TGE_TOKEN_2))];
         tgeToken =
             HostProxyLib.deployContract(seed, uint(IHost.ContractKinds.TGE_TOKEN_2), abi.encode(daoUid), authority_);
         _setupTgeToken(tgeToken, authority_);

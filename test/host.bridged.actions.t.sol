@@ -10,9 +10,8 @@ import {Vm, Test} from "forge-std/Test.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
-import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {ITokenomics} from "../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {IHostCodec} from "../src/interfaces/IHostCodec.sol";
 import {ISegment4} from "../src/interfaces/ISegment4.sol";
 import {IDataReader} from "../src/interfaces/IDataReader.sol";
@@ -181,7 +180,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ bridge dao from Sonic to Avalanche
-        (bytes memory proposalPayload, ITokenomics.DaoParameters memory daoParams) =
+        (bytes memory proposalPayload, IDAOData.DaoParameters memory daoParams) =
             _makeUpdateDaoParamsProposal(hostSonic, dao);
 
         // ------------------------ Process proposal on Sonic
@@ -223,7 +222,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ bridge dao from Sonic to Avalanche
-        (bytes memory proposalPayload, ITokenomics.DaoChainSettings memory chainSettings) =
+        (bytes memory proposalPayload, IDAOData.DaoChainSettings memory chainSettings) =
             _makeUpdateDaoChainSettingsProposal(hostSonic, dao);
 
         // ------------------------ Process proposal on Sonic
@@ -274,7 +273,7 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ Process proposal on Sonic
         bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
-        ITokenomics.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
+        IDAOData.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
         assertTrue(proposal.validationRequired, "proposal should require validation because of salts");
         assertTrue(proposal.votingRequired, "proposal should require voting");
 
@@ -318,7 +317,7 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------ Process proposal on Sonic
         bytes32 proposalId = HostUtilsLib.getLastProposalId(hostSonic, dao.symbol);
-        ITokenomics.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
+        IDAOData.Proposal memory proposal = _processProposal(hostSonic, proposalId, proposalPayload);
         assertTrue(proposal.validationRequired, "validation is required");
         assertTrue(proposal.votingRequired, "voting required");
 
@@ -356,7 +355,7 @@ contract HostBridgedActionsTest is Test {
             SampleDataLib.getUnitsSingle("aliens:os");
         host.updateDAO(
             symbol,
-            uint16(ITokenomics.DAOAction.UPDATE_UNITS_3),
+            uint16(IDAOData.DAOAction.UPDATE_UNITS_3),
             codec.encode(units, codec.PAYLOAD_API_VERSION()),
             codec.encode(metas, codec.PAYLOAD_API_VERSION())
         );
@@ -366,7 +365,7 @@ contract HostBridgedActionsTest is Test {
         IHost host,
         bytes32 proposalId,
         bytes memory proposalPayload
-    ) internal returns (ITokenomics.Proposal memory proposal) {
+    ) internal returns (IDAOData.Proposal memory proposal) {
         proposal = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
 
         if (proposal.validationRequired) {
@@ -463,7 +462,7 @@ contract HostBridgedActionsTest is Test {
         }
 
         uint16[] memory saltContractIndices = new uint16[](1);
-        saltContractIndices[0] = uint16(ITokenomics.ContractIndices.TOKEN_3);
+        saltContractIndices[0] = uint16(IDAOData.ContractIndices.TOKEN_3);
 
         bytes32[] memory salts = new bytes32[](1);
         salts[0] = "0x70859983";
@@ -482,7 +481,7 @@ contract HostBridgedActionsTest is Test {
     function _makeUpdateDaoParamsProposal(
         IHost host,
         IDAOData.DaoData memory dao
-    ) internal returns (bytes memory proposalPayload, ITokenomics.DaoParameters memory daoParams) {
+    ) internal returns (bytes memory proposalPayload, IDAOData.DaoParameters memory daoParams) {
         uint32[] memory dstEids = new uint32[](1);
         dstEids[0] = avalanche.endpointId;
 
@@ -504,11 +503,11 @@ contract HostBridgedActionsTest is Test {
     function _makeUpdateDaoChainSettingsProposal(
         IHost host,
         IDAOData.DaoData memory dao
-    ) internal returns (bytes memory proposalPayload, ITokenomics.DaoChainSettings memory chainSettings) {
+    ) internal returns (bytes memory proposalPayload, IDAOData.DaoChainSettings memory chainSettings) {
         uint32[] memory dstEids = new uint32[](1);
         dstEids[0] = avalanche.endpointId;
 
-        chainSettings = ITokenomics.DaoChainSettings({bbRate: 17, multisig: address(0)});
+        chainSettings = IDAOData.DaoChainSettings({bbRate: 17, multisig: address(0)});
 
         bytes[] memory actionPayloads = new bytes[](1);
         IHostCodec codec = IHostCodec(sonic.hostCodec);
@@ -533,8 +532,8 @@ contract HostBridgedActionsTest is Test {
         dstEids[0] = avalanche.endpointId;
 
         contractIndices = new uint16[](2);
-        contractIndices[0] = uint16(ITokenomics.ContractIndices.TOKEN_3);
-        contractIndices[1] = uint16(ITokenomics.ContractIndices.SEED_TOKEN_1);
+        contractIndices[0] = uint16(IDAOData.ContractIndices.TOKEN_3);
+        contractIndices[1] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1);
 
         salt = new bytes32[](2);
         salt[0] = "0x24310218";

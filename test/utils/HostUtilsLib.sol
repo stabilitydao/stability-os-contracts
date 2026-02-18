@@ -18,13 +18,12 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {TgeToken} from "../../src/tokenomics/TgeToken.sol";
 import {HostSetupUtils} from "../scenario/access/HostSetupUtils.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
-import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IDataReader} from "../../src/interfaces/IDataReader.sol";
 import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 
 library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.HOST_ADMIN;
@@ -192,58 +191,58 @@ library HostUtilsLib {
         string memory symbol,
         string memory daoName
     ) public returns (IDAOData.DaoData memory) {
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
+        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
+        IDAOData.DaoParameters memory params = generateDaoParams(365, 100);
         host.createDAO(daoName, symbol, activity, params, funding);
 
         return IDataReader(host.getChainSettings().dataReader).getDAO(symbol);
     }
 
     function createAliensDao(Vm vm, IHost os_, string memory symbol) internal returns (IDAOData.DaoData memory) {
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_SEED_DELAY, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](2);
-        activity[0] = ITokenomics.Activity.BUILDER_3;
-        activity[1] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
+        activity[0] = IDAOData.Activity.BUILDER_3;
+        activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = generateDaoParams(365, 100);
+        IDAOData.DaoParameters memory params = generateDaoParams(365, 100);
 
         return _createDao(vm, os_, "Aliens Community", symbol, funding, activity, params);
     }
 
     function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0] = generateSeedFunding(
             DEFAULT_MIN_INCEPTION_DURATION, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
         );
 
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
+        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
 
-        ITokenomics.DaoParameters memory params = generateDaoParams(30, 90);
+        IDAOData.DaoParameters memory params = generateDaoParams(30, 90);
 
         return _createDao(vm, os_, "Apes Syndicate", "APES", funding, activity, params);
     }
 
     function createDaoMachines(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
-        ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](2);
+        IDAOData.Funding[] memory funding = new IDAOData.Funding[](2);
         funding[0] = generateSeedFunding(7 days, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE);
         funding[1] = generateTGEFunding();
 
-        ITokenomics.Activity[] memory activity = new ITokenomics.Activity[](1);
-        activity[0] = ITokenomics.Activity.MEV_SEARCHER_2;
+        IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
+        activity[0] = IDAOData.Activity.MEV_SEARCHER_2;
 
-        ITokenomics.DaoParameters memory params = generateDaoParams(14, 99);
+        IDAOData.DaoParameters memory params = generateDaoParams(14, 99);
 
         return _createDao(vm, os_, "Machines Cartel", "MACHINE", funding, activity, params);
     }
@@ -253,9 +252,9 @@ library HostUtilsLib {
         IHost host_,
         string memory name_,
         string memory symbol_,
-        ITokenomics.Funding[] memory funding,
-        ITokenomics.Activity[] memory activity,
-        ITokenomics.DaoParameters memory params
+        IDAOData.Funding[] memory funding,
+        IDAOData.Activity[] memory activity,
+        IDAOData.DaoParameters memory params
     ) internal returns (IDAOData.DaoData memory) {
         // user should pay for cross-chain messages
         uint value = host_.quoteCreateDAO(symbol_);
@@ -316,15 +315,15 @@ library HostUtilsLib {
 
     //region ----------------------------- Funding, DaoParams, Vesting
     /// @notice Generate a seed funding with sensible defaults relative to current block timestamp.
-    /// @return A populated ITokenomics.Funding struct ready to be passed to createDAO/updateFunding.
+    /// @return A populated IDAOData.Funding struct ready to be passed to createDAO/updateFunding.
     function generateSeedFunding(
         uint delaySec,
         uint duration,
         uint minRaise,
         uint maxRaise
-    ) internal view returns (ITokenomics.Funding memory) {
-        return ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.SEED_0,
+    ) internal view returns (IDAOData.Funding memory) {
+        return IDAOData.Funding({
+            fundingType: IDAOData.FundingType.SEED_0,
             start: uint64(block.timestamp + delaySec),
             end: uint64(block.timestamp + delaySec + duration),
             minRaise: minRaise,
@@ -334,14 +333,14 @@ library HostUtilsLib {
         });
     }
 
-    function generateTGEFunding() internal view returns (ITokenomics.Funding memory) {
+    function generateTGEFunding() internal view returns (IDAOData.Funding memory) {
         uint64 _after = 30 * 6 days;
         uint64 duration = 7 days;
         uint minRaise = 100_000e18; // exchange asset
         uint maxRaise = 500_000e18; // ex change asset
 
-        return ITokenomics.Funding({
-            fundingType: ITokenomics.FundingType.TGE_1,
+        return IDAOData.Funding({
+            fundingType: IDAOData.FundingType.TGE_1,
             start: uint64(block.timestamp + _after),
             end: uint64(block.timestamp + _after + duration),
             minRaise: minRaise,
@@ -354,8 +353,8 @@ library HostUtilsLib {
     function generateDaoParams(
         uint32 vePeriod_,
         uint16 pvpFee_
-    ) internal pure returns (ITokenomics.DaoParameters memory) {
-        return ITokenomics.DaoParameters({
+    ) internal pure returns (IDAOData.DaoParameters memory) {
+        return IDAOData.DaoParameters({
             vePeriod: vePeriod_,
             pvpFee: pvpFee_,
             minPower: 0,
@@ -366,11 +365,11 @@ library HostUtilsLib {
         });
     }
 
-    function generateVesting(string memory name, uint tgeEnd) internal pure returns (ITokenomics.Vesting memory) {
+    function generateVesting(string memory name, uint tgeEnd) internal pure returns (IDAOData.Vesting memory) {
         uint64 cliff = 180 days;
         uint64 duration = 365 days;
         uint32 allocation = 100;
-        return ITokenomics.Vesting({
+        return IDAOData.Vesting({
             name: name,
             description: "Vesting for testing",
             start: uint64(tgeEnd + cliff),
@@ -381,7 +380,7 @@ library HostUtilsLib {
 
     function createTestDaoData() internal pure returns (IDAOData.DaoDataInput memory data) {
         // ---------------- base fields
-        data.phase = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
+        data.phase = IDAOData.LifecyclePhase.DEVELOPMENT_4;
         data.symbol = "TESTDAO";
         data.name = "Test DAO";
         data.deployer = address(0x123);
@@ -393,9 +392,9 @@ library HostUtilsLib {
         data.socials[2] = "https://discord.gg/testdao";
 
         // ---------------- activity
-        data.activity = new ITokenomics.Activity[](2);
-        data.activity[0] = ITokenomics.Activity.SAAS_OPERATOR_1;
-        data.activity[1] = ITokenomics.Activity.BUILDER_3;
+        data.activity = new IDAOData.Activity[](2);
+        data.activity[0] = IDAOData.Activity.SAAS_OPERATOR_1;
+        data.activity[1] = IDAOData.Activity.BUILDER_3;
 
         // ---------------- images
         data.images = SampleDataLib.getDaoImages();
@@ -405,7 +404,7 @@ library HostUtilsLib {
         vestings[0] = address(0x5001);
         vestings[1] = address(0x5002);
 
-        data.deployments = ITokenomics.DaoDeploymentInfo({
+        data.deployments = IDAOData.DaoDeploymentInfo({
             seedToken: address(0x1001),
             tgeToken: address(0x1002),
             token: address(0x1003),
@@ -424,7 +423,7 @@ library HostUtilsLib {
         (data.units, data.unitDataToEmit) = SampleDataLib.getUnitsThree();
 
         // ---------------- Dao params
-        data.params = ITokenomics.DaoParameters({
+        data.params = IDAOData.DaoParameters({
             vePeriod: uint32(180),
             pvpFee: uint16(25),
             minPower: uint(100 ether),
@@ -435,9 +434,9 @@ library HostUtilsLib {
         });
 
         { // ---------------- Tokenomics
-            ITokenomics.Funding[] memory funding = new ITokenomics.Funding[](1);
-            funding[0] = ITokenomics.Funding({
-                fundingType: ITokenomics.FundingType.SEED_0,
+            IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
+            funding[0] = IDAOData.Funding({
+                fundingType: IDAOData.FundingType.SEED_0,
                 start: uint64(1650000000),
                 end: uint64(1650000000 + 30 days),
                 minRaise: uint(1 ether),
@@ -446,15 +445,15 @@ library HostUtilsLib {
                 claim: uint64(0)
             });
 
-            ITokenomics.Vesting[] memory vest = new ITokenomics.Vesting[](2);
-            vest[0] = ITokenomics.Vesting({
+            IDAOData.Vesting[] memory vest = new IDAOData.Vesting[](2);
+            vest[0] = IDAOData.Vesting({
                 name: "Founders",
                 description: "Founders allocation",
                 allocation: uint32(90_000),
                 start: uint64(1650000000),
                 end: uint64(1650000000 + 365 days)
             });
-            vest[1] = ITokenomics.Vesting({
+            vest[1] = IDAOData.Vesting({
                 name: "Team",
                 description: "Team allocation",
                 allocation: uint32(80_000),
@@ -552,7 +551,7 @@ library HostUtilsLib {
     //region ----------------------------- Utils
     function getFundingIndex(
         IDAOData.DaoData memory data,
-        ITokenomics.FundingType fType
+        IDAOData.FundingType fType
     ) internal pure returns (uint index) {
         for (uint i; i < data.funding.length; i++) {
             if (data.funding[i].fundingType == fType) {
@@ -592,7 +591,7 @@ library HostUtilsLib {
     ) internal returns (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) {
         vm.recordLogs();
         inputPayload = codec_.encode(socials);
-        host_.updateDAO(symbol, uint16(ITokenomics.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
+        host_.updateDAO(symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
         payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
         proposalId = HostUtilsLib.getLastProposalId(host_, symbol);
 

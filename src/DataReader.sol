@@ -2,7 +2,6 @@
 pragma solidity ^0.8.28;
 
 import {IAuthority} from "./interfaces/IAuthority.sol";
-import {ITokenomics} from "./interfaces/ITokenomics.sol";
 import {IDAOData} from "./interfaces/IDAOData.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {Hosted} from "./base/Hosted.sol";
@@ -32,7 +31,7 @@ contract DataReader is IDataReader, Hosted {
     }
 
     /// @inheritdoc IDataReader
-    function proposal(bytes32 proposalId) external view returns (ITokenomics.Proposal memory dest) {
+    function proposal(bytes32 proposalId) external view returns (IDAOData.Proposal memory dest) {
         bytes memory data = _host()
             .getBinaryData(
                 uint(IHost.DataReaderItem.PROPOSAL_1), abi.encode(proposalId), HostEncodingLib.PAYLOAD_API_VERSION

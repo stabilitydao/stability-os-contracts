@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "./interfaces/ITokenomics.sol";
 import {IDAOData} from "./interfaces/IDAOData.sol";
 import {IHostCodec} from "./interfaces/IHostCodec.sol";
 import {IBridgedActions} from "./interfaces/IBridgedActions.sol";
@@ -26,12 +25,12 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.DaoImages memory images, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.DaoImages memory images, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoImages(images, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeImages(bytes memory encoded) external pure returns (ITokenomics.DaoImages memory images) {
+    function decodeImages(bytes memory encoded) external pure returns (IDAOData.DaoImages memory images) {
         return HostEncodingLib.decodeDaoImages(encoded);
     }
 
@@ -46,12 +45,12 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.DaoNames memory data, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.DaoNames memory data, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoNames(data, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeDaoNames(bytes memory encoded) external pure returns (ITokenomics.DaoNames memory data) {
+    function decodeDaoNames(bytes memory encoded) external pure returns (IDAOData.DaoNames memory data) {
         return HostEncodingLib.decodeDaoNames(encoded);
     }
 
@@ -76,22 +75,22 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.Funding memory funding, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.Funding memory funding, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeFunding(funding, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeFunding(bytes memory encoded) external pure returns (ITokenomics.Funding memory funding) {
+    function decodeFunding(bytes memory encoded) external pure returns (IDAOData.Funding memory funding) {
         return HostEncodingLib.decodeFunding(encoded);
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.Vesting[] memory vestings, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.Vesting[] memory vestings, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeVesting(vestings, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeVesting(bytes memory encoded) external pure returns (ITokenomics.Vesting[] memory vestings) {
+    function decodeVesting(bytes memory encoded) external pure returns (IDAOData.Vesting[] memory vestings) {
         return HostEncodingLib.decodeVesting(encoded);
     }
 
@@ -110,22 +109,22 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.DaoParameters memory data, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.DaoParameters memory data, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoParameters(data, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeDaoParameters(bytes memory encoded) external pure returns (ITokenomics.DaoParameters memory) {
+    function decodeDaoParameters(bytes memory encoded) external pure returns (IDAOData.DaoParameters memory) {
         return HostEncodingLib.decodeDaoParameters(encoded);
     }
 
     /// @inheritdoc IHostCodec
-    function encode(ITokenomics.DaoChainSettings memory data, uint16 version) external pure returns (bytes memory) {
+    function encode(IDAOData.DaoChainSettings memory data, uint16 version) external pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoChainSettings(data, version);
     }
 
     /// @inheritdoc IHostCodec
-    function decodeDaoChainSettings(bytes memory encoded) external pure returns (ITokenomics.DaoChainSettings memory) {
+    function decodeDaoChainSettings(bytes memory encoded) external pure returns (IDAOData.DaoChainSettings memory) {
         return HostEncodingLib.decodeDaoChainSettings(encoded);
     }
 

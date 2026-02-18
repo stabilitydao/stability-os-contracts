@@ -3,7 +3,6 @@ pragma solidity ^0.8.28;
 
 import {ISegment4} from "../../src/interfaces/ISegment4.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 
 library SampleDataLib {
@@ -20,8 +19,8 @@ library SampleDataLib {
             symbol: "SYMBOL",
             name: "NAME",
             unitIds: new string[](2),
-            chainSettings: ITokenomics.DaoChainSettings({bbRate: 10, multisig: address(0x123)}),
-            daoParameters: ITokenomics.DaoParameters({
+            chainSettings: IDAOData.DaoChainSettings({bbRate: 10, multisig: address(0x123)}),
+            daoParameters: IDAOData.DaoParameters({
                 vePeriod: 1, pvpFee: 2, minPower: 3, ttBribe: 4, recoveryShare: 5, proposalThreshold: 6, totalSupply: 7
             }),
             saltContractIndices: new uint16[](1),
@@ -32,17 +31,17 @@ library SampleDataLib {
         p.unitIds[1] = "unit2";
 
         p.salts[0] = bytes32("0xabc");
-        p.saltContractIndices[0] = uint16(ITokenomics.ContractIndices.DAO_TOKEN_5);
+        p.saltContractIndices[0] = uint16(IDAOData.ContractIndices.DAO_TOKEN_5);
 
         return p;
     }
 
-    function getDaoChainSettings() internal pure returns (ITokenomics.DaoChainSettings memory) {
-        return ITokenomics.DaoChainSettings({bbRate: 10, multisig: address(0x123)});
+    function getDaoChainSettings() internal pure returns (IDAOData.DaoChainSettings memory) {
+        return IDAOData.DaoChainSettings({bbRate: 10, multisig: address(0x123)});
     }
 
-    function getDaoParameters() internal pure returns (ITokenomics.DaoParameters memory) {
-        return ITokenomics.DaoParameters({
+    function getDaoParameters() internal pure returns (IDAOData.DaoParameters memory) {
+        return IDAOData.DaoParameters({
             vePeriod: 1, pvpFee: 2, minPower: 3, ttBribe: 4, recoveryShare: 5, proposalThreshold: 6, totalSupply: 7
         });
     }
@@ -51,16 +50,16 @@ library SampleDataLib {
         contractIndices = new uint16[](3);
         salt = new bytes32[](3);
 
-        contractIndices[0] = uint16(ITokenomics.ContractIndices.DAO_TOKEN_5);
-        contractIndices[1] = uint16(ITokenomics.ContractIndices.DAO_TOKEN_BRIDGE_10);
-        contractIndices[2] = uint16(ITokenomics.ContractIndices.STAKING_6);
+        contractIndices[0] = uint16(IDAOData.ContractIndices.DAO_TOKEN_5);
+        contractIndices[1] = uint16(IDAOData.ContractIndices.DAO_TOKEN_BRIDGE_10);
+        contractIndices[2] = uint16(IDAOData.ContractIndices.STAKING_6);
         salt[0] = bytes32("0xabc1");
         salt[1] = bytes32("0xabc2");
         salt[2] = bytes32("0xabc3");
     }
 
-    function getDaoImages() internal pure returns (ITokenomics.DaoImages memory) {
-        return ITokenomics.DaoImages({
+    function getDaoImages() internal pure returns (IDAOData.DaoImages memory) {
+        return IDAOData.DaoImages({
             seedToken: "images/seed.png",
             tgeToken: "images/tge.png",
             token: "images/token.png",

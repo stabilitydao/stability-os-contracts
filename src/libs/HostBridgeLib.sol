@@ -5,7 +5,7 @@ import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
 import {IHost} from "../interfaces/IHost.sol";
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
+import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 import {HostLib} from "./HostLib.sol";
 import {HostEncodingLib} from "./HostEncodingLib.sol";
@@ -173,7 +173,7 @@ library HostBridgeLib {
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
 
         /// @dev Action bridgeDao is intended for drafts only. Live phase requires to use BRIDGE_DAO_WITH_DEPLOYMENTS_7
-        require(segment2.phase < ITokenomics.LifecyclePhase.LIVE_CLIFF_6, IHost.WrongAction());
+        require(segment2.phase < IDAOData.LifecyclePhase.LIVE_CLIFF_6, IHost.WrongAction());
 
         /// @dev Ensure that user set correct DAO symbol in payload
         require(
@@ -225,7 +225,7 @@ library HostBridgeLib {
             name: p.name,
             // Actual phase doesn't matter if it's below LIVE_CLIFF.
             // For LIVE_CLIFF, etc different bridged action is used
-            phase: ITokenomics.LifecyclePhase.DRAFT_0,
+            phase: IDAOData.LifecyclePhase.DRAFT_0,
             unitIds: p.unitIds
         });
 
@@ -261,7 +261,7 @@ library HostBridgeLib {
     }
 
     /// @dev Update DAO chain-related settings according to action payload registered on initial chain
-    function _applyDaoChainSettingsUpdate(uint daoUid, ITokenomics.DaoChainSettings memory p) internal {
+    function _applyDaoChainSettingsUpdate(uint daoUid, IDAOData.DaoChainSettings memory p) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.chainSettings[daoUid] = p;
 
@@ -269,7 +269,7 @@ library HostBridgeLib {
     }
 
     /// @dev Update DAO parameters according to action payload registered on initial chain
-    function _applyDaoParametersUpdate(uint daoUid, ITokenomics.DaoParameters memory daoParameters) internal {
+    function _applyDaoParametersUpdate(uint daoUid, IDAOData.DaoParameters memory daoParameters) internal {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         $.daoParameters[daoUid] = daoParameters;
 

@@ -8,7 +8,7 @@ import {IHost} from "../../src/interfaces/IHost.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
 import {ITgeToken} from "../../src/interfaces/ITgeToken.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
@@ -80,11 +80,11 @@ contract HostActionsLibTest is Test {
         st.minInceptionDuration = 1 days;
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp + 1 days);
 
         assertEq(
-            uint(this.changePhaseDraft(daoUid)), uint(ITokenomics.LifecyclePhase.INCEPTION_1), "next phase is inception"
+            uint(this.changePhaseDraft(daoUid)), uint(IDAOData.LifecyclePhase.INCEPTION_1), "next phase is inception"
         );
     }
 
@@ -94,7 +94,7 @@ contract HostActionsLibTest is Test {
         st.minInceptionDuration = 1 days;
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp + 1 days - 1);
 
         vm.expectRevert(IHost.TooLateSoSetupFundingAgain.selector);
@@ -104,17 +104,17 @@ contract HostActionsLibTest is Test {
     function testChangePhaseInception_Success_ReturnSeed() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp - 1);
 
         AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
 
         // allow to deploy seed token
-        $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.SEED_TOKEN_1))] = "0x9743733";
+        $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.SEED_TOKEN_1))] = "0x9743733";
         HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
-        $proxy.implementations[uint(ITokenomics.ContractIndices.SEED_TOKEN_1)] = address(new SeedToken());
+        $proxy.implementations[uint(IDAOData.ContractIndices.SEED_TOKEN_1)] = address(new SeedToken());
 
-        assertEq(uint(this.changePhaseInception(daoUid)), uint(ITokenomics.LifecyclePhase.SEED_2), "next phase is seed");
+        assertEq(uint(this.changePhaseInception(daoUid)), uint(IDAOData.LifecyclePhase.SEED_2), "next phase is seed");
 
         assertNotEq($.deployments[daoUid].seedToken, address(0), "seed token deployed");
     }
@@ -122,7 +122,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseInception_TooEarly_Revert() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp);
 
         vm.expectRevert(IHost.WaitFundingStart.selector);
@@ -137,7 +137,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseSeed_Success_ReturnDevelopment() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
 
         seed.end = uint64(block.timestamp);
         seed.minRaise = 100;
@@ -145,7 +145,7 @@ contract HostActionsLibTest is Test {
 
         assertEq(
             uint(this.changePhaseSeed(daoUid)),
-            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_4),
+            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
             "next phase is Development"
         );
 
@@ -153,7 +153,7 @@ contract HostActionsLibTest is Test {
         seed.end = uint64(block.timestamp - 1);
         assertEq(
             uint(this.changePhaseSeed(daoUid)),
-            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_4),
+            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
             "next phase is Development"
         );
     }
@@ -161,7 +161,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseSeed_TooEarly_Revert() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
 
         seed.end = uint64(block.timestamp) + 1;
         seed.minRaise = 100;
@@ -174,7 +174,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseSeed_RaiseTooLow_ReturnSeedFailed() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
 
         seed.end = uint64(block.timestamp) - 1;
         seed.minRaise = 100;
@@ -182,7 +182,7 @@ contract HostActionsLibTest is Test {
 
         assertEq(
             uint(this.changePhaseSeed(daoUid)),
-            uint(ITokenomics.LifecyclePhase.SEED_FAILED_3),
+            uint(IDAOData.LifecyclePhase.SEED_FAILED_3),
             "next phase is Seed Failed"
         );
     }
@@ -190,20 +190,20 @@ contract HostActionsLibTest is Test {
     function testChangePhaseDevelopment_Success_ReturnTge() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
 
         // allow to deploy TGE token
-        $.salt[HostLib.getKey(daoUid, uint16(ITokenomics.ContractIndices.TGE_TOKEN_2))] = "0x34";
+        $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.TGE_TOKEN_2))] = "0x34";
         HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
-        $proxy.implementations[uint(ITokenomics.ContractIndices.TGE_TOKEN_2)] = address(new TgeToken());
+        $proxy.implementations[uint(IDAOData.ContractIndices.TGE_TOKEN_2)] = address(new TgeToken());
 
         for (uint i = 0; i < 2; ++i) {
             uint snapshot = vm.snapshotState();
             tge.end = uint64(block.timestamp - i);
             assertEq(
-                uint(this.changePhaseDevelopment(daoUid)), uint(ITokenomics.LifecyclePhase.TGE_5), "next phase is TGE"
+                uint(this.changePhaseDevelopment(daoUid)), uint(IDAOData.LifecyclePhase.TGE_5), "next phase is TGE"
             );
             assertNotEq($.deployments[daoUid].tgeToken, address(0), "TGE token deployed");
             vm.revertToState(snapshot);
@@ -213,7 +213,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseDevelopment_TooEarly_Revert() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         tge.start = uint64(block.timestamp) + 1;
 
@@ -224,7 +224,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseTge_Success_ReturnLiveCliff() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         // todo: set up contract implementations for token, xToken, staking, daoToken
 
@@ -234,7 +234,7 @@ contract HostActionsLibTest is Test {
         tge.raised = 100;
         assertEq(
             uint(this.changePhaseTge(daoUid)),
-            uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6),
+            uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6),
             "next phase is Life Cliff 1"
         );
         vm.revertToState(snapshot);
@@ -243,7 +243,7 @@ contract HostActionsLibTest is Test {
         tge.end = uint64(block.timestamp - 1);
         assertEq(
             uint(this.changePhaseTge(daoUid)),
-            uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6),
+            uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6),
             "next phase is Live Cliff 2"
         );
 
@@ -253,7 +253,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseTge_TooEarly_Revert() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         tge.end = uint64(block.timestamp) + 1;
         tge.minRaise = 100;
@@ -266,7 +266,7 @@ contract HostActionsLibTest is Test {
     function testChangePhaseTge_RaiseTooLow_ReturnDevelopment() public {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         tge.end = uint64(block.timestamp) - 1;
         tge.minRaise = 100;
@@ -274,7 +274,7 @@ contract HostActionsLibTest is Test {
 
         assertEq(
             uint(this.changePhaseTge(daoUid)),
-            uint(ITokenomics.LifecyclePhase.DEVELOPMENT_4),
+            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
             "next phase is Development"
         );
     }
@@ -288,7 +288,7 @@ contract HostActionsLibTest is Test {
 
         assertEq(
             uint(this.changePhaseLiveCliff(daoUid)),
-            uint(ITokenomics.LifecyclePhase.LIVE_VESTING_7),
+            uint(IDAOData.LifecyclePhase.LIVE_VESTING_7),
             "next phase is LIVE_VESTING_6"
         );
     }
@@ -303,7 +303,7 @@ contract HostActionsLibTest is Test {
 
         assertEq(
             uint(this.changePhaseLiveCliff(daoUid)),
-            uint(ITokenomics.LifecyclePhase.LIVE_VESTING_7),
+            uint(IDAOData.LifecyclePhase.LIVE_VESTING_7),
             "next phase is LIVE_VESTING_6"
         );
     }
@@ -331,7 +331,7 @@ contract HostActionsLibTest is Test {
         $.vesting[HostLib.getKey(daoUid, 0)].end = uint64(block.timestamp - 1); // ended
 
         assertEq(
-            uint(this.changePhaseLiveVesting(daoUid)), uint(ITokenomics.LifecyclePhase.LIVE_8), "next phase is LIVE"
+            uint(this.changePhaseLiveVesting(daoUid)), uint(IDAOData.LifecyclePhase.LIVE_8), "next phase is LIVE"
         );
     }
 
@@ -370,31 +370,31 @@ contract HostActionsLibTest is Test {
         HostActionsLib.changePhase(symbol, authority_);
     }
 
-    function changePhaseDraft(uint daoUid) public view returns (ITokenomics.LifecyclePhase) {
+    function changePhaseDraft(uint daoUid) public view returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseDraft(HostLib.getHostStorage(), daoUid);
     }
 
-    function changePhaseInception(uint daoUid) public returns (ITokenomics.LifecyclePhase) {
+    function changePhaseInception(uint daoUid) public returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseInception(HostLib.getHostStorage(), daoUid, address(authority));
     }
 
-    function changePhaseSeed(uint daoUid) public view returns (ITokenomics.LifecyclePhase) {
+    function changePhaseSeed(uint daoUid) public view returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseSeed(HostLib.getHostStorage(), daoUid);
     }
 
-    function changePhaseDevelopment(uint daoUid) public returns (ITokenomics.LifecyclePhase) {
+    function changePhaseDevelopment(uint daoUid) public returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseDevelopment(HostLib.getHostStorage(), daoUid, address(authority));
     }
 
-    function changePhaseTge(uint daoUid) public returns (ITokenomics.LifecyclePhase) {
+    function changePhaseTge(uint daoUid) public returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseTge(HostLib.getHostStorage(), daoUid, address(authority));
     }
 
-    function changePhaseLiveCliff(uint daoUid) public view returns (ITokenomics.LifecyclePhase) {
+    function changePhaseLiveCliff(uint daoUid) public view returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseLiveCliff(HostLib.getHostStorage(), daoUid);
     }
 
-    function changePhaseLiveVesting(uint daoUid) public view returns (ITokenomics.LifecyclePhase) {
+    function changePhaseLiveVesting(uint daoUid) public view returns (IDAOData.LifecyclePhase) {
         return HostActionsLib._changePhaseLiveVesting(HostLib.getHostStorage(), daoUid);
     }
 

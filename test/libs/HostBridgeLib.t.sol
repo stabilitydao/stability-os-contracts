@@ -8,7 +8,7 @@ import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {Test} from "forge-std/Test.sol";
@@ -148,8 +148,8 @@ contract HostBridgeLibTest is Test {
 
         $.units[HostLib.getUnitKey(daoUid, "unitId")].daoUid = 97;
 
-        for (uint i; i < uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6); ++i) {
-            segment2.phase = ITokenomics.LifecyclePhase(i);
+        for (uint i; i < uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6); ++i) {
+            segment2.phase = IDAOData.LifecyclePhase(i);
             this.verifyBridgedActionBridgeDaoPublic(daoUid, p);
         }
     }
@@ -166,11 +166,11 @@ contract HostBridgeLibTest is Test {
         segment2.name = "b";
 
         for (
-            uint i = uint(ITokenomics.LifecyclePhase.LIVE_CLIFF_6);
-            i < uint(ITokenomics.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
+            uint i = uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6);
+            i < uint(IDAOData.LifecyclePhase.COUNT_LIFECYCLE_PHASES);
             ++i
         ) {
-            segment2.phase = ITokenomics.LifecyclePhase(i);
+            segment2.phase = IDAOData.LifecyclePhase(i);
 
             vm.expectRevert(IHost.WrongAction.selector);
             this.verifyBridgedActionBridgeDaoPublic(1, p);
@@ -185,7 +185,7 @@ contract HostBridgeLibTest is Test {
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[1];
-        segment2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
+        segment2.phase = IDAOData.LifecyclePhase.DRAFT_0;
 
         segment2.symbol = "not-a";
         segment2.name = "b";
@@ -205,7 +205,7 @@ contract HostBridgeLibTest is Test {
 
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[1];
-        segment2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
+        segment2.phase = IDAOData.LifecyclePhase.DRAFT_0;
         segment2.symbol = "a";
         segment2.name = "b";
 
@@ -229,7 +229,7 @@ contract HostBridgeLibTest is Test {
         HostLib.DaoDataSegment2 storage segment2 = $.segment2[daoUid];
         segment2.symbol = "a";
         segment2.name = "b";
-        segment2.phase = ITokenomics.LifecyclePhase.DRAFT_0;
+        segment2.phase = IDAOData.LifecyclePhase.DRAFT_0;
 
         $.units[HostLib.getUnitKey(daoUid, "unitId1")].daoUid = 97; // only unit1 is registered, unit2 is not registered
 
@@ -272,7 +272,7 @@ contract HostBridgeLibTest is Test {
 
     function test_applyBridgedAction_DaoParameters_Success() public {
         uint daoUid = 97;
-        ITokenomics.DaoParameters memory p = SampleDataLib.getDaoParameters();
+        IDAOData.DaoParameters memory p = SampleDataLib.getDaoParameters();
         bytes memory payload = HostEncodingLib.encodeDaoParameters(p, HostEncodingLib.PAYLOAD_API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.SET_DAO_PARAMS_4, payload);
@@ -297,7 +297,7 @@ contract HostBridgeLibTest is Test {
 
     function test_applyBridgedAction_ChainSettings_Success() public {
         uint daoUid = 97;
-        ITokenomics.DaoChainSettings memory p = SampleDataLib.getDaoChainSettings();
+        IDAOData.DaoChainSettings memory p = SampleDataLib.getDaoChainSettings();
         bytes memory payload = HostEncodingLib.encodeDaoChainSettings(p, HostEncodingLib.PAYLOAD_API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6, payload);
@@ -329,7 +329,7 @@ contract HostBridgeLibTest is Test {
         assertEq(segment2.name, p.name, "DAO name is updated");
         assertEq(segment2.unitIds, p.unitIds, "unitIds are set");
 
-        assertTrue(segment2.phase == ITokenomics.LifecyclePhase.DRAFT_0, "DAO phase is set to DRAFT");
+        assertTrue(segment2.phase == IDAOData.LifecyclePhase.DRAFT_0, "DAO phase is set to DRAFT");
 
         assertEq(abi.encode($.daoParameters[daoUid]), abi.encode(p.daoParameters), "daoParameters");
         assertEq(abi.encode($.chainSettings[daoUid]), abi.encode(p.chainSettings), "chainSettings");
@@ -416,7 +416,7 @@ contract HostBridgeLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoChainSettings memory p = SampleDataLib.getDaoChainSettings();
+        IDAOData.DaoChainSettings memory p = SampleDataLib.getDaoChainSettings();
         this.applyDaoChainSettingsUpdatePublic(daoUid, p);
 
         assertEq(abi.encode($.chainSettings[daoUid]), abi.encode(p), "chainSettings are updated");
@@ -426,7 +426,7 @@ contract HostBridgeLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoParameters memory p = SampleDataLib.getDaoParameters();
+        IDAOData.DaoParameters memory p = SampleDataLib.getDaoParameters();
         this.applyDaoParametersUpdatePublic(daoUid, p);
 
         assertEq(abi.encode($.daoParameters[daoUid]), abi.encode(p), "Dao parameters are updated");
@@ -486,11 +486,11 @@ contract HostBridgeLibTest is Test {
         HostBridgeLib._applyBridgeDaoUpdate(daoUid, p);
     }
 
-    function applyDaoChainSettingsUpdatePublic(uint daoUid, ITokenomics.DaoChainSettings memory p) external {
+    function applyDaoChainSettingsUpdatePublic(uint daoUid, IDAOData.DaoChainSettings memory p) external {
         HostBridgeLib._applyDaoChainSettingsUpdate(daoUid, p);
     }
 
-    function applyDaoParametersUpdatePublic(uint daoUid, ITokenomics.DaoParameters memory daoParameters) external {
+    function applyDaoParametersUpdatePublic(uint daoUid, IDAOData.DaoParameters memory daoParameters) external {
         HostBridgeLib._applyDaoParametersUpdate(daoUid, daoParameters);
     }
 

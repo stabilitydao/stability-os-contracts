@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import {EnumerableMap} from "@openzeppelin/contracts/utils/structs/EnumerableMap.sol";
 import {Test} from "forge-std/Test.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
-import {ITokenomics} from "../../src/interfaces/ITokenomics.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {HostViewLib} from "../../src/libs/HostViewLib.sol";
 import {HostLib} from "../../src/libs/HostLib.sol";
 import {HostConfigLib} from "../../src/libs/HostConfigLib.sol";
@@ -87,14 +87,14 @@ contract HostViewLibTest is Test {
     //region ----------------------------------- getDAOOwner
 
     /// @dev All phases where segment3.developer is owner
-    function fixturePhaseDeployer() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        phases = new ITokenomics.LifecyclePhase[](3);
-        phases[0] = ITokenomics.LifecyclePhase.DRAFT_0;
-        phases[1] = ITokenomics.LifecyclePhase.INCEPTION_1;
-        phases[2] = ITokenomics.LifecyclePhase.SEED_FAILED_3;
+    function fixturePhaseDeployer() public pure returns (IDAOData.LifecyclePhase[] memory phases) {
+        phases = new IDAOData.LifecyclePhase[](3);
+        phases[0] = IDAOData.LifecyclePhase.DRAFT_0;
+        phases[1] = IDAOData.LifecyclePhase.INCEPTION_1;
+        phases[2] = IDAOData.LifecyclePhase.SEED_FAILED_3;
     }
 
-    function tableGetDAOOwner_PhaseDeployer_ReturnSegment3Deployer(ITokenomics.LifecyclePhase phaseDeployer) public {
+    function tableGetDAOOwner_PhaseDeployer_ReturnSegment3Deployer(IDAOData.LifecyclePhase phaseDeployer) public {
         uint daoUid = 97;
         address owner = makeAddr("owner");
 
@@ -109,14 +109,14 @@ contract HostViewLibTest is Test {
     }
 
     /// @dev All phases where seed token is owner
-    function fixturePhaseSeed() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        phases = new ITokenomics.LifecyclePhase[](3);
-        phases[0] = ITokenomics.LifecyclePhase.SEED_2;
-        phases[1] = ITokenomics.LifecyclePhase.DEVELOPMENT_4;
-        phases[2] = ITokenomics.LifecyclePhase.TGE_5;
+    function fixturePhaseSeed() public pure returns (IDAOData.LifecyclePhase[] memory phases) {
+        phases = new IDAOData.LifecyclePhase[](3);
+        phases[0] = IDAOData.LifecyclePhase.SEED_2;
+        phases[1] = IDAOData.LifecyclePhase.DEVELOPMENT_4;
+        phases[2] = IDAOData.LifecyclePhase.TGE_5;
     }
 
-    function tableGetDAOOwner_PhaseSeed_ReturnSeedToken(ITokenomics.LifecyclePhase phaseSeed) public {
+    function tableGetDAOOwner_PhaseSeed_ReturnSeedToken(IDAOData.LifecyclePhase phaseSeed) public {
         uint daoUid = 97;
         address owner = makeAddr("owner");
 
@@ -131,14 +131,14 @@ contract HostViewLibTest is Test {
     }
 
     /// @dev All phases where DAO token is owner
-    function fixturePhaseDao() public pure returns (ITokenomics.LifecyclePhase[] memory phases) {
-        phases = new ITokenomics.LifecyclePhase[](3);
-        phases[0] = ITokenomics.LifecyclePhase.LIVE_CLIFF_6;
-        phases[1] = ITokenomics.LifecyclePhase.LIVE_VESTING_7;
-        phases[2] = ITokenomics.LifecyclePhase.LIVE_8;
+    function fixturePhaseDao() public pure returns (IDAOData.LifecyclePhase[] memory phases) {
+        phases = new IDAOData.LifecyclePhase[](3);
+        phases[0] = IDAOData.LifecyclePhase.LIVE_CLIFF_6;
+        phases[1] = IDAOData.LifecyclePhase.LIVE_VESTING_7;
+        phases[2] = IDAOData.LifecyclePhase.LIVE_8;
     }
 
-    function tableGetDAOOwner_PhaseDao_ReturnDaoToken(ITokenomics.LifecyclePhase phaseDao) public {
+    function tableGetDAOOwner_PhaseDao_ReturnDaoToken(IDAOData.LifecyclePhase phaseDao) public {
         uint daoUid = 97;
         address owner = makeAddr("owner");
 
@@ -182,7 +182,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.seedToken = "a";
         daoImages.token = "a";
 
@@ -200,7 +200,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.seedToken = "a";
         daoImages.token = ""; // (!)
 
@@ -219,7 +219,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.seedToken = ""; // (!)
         daoImages.token = "a";
 
@@ -236,7 +236,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.seedToken = "a";
         daoImages.token = "a";
 
@@ -253,7 +253,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.seedToken = "a";
         daoImages.token = "a";
 
@@ -308,8 +308,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        seed.fundingType = ITokenomics.FundingType.SEED_0;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+        seed.fundingType = IDAOData.FundingType.SEED_0;
         seed.raised = 100;
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp);
@@ -323,8 +323,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        seed.fundingType = ITokenomics.FundingType.SEED_0;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+        seed.fundingType = IDAOData.FundingType.SEED_0;
         seed.raised = 99; // (!)
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp);
@@ -338,8 +338,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        seed.fundingType = ITokenomics.FundingType.SEED_0;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+        seed.fundingType = IDAOData.FundingType.SEED_0;
         seed.raised = 101;
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp) + 1; // (!)
@@ -353,8 +353,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        seed.fundingType = ITokenomics.FundingType.SEED_0;
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+        seed.fundingType = IDAOData.FundingType.SEED_0;
         seed.raised = 0; // (!)
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp) + 1; // (!)
@@ -372,10 +372,10 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        tge.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        tge.fundingType = IDAOData.FundingType.TGE_1;
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.tgeToken = "a";
         daoImages.xToken = "a";
         daoImages.daoToken = "a";
@@ -396,7 +396,7 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.tgeToken = "a";
         daoImages.xToken = "a";
         daoImages.daoToken = "a";
@@ -417,8 +417,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        tge.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        tge.fundingType = IDAOData.FundingType.TGE_1;
 
         $.segment3[daoUid].countVesting = 1;
         $.segment2[daoUid].unitIds = new string[](1);
@@ -427,7 +427,7 @@ contract HostViewLibTest is Test {
 
         IHost.Task[] memory dest = new IHost.Task[](25);
         for (uint i; i < 3; ++i) {
-            ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+            IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
             daoImages.tgeToken = i == 0 ? "" : "a";
             daoImages.xToken = i == 1 ? "" : "a";
             daoImages.daoToken = i == 2 ? "" : "a";
@@ -442,10 +442,10 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        tge.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        tge.fundingType = IDAOData.FundingType.TGE_1;
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.tgeToken = "a";
         daoImages.xToken = "a";
         daoImages.daoToken = "a";
@@ -465,10 +465,10 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        tge.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        tge.fundingType = IDAOData.FundingType.TGE_1;
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.tgeToken = "a";
         daoImages.xToken = "a";
         daoImages.daoToken = "a";
@@ -489,10 +489,10 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        tge.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        tge.fundingType = IDAOData.FundingType.TGE_1;
 
-        ITokenomics.DaoImages storage daoImages = $.daoImages[daoUid];
+        IDAOData.DaoImages storage daoImages = $.daoImages[daoUid];
         daoImages.tgeToken = "a";
         daoImages.xToken = "a";
         daoImages.daoToken = "a";
@@ -512,8 +512,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.SEED_0))];
-        seed.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+        seed.fundingType = IDAOData.FundingType.TGE_1;
         seed.raised = 100;
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp);
@@ -527,8 +527,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        seed.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        seed.fundingType = IDAOData.FundingType.TGE_1;
         seed.raised = 99; // (!)
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp);
@@ -542,8 +542,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        seed.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        seed.fundingType = IDAOData.FundingType.TGE_1;
         seed.raised = 101;
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp) + 1; // (!)
@@ -557,8 +557,8 @@ contract HostViewLibTest is Test {
         uint daoUid = 97;
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
-        ITokenomics.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(ITokenomics.FundingType.TGE_1))];
-        seed.fundingType = ITokenomics.FundingType.TGE_1;
+        IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
+        seed.fundingType = IDAOData.FundingType.TGE_1;
         seed.raised = 0; // (!)
         seed.minRaise = 100;
         seed.end = uint64(block.timestamp) + 1; // (!)

@@ -15,7 +15,7 @@ import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 
 /// @dev All deploy-related intents
 library DeployIntentsLib {

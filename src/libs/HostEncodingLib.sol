@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "../interfaces/IDAOData.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
@@ -27,7 +26,7 @@ library HostEncodingLib {
     //region ----------------------- Decode / Encode update-actions structs with versions
 
     /// @notice Encode DaoImages struct of the given version. Version is supported explicitly to simplify testing
-    function encodeDaoImages(ITokenomics.DaoImages memory data, uint16 version) internal pure returns (bytes memory) {
+    function encodeDaoImages(IDAOData.DaoImages memory data, uint16 version) internal pure returns (bytes memory) {
         if (version == 1) {
             return abi.encode(version, data.seedToken, data.tgeToken, data.token, data.xToken, data.daoToken);
         } else {
@@ -35,7 +34,7 @@ library HostEncodingLib {
         }
     }
 
-    function decodeDaoImages(bytes memory payload) internal pure returns (ITokenomics.DaoImages memory dest) {
+    function decodeDaoImages(bytes memory payload) internal pure returns (IDAOData.DaoImages memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
             (, dest.seedToken, dest.tgeToken, dest.token, dest.xToken, dest.daoToken) =
@@ -63,7 +62,7 @@ library HostEncodingLib {
         if (version == 1) {
             // if new version of UnitInfo will be created it's necessary to do following:
             // 1) create a copy of old structure UnitInfoV1
-            // 2) replace ITokenomics.UnitInfo by UnitInfoV1 below
+            // 2) replace IDAOData.UnitInfo by UnitInfoV1 below
             // 3) create a branch of code for version == 2 below
             (version, dest) = abi.decode(payload, (uint16, IDAOData.UnitDataInput[]));
             return dest;
@@ -139,7 +138,7 @@ library HostEncodingLib {
     }
 
     /// @notice Encode Funding struct of the given version. Version is supported explicitly to simplify testing
-    function encodeFunding(ITokenomics.Funding memory data, uint16 version) internal pure returns (bytes memory) {
+    function encodeFunding(IDAOData.Funding memory data, uint16 version) internal pure returns (bytes memory) {
         if (version == 1) {
             return abi.encode(
                 version, data.fundingType, data.start, data.end, data.minRaise, data.maxRaise, data.raised, data.claim
@@ -149,11 +148,11 @@ library HostEncodingLib {
         }
     }
 
-    function decodeFunding(bytes memory payload) internal pure returns (ITokenomics.Funding memory dest) {
+    function decodeFunding(bytes memory payload) internal pure returns (IDAOData.Funding memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
             (, dest.fundingType, dest.start, dest.end, dest.minRaise, dest.maxRaise, dest.raised, dest.claim) =
-                abi.decode(payload, (uint16, ITokenomics.FundingType, uint64, uint64, uint, uint, uint, uint64));
+                abi.decode(payload, (uint16, IDAOData.FundingType, uint64, uint64, uint, uint, uint, uint64));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -161,7 +160,7 @@ library HostEncodingLib {
     }
 
     /// @notice Encode array of Vesting of the given version. Version is supported explicitly to simplify testing
-    function encodeVesting(ITokenomics.Vesting[] memory data, uint16 version) internal pure returns (bytes memory) {
+    function encodeVesting(IDAOData.Vesting[] memory data, uint16 version) internal pure returns (bytes memory) {
         if (version == 1) {
             return abi.encode(version, data);
         } else {
@@ -169,15 +168,15 @@ library HostEncodingLib {
         }
     }
 
-    function decodeVesting(bytes memory payload) internal pure returns (ITokenomics.Vesting[] memory dest) {
+    function decodeVesting(bytes memory payload) internal pure returns (IDAOData.Vesting[] memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
             // if new version of Vesting will be created it's necessary to do following:
             // 1) create a copy of old structure VestingV1
-            // 2) replace ITokenomics.Vesting by VestingV1 below
+            // 2) replace IDAOData.Vesting by VestingV1 below
             // 3) create a branch of code for version == 2 below
-            (version, dest) = abi.decode(payload, (uint16, ITokenomics.Vesting[]));
+            (version, dest) = abi.decode(payload, (uint16, IDAOData.Vesting[]));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -186,7 +185,7 @@ library HostEncodingLib {
 
     /// @notice Encode DaoParameters struct of the given version. Version is supported explicitly to simplify testing
     function encodeDaoParameters(
-        ITokenomics.DaoParameters memory data,
+        IDAOData.DaoParameters memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
@@ -205,7 +204,7 @@ library HostEncodingLib {
         }
     }
 
-    function decodeDaoParameters(bytes memory payload) internal pure returns (ITokenomics.DaoParameters memory dest) {
+    function decodeDaoParameters(bytes memory payload) internal pure returns (IDAOData.DaoParameters memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
@@ -227,7 +226,7 @@ library HostEncodingLib {
 
     /// @notice Encode DaoParameters struct of the given version. Version is supported explicitly to simplify testing
     function encodeDaoChainSettings(
-        ITokenomics.DaoChainSettings memory data,
+        IDAOData.DaoChainSettings memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
@@ -240,7 +239,7 @@ library HostEncodingLib {
     function decodeDaoChainSettings(bytes memory payload)
         internal
         pure
-        returns (ITokenomics.DaoChainSettings memory dest)
+        returns (IDAOData.DaoChainSettings memory dest)
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
@@ -252,7 +251,7 @@ library HostEncodingLib {
         }
     }
 
-    function encodeDaoNames(ITokenomics.DaoNames memory data, uint16 version) internal pure returns (bytes memory) {
+    function encodeDaoNames(IDAOData.DaoNames memory data, uint16 version) internal pure returns (bytes memory) {
         if (version == 1) {
             return abi.encode(version, data.name, data.symbol);
         } else {
@@ -260,7 +259,7 @@ library HostEncodingLib {
         }
     }
 
-    function decodeDaoNames(bytes memory payload) internal pure returns (ITokenomics.DaoNames memory dest) {
+    function decodeDaoNames(bytes memory payload) internal pure returns (IDAOData.DaoNames memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
         if (version == 1) {
@@ -328,7 +327,7 @@ library HostEncodingLib {
 
     /// @notice Encode DaoParameters struct of the given version. Version is supported explicitly to simplify testing
     function encodeGovernanceSettings(
-        ITokenomics.GovernanceSettings memory data,
+        IDAOData.GovernanceSettings memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
         if (version == 1) {
@@ -341,7 +340,7 @@ library HostEncodingLib {
     function decodeGovernanceSettings(bytes memory payload)
         internal
         pure
-        returns (ITokenomics.GovernanceSettings memory dest)
+        returns (IDAOData.GovernanceSettings memory dest)
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
@@ -462,23 +461,23 @@ library HostEncodingLib {
             (
                 bytes,
                 IDAOData.UnitDataInput[],
-                ITokenomics.Funding[],
-                ITokenomics.Vesting[],
-                ITokenomics.GovernanceSettings
+                IDAOData.Funding[],
+                IDAOData.Vesting[],
+                IDAOData.GovernanceSettings
             )
         );
 
         (rest, dao.socials, dao.activity, dao.images) =
-            abi.decode(rest, (bytes, string[], ITokenomics.Activity[], ITokenomics.DaoImages));
+            abi.decode(rest, (bytes, string[], IDAOData.Activity[], IDAOData.DaoImages));
 
         (rest, dao.chainSettings, dao.unitIds, dao.params) =
-            abi.decode(rest, (bytes, ITokenomics.DaoChainSettings, string[], ITokenomics.DaoParameters));
+            abi.decode(rest, (bytes, IDAOData.DaoChainSettings, string[], IDAOData.DaoParameters));
 
         {
             uint8 phase;
             (dao.symbol, dao.name, phase, dao.deployments) =
-                abi.decode(rest, (string, string, uint8, ITokenomics.DaoDeploymentInfo));
-            dao.phase = ITokenomics.LifecyclePhase(phase);
+                abi.decode(rest, (string, string, uint8, IDAOData.DaoDeploymentInfo));
+            dao.phase = IDAOData.LifecyclePhase(phase);
         }
 
         return dao;
@@ -574,16 +573,16 @@ library HostEncodingLib {
                 uint8 phaseRaw;
 
                 (dest.symbol, dest.uid, dest.name, phaseRaw, dest.deployments) =
-                    abi.decode(b[0], (string, uint, string, uint8, ITokenomics.DaoDeploymentInfo));
+                    abi.decode(b[0], (string, uint, string, uint8, IDAOData.DaoDeploymentInfo));
 
-                dest.phase = ITokenomics.LifecyclePhase(phaseRaw);
+                dest.phase = IDAOData.LifecyclePhase(phaseRaw);
             }
 
             (dest.chainSettings, dest.unitIds, dest.unitRevenue, dest.unitRevenueAssets) =
-                abi.decode(b[1], (ITokenomics.DaoChainSettings, string[], uint[], address[]));
+                abi.decode(b[1], (IDAOData.DaoChainSettings, string[], uint[], address[]));
 
             (dest.params, dest.initialChain, dest.socials) =
-                abi.decode(b[2], (ITokenomics.DaoParameters, uint, string[]));
+                abi.decode(b[2], (IDAOData.DaoParameters, uint, string[]));
 
             {
                 uint8[] memory activityRaw;
@@ -592,22 +591,22 @@ library HostEncodingLib {
                     b[3],
                     (
                         uint8[],
-                        ITokenomics.DaoImages,
-                        ITokenomics.UnitData[],
-                        ITokenomics.Funding[],
-                        ITokenomics.Vesting[]
+                        IDAOData.DaoImages,
+                        IDAOData.UnitData[],
+                        IDAOData.Funding[],
+                        IDAOData.Vesting[]
                     )
                 );
 
                 uint len = activityRaw.length;
-                dest.activity = new ITokenomics.Activity[](len);
+                dest.activity = new IDAOData.Activity[](len);
                 for (uint i; i < len; ++i) {
-                    dest.activity[i] = ITokenomics.Activity(activityRaw[i]);
+                    dest.activity[i] = IDAOData.Activity(activityRaw[i]);
                 }
             }
 
             (dest.governanceSettings, dest.deployer, dest.saltContractIndices, dest.salts, dest.metaDataLocation) =
-                abi.decode(b[4], (ITokenomics.GovernanceSettings, address, uint16[], bytes32[], string));
+                abi.decode(b[4], (IDAOData.GovernanceSettings, address, uint16[], bytes32[], string));
 
             (dest.vestingContracts) = abi.decode(b[5], (address[]));
 
@@ -618,7 +617,7 @@ library HostEncodingLib {
     }
 
     function encodeProposal(
-        ITokenomics.Proposal memory data,
+        IDAOData.Proposal memory data,
         uint16 version
     ) internal pure returns (bytes memory dest) {
         if (version == 1) {
@@ -632,7 +631,7 @@ library HostEncodingLib {
         }
     }
 
-    function decodeProposal(bytes memory payload) internal pure returns (ITokenomics.Proposal memory dest) {
+    function decodeProposal(bytes memory payload) internal pure returns (IDAOData.Proposal memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
         if (version == 1) {
             (, bytes memory b1, bytes memory b2) = abi.decode(payload, (uint16, bytes, bytes));
@@ -641,14 +640,14 @@ library HostEncodingLib {
                 uint8 validationStatus;
                 (action, dest.validationRequired, dest.votingRequired, validationStatus, dest.id) =
                     abi.decode(b1, (uint8, bool, bool, uint8, bytes32));
-                dest.action = ITokenomics.DAOAction(action);
-                dest.validationStatus = ITokenomics.ValidationStatus(validationStatus);
+                dest.action = IDAOData.DAOAction(action);
+                dest.validationStatus = IDAOData.ValidationStatus(validationStatus);
             }
 
             {
                 uint8 status;
                 (dest.symbol, dest.created, status, dest.payloadHash) = abi.decode(b2, (string, uint64, uint8, bytes32));
-                dest.status = ITokenomics.VotingStatus(status);
+                dest.status = IDAOData.VotingStatus(status);
             }
 
             return dest;

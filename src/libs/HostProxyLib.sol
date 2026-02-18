@@ -31,7 +31,7 @@ library HostProxyLib {
 
     /// @custom:storage-location erc7201:stability.host-contracts.HostProxyLib
     struct HostProxyStorage {
-        /// @notice Current implementation of the given contracts, ITokenomics.ContractIndices
+        /// @notice Current implementation of the given contracts, IDAOData.ContractIndices
         mapping(uint contractKind => address logic) implementations;
 
         /// @dev Announced pending host upgrade data
@@ -45,13 +45,13 @@ library HostProxyLib {
     //endregion -------------------------------------- Data types
 
     //region -------------------------------------- Deploy logic
-    /// @param kind ITokenomics.ContractIndices
+    /// @param kind IDAOData.ContractIndices
     function contractImplementation(uint kind) external view returns (address) {
         HostProxyStorage storage $ = getHostProxyStorage();
         return $.implementations[kind];
     }
 
-    /// @param kind ITokenomics.ContractIndices
+    /// @param kind IDAOData.ContractIndices
     function setContractImplementation(uint kind, address implementation) external {
         HostProxyStorage storage $ = getHostProxyStorage();
         $.implementations[kind] = implementation;

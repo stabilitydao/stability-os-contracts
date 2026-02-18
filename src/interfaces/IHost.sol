@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ITokenomics} from "../interfaces/ITokenomics.sol";
 import {IDAOData} from "./IDAOData.sol";
 import {IBridgedActions} from "../interfaces/IBridgedActions.sol";
 
@@ -85,9 +84,9 @@ interface IHost {
     event HostSettingsUpdated(IHost.HostSettings st);
     event HostChainSettingsUpdated(IHost.HostChainSettings st);
     event WhitelistAsset(address[] assets, bool whitelisted);
-    event DaoImagesUpdated(string symbol, ITokenomics.DaoImages images);
+    event DaoImagesUpdated(string symbol, IDAOData.DaoImages images);
     event DaoSocialsUpdated(string symbol, string[] socials);
-    event Proposal(uint daoUid, ITokenomics.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
+    event Proposal(uint daoUid, IDAOData.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
 
     /// @notice Units are updated via proposal or instantly
     event ProposalToUpdateDaoUnits(
@@ -104,12 +103,12 @@ interface IHost {
     /// @param proposalUid Zero if updated instantly
     event DaoUnitDeleted(uint daoUid, string unitId, bytes32 proposalUid);
 
-    event DaoFundingUpdated(uint daoUid, ITokenomics.Funding funding);
-    event DaoVestingUpdated(uint daoUid, ITokenomics.Vesting[] vestings);
-    event DaoNamingUpdated(uint daoUid, ITokenomics.DaoNames daoNames);
-    event DaoParametersUpdated(uint daoUid, ITokenomics.DaoParameters daoParameters);
-    event DaoChainSettingsUpdated(uint daoUid, ITokenomics.DaoChainSettings chainSettings);
-    event DaoPhaseChanged(uint daoUid, ITokenomics.LifecyclePhase newPhase);
+    event DaoFundingUpdated(uint daoUid, IDAOData.Funding funding);
+    event DaoVestingUpdated(uint daoUid, IDAOData.Vesting[] vestings);
+    event DaoNamingUpdated(uint daoUid, IDAOData.DaoNames daoNames);
+    event DaoParametersUpdated(uint daoUid, IDAOData.DaoParameters daoParameters);
+    event DaoChainSettingsUpdated(uint daoUid, IDAOData.DaoChainSettings chainSettings);
+    event DaoPhaseChanged(uint daoUid, IDAOData.LifecyclePhase newPhase);
     event DaoFunded(uint daoUid, address funder, uint amount, uint8 fundingType);
     event DaoRefunded(uint daoUid, address funder, address asset, uint amount, address fundingToken);
     event OnRegisterDaoSymbol(string symbol, uint32 srcEid, bytes32 guid_);
@@ -135,7 +134,7 @@ interface IHost {
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
     event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
-    event GovernanceSettingsUpdated(uint daoUid, ITokenomics.GovernanceSettings settings);
+    event GovernanceSettingsUpdated(uint daoUid, IDAOData.GovernanceSettings settings);
 
     //endregion ---------------------------------------- Events
 
@@ -363,7 +362,7 @@ interface IHost {
 
     /// @notice Get salt to create contract with given index
     /// @param symbol DAO symbol
-    /// @param contractIndex Contract index, for exact values see ITokenomics.ContractIndices
+    /// @param contractIndex Contract index, for exact values see IDAOData.ContractIndices
     /// @return Salt value used in CREATE2
     function salt(string calldata symbol, uint16 contractIndex) external view returns (bytes32);
 
@@ -422,14 +421,14 @@ interface IHost {
     function createDAO(
         string calldata name,
         string calldata symbol,
-        ITokenomics.Activity[] memory activity,
-        ITokenomics.DaoParameters memory params,
-        ITokenomics.Funding[] memory funding
+        IDAOData.Activity[] memory activity,
+        IDAOData.DaoParameters memory params,
+        IDAOData.Funding[] memory funding
     ) external payable;
 
     /// @notice Update/create proposal to update DAO values
     /// @param symbol DAO symbol
-    /// @param action Action kind, see ITokenomics.DAOAction
+    /// @param action Action kind, see IDAOData.DAOAction
     /// @param payload Data of the action. Use HostCodec.encode to create it. Its format depend on the action kind.
     /// This data should be passed together with {proposalId} to {receiveVotingResults} after voting
     /// @param emitData Additional data that is not stored on-chain, but emitted in the event and can be used off-chain
