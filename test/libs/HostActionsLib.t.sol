@@ -144,17 +144,13 @@ contract HostActionsLibTest is Test {
         seed.raised = 100;
 
         assertEq(
-            uint(this.changePhaseSeed(daoUid)),
-            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
-            "next phase is Development"
+            uint(this.changePhaseSeed(daoUid)), uint(IDAOData.LifecyclePhase.DEVELOPMENT_4), "next phase is Development"
         );
 
         seed.raised = 101;
         seed.end = uint64(block.timestamp - 1);
         assertEq(
-            uint(this.changePhaseSeed(daoUid)),
-            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
-            "next phase is Development"
+            uint(this.changePhaseSeed(daoUid)), uint(IDAOData.LifecyclePhase.DEVELOPMENT_4), "next phase is Development"
         );
     }
 
@@ -181,9 +177,7 @@ contract HostActionsLibTest is Test {
         seed.raised = 99;
 
         assertEq(
-            uint(this.changePhaseSeed(daoUid)),
-            uint(IDAOData.LifecyclePhase.SEED_FAILED_3),
-            "next phase is Seed Failed"
+            uint(this.changePhaseSeed(daoUid)), uint(IDAOData.LifecyclePhase.SEED_FAILED_3), "next phase is Seed Failed"
         );
     }
 
@@ -233,18 +227,14 @@ contract HostActionsLibTest is Test {
         tge.minRaise = 100;
         tge.raised = 100;
         assertEq(
-            uint(this.changePhaseTge(daoUid)),
-            uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6),
-            "next phase is Life Cliff 1"
+            uint(this.changePhaseTge(daoUid)), uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6), "next phase is Life Cliff 1"
         );
         vm.revertToState(snapshot);
 
         tge.raised = 101;
         tge.end = uint64(block.timestamp - 1);
         assertEq(
-            uint(this.changePhaseTge(daoUid)),
-            uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6),
-            "next phase is Live Cliff 2"
+            uint(this.changePhaseTge(daoUid)), uint(IDAOData.LifecyclePhase.LIVE_CLIFF_6), "next phase is Live Cliff 2"
         );
 
         // todo: check all deployed addresses
@@ -273,9 +263,7 @@ contract HostActionsLibTest is Test {
         tge.raised = 99;
 
         assertEq(
-            uint(this.changePhaseTge(daoUid)),
-            uint(IDAOData.LifecyclePhase.DEVELOPMENT_4),
-            "next phase is Development"
+            uint(this.changePhaseTge(daoUid)), uint(IDAOData.LifecyclePhase.DEVELOPMENT_4), "next phase is Development"
         );
     }
 
@@ -330,9 +318,7 @@ contract HostActionsLibTest is Test {
 
         $.vesting[HostLib.getKey(daoUid, 0)].end = uint64(block.timestamp - 1); // ended
 
-        assertEq(
-            uint(this.changePhaseLiveVesting(daoUid)), uint(IDAOData.LifecyclePhase.LIVE_8), "next phase is LIVE"
-        );
+        assertEq(uint(this.changePhaseLiveVesting(daoUid)), uint(IDAOData.LifecyclePhase.LIVE_8), "next phase is LIVE");
     }
 
     function testChangePhaseLiveVesting_OneEndedOneNotEndedVesting_Revert() public {

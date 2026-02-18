@@ -176,11 +176,7 @@ library HostUpdateLib {
         require(totalAllocation < 100_000, IHost.TotalAllocationTooHigh());
     }
 
-    function validateVesting(
-        IDAOData.Vesting memory vesting,
-        IHost.HostSettings storage st,
-        uint claim
-    ) internal view {
+    function validateVesting(IDAOData.Vesting memory vesting, IHost.HostSettings storage st, uint claim) internal view {
         {
             uint len = bytes(vesting.name).length;
             require(len >= st.minVestingNameLen && len <= st.maxVestingNameLen, IHost.NameLength(len));

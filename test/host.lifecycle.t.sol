@@ -173,9 +173,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
-            assertEq(
-                uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION"
-            );
+            assertEq(uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.INCEPTION_1), "phase should be INCEPTION");
         }
 
         // ------------------------------ phase cant be changed right now
@@ -287,9 +285,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(
-                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
-            );
+            assertEq(uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on Development phase");
@@ -661,9 +657,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(
-                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.SEED_FAILED_3), "phase should be SEED_FAILED"
-            );
+            assertEq(uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.SEED_FAILED_3), "phase should be SEED_FAILED");
 
             assertEq(
                 IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
@@ -775,9 +769,7 @@ contract HostLifeCycleTest is Test {
             IDAOData.DaoData memory daoDataAfter =
                 IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(
-                uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.SEED_2), "machines phase should be SEED"
-            );
+            assertEq(uint8(daoDataAfter.phase), uint8(IDAOData.LifecyclePhase.SEED_2), "machines phase should be SEED");
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
         }
 
@@ -796,9 +788,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(
-                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
-            );
+            assertEq(uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT");
             assertEq(
                 IERC20(daoData.deployments.seedToken).balanceOf(FIRST_SEEDER),
                 50000e18,
@@ -842,9 +832,7 @@ contract HostLifeCycleTest is Test {
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
             assertEq(
-                uint8(daoData.phase),
-                uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4),
-                "phase should be DEVELOPMENT again"
+                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT again"
             );
         }
 
@@ -1119,9 +1107,7 @@ contract HostLifeCycleTest is Test {
             host_.changePhase(daoData.symbol);
             daoData = IDataReader(host_.getChainSettings().dataReader).getDAO(daoData.symbol);
 
-            assertEq(
-                uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT"
-            );
+            assertEq(uint8(daoData.phase), uint8(IDAOData.LifecyclePhase.DEVELOPMENT_4), "phase should be DEVELOPMENT");
 
             IHost.Task[] memory tasks = host_.tasks(daoData.symbol);
             assertGt(tasks.length, 0, "there are unsolved tasks on Development phase");

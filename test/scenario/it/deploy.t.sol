@@ -14,8 +14,8 @@ import {EngineLib} from "../engine/EngineLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 
 contract DeployUsesCasesTest is Test {
-    uint constant internal FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
-    uint constant internal CHAIN_ID = 1;
+    uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
+    uint internal constant CHAIN_ID = 1;
 
     StdConfig internal config;
     StdConfig internal configDeployed;
@@ -69,26 +69,20 @@ contract DeployUsesCasesTest is Test {
 
         /// ---------------------------------- Check results
         // todo
-        assertEq(address(hostBridge), proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()), "expected host bridge address");
+        assertEq(
+            address(hostBridge),
+            proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
+            "expected host bridge address"
+        );
     }
 
-    function testDeployHostCodec() public {
+    function testDeployHostCodec() public {}
 
-    }
+    function testDeployDataReader() public {}
 
-    function testDeployDataReader() public {
-
-    }
-
-    function testDeployAll() public {
-
-    }
+    function testDeployAll() public {}
 
     function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
-        return EngineLib.BaseContext({
-            configDeployed: configDeployed,
-            config: config,
-            chainId: CHAIN_ID
-        });
+        return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
     }
 }

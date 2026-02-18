@@ -15,6 +15,7 @@ import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Vm} from "forge-std/Test.sol";
+
 // import {console} from "forge-std/console.sol";
 
 /// @dev All deploy-related intents
@@ -64,12 +65,18 @@ library DeployIntentsLib {
         /// @dev LayerZero V2 endpoint address for the selected chain
         address endpoint;
     }
+
     //endregion --------------------------------------- Intents data types
 
     //region --------------------------------------- Deploy authority
     /// @dev Build intent for deploying authority
     /// @param proxyFactory Address of already deployed proxy factory
-    function buildIntentDeployAuthority(StdConfig config, uint chainId, address proxyFactory, address signer) internal view returns (IntentDeployAuthorityIn memory dest) {
+    function buildIntentDeployAuthority(
+        StdConfig config,
+        uint chainId,
+        address proxyFactory,
+        address signer
+    ) internal view returns (IntentDeployAuthorityIn memory dest) {
         dest = IntentDeployAuthorityIn({
             signer: signer,
             proxyFactory: proxyFactory,
@@ -89,11 +96,18 @@ library DeployIntentsLib {
 
         return address(authority);
     }
+
     //endregion --------------------------------------- Deploy authority
 
     //region --------------------------------------- Deploy Host
     /// @dev Build intent for deploying authority
-    function buildIntentDeployHost(StdConfig config, uint chainId, address signer, address authority, IHost.HostInitPayload memory init) internal view returns (IntentDeployHostIn memory) {
+    function buildIntentDeployHost(
+        StdConfig config,
+        uint chainId,
+        address signer,
+        address authority,
+        IHost.HostInitPayload memory init
+    ) internal view returns (IntentDeployHostIn memory) {
         return IntentDeployHostIn({
             signer: signer,
             authority: authority,
@@ -107,10 +121,7 @@ library DeployIntentsLib {
     function deployHost(Vm vm, IntentDeployHostIn memory intent) internal returns (address) {
         address proxyFactory = IAuthority(intent.authority).PROXY_FACTORY();
         address host = IProxyFactory(proxyFactory).predictAddress(intent.saltHost);
-        require(
-            host == IAuthority(intent.authority).HOST(),
-            "Host address and host salt mismatch"
-        );
+        require(host == IAuthority(intent.authority).HOST(), "Host address and host salt mismatch");
 
         /// @dev 1. Deploy host
         {
@@ -119,14 +130,21 @@ library DeployIntentsLib {
             vm.recordLogs();
 
             vm.prank(intent.signer);
-            IAccessManager(intent.authority).execute(
-                address(proxyFactory),
-                abi.encodeCall(
-                    IProxyFactory.create2NewProxy,
-                    (intent.saltHost, logic, abi.encodeCall(IHosted.initialize, (address(intent.authority), abi.encode(intent.init))))
-                )
+            IAccessManager(intent.authority)
+                .execute(
+                    address(proxyFactory),
+                    abi.encodeCall(
+                        IProxyFactory.create2NewProxy,
+                        (
+                            intent.saltHost,
+                            logic,
+                            abi.encodeCall(IHosted.initialize, (address(intent.authority), abi.encode(intent.init)))
+                        )
+                    )
+                );
+            require(
+                _extractDeployedProxy(vm.getRecordedLogs()) == host, "Host was not deployed or event was not emitted"
             );
-            require(_extractDeployedProxy(vm.getRecordedLogs()) == host, "Host was not deployed or event was not emitted");
         }
 
         /// @dev 2. Allow Host to create new proxies
@@ -196,11 +214,17 @@ library DeployIntentsLib {
 
         return host;
     }
+
     //endregion --------------------------------------- Deploy Host
 
     //region --------------------------------------- Deploy host bridge
     /// @dev Build intent for deploying authority
-    function buildIntentDeployHostBridge(StdConfig config, uint chainId, address signer, address host) internal view returns (IntentDeployHostBridgeIn memory) {
+    function buildIntentDeployHostBridge(
+        StdConfig config,
+        uint chainId,
+        address signer,
+        address host
+    ) internal view returns (IntentDeployHostBridgeIn memory) {
         return IntentDeployHostBridgeIn({
             signer: signer,
             host: host,
@@ -218,18 +242,19 @@ library DeployIntentsLib {
 
         /// @dev 1. Deploy HostBridge
         vm.prank(intent.signer);
-        address hostBridge = IHost(intent.host).deployProxy(
-            intent.saltHostBridge,
-            logic,
-            abi.encode(
-                address(intent.multisig), // owner
-                address(intent.signer) // delegate to setup the bridge
-            )
-        );
+        address hostBridge = IHost(intent.host)
+            .deployProxy(
+                intent.saltHostBridge,
+                logic,
+                abi.encode(
+                    address(intent.multisig), // owner
+                    address(intent.signer) // delegate to setup the bridge
+                )
+            );
 
         // -------------------- set endpoints inside HostBridge
-//        vm.prank(intent.signer);
-//        IHostBridge(hostBridge).addEndpoint(endpoints);
+        //        vm.prank(intent.signer);
+        //        IHostBridge(hostBridge).addEndpoint(endpoints);
 
         /// @dev 2. Allow HOST to call OSBridge.sendMessageToAllChains
         AuthorityAccessUtils.setRestrictedAccess(
@@ -267,7 +292,6 @@ library DeployIntentsLib {
             IHostBridge.removeEndpoint.selector
         );
 
-
         // @dev 5. Set gas limits for HostBridge calls
         vm.prank(intent.multisig);
         IHostBridge(hostBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
@@ -280,8 +304,8 @@ library DeployIntentsLib {
 
         return IHostBridge(hostBridge);
     }
-    //endregion --------------------------------------- Deploy host bridge
 
+    //endregion --------------------------------------- Deploy host bridge
 
     //region --------------------------------------- Internal logic
     function _extractDeployedProxy(Vm.Log[] memory entries) internal pure returns (address deployedProxy) {
@@ -292,7 +316,7 @@ library DeployIntentsLib {
             if (entries[i].topics.length != 0 && entries[i].topics[0] == sigCreated) {
                 // ProxyCreated has indexed proxy => topics[1] contains the address
                 if (entries[i].topics.length > 1) {
-                    deployedProxy = address(uint160(uint256(entries[i].topics[1])));
+                    deployedProxy = address(uint160(uint(entries[i].topics[1])));
                 } else {
                     // fallback: decode from data if not indexed for some reason
                     deployedProxy = abi.decode(entries[i].data, (address));

@@ -359,9 +359,8 @@ contract HostUpdateLibTest is Test {
             funding[1].end = uint64(block.timestamp + 10 days);
             funding[1].minRaise = 1e18;
             funding[1].maxRaise = 100e18;
-            funding[1].fundingType = fundingType == IDAOData.FundingType.SEED_0
-                ? IDAOData.FundingType.TGE_1
-                : IDAOData.FundingType.SEED_0;
+            funding[1].fundingType =
+                fundingType == IDAOData.FundingType.SEED_0 ? IDAOData.FundingType.TGE_1 : IDAOData.FundingType.SEED_0;
 
             this.validateFundingListPublic(funding);
         }
@@ -535,19 +534,14 @@ contract HostUpdateLibTest is Test {
         tests = new TestCaseFunding[](uint(IDAOData.LifecyclePhase.SEED_2) + 4);
         uint n;
         for (uint i = 0; i < uint(IDAOData.LifecyclePhase.SEED_2); i++) {
-            tests[n++] =
-                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
+            tests[n++] = TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
         }
+        tests[n++] = TestCaseFunding({phase: IDAOData.LifecyclePhase.DRAFT_0, fundingType: IDAOData.FundingType.TGE_1});
         tests[n++] =
-            TestCaseFunding({phase: IDAOData.LifecyclePhase.DRAFT_0, fundingType: IDAOData.FundingType.TGE_1});
-        tests[n++] = TestCaseFunding({
-            phase: IDAOData.LifecyclePhase.INCEPTION_1, fundingType: IDAOData.FundingType.TGE_1
-        });
+            TestCaseFunding({phase: IDAOData.LifecyclePhase.INCEPTION_1, fundingType: IDAOData.FundingType.TGE_1});
+        tests[n++] = TestCaseFunding({phase: IDAOData.LifecyclePhase.SEED_2, fundingType: IDAOData.FundingType.TGE_1});
         tests[n++] =
-            TestCaseFunding({phase: IDAOData.LifecyclePhase.SEED_2, fundingType: IDAOData.FundingType.TGE_1});
-        tests[n++] = TestCaseFunding({
-            phase: IDAOData.LifecyclePhase.DEVELOPMENT_4, fundingType: IDAOData.FundingType.TGE_1
-        });
+            TestCaseFunding({phase: IDAOData.LifecyclePhase.DEVELOPMENT_4, fundingType: IDAOData.FundingType.TGE_1});
     }
 
     function tableValidateFundingNegativeGoodPhase(TestCaseFunding memory goodFundingPhase) public {
@@ -630,15 +624,12 @@ contract HostUpdateLibTest is Test {
         );
         uint n;
         for (uint i = uint(IDAOData.LifecyclePhase.SEED_2); i < countPhases; i++) {
-            tests[n++] =
-                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
+            tests[n++] = TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.SEED_0});
         }
-        tests[n++] = TestCaseFunding({
-            phase: IDAOData.LifecyclePhase.SEED_FAILED_3, fundingType: IDAOData.FundingType.TGE_1
-        });
+        tests[n++] =
+            TestCaseFunding({phase: IDAOData.LifecyclePhase.SEED_FAILED_3, fundingType: IDAOData.FundingType.TGE_1});
         for (uint i = uint(IDAOData.LifecyclePhase.TGE_5); i < countPhases; i++) {
-            tests[n++] =
-                TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.TGE_1});
+            tests[n++] = TestCaseFunding({phase: IDAOData.LifecyclePhase(i), fundingType: IDAOData.FundingType.TGE_1});
         }
     }
 

@@ -457,14 +457,7 @@ library HostEncodingLib {
         (rest, dao.deployer, dao.metaDataLocation) = abi.decode(rest, (bytes, address, string));
 
         (rest, dao.units, dao.funding, dao.vesting, dao.governanceSettings) = abi.decode(
-            rest,
-            (
-                bytes,
-                IDAOData.UnitDataInput[],
-                IDAOData.Funding[],
-                IDAOData.Vesting[],
-                IDAOData.GovernanceSettings
-            )
+            rest, (bytes, IDAOData.UnitDataInput[], IDAOData.Funding[], IDAOData.Vesting[], IDAOData.GovernanceSettings)
         );
 
         (rest, dao.socials, dao.activity, dao.images) =
@@ -581,21 +574,13 @@ library HostEncodingLib {
             (dest.chainSettings, dest.unitIds, dest.unitRevenue, dest.unitRevenueAssets) =
                 abi.decode(b[1], (IDAOData.DaoChainSettings, string[], uint[], address[]));
 
-            (dest.params, dest.initialChain, dest.socials) =
-                abi.decode(b[2], (IDAOData.DaoParameters, uint, string[]));
+            (dest.params, dest.initialChain, dest.socials) = abi.decode(b[2], (IDAOData.DaoParameters, uint, string[]));
 
             {
                 uint8[] memory activityRaw;
 
                 (activityRaw, dest.images, dest.units, dest.funding, dest.vesting) = abi.decode(
-                    b[3],
-                    (
-                        uint8[],
-                        IDAOData.DaoImages,
-                        IDAOData.UnitData[],
-                        IDAOData.Funding[],
-                        IDAOData.Vesting[]
-                    )
+                    b[3], (uint8[], IDAOData.DaoImages, IDAOData.UnitData[], IDAOData.Funding[], IDAOData.Vesting[])
                 );
 
                 uint len = activityRaw.length;
@@ -616,14 +601,10 @@ library HostEncodingLib {
         }
     }
 
-    function encodeProposal(
-        IDAOData.Proposal memory data,
-        uint16 version
-    ) internal pure returns (bytes memory dest) {
+    function encodeProposal(IDAOData.Proposal memory data, uint16 version) internal pure returns (bytes memory dest) {
         if (version == 1) {
-            bytes memory b1 = abi.encode(
-                data.action, data.validationRequired, data.votingRequired, data.validationStatus, data.id
-            );
+            bytes memory b1 =
+                abi.encode(data.action, data.validationRequired, data.votingRequired, data.validationStatus, data.id);
             bytes memory b2 = abi.encode(data.symbol, data.created, data.status, data.payloadHash);
             return abi.encode(version, b1, b2);
         } else {

@@ -119,8 +119,7 @@ library HostProposalLib {
         require(header.validationStatus == IDAOData.ValidationStatus.NONE_0, IHost.AlreadyValidated());
 
         /// @dev Save validation status to prevent re-validation
-        header.validationStatus =
-            valid ? IDAOData.ValidationStatus.APPROVED_1 : IDAOData.ValidationStatus.REJECTED_2;
+        header.validationStatus = valid ? IDAOData.ValidationStatus.APPROVED_1 : IDAOData.ValidationStatus.REJECTED_2;
         p.proposalHeader = HostLib.packProposalHeader(header);
 
         if (valid) {
@@ -365,8 +364,7 @@ library HostProposalLib {
         if (d_.instant) {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);
         } else {
-            ActionParams memory p =
-                _getActionParams(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
+            ActionParams memory p = _getActionParams(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
             _proposeAction(d_.daoUid, payload, p);
         }
     }

@@ -69,8 +69,7 @@ library HostFundingLib {
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == IDAOData.LifecyclePhase.SEED_FAILED_3) {
             address seedToken = $.deployments[daoUid].seedToken;
-            IDAOData.Funding storage funding =
-                $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+            IDAOData.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
             _refundFunding(funding, daoUid, msg.sender, seedToken, asset);
         } else if (phase == IDAOData.LifecyclePhase.DEVELOPMENT_4) {
             address tgeToken = $.deployments[daoUid].tgeToken;
@@ -93,8 +92,7 @@ library HostFundingLib {
         address asset = HostConfigLib.getHostChainSettings().exchangeAsset;
         if (phase == IDAOData.LifecyclePhase.SEED_FAILED_3) {
             address seedToken = $.deployments[daoUid].seedToken;
-            IDAOData.Funding storage funding =
-                $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
+            IDAOData.Funding storage funding = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
             for (uint i; i < users.length; i++) {
                 _refundFunding(funding, daoUid, users[i], seedToken, asset);
             }

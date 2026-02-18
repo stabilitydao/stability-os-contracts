@@ -159,7 +159,6 @@ interface IHost {
         /// @notice Maximum allowed funding amount to raise.
         uint maxFundingRaise;
 
-
         /// @notice Min allowed length of DAO name in characters
         uint16 minNameLength;
 

@@ -93,9 +93,7 @@ contract HostEncodingLibTest is Test {
 
         a[0] = IDAOData.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
         b[0] = IDAOData.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
-        b[1] = IDAOData.Vesting({
-            name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300
-        });
+        b[1] = IDAOData.Vesting({name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300});
 
         bytes memory encA = this._encodeVestingWrapper(a, 1);
         bytes memory encB = this._encodeVestingWrapper(b, 1);
@@ -573,10 +571,7 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.decodeFunding(payload);
     }
 
-    function _encodeVestingWrapper(
-        IDAOData.Vesting[] memory data,
-        uint16 version
-    ) public pure returns (bytes memory) {
+    function _encodeVestingWrapper(IDAOData.Vesting[] memory data, uint16 version) public pure returns (bytes memory) {
         return HostEncodingLib.encodeVesting(data, version);
     }
 
@@ -614,10 +609,7 @@ contract HostEncodingLibTest is Test {
         return HostEncodingLib.decodeDaoChainSettings(payload);
     }
 
-    function _encodeDaoNamesWrapper(
-        IDAOData.DaoNames memory data,
-        uint16 version
-    ) public pure returns (bytes memory) {
+    function _encodeDaoNamesWrapper(IDAOData.DaoNames memory data, uint16 version) public pure returns (bytes memory) {
         return HostEncodingLib.encodeDaoNames(data, version);
     }
 

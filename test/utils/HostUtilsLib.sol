@@ -350,10 +350,7 @@ library HostUtilsLib {
         });
     }
 
-    function generateDaoParams(
-        uint32 vePeriod_,
-        uint16 pvpFee_
-    ) internal pure returns (IDAOData.DaoParameters memory) {
+    function generateDaoParams(uint32 vePeriod_, uint16 pvpFee_) internal pure returns (IDAOData.DaoParameters memory) {
         return IDAOData.DaoParameters({
             vePeriod: vePeriod_,
             pvpFee: pvpFee_,

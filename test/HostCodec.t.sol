@@ -218,9 +218,7 @@ contract HostCodecTest is Test {
 
         a[0] = IDAOData.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
         b[0] = IDAOData.Vesting({name: "Seed", description: "seed vesting", allocation: 2000, start: 2, end: 200});
-        b[1] = IDAOData.Vesting({
-            name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300
-        });
+        b[1] = IDAOData.Vesting({name: "Private", description: "private vesting", allocation: 3000, start: 3, end: 300});
 
         bytes memory encA = hostCodec.encode(a, 1);
         bytes memory encB = hostCodec.encode(b, 1);
