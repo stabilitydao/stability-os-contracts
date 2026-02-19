@@ -32,7 +32,9 @@ contract HostUpdateLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
+        vm.startPrank(multisig);
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(multisig);
+        vm.stopPrank();
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;

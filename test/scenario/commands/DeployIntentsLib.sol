@@ -155,10 +155,9 @@ library DeployIntentsLib {
         vm.prank(intent.signer);
         IAccessManager(intent.authority).grantRole(AccessRolesLib.DEFAULT_AUTHORITY_ADMIN, host, 0);
 
+        vm.startPrank(intent.signer);
         /// @dev 4. Set multisig as VOTING RESULTS PROVIDER for Host
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             IAuthority(intent.authority),
             intent.multisig,
             AccessRolesLib.HOST_VOTING_RESULTS_PROVIDER,
@@ -168,8 +167,6 @@ library DeployIntentsLib {
 
         /// @dev 5. Set multisig as VALIDATOR for Host
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             IAuthority(intent.authority),
             intent.multisig,
             AccessRolesLib.HOST_VALIDATOR,
@@ -179,8 +176,6 @@ library DeployIntentsLib {
 
         /// @dev 6. allow multisig to refund and update by admin in Host
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             IAuthority(intent.authority),
             intent.multisig,
             AccessRolesLib.HOST_ADMIN,
@@ -191,8 +186,6 @@ library DeployIntentsLib {
 
         /// @dev 7. allow multisig to update settings in Host
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             IAuthority(intent.authority),
             intent.multisig,
             AccessRolesLib.HOST_ADMIN,
@@ -203,14 +196,13 @@ library DeployIntentsLib {
 
         /// @dev 8. allow Multisig to set proxy implementations in Host
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             IAuthority(intent.authority),
             intent.multisig,
             AccessRolesLib.HOST_PROXY_FACTORY_ADMIN,
             address(host),
             IHost.setContractImplementation.selector
         );
+        vm.stopPrank();
 
         return host;
     }
@@ -252,14 +244,13 @@ library DeployIntentsLib {
                 )
             );
 
+        vm.startPrank(intent.signer);
         // -------------------- set endpoints inside HostBridge
         //        vm.prank(intent.signer);
         //        IHostBridge(hostBridge).addEndpoint(endpoints);
 
         /// @dev 2. Allow HOST to call OSBridge.sendMessageToAllChains
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             accessManager,
             intent.multisig,
             AccessRolesLib.HOST_BRIDGE_USER,
@@ -270,8 +261,6 @@ library DeployIntentsLib {
 
         // @dev 3. Allow HostBridge to call Host.receiveCrossChainMessage
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             accessManager,
             address(hostBridge),
             AccessRolesLib.HOST_BRIDGE,
@@ -281,8 +270,6 @@ library DeployIntentsLib {
 
         // @dev 4. Allow multisig to setup HostBridge
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            intent.signer,
             accessManager,
             intent.multisig,
             AccessRolesLib.HOST_BRIDGE_ADMIN,
@@ -291,6 +278,7 @@ library DeployIntentsLib {
             IHostBridge.addEndpoint.selector,
             IHostBridge.removeEndpoint.selector
         );
+        vm.stopPrank();
 
         // @dev 5. Set gas limits for HostBridge calls
         vm.prank(intent.multisig);

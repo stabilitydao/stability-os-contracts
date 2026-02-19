@@ -29,7 +29,9 @@ contract HostActionsLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
+        vm.startPrank(multisig);
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(multisig);
+        vm.stopPrank();
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -40,9 +42,8 @@ contract HostActionsLibTest is Test {
         seedToken = address(_deploySeedToken(1));
         tgeToken = address(_deployTgeToken(1));
 
+        vm.startPrank(multisig);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            multisig,
             authority,
             address(this),
             65871739,
@@ -52,8 +53,9 @@ contract HostActionsLibTest is Test {
             SeedToken.transferTo.selector
         );
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, multisig, authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
+            authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
         );
+        vm.stopPrank();
     }
 
     //region ---------------------------- ChangePhase
@@ -107,7 +109,9 @@ contract HostActionsLibTest is Test {
         IDAOData.Funding storage seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         seed.start = uint64(block.timestamp - 1);
 
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
+        vm.startPrank(multisig);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)), multisig);
+        vm.stopPrank();
 
         // allow to deploy seed token
         $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.SEED_TOKEN_1))] = "0x9743733";
@@ -186,7 +190,9 @@ contract HostActionsLibTest is Test {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
         IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, IHost(address(this)), multisig);
+        vm.startPrank(multisig);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)), multisig);
+        vm.stopPrank();
 
         // allow to deploy TGE token
         $.salt[HostLib.getKey(daoUid, uint16(IDAOData.ContractIndices.TGE_TOKEN_2))] = "0x34";

@@ -40,15 +40,15 @@ contract HostProxyLibTest is Test {
         vm.prank(owner);
         IProxyFactory(proxyFactory).setWhitelisted(address(this), true);
 
+        vm.startPrank(multisig);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            multisig,
             authority,
             address(this),
             AccessRolesLib.HOST_PROXY_FACTORY_DEPLOYER,
             address(host),
             IHost.deployProxy.selector
         );
+        vm.stopPrank();
     }
 
     function testStorageLocation() public pure {

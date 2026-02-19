@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {MockERC20} from "@solady/../test/utils/mocks/MockERC20.sol";
@@ -278,9 +279,14 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        console.log("multisig", MULTISIG);
+        console.log("msg.sender", msg.sender);
+
+        vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+            authority, address(this), 555, address(host), IHost.whitelistAssets.selector
         );
+        vm.stopPrank();
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
 
@@ -315,9 +321,11 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+            authority, address(this), 555, address(host), IHost.whitelistAssets.selector
         );
+        vm.stopPrank();
         address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
@@ -353,9 +361,11 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+            authority, address(this), 555, address(host), IHost.whitelistAssets.selector
         );
+        vm.stopPrank();
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, address(exchangeAsset));
 
@@ -404,9 +414,11 @@ contract HostTest is Test {
 
         // ------------------------------ setup whitelisted assets
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+            authority, address(this), 555, address(host), IHost.whitelistAssets.selector
         );
+        vm.stopPrank();
         address mockAsset = address(new MockERC20("Mock", "MOCK", 18));
 
         HostSetupUtils.whitelistAsset(vm, address(this), host, mockAsset);
@@ -435,9 +447,11 @@ contract HostTest is Test {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
 
         IAuthority authority = AuthorityAccessUtils.getAuthority(host);
+        vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, MULTISIG, authority, address(this), 555, address(host), IHost.whitelistAssets.selector
+            authority, address(this), 555, address(host), IHost.whitelistAssets.selector
         );
+        vm.stopPrank();
 
         {
             address[] memory assets = new address[](2);
@@ -1295,8 +1309,10 @@ contract HostTest is Test {
     }
 
     function _setupAuthority(IHost host) internal {
-        AuthorityAccessUtils.setupHostMultisigAccess(vm, host, MULTISIG);
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
+        vm.startPrank(MULTISIG);
+        AuthorityAccessUtils.setupHostMultisigAccess(host, MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host, MULTISIG);
+        vm.stopPrank();
     }
 
     function _moveDaoToSeedPhase(IHost host_, IHostCodec codec_, string memory symbol) internal {
@@ -1391,4 +1407,5 @@ contract HostTest is Test {
         return HostEncodingLib.decodeDaoDataInput(payload);
     }
     //endregion ----------------------------------- Internal logic
+
 }

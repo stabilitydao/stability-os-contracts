@@ -38,7 +38,9 @@ contract HostLifeCycleTest is Test {
         IHost host56 = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host56);
 
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host56, MULTISIG);
+        vm.startPrank(MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host56, MULTISIG);
+        vm.stopPrank();
 
         lifeCycleDaoAlien56(host56, codec);
 
@@ -66,7 +68,9 @@ contract HostLifeCycleTest is Test {
     function testLifeCycleWithSalt() public {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host);
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
+        vm.startPrank(MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host, MULTISIG);
+        vm.stopPrank();
         lifeCycleWithSalt(host, codec);
     }
 

@@ -26,7 +26,9 @@ contract SeedTokenTest is Test {
     constructor() {
         dataReader = new MockDataReader();
         multisig = makeAddr("multisig");
-        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
+        vm.startPrank(multisig);
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(multisig);
+        vm.stopPrank();
         host = authority.HOST();
         MockHost(host).setDataReader(address(dataReader));
     }
@@ -202,9 +204,8 @@ contract SeedTokenTest is Test {
     }
 
     function _setupAuthority(IAuthority authority_, address seedToken_) internal {
+        vm.startPrank(multisig);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            multisig,
             authority_,
             address(this),
             65871739,
@@ -213,6 +214,7 @@ contract SeedTokenTest is Test {
             SeedToken.refund.selector,
             SeedToken.transferTo.selector
         );
+        vm.stopPrank();
     }
 
     //endregion ------------------------------------------ Internal logic

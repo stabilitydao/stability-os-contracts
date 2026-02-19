@@ -28,7 +28,9 @@ contract HostFundingLibTest is Test {
 
     constructor() {
         multisig = makeAddr("multisig");
-        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(vm, multisig);
+        vm.startPrank(multisig);
+        authority = AuthorityAccessUtils.createAuthorityMockedHostWhitelistThis(multisig);
+        vm.stopPrank();
 
         /// @dev We call library directly, internal msg.sender is not overwritten by vm.prank
         user = msg.sender;
@@ -39,9 +41,8 @@ contract HostFundingLibTest is Test {
         seedToken = address(_deploySeedToken(1));
         tgeToken = address(_deployTgeToken(1));
 
+        vm.startPrank(multisig);
         AuthorityAccessUtils.setRestrictedAccess(
-            vm,
-            multisig,
             authority,
             address(this),
             65871739,
@@ -51,8 +52,9 @@ contract HostFundingLibTest is Test {
             SeedToken.transferTo.selector
         );
         AuthorityAccessUtils.setRestrictedAccess(
-            vm, multisig, authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
+            authority, address(this), 65871739, tgeToken, TgeToken.mint.selector, TgeToken.refund.selector
         );
+        vm.stopPrank();
     }
 
     //region ------------------------------------------ Fund tests

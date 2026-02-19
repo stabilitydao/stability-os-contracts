@@ -34,7 +34,9 @@ contract DataReaderTest is Test {
         IHost host = HostUtilsLib.createHostInstance(vm, MULTISIG);
         IHostCodec codec = _createHostCodec(host);
 
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(vm, host, MULTISIG);
+        vm.startPrank(MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host, MULTISIG);
+        vm.stopPrank();
 
         _lifeCycleUpToTGE(host, codec);
 
