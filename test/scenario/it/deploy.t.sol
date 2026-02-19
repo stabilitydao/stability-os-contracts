@@ -32,9 +32,9 @@ contract DeployUsesCasesTest is Test {
     //region --------------------------------------- Deploy tests
     function testDeployCore() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
         EngineLib.Core memory core = DeployUsesCaseLib.deployCore(_getBaseContext());
         vm.stopPrank();
 
@@ -58,14 +58,14 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployAuthority() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
         IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
         vm.stopPrank();
 
         // ---------------------------------- Check results
-        (bool isMember, uint32 executionDelay) = authority.hasRole(0, proxyFactoryOwner);
+        (bool isMember, uint32 executionDelay) = authority.hasRole(0, deployer);
         assertTrue(isMember, "Initial admin is correct");
         assertEq(executionDelay, 0, "no delay");
 
@@ -76,9 +76,9 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployHost() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
 
         /// @dev Assume here that Authority is not deployed yet
         IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
@@ -100,11 +100,11 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployHostBridge() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
         EngineLib.BaseContext memory bc = _getBaseContext();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
 
         /// @dev Assume here that Authority is not deployed yet
         IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
@@ -130,11 +130,11 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployHostCodec() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
         EngineLib.BaseContext memory bc = _getBaseContext();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
 
         /// @dev Assume here that Authority is not deployed yet
         IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
@@ -157,11 +157,11 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployDataReader() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
         EngineLib.BaseContext memory bc = _getBaseContext();
 
-        vm.startPrank(proxyFactoryOwner);
+        vm.startPrank(deployer);
 
         /// @dev Assume here that Authority is not deployed yet
         IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);

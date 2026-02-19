@@ -678,8 +678,8 @@ contract HostUpdateLibTest is Test {
 
         st.minVestingNameLen = 5;
         st.maxVestingNameLen = 7;
-        st.minVePeriod = 14;
-        st.maxVePeriod = 365;
+        st.minVestingDuration = 14 days;
+        st.maxVestingDuration = 365 days;
         st.minCliff = 7;
 
         IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](2);
@@ -703,8 +703,8 @@ contract HostUpdateLibTest is Test {
 
         st.minVestingNameLen = 5;
         st.maxVestingNameLen = 7;
-        st.minVePeriod = 14;
-        st.maxVePeriod = 365;
+        st.minVestingDuration = 14 days;
+        st.maxVestingDuration = 365 days;
         st.minCliff = 7;
 
         {
@@ -736,8 +736,8 @@ contract HostUpdateLibTest is Test {
 
         st.minVestingNameLen = 5;
         st.maxVestingNameLen = 7;
-        st.minVePeriod = 14;
-        st.maxVePeriod = 365;
+        st.minVestingDuration = 14 days;
+        st.maxVestingDuration = 365 days;
         st.minCliff = 7;
 
         IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
@@ -756,8 +756,8 @@ contract HostUpdateLibTest is Test {
 
         st.minVestingNameLen = 5;
         st.maxVestingNameLen = 7;
-        st.minVePeriod = 14;
-        st.maxVePeriod = 365;
+        st.minVestingDuration = 14 days;
+        st.maxVestingDuration = 365 days;
         st.minCliff = 7;
 
         IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](2);
@@ -780,6 +780,42 @@ contract HostUpdateLibTest is Test {
         vesting[1].allocation = 1_000;
 
         vm.expectRevert(IHost.TotalAllocationTooHigh.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
+    }
+
+    function tableVestingListGoodPhase_IncorrectVestingPeriod_Throws(IDAOData.LifecyclePhase vestingGoodPhase) public {
+        IHost.HostSettings storage st = HostConfigLib.getHostGlobalSettings();
+
+        st.minVestingNameLen = 5;
+        st.maxVestingNameLen = 7;
+        st.minVestingDuration = 14 days;
+        st.maxVestingDuration = 365 days;
+        st.minCliff = 7;
+
+        IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
+        vesting[0].name = "123456";
+        vesting[0].description = "vesting description";
+        vesting[0].allocation = 10_000;
+        vesting[0].start = uint64(block.timestamp + 10 days);
+        vesting[0].end = uint64(block.timestamp + 24 days - 1 seconds);
+
+        vm.expectRevert(IHost.InvalidVestingPeriod.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
+
+        vesting[0].start = uint64(block.timestamp + 8 days);
+        vesting[0].end = uint64(block.timestamp + 365 days + 8 days + 1 seconds);
+
+        vm.expectRevert(IHost.InvalidVestingPeriod.selector);
+        this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
+
+        vesting[0].start = uint64(block.timestamp + 8 days);
+        vesting[0].end = uint64(block.timestamp + 14 days + 8 days);
+
+        this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
+
+        vesting[0].start = uint64(block.timestamp + 8 days);
+        vesting[0].end = uint64(block.timestamp + 365 days + 8 days);
+
         this.validateVestingListPublic(vestingGoodPhase, vesting, block.timestamp + DEFAULT_CLAIM_OFFSET);
     }
 

@@ -145,4 +145,14 @@ contract HostCodec is IHostCodec, Hosted {
     {
         return HostEncodingLib.decodeSalt(encoded);
     }
+
+    /// @inheritdoc IHostCodec
+    function encode(IDAOData.GovernanceSettings memory data, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeGovernanceSettings(data, version);
+    }
+
+    /// @inheritdoc IHostCodec
+    function decodeGovernanceSettings(bytes memory encoded) external pure returns (IDAOData.GovernanceSettings memory) {
+        return HostEncodingLib.decodeGovernanceSettings(encoded);
+    }
 }

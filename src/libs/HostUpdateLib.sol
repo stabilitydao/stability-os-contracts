@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-//import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {LibString} from "@solady/utils/LibString.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -307,6 +307,7 @@ library HostUpdateLib {
             // -------------------- delete old units (the units that don't exist in {units} list anymore}
             for (uint j; j < existHashes.length; ++j) {
                 if (!notDelete[j]) {
+                    // todo forbid to delete units that either bridged or has not-zero revenue
                     emit IHost.DaoUnitDeleted(daoUid, existUnitIds[j], proposalId);
                     // todo probably we shouldn't call delete to reduce gas costs (?)
                     delete $.units[existHashes[j]];

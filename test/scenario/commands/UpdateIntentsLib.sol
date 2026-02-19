@@ -2,24 +2,10 @@
 pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
-import {HostBridge} from "../../../src/HostBridge.sol";
-import {AccessRolesLib} from "../../../src/libs/AccessRolesLib.sol";
-import {AuthorityAccessUtils} from "../access/AuthorityAccessUtils.sol";
-import {Authority} from "../../../src/Authority.sol";
-import {Host} from "../../../src/Host.sol";
-import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
-import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
-import {IHosted} from "../../../src/interfaces/IHosted.sol";
-import {IHost} from "../../../src/interfaces/IHost.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
-import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
-import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
-import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
-import {HostCodec} from "../../../src/HostCodec.sol";
-import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
-import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
+import "../../utils/HostUtilsLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
+import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
+import {Vm} from "forge-std/Test.sol";
 
 // import {console} from "forge-std/console.sol";
 
@@ -27,18 +13,156 @@ import {EngineLib} from "../engine/EngineLib.sol";
 library UpdateIntentsLib {
     //region --------------------------------------- Intents data types
     struct IntentUpdateImages {
+        address signer;
         string symbol;
         IDAOData.DaoImages images;
     }
 
+    struct IntentUpdateSocials {
+        address signer;
+        string symbol;
+        string[] data;
+    }
+
+    struct IntentUpdateNaming {
+        address signer;
+        string symbol;
+        string newSymbol;
+        string newName;
+    }
+
+    struct IntentUpdateUnits {
+        address signer;
+        string symbol;
+        IDAOData.UnitDataInput[] data;
+        IDAOData.UnitEmitData[] emitData;
+    }
+
+    struct IntentUpdateFunding {
+        address signer;
+        string symbol;
+        IDAOData.Funding funding;
+    }
+
+    struct IntentUpdateVesting {
+        address signer;
+        string symbol;
+        IDAOData.Vesting[] vesting;
+    }
+
+    struct IntentUpdateDaoParameters {
+        address signer;
+        string symbol;
+        IDAOData.DaoParameters params;
+    }
+
+    struct IntentUpdateSalts {
+        address signer;
+        string symbol;
+        bytes32[] salts;
+        uint16[] contractIndices;
+    }
+
+    struct IntentUpdateDaoChainSettings {
+        address signer;
+        string symbol;
+        IDAOData.DaoChainSettings params;
+    }
+
+    struct IntentUpdateGovernanceSettings {
+        address signer;
+        string symbol;
+        IDAOData.GovernanceSettings params;
+    }
+
     //endregion --------------------------------------- Intents data types
 
-    //region --------------------------------------- Update images
-    function updateImages(EngineLib.Core memory core, IntentUpdateImages memory intent) internal {
+    //region --------------------------------------- Update actions
+    function updateImages(Vm vm, EngineLib.Core memory core, IntentUpdateImages memory intent) internal {
         bytes memory payload = core.hostCodec.encode(intent.images, core.hostCodec.PAYLOAD_API_VERSION());
 
+        vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_IMAGES_0), payload, "");
     }
 
-    //endregion --------------------------------------- Update images
+    function updateSocials(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateSocials memory intent
+    ) internal returns (bytes32 proposalId, bytes memory payload) {
+        payload = core.hostCodec.encode(intent.data);
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), payload, "");
+
+        proposalId = HostUtilsLib.getLastProposalId(core.host, intent.symbol);
+    }
+
+    function updateNaming(Vm vm, EngineLib.Core memory core, IntentUpdateNaming memory intent) internal {
+        IDAOData.DaoNames memory data = IDAOData.DaoNames({name: intent.newName, symbol: intent.newSymbol});
+        bytes memory payload = core.hostCodec.encode(data, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_NAMING_2), payload, "");
+    }
+
+    function updateUnits(Vm vm, EngineLib.Core memory core, IntentUpdateUnits memory intent) internal {
+        bytes memory payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
+        bytes memory payloadEmit = core.hostCodec.encode(intent.emitData, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_UNITS_3), payload, payloadEmit);
+    }
+
+    function updateFunding(Vm vm, EngineLib.Core memory core, IntentUpdateFunding memory intent) internal {
+        bytes memory payload = core.hostCodec.encode(intent.funding, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_FUNDING_4), payload, "");
+    }
+
+    function updateVesting(Vm vm, EngineLib.Core memory core, IntentUpdateVesting memory intent) internal {
+        bytes memory payload = core.hostCodec.encode(intent.vesting, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_VESTING_5), payload, "");
+    }
+
+    function updateDaoParameters(Vm vm, EngineLib.Core memory core, IntentUpdateDaoParameters memory intent) internal {
+        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_DAO_PARAMETERS_6), payload, "");
+    }
+
+    function updateSalts(Vm vm, EngineLib.Core memory core, IntentUpdateSalts memory intent) internal {
+        bytes memory payload =
+            core.hostCodec.encode(intent.contractIndices, intent.salts, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), payload, "");
+    }
+
+    function updateDaoChainSettings(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateDaoChainSettings memory intent
+    ) internal {
+        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
+    }
+
+    function updateGovernanceSettings(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateGovernanceSettings memory intent
+    ) internal {
+        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.prank(intent.signer);
+        core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10), payload, "");
+    }
+    //endregion --------------------------------------- Update actions
 }

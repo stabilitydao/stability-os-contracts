@@ -19,10 +19,13 @@ import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {HostCodec} from "../../../src/HostCodec.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 import {DataReader} from "../../../src/DataReader.sol";
+import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
+import {RestrictHostBridgeUtils} from "../access/RestrictHostBridgeUtils.sol";
 
 // import {console} from "forge-std/console.sol";
 
 /// @dev All deploy-related intents
+/// @dev All following intents don't depend on Vm, so they can be used both in scripts and tests.
 library DeployIntentsLib {
     //region --------------------------------------- Intents data types
     struct IntentDeployAuthority {
@@ -34,6 +37,9 @@ library DeployIntentsLib {
 
         /// @dev Expected address of host to set in authority
         address host;
+
+        /// @dev Multisig to make multisig the admin of authority
+        address multisig;
     }
 
     struct IntentDeployHost {
@@ -95,7 +101,8 @@ library DeployIntentsLib {
         dest = IntentDeployAuthority({
             proxyFactory: proxyFactory,
             initialAdmin: IOwnable(address(proxyFactory)).owner(),
-            host: config.get(chainId, "HOST").toAddress()
+            host: config.get(chainId, "HOST").toAddress(),
+            multisig: config.get(chainId, "MULTISIG").toAddress()
         });
     }
 
@@ -105,6 +112,9 @@ library DeployIntentsLib {
 
         // allow authority to create new proxies
         IProxyFactory(intent.proxyFactory).setWhitelisted(address(authority), true);
+
+        // make multisig the admin of authority
+        IAccessManager(address(authority)).grantRole(AccessRolesLib.DEFAULT_AUTHORITY_ADMIN, intent.multisig, 0);
 
         return address(authority);
     }
@@ -157,61 +167,8 @@ library DeployIntentsLib {
         /// @dev 3. Set multisig as Host admin
         IAccessManager(intent.authority).grantRole(AccessRolesLib.DEFAULT_AUTHORITY_ADMIN, host, 0);
 
-        /// @dev 4. Set multisig as VOTING RESULTS PROVIDER for Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.HOST_VOTING_RESULTS_PROVIDER,
-            address(host),
-            IHost.receiveVotingResults.selector
-        );
-
-        /// @dev 5. Set multisig as VALIDATOR for Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.HOST_VALIDATOR,
-            address(host),
-            IHost.receiveVotingResults.selector
-        );
-
-        /// @dev 6. allow multisig to refund and update by admin in Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.HOST_ADMIN,
-            address(host),
-            Host.updateByAdmin.selector,
-            Host.refundFor.selector
-        );
-
-        /// @dev 7. allow multisig to update settings in Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.HOST_ADMIN,
-            address(host),
-            Host.setSettings.selector,
-            Host.setChainSettings.selector
-        );
-
-        /// @dev 8. allow Multisig to set proxy implementations in Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.HOST_PROXY_FACTORY_ADMIN,
-            address(host),
-            IHost.setContractImplementation.selector
-        );
-
-        /// @dev 9. allow Multisig to deployProxy in Host
-        AuthorityAccessUtils.setRestrictedAccess(
-            IAuthority(intent.authority),
-            intent.multisig,
-            AccessRolesLib.PROXY_DEPLOYER,
-            address(host),
-            IHost.deployProxy.selector
-        );
+        /// @dev 4. Set up restricted access for multisig to manage the host
+        RestrictHostUtils.setupMultisig(IAuthority(intent.authority), host, intent.multisig);
 
         return host;
     }
@@ -242,7 +199,7 @@ library DeployIntentsLib {
 
         address hostBridge = IProxyFactory(proxyFactory).predictAddress(intent.saltHostBridge);
 
-        /// @dev 1. Deploy HostBridge
+        /// @dev Deploy HostBridge
         {
             address logic = address(new HostBridge(intent.endpoint));
 
@@ -269,6 +226,7 @@ library DeployIntentsLib {
                 );
         }
 
+        // todo we can deploy HostBridge through host but it requires additional permission for deployer
         //        /// @dev 1. Deploy HostBridge
         //        address hostBridge = IHost(intent.host)
         //            .deployProxy(
@@ -283,46 +241,11 @@ library DeployIntentsLib {
         // -------------------- set endpoints inside HostBridge
         //        IHostBridge(hostBridge).addEndpoint(endpoints);
 
-        /// @dev 2. Allow HOST to call OSBridge.sendMessageToAllChains
-        AuthorityAccessUtils.setRestrictedAccess(
-            accessManager,
-            intent.multisig,
-            AccessRolesLib.HOST_BRIDGE_USER,
-            address(intent.host),
-            IHostBridge.sendMessageToAllChains.selector,
-            IHostBridge.sendMessage.selector
-        );
+        RestrictHostUtils.setupHostBridge(accessManager, intent.host, intent.multisig, address(hostBridge));
+        RestrictHostBridgeUtils.setupMultisig(accessManager, hostBridge, intent.multisig);
+        RestrictHostBridgeUtils.setupDeployer(accessManager, hostBridge, intent.signer);
 
-        // @dev 3. Allow HostBridge to call Host.receiveCrossChainMessage
-        AuthorityAccessUtils.setRestrictedAccess(
-            accessManager,
-            address(hostBridge),
-            AccessRolesLib.HOST_BRIDGE,
-            address(intent.host),
-            IHost.onReceiveCrossChainMessage.selector
-        );
-
-        // @dev 4. Allow multisig to setup HostBridge
-        AuthorityAccessUtils.setRestrictedAccess(
-            accessManager,
-            intent.multisig,
-            AccessRolesLib.HOST_BRIDGE_ADMIN,
-            address(hostBridge),
-            IHostBridge.setGasLimit.selector,
-            IHostBridge.addEndpoint.selector,
-            IHostBridge.removeEndpoint.selector
-        );
-
-        // @dev 5. Allow msg.sender to setup GasLimit
-        AuthorityAccessUtils.setRestrictedAccess(
-            accessManager,
-            intent.signer,
-            AccessRolesLib.HOST_BRIDGE_ADMIN,
-            address(hostBridge),
-            IHostBridge.setGasLimit.selector
-        );
-
-        // @dev 5. Set gas limits for HostBridge calls
+        // @dev Set gas limits for HostBridge calls
         IHostBridge(hostBridge).setGasLimit(uint(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0), 70_000);
 
         IHostBridge(hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_RENAME_SYMBOL_1), 90_000);

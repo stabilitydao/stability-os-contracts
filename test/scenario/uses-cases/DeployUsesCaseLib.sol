@@ -14,7 +14,6 @@ import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 
 /// @dev Set of deploy-related functions ready to be used in integration tests
 library DeployUsesCaseLib {
-
     /// @dev Deploy core contracts: authority, host, host bridge, host codec and data reader.
     /// @dev Assume that proxy factory is already deployed and the caller is proxy factory owner.
     function deployCore(EngineLib.BaseContext memory bc) internal returns (EngineLib.Core memory) {
@@ -22,7 +21,6 @@ library DeployUsesCaseLib {
         IHost host = deployFirstHost(bc, address(authority));
 
         return EngineLib.Core({
-            multisig: bc.config.get(bc.chainId, "MULTISIG").toAddress(),
             authority: authority,
             host: host,
             hostBridge: deployHostBridge(bc, address(host)),
@@ -73,11 +71,11 @@ library DeployUsesCaseLib {
     /// @dev Deploy host bridge for the given host
     function deployHostBridge(EngineLib.BaseContext memory bc, address host) internal returns (IHostBridge) {
         IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(bc.chainId, "PROXY_FACTORY").toAddress());
-        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+        address deployer = IOwnable(address(proxyFactory)).owner();
 
         /// @dev 1. Build intent from config
         DeployIntentsLib.IntentDeployHostBridge memory intent =
-            DeployIntentsLib.buildIntentDeployHostBridge(bc.config, bc.chainId, proxyFactoryOwner, host);
+            DeployIntentsLib.buildIntentDeployHostBridge(bc.config, bc.chainId, deployer, host);
 
         /// @dev 2. Deploy host bridge
         return DeployIntentsLib.deployHostBridge(intent);

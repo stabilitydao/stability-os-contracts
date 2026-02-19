@@ -39,7 +39,7 @@ contract HostCodecTest is Test {
         assertEq(decA.proposalThreshold, a.proposalThreshold);
     }
 
-    function testEncodeDaoParametersBadPaths() public {
+    function testEncodeDaoParameters_IncorrectVersion_Revert() public {
         IDAOData.DaoParameters memory a;
         a.vePeriod = 100;
         a.pvpFee = 10;
@@ -71,7 +71,7 @@ contract HostCodecTest is Test {
         assertEq(decA.bbRate, 101);
     }
 
-    function testEncodeDaoChainSettingsBadPaths() public {
+    function testEncodeDaoChainSettings_IncorrectVersion_Revert() public {
         IDAOData.DaoChainSettings memory a;
         a.bbRate = 101;
 
@@ -106,7 +106,7 @@ contract HostCodecTest is Test {
         assertEq(retSalt[1], salt[1], "salt[1]");
     }
 
-    function testEncodeSaltBadPaths() public {
+    function testEncodeSalt_IncorrectVersion_Revert() public {
         uint16[] memory contractIndices = new uint16[](2);
         contractIndices[0] = 1;
         contractIndices[1] = 2;
@@ -189,7 +189,7 @@ contract HostCodecTest is Test {
         assertEq(decA.claim, a.claim);
     }
 
-    function testEncodeFundingBadPaths() public {
+    function testEncodeFunding_IncorrectVersion_Revert() public {
         IDAOData.Funding memory a;
         a.fundingType = IDAOData.FundingType(uint8(0));
         a.start = 100;
@@ -234,7 +234,7 @@ contract HostCodecTest is Test {
         assertTrue(keccak256(abi.encode(decC)) == keccak256(abi.encode(c)));
     }
 
-    function testEncodeVestingBadPaths() public {
+    function testEncodeVesting_IncorrectVersion_Revert() public {
         IDAOData.Vesting[] memory a = new IDAOData.Vesting[](1);
         a[0] = IDAOData.Vesting({name: "Team", description: "team vesting", allocation: 1000, start: 1, end: 100});
 
@@ -259,7 +259,7 @@ contract HostCodecTest is Test {
         assertEq(decA.symbol, a.symbol);
     }
 
-    function testEncodeDaoNamesBadPaths() public {
+    function testEncodeDaoNames_IncorrectVersion_Revert() public {
         IDAOData.DaoNames memory a = IDAOData.DaoNames({symbol: "NA", name: "NameA"});
 
         // encode with unsupported version should revert
@@ -286,7 +286,7 @@ contract HostCodecTest is Test {
         assertEq(decA.daoToken, a.daoToken);
     }
 
-    function testEncodeDaoImagesBadPaths() public {
+    function testEncodeDaoImages_IncorrectVersion_Revert() public {
         IDAOData.DaoImages memory a = SampleDataLib.getDaoImages();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
@@ -325,7 +325,7 @@ contract HostCodecTest is Test {
         assertEq(keccak256(abi.encode(decM)), keccak256(abi.encode(emitted)), "emitted data");
     }
 
-    function testEncodeUnitsBadPath() public {
+    function testEncodeUnits_IncorrectVersion_Revert() public {
         (IDAOData.UnitDataInput[] memory units, ISegment4.UnitEmitData[] memory emitted) = SampleDataLib.getUnitsTwo();
 
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
@@ -341,5 +341,29 @@ contract HostCodecTest is Test {
         payloadUnknownVersion = abi.encode(INCORRECT_VERSION, emitted);
         vm.expectRevert(IHost.UnsupportedStructVersion.selector);
         hostCodec.decodeUnitsEmitData(payloadUnknownVersion);
+    }
+
+    function testEncodeGovernanceSettings() public view {
+        IDAOData.GovernanceSettings memory a = IDAOData.GovernanceSettings({ttBribe: 99, proposalThreshold: 10_000});
+
+        bytes memory encA = hostCodec.encode(a, hostCodec.PAYLOAD_API_VERSION());
+
+        IDAOData.GovernanceSettings memory decA = hostCodec.decodeGovernanceSettings(encA);
+
+        assertEq(decA.ttBribe, 99, "ttBribe");
+        assertEq(decA.proposalThreshold, 10_000, "proposalThreshold");
+    }
+
+    function testEncodeGovernanceSettings_IncorrectVersion_Revert() public {
+        IDAOData.GovernanceSettings memory a = IDAOData.GovernanceSettings({ttBribe: 99, proposalThreshold: 10_000});
+
+        // encode with unsupported version should revert
+        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
+        hostCodec.encode(a, INCORRECT_VERSION);
+
+        // craft payload with unsupported version prefix and expect decode to revert
+        bytes memory payloadUnknownVersion = abi.encode(INCORRECT_VERSION, a.proposalThreshold, a.ttBribe);
+        vm.expectRevert(IHost.UnsupportedStructVersion.selector);
+        hostCodec.decodeGovernanceSettings(payloadUnknownVersion);
     }
 }

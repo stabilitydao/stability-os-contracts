@@ -38,11 +38,18 @@ library EngineLib {
     }
 
     struct Core {
-        address multisig;
         IAuthority authority;
         IHost host;
         IHostBridge hostBridge;
         IHostCodec hostCodec;
         IDataReader dataReader;
+    }
+
+    struct Context {
+        Core core;
+        BaseContext bc;
+        address user;
+        address multisig;
+        address validator;
     }
 }
