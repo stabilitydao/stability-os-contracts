@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
@@ -107,7 +107,7 @@ library AuthorityAccessUtils {
     }
 
     /// @dev Host should be able to set up seed, tge tokens which it deploys
-    function setupHostAsAuthorityAdmin(IHost host, address multisig) internal {
+    function setupHostAsAuthorityAdmin(IHost host) internal {
         address authority = IAccessManaged(address(host)).authority();
 
         IAccessManager(address(authority)).grantRole(0, address(host), 0);

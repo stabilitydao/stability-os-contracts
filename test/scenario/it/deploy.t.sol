@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import {console} from "forge-std/console.sol";
+//import {console} from "forge-std/console.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
-import {Test} from "forge-std/Test.sol";
+import {Vm, Test} from "forge-std/Test.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
@@ -31,7 +31,9 @@ contract DeployUsesCasesTest is Test {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
 
-        IAuthority authority = DeployUsesCaseLib.deployAuthority(vm, _getBaseContext());
+        vm.startPrank(proxyFactoryOwner);
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
+        vm.stopPrank();
 
         // ---------------------------------- Check results
         (bool isMember, uint32 executionDelay) = authority.hasRole(0, proxyFactoryOwner);
@@ -44,11 +46,23 @@ contract DeployUsesCasesTest is Test {
     }
 
     function testDeployHost() public {
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+
+        vm.startPrank(proxyFactoryOwner);
+
         /// @dev Assume here that Authority is not deployed yet
-        IAuthority authority = DeployUsesCaseLib.deployAuthority(vm, _getBaseContext());
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
 
         /// @dev Deploy host
-        IHost deployedHost = DeployUsesCaseLib.deployFirstHost(vm, _getBaseContext(), address(authority));
+        vm.recordLogs();
+        IHost deployedHost = DeployUsesCaseLib.deployFirstHost(_getBaseContext(), address(authority));
+
+        vm.stopPrank();
+
+        require(
+            _extractDeployedProxy(vm.getRecordedLogs()) == authority.HOST(), "Host was not deployed or event was not emitted"
+        );
 
         /// ---------------------------------- Check results
         assertEq(authority.HOST(), address(deployedHost), "Host deployed in proper address");
@@ -57,15 +71,23 @@ contract DeployUsesCasesTest is Test {
 
     function testDeployHostBridge() public {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+
         EngineLib.BaseContext memory bc = _getBaseContext();
+
+        vm.startPrank(proxyFactoryOwner);
+
         /// @dev Assume here that Authority is not deployed yet
-        IAuthority authority = DeployUsesCaseLib.deployAuthority(vm, bc);
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
 
         /// @dev Deploy host
-        IHost host = DeployUsesCaseLib.deployFirstHost(vm, bc, address(authority));
+        IHost host = DeployUsesCaseLib.deployFirstHost(bc, address(authority));
 
         /// @dev Deploy host bridge
-        IHostBridge hostBridge = DeployUsesCaseLib.deployHostBridge(vm, bc, address(host));
+        IHostBridge hostBridge = DeployUsesCaseLib.deployHostBridge(bc, address(host));
+
+        vm.stopPrank();
+
 
         /// ---------------------------------- Check results
         // todo
@@ -85,4 +107,25 @@ contract DeployUsesCasesTest is Test {
     function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
         return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
     }
+
+    //region --------------------------------------- Internal logic
+    function _extractDeployedProxy(Vm.Log[] memory entries) internal pure returns (address deployedProxy) {
+        // Only support ProxyCreated(address) event: proxy is indexed (topics[1])
+        bytes32 sigCreated = keccak256("ProxyCreated(address)");
+
+        for (uint i = 0; i < entries.length; i++) {
+            if (entries[i].topics.length != 0 && entries[i].topics[0] == sigCreated) {
+                // ProxyCreated has indexed proxy => topics[1] contains the address
+                if (entries[i].topics.length > 1) {
+                    deployedProxy = address(uint160(uint(entries[i].topics[1])));
+                } else {
+                    // fallback: decode from data if not indexed for some reason
+                    deployedProxy = abi.decode(entries[i].data, (address));
+                }
+                break;
+            }
+        }
+        return deployedProxy;
+    }
+    //endregion --------------------------------------- Internal logic
 }

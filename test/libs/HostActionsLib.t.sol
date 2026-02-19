@@ -110,7 +110,7 @@ contract HostActionsLibTest is Test {
         seed.start = uint64(block.timestamp - 1);
 
         vm.startPrank(multisig);
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)), multisig);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)));
         vm.stopPrank();
 
         // allow to deploy seed token
@@ -191,7 +191,7 @@ contract HostActionsLibTest is Test {
         IDAOData.Funding storage tge = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.TGE_1))];
 
         vm.startPrank(multisig);
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)), multisig);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(IHost(address(this)));
         vm.stopPrank();
 
         // allow to deploy TGE token

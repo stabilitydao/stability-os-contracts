@@ -1311,7 +1311,7 @@ contract HostTest is Test {
     function _setupAuthority(IHost host) internal {
         vm.startPrank(MULTISIG);
         AuthorityAccessUtils.setupHostMultisigAccess(host, MULTISIG);
-        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host, MULTISIG);
+        AuthorityAccessUtils.setupHostAsAuthorityAdmin(host);
         vm.stopPrank();
     }
 
