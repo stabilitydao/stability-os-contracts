@@ -9,7 +9,6 @@ import {IHost} from "../../../src/interfaces/IHost.sol";
 
 /// @dev Routines to set up restricted access to HostBridge functions
 library RestrictHostBridgeUtils {
-
     /// @dev Set up restricted access for multisig to manage the host bridge
     function setupMultisig(IAuthority authority, address hostBridge, address multisig) internal {
         // @dev Allow multisig to setup HostBridge

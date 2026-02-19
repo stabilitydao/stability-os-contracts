@@ -56,6 +56,53 @@ contract CreateDaoUsesCasesTest is Test {
 
         // ---------------------------------- Check results
         assertEq(dao.symbol, CreateDaoUsesCaseLib.HOST_DAO_SYMBOL, "DAO symbol is correct");
+
+        {
+            string[] memory socials = CreateDaoUsesCaseLib.getHostSocials();
+            assertEq(dao.socials, socials, "socials are correct");
+        }
+
+        {
+            IDAOData.DaoParameters memory params = CreateDaoUsesCaseLib.getHostDaoParameters();
+            assertEq(keccak256(abi.encode(dao.params)), keccak256(abi.encode(params)), "DAO parameters are correct");
+        }
+
+        {
+            IDAOData.DaoImages memory images = CreateDaoUsesCaseLib.getHostDaoImages();
+            assertEq(keccak256(abi.encode(dao.images)), keccak256(abi.encode(images)), "images are correct");
+        }
+
+        {
+            IDAOData.Activity[] memory activity = CreateDaoUsesCaseLib.getHostActivity();
+            assertEq(keccak256(abi.encode(dao.activity)), keccak256(abi.encode(activity)), "activity are correct");
+        }
+
+        {
+            IDAOData.Funding[] memory funding = CreateDaoUsesCaseLib.getHostFunding();
+            assertEq(keccak256(abi.encode(dao.funding)), keccak256(abi.encode(funding)), "funding are correct");
+        }
+
+        {
+            (bytes32[] memory salts, uint16[] memory contractIndices) =
+                CreateDaoUsesCaseLib.getHostSalts(_getBaseContext());
+            // todo
+            //            assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
+            //            assertEq(keccak256(abi.encode(dao.saltContractIndices)), keccak256(abi.encode(contractIndices)), "contractIndices are correct");
+        }
+
+        {
+            IDAOData.DaoChainSettings memory chainSettings = CreateDaoUsesCaseLib.getHostChainSettings(multisig);
+            // todo
+            //            assertEq(keccak256(abi.encode(dao.chainSettings)), keccak256(abi.encode(chainSettings)), "chainSettings are correct");
+        }
+
+        {
+            (IDAOData.UnitDataInput[] memory units,) = CreateDaoUsesCaseLib.getHostUnits();
+            // todo
+            //            assertEq(keccak256(abi.encode(dao.unitIds)), keccak256(abi.encode(units)), "units are correct");
+
+            // todo check emitted data
+        }
     }
 
     //region --------------------------------------- Internal logic

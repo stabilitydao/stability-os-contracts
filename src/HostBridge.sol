@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {IHostBridge} from "./interfaces/IHostBridge.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {
@@ -54,7 +54,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
         __Hosted_init(authority_);
         __OApp_init(_delegate == address(0) ? _owner : _delegate);
         __Ownable_init(_owner);
-        console.log("Initialize HostBridge: authority_", authority_);
     }
 
     //endregion --------------------------------- Initializers
@@ -163,7 +162,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
             uint32 dstEid = uint32($.endpoints.at(i));
             MessagingFee memory fee = _quote(dstEid, message_, options, false);
             totalFee += fee.nativeFee;
-            console.log("fee", dstEid, fee.nativeFee, totalFee);
         }
 
         return totalFee;
@@ -171,7 +169,6 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
 
     /// @inheritdoc IHostBridge
     function sendMessageToAllChains(uint messageKind, bytes memory message_) external payable restricted {
-        console.log("sendMessageToAllChains", msg.value);
         HostBridgeStorage storage $ = _getHostBridgeStorage();
 
         // todo assume here that gas limit is same for all chains
@@ -188,13 +185,10 @@ contract HostBridge is Hosted, OAppUpgradeable, IHostBridge {
 
         for (uint i; i < len; ++i) {
             uint32 dstEid = uint32($.endpoints.at(i));
-            console.log("i", i, dstEid);
             MessagingFee memory fee = _quote(dstEid, message_, options, false);
 
             nativeSpent += fee.nativeFee;
             require(nativeSpent <= msg.value, NotEnoughNative(msg.value));
-
-            console.log("fee, value, spent", fee.nativeFee, msg.value, nativeSpent);
 
             _lzSend(dstEid, message_, options, fee, payable(msg.sender));
 

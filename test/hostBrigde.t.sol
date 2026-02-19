@@ -82,7 +82,6 @@ contract HostBridgeTest is Test {
         vm.selectFork(sonic.fork);
         _dealAndApprove(hostSonic);
         IDAOData.DaoData memory dao1 = HostUtilsLib.createAliensDao(vm, hostSonic, "ALIENS");
-        console.log("done createAliensDao");
 
         { // ------------------------- process cross chain events: Sonic -> Avalanche, Plasma
             Vm.Log[] memory logs = vm.getRecordedLogs();
@@ -94,7 +93,6 @@ contract HostBridgeTest is Test {
         vm.selectFork(avalanche.fork);
         _dealAndApprove(hostAvax);
         IDAOData.DaoData memory dao2 = HostUtilsLib.createApesDao(vm, hostAvax);
-        console.log("done createApesDao");
 
         { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
             Vm.Log[] memory logs = vm.getRecordedLogs();

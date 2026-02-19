@@ -18,14 +18,12 @@ library HostCrossChainLib {
     /// @param guid_ Unique message identifier
     /// @param message_ Message payload
     function onReceiveCrossChainMessage(uint32 srcEid, bytes32 guid_, bytes memory message_) external {
-        console.log("onReceiveCrossChainMessage", block.chainid);
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         // todo do we need to check sender here? require(msg.sender == bridge, NotBridge());
         require(message_.length >= 32, TooShortCrossChainMessage());
 
         uint16 messageKind = abi.decode(message_, (uint16));
-        console.log("onReceiveCrossChainMessage message kind", messageKind);
 
         if (messageKind == uint16(IHost.CrossChainMessages.NEW_DAO_SYMBOL_0)) {
             string memory symbol = unpackMessageNewDaoSymbol(message_);
