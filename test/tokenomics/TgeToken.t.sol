@@ -155,12 +155,7 @@ contract TgeTokenTest is Test {
     function _setupAuthority(IAuthority authority_, address tgeToken_) internal {
         vm.startPrank(multisig);
         AuthorityAccessUtils.setRestrictedAccess(
-            authority_,
-            address(this),
-            65871739,
-            tgeToken_,
-            TgeToken.mint.selector,
-            TgeToken.refund.selector
+            authority_, address(this), 65871739, tgeToken_, TgeToken.mint.selector, TgeToken.refund.selector
         );
         vm.stopPrank();
     }

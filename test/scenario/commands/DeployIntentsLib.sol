@@ -15,13 +15,16 @@ import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {HostCodec} from "../../../src/HostCodec.sol";
+import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 
 // import {console} from "forge-std/console.sol";
 
 /// @dev All deploy-related intents
 library DeployIntentsLib {
     //region --------------------------------------- Intents data types
-    struct IntentDeployAuthorityIn {
+    struct IntentDeployAuthority {
         /// @dev Already deployed proxy factory
         address proxyFactory;
 
@@ -32,7 +35,7 @@ library DeployIntentsLib {
         address host;
     }
 
-    struct IntentDeployHostIn {
+    struct IntentDeployHost {
         /// @dev Parameters of host initialization
         IHost.HostInitPayload init;
 
@@ -46,10 +49,10 @@ library DeployIntentsLib {
         address multisig;
     }
 
-    struct IntentDeployHostBridgeIn {
+    struct IntentDeployHostBridge {
         address signer;
 
-        /// @dev Salt for host
+        /// @dev Salt for host bridge
         bytes32 saltHostBridge;
 
         /// @dev Already deployed host
@@ -62,6 +65,22 @@ library DeployIntentsLib {
         address endpoint;
     }
 
+    struct IntentDeployHostCodec {
+        /// @dev Already deployed authority
+        address authority;
+
+        /// @dev Salt for host codec
+        bytes32 saltHostCodec;
+    }
+
+    struct IntentDeployDataReader {
+        /// @dev Already deployed authority
+        address authority;
+
+        /// @dev Salt for data reader
+        bytes32 saltDataReader;
+    }
+
     //endregion --------------------------------------- Intents data types
 
     //region --------------------------------------- Deploy authority
@@ -71,8 +90,8 @@ library DeployIntentsLib {
         StdConfig config,
         uint chainId,
         address proxyFactory
-    ) internal view returns (IntentDeployAuthorityIn memory dest) {
-        dest = IntentDeployAuthorityIn({
+    ) internal view returns (IntentDeployAuthority memory dest) {
+        dest = IntentDeployAuthority({
             proxyFactory: proxyFactory,
             initialAdmin: IOwnable(address(proxyFactory)).owner(),
             host: config.get(chainId, "HOST").toAddress()
@@ -80,7 +99,7 @@ library DeployIntentsLib {
     }
 
     /// @dev Deploy authority and set up necessary permissions for it to work
-    function deployAuthority(IntentDeployAuthorityIn memory intent) internal returns (address) {
+    function deployAuthority(IntentDeployAuthority memory intent) internal returns (address) {
         Authority authority = new Authority(intent.initialAdmin, intent.host, intent.proxyFactory);
 
         // allow authority to create new proxies
@@ -92,14 +111,14 @@ library DeployIntentsLib {
     //endregion --------------------------------------- Deploy authority
 
     //region --------------------------------------- Deploy Host
-    /// @dev Build intent for deploying authority
+    /// @dev Build intent for deploying host
     function buildIntentDeployHost(
         StdConfig config,
         uint chainId,
         address authority,
         IHost.HostInitPayload memory init
-    ) internal view returns (IntentDeployHostIn memory) {
-        return IntentDeployHostIn({
+    ) internal view returns (IntentDeployHost memory) {
+        return IntentDeployHost({
             authority: authority,
             multisig: config.get(chainId, "MULTISIG").toAddress(),
             saltHost: config.get(chainId, "SALT_HOST").toBytes32(),
@@ -108,7 +127,7 @@ library DeployIntentsLib {
     }
 
     /// @dev Deploy host and set up necessary permissions for it to work
-    function deployHost(IntentDeployHostIn memory intent) internal returns (address) {
+    function deployHost(IntentDeployHost memory intent) internal returns (address) {
         address proxyFactory = IAuthority(intent.authority).PROXY_FACTORY();
         address host = IProxyFactory(proxyFactory).predictAddress(intent.saltHost);
         require(host == IAuthority(intent.authority).HOST(), "Host address and host salt mismatch");
@@ -199,14 +218,14 @@ library DeployIntentsLib {
     //endregion --------------------------------------- Deploy Host
 
     //region --------------------------------------- Deploy host bridge
-    /// @dev Build intent for deploying authority
+    /// @dev Build intent for deploying host bridge
     function buildIntentDeployHostBridge(
         StdConfig config,
         uint chainId,
         address signer,
         address host
-    ) internal view returns (IntentDeployHostBridgeIn memory) {
-        return IntentDeployHostBridgeIn({
+    ) internal view returns (IntentDeployHostBridge memory) {
+        return IntentDeployHostBridge({
             signer: signer,
             host: host,
             multisig: config.get(chainId, "MULTISIG").toAddress(),
@@ -216,7 +235,7 @@ library DeployIntentsLib {
     }
 
     /// @dev Deploy host bridge and set up necessary permissions for it to work
-    function deployHostBridge(IntentDeployHostBridgeIn memory intent) internal returns (IHostBridge) {
+    function deployHostBridge(IntentDeployHostBridge memory intent) internal returns (IHostBridge) {
         IAuthority accessManager = IAuthority(IHosted(intent.host).authority());
         address proxyFactory = accessManager.PROXY_FACTORY();
 
@@ -227,33 +246,38 @@ library DeployIntentsLib {
             address logic = address(new HostBridge(intent.endpoint));
 
             IAccessManager(address(accessManager))
-            .execute(
-                address(proxyFactory),
-                abi.encodeCall(
-                    IProxyFactory.create2NewProxy,
-                    (
-                        intent.saltHostBridge,
-                        logic,
-                        abi.encodeCall(IHosted.initialize, (address(accessManager),
-                        abi.encode(
-                            address(intent.multisig), // owner
-                            address(intent.signer) // delegate to setup the bridge
+                .execute(
+                    address(proxyFactory),
+                    abi.encodeCall(
+                        IProxyFactory.create2NewProxy,
+                        (
+                            intent.saltHostBridge,
+                            logic,
+                            abi.encodeCall(
+                                IHosted.initialize,
+                                (
+                                    address(accessManager),
+                                    abi.encode(
+                                        address(intent.multisig), // owner
+                                        address(intent.signer) // delegate to setup the bridge
+                                    )
+                                )
+                            )
                         )
-                    )))
-                )
-            );
+                    )
+                );
         }
 
-//        /// @dev 1. Deploy HostBridge
-//        address hostBridge = IHost(intent.host)
-//            .deployProxy(
-//                intent.saltHostBridge,
-//                logic,
-//                abi.encode(
-//                    address(intent.multisig), // owner
-//                    address(intent.signer) // delegate to setup the bridge
-//                )
-//            );
+        //        /// @dev 1. Deploy HostBridge
+        //        address hostBridge = IHost(intent.host)
+        //            .deployProxy(
+        //                intent.saltHostBridge,
+        //                logic,
+        //                abi.encode(
+        //                    address(intent.multisig), // owner
+        //                    address(intent.signer) // delegate to setup the bridge
+        //                )
+        //            );
 
         // -------------------- set endpoints inside HostBridge
         //        IHostBridge(hostBridge).addEndpoint(endpoints);
@@ -308,4 +332,77 @@ library DeployIntentsLib {
     }
 
     //endregion --------------------------------------- Deploy host bridge
+
+    //region --------------------------------------- Deploy host codec
+    /// @dev Build intent for deploying host codec
+    function buildIntentDeployHostCodec(
+        StdConfig config,
+        uint chainId,
+        address authority_
+    ) internal view returns (IntentDeployHostCodec memory) {
+        return IntentDeployHostCodec({
+            saltHostCodec: config.get(chainId, "SALT_HOST_CODEC").toBytes32(), authority: authority_
+        });
+    }
+
+    /// @dev Deploy host bridge and set up necessary permissions for it to work
+    function deployHostCodec(IntentDeployHostCodec memory intent) internal returns (IHostCodec) {
+        IAuthority accessManager = IAuthority(intent.authority);
+        address proxyFactory = accessManager.PROXY_FACTORY();
+
+        address hostCodec = IProxyFactory(proxyFactory).predictAddress(intent.saltHostCodec);
+
+        address logic = address(new HostCodec());
+
+        /// @dev 1. Deploy HostCodec
+        IAccessManager(address(accessManager))
+            .execute(
+                address(proxyFactory),
+                abi.encodeCall(
+                    IProxyFactory.create2NewProxy,
+                    (intent.saltHostCodec, logic, abi.encodeCall(IHosted.initialize, (address(accessManager), "")))
+                )
+            );
+
+        return IHostCodec(hostCodec);
+    }
+
+    //endregion --------------------------------------- Deploy host bridge
+
+    //region --------------------------------------- Deploy data reader
+    /// @dev Build intent for deploying data reader
+    function buildIntentDeployDataReader(
+        StdConfig config,
+        uint chainId,
+        address authority_
+    ) internal view returns (IntentDeployDataReader memory) {
+        return IntentDeployDataReader({
+            saltDataReader: config.get(chainId, "SALT_DATA_READER").toBytes32(), authority: authority_
+        });
+    }
+
+    /// @dev Deploy data reader and set up necessary permissions for it to work
+    function deployDataReader(IntentDeployDataReader memory intent) internal returns (IDataReader) {
+        IAuthority accessManager = IAuthority(intent.authority);
+        address proxyFactory = accessManager.PROXY_FACTORY();
+
+        address dataReader = IProxyFactory(proxyFactory).predictAddress(intent.saltDataReader);
+
+        address logic = address(new HostCodec());
+
+        /// @dev 1. Deploy DataReader
+        IAccessManager(address(accessManager))
+            .execute(
+                address(proxyFactory),
+                abi.encodeCall(
+                    IProxyFactory.create2NewProxy,
+                    (intent.saltDataReader, logic, abi.encodeCall(IHosted.initialize, (address(accessManager), "")))
+                )
+            );
+
+        return IDataReader(dataReader);
+    }
+
+    //endregion --------------------------------------- Deploy data reader
 }
+

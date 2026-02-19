@@ -9,9 +9,11 @@ import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
 import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {IHosted} from "../../../src/interfaces/IHosted.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
+import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 
 contract DeployUsesCasesTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
@@ -25,6 +27,33 @@ contract DeployUsesCasesTest is Test {
 
         configDeployed = new StdConfig("./config.d.toml", false);
         config = new StdConfig("./config.toml", false);
+    }
+
+    //region --------------------------------------- Deploy tests
+    function testDeployCore() public {
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+
+        vm.startPrank(proxyFactoryOwner);
+        EngineLib.Core memory core = DeployUsesCaseLib.deployCore(_getBaseContext());
+        vm.stopPrank();
+
+        // ---------------------------------- Check results
+        assertEq(core.authority.HOST(), address(core.host), "Host is correct");
+        assertEq(IHosted(address(core.host)).authority(), address(core.authority), "authority is correct in host");
+        assertEq(
+            IHosted(address(core.hostBridge)).authority(),
+            address(core.authority),
+            "authority is correct in host bridge"
+        );
+        assertEq(
+            IHosted(address(core.hostCodec)).authority(), address(core.authority), "authority is correct in host codec"
+        );
+        assertEq(
+            IHosted(address(core.dataReader)).authority(),
+            address(core.authority),
+            "authority is correct in data reader"
+        );
     }
 
     function testDeployAuthority() public {
@@ -60,11 +89,11 @@ contract DeployUsesCasesTest is Test {
 
         vm.stopPrank();
 
+        /// ---------------------------------- Check results
         require(
-            _extractDeployedProxy(vm.getRecordedLogs()) == authority.HOST(), "Host was not deployed or event was not emitted"
+            _extractDeployedProxy(vm.getRecordedLogs()) == authority.HOST(), "Host was deployed on predicted address"
         );
 
-        /// ---------------------------------- Check results
         assertEq(authority.HOST(), address(deployedHost), "Host deployed in proper address");
         assertEq(IHosted(address(deployedHost)).authority(), address(authority), "authority is correct");
     }
@@ -83,32 +112,83 @@ contract DeployUsesCasesTest is Test {
         /// @dev Deploy host
         IHost host = DeployUsesCaseLib.deployFirstHost(bc, address(authority));
 
+        vm.recordLogs();
         /// @dev Deploy host bridge
         IHostBridge hostBridge = DeployUsesCaseLib.deployHostBridge(bc, address(host));
 
         vm.stopPrank();
 
-
         /// ---------------------------------- Check results
-        // todo
-        assertEq(
-            address(hostBridge),
-            proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
-            "expected host bridge address"
+        require(
+            _extractDeployedProxy(vm.getRecordedLogs())
+                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
+            "Host bridge was deployed on predicted address"
         );
+
+        assertNotEq(IHosted(address(hostBridge)).VERSION(), "", "host bridge has version");
     }
 
-    function testDeployHostCodec() public {}
+    function testDeployHostCodec() public {
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
 
-    function testDeployDataReader() public {}
+        EngineLib.BaseContext memory bc = _getBaseContext();
 
-    function testDeployAll() public {}
+        vm.startPrank(proxyFactoryOwner);
 
+        /// @dev Assume here that Authority is not deployed yet
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
+
+        vm.recordLogs();
+        /// @dev Deploy host codec
+        IHostCodec hostCodec = DeployUsesCaseLib.deployHostCodec(bc, address(authority));
+
+        vm.stopPrank();
+
+        /// ---------------------------------- Check results
+        require(
+            _extractDeployedProxy(vm.getRecordedLogs())
+                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_CODEC").toBytes32()),
+            "Host codec was deployed on predicted address"
+        );
+
+        assertNotEq(IHosted(address(hostCodec)).VERSION(), "", "host codec has version");
+    }
+
+    function testDeployDataReader() public {
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
+
+        EngineLib.BaseContext memory bc = _getBaseContext();
+
+        vm.startPrank(proxyFactoryOwner);
+
+        /// @dev Assume here that Authority is not deployed yet
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
+
+        vm.recordLogs();
+        /// @dev Deploy host bridge
+        IDataReader dataReader = DeployUsesCaseLib.deployDataReader(bc, address(authority));
+
+        vm.stopPrank();
+
+        /// ---------------------------------- Check results
+        require(
+            _extractDeployedProxy(vm.getRecordedLogs())
+                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_DATA_READER").toBytes32()),
+            "Data reader was deployed on predicted address"
+        );
+
+        assertNotEq(IHosted(address(dataReader)).VERSION(), "", "data reader has version");
+    }
+
+    //endregion --------------------------------------- Deploy tests
+
+    //region --------------------------------------- Internal logic
     function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
         return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
     }
 
-    //region --------------------------------------- Internal logic
     function _extractDeployedProxy(Vm.Log[] memory entries) internal pure returns (address deployedProxy) {
         // Only support ProxyCreated(address) event: proxy is indexed (topics[1])
         bytes32 sigCreated = keccak256("ProxyCreated(address)");

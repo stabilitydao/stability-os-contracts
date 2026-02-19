@@ -9,9 +9,24 @@ import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {DeployIntentsLib} from "../commands/DeployIntentsLib.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 
 /// @dev Set of functions ready to be used in uses-cases
 library DeployUsesCaseLib {
+    function deployCore(EngineLib.BaseContext memory bc) internal returns (EngineLib.Core memory) {
+        IAuthority authority = deployAuthority(bc);
+        IHost host = deployFirstHost(bc, address(authority));
+
+        return EngineLib.Core({
+            authority: authority,
+            host: host,
+            hostBridge: deployHostBridge(bc, address(host)),
+            hostCodec: deployHostCodec(bc, address(authority)),
+            dataReader: deployDataReader(bc, address(authority))
+        });
+    }
+
     /// @dev Deploy authority. Assume that proxy factory is already deployed.
     function deployAuthority(EngineLib.BaseContext memory bc) internal returns (IAuthority) {
         IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(bc.chainId, "PROXY_FACTORY").toAddress());
@@ -44,7 +59,8 @@ library DeployUsesCaseLib {
         IHost.HostInitPayload memory init
     ) internal returns (IHost) {
         /// @dev 1. Build intent from config
-        DeployIntentsLib.IntentDeployHostIn memory intent = DeployIntentsLib.buildIntentDeployHost(bc.config, bc.chainId, authority, init);
+        DeployIntentsLib.IntentDeployHost memory intent =
+            DeployIntentsLib.buildIntentDeployHost(bc.config, bc.chainId, authority, init);
 
         /// @dev 2. Deploy host
         return IHost(DeployIntentsLib.deployHost(intent));
@@ -56,10 +72,30 @@ library DeployUsesCaseLib {
         address proxyFactoryOwner = IOwnable(address(proxyFactory)).owner();
 
         /// @dev 1. Build intent from config
-        DeployIntentsLib.IntentDeployHostBridgeIn memory intent =
+        DeployIntentsLib.IntentDeployHostBridge memory intent =
             DeployIntentsLib.buildIntentDeployHostBridge(bc.config, bc.chainId, proxyFactoryOwner, host);
 
-        /// @dev 2. Deploy host
+        /// @dev 2. Deploy host bridge
         return DeployIntentsLib.deployHostBridge(intent);
+    }
+
+    /// @dev Deploy host codec
+    function deployHostCodec(EngineLib.BaseContext memory bc, address authority_) internal returns (IHostCodec) {
+        /// @dev 1. Build intent from config
+        DeployIntentsLib.IntentDeployHostCodec memory intent =
+            DeployIntentsLib.buildIntentDeployHostCodec(bc.config, bc.chainId, authority_);
+
+        /// @dev 2. Deploy host codec
+        return DeployIntentsLib.deployHostCodec(intent);
+    }
+
+    /// @dev Deploy data reader
+    function deployDataReader(EngineLib.BaseContext memory bc, address authority_) internal returns (IDataReader) {
+        /// @dev 1. Build intent from config
+        DeployIntentsLib.IntentDeployDataReader memory intent =
+            DeployIntentsLib.buildIntentDeployDataReader(bc.config, bc.chainId, authority_);
+
+        /// @dev 2. Deploy host codec
+        return DeployIntentsLib.deployDataReader(intent);
     }
 }

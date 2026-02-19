@@ -1407,5 +1407,4 @@ contract HostTest is Test {
         return HostEncodingLib.decodeDaoDataInput(payload);
     }
     //endregion ----------------------------------- Internal logic
-
 }

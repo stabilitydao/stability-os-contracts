@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
+import {IHost} from "../../../src/interfaces/IHost.sol";
+import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 
 /// @dev Data types of Intents Engine
@@ -30,5 +35,13 @@ library EngineLib {
 
         /// @dev Chain for which config and configDeployed should be used. vm.chainId is 31337 in tests...
         uint chainId;
+    }
+
+    struct Core {
+        IAuthority authority;
+        IHost host;
+        IHostBridge hostBridge;
+        IHostCodec hostCodec;
+        IDataReader dataReader;
     }
 }
