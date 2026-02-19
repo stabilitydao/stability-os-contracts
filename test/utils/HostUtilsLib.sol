@@ -291,7 +291,9 @@ library HostUtilsLib {
                 minVestingNameLen: 3,
                 maxVestingNameLen: 30,
                 minCliff: 7 days,
-                minInceptionDuration: DEFAULT_MIN_INCEPTION_DURATION
+                minInceptionDuration: DEFAULT_MIN_INCEPTION_DURATION,
+                minVestingDuration: 1 days,
+                maxVestingDuration: 365 * 4 days
             })
         );
     }

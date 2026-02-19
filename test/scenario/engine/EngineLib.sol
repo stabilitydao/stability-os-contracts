@@ -38,6 +38,7 @@ library EngineLib {
     }
 
     struct Core {
+        address multisig;
         IAuthority authority;
         IHost host;
         IHostBridge hostBridge;

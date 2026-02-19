@@ -12,13 +12,17 @@ import {EngineLib} from "../engine/EngineLib.sol";
 import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 
-/// @dev Set of functions ready to be used in uses-cases
+/// @dev Set of deploy-related functions ready to be used in integration tests
 library DeployUsesCaseLib {
+
+    /// @dev Deploy core contracts: authority, host, host bridge, host codec and data reader.
+    /// @dev Assume that proxy factory is already deployed and the caller is proxy factory owner.
     function deployCore(EngineLib.BaseContext memory bc) internal returns (EngineLib.Core memory) {
         IAuthority authority = deployAuthority(bc);
         IHost host = deployFirstHost(bc, address(authority));
 
         return EngineLib.Core({
+            multisig: bc.config.get(bc.chainId, "MULTISIG").toAddress(),
             authority: authority,
             host: host,
             hostBridge: deployHostBridge(bc, address(host)),

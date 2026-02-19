@@ -126,7 +126,7 @@ interface IDAOData is ISegment4 {
         /// @notice Vested Escrow period, days.
         uint32 vePeriod;
 
-        /// @notice Instant exit fee, decimals 1e4 (!), i.e. 50_00 = 50%             todo we have different decimals here, probably we should change implementation in xSTBL !!!!
+        /// @notice Instant exit fee, decimals 1e5 (!), i.e. 50_000 = 50%   todo probably we should change implementation in xSTBL !!!!
         uint32 pvpFee;
 
         /// @notice Minimal power in chain to have voting rights, amount of staked tokens

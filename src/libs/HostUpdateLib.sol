@@ -185,6 +185,9 @@ library HostUpdateLib {
         require(vesting.allocation != 0, IHost.ZeroValueNotAllowed());
 
         require(vesting.start >= claim + st.minCliff, IHost.IncorrectVestingStart());
+
+        uint duration = vesting.end > vesting.start ? vesting.end - vesting.start : 0;
+        require(duration >= st.minVestingDuration && duration <= st.maxVestingDuration, IHost.InvalidVestingPeriod());
     }
 
     /// @notice Validate salts: salts is not used OR used by the given DAO

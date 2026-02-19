@@ -34,7 +34,9 @@ contract HostViewLibTest is Test {
             minVestingNameLen: type(uint16).max,
             maxVestingNameLen: type(uint16).max,
             minCliff: type(uint64).max,
-            minInceptionDuration: type(uint64).max
+            minInceptionDuration: type(uint64).max,
+            minVestingDuration: type(uint64).max,
+            maxVestingDuration: type(uint64).max
         });
         $.globalSettings = src;
         IHost.HostSettings memory read = HostViewLib.getSettings();
@@ -62,7 +64,9 @@ contract HostViewLibTest is Test {
             minVestingNameLen: 20004,
             maxVestingNameLen: 20005,
             minCliff: 100_003 days,
-            minInceptionDuration: 100_004 days
+            minInceptionDuration: 100_004 days,
+            minVestingDuration: 100_005 days,
+            maxVestingDuration: 100_006 days
         });
         $.globalSettings = src;
         IHost.HostSettings memory read = HostViewLib.getSettings();

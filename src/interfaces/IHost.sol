@@ -64,7 +64,7 @@ interface IHost {
     error InvalidFundingPeriod();
     error InvalidFundingRaise();
     error InvalidFundingArray();
-    error IncorrectVestingPeriod();
+    error InvalidVestingPeriod();
     error TotalAllocationTooHigh();
     error VestingNotAllowed();
     error IncorrectVestingStart();
@@ -145,8 +145,9 @@ interface IHost {
         uint priceDao;
 
         /// @notice Percent of amount received in funding round that Host dao takes, decimals 1e4 // todo 1e4 or 1e5?
-        uint fundingFee;
+        uint fundingFee; // todo reduce uint to uint32
 
+        ///
         uint minPvPFee;
         uint maxPvPFee;
 
@@ -194,6 +195,12 @@ interface IHost {
 
         /// @notice Min allowed duration of inception phase, seconds. Phase SEED can be activated not later than SEED.start + maxSeedStartDelay
         uint64 minInceptionDuration;
+
+        /// @notice Minimal vesting duration, seconds
+        uint64 minVestingDuration;
+
+        /// @notice Max vesting duration, seconds
+        uint64 maxVestingDuration;
     }
 
     /// @notice Chain-dependent data of the DAO

@@ -18,6 +18,7 @@ import {StdConfig} from "forge-std/StdConfig.sol";
 import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {HostCodec} from "../../../src/HostCodec.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
+import {DataReader} from "../../../src/DataReader.sol";
 
 // import {console} from "forge-std/console.sol";
 
@@ -388,7 +389,7 @@ library DeployIntentsLib {
 
         address dataReader = IProxyFactory(proxyFactory).predictAddress(intent.saltDataReader);
 
-        address logic = address(new HostCodec());
+        address logic = address(new DataReader());
 
         /// @dev 1. Deploy DataReader
         IAccessManager(address(accessManager))
