@@ -14,7 +14,8 @@ import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {Test} from "forge-std/Test.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
-contract CreateDaoUsesCasesTest is Test {
+/// @dev Uses cases for DAO "HOST"
+contract HostDaoUsesCasesTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
     uint internal constant CHAIN_ID = 1;
 
