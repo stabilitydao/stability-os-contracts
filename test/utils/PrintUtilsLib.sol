@@ -93,6 +93,12 @@ library PrintUtilsLib {
         console.log("Funding: type, raised");
         for (uint i = 0; i < data.funding.length; i++) {
             console.log(" ", i, uint8(data.funding[i].fundingType), data.funding[i].raised);
+            console.log("  start:", data.funding[i].start);
+            console.log("  end:", data.funding[i].end);
+            console.log("  claim:", data.funding[i].claim);
+            console.log("  minRaise:", data.funding[i].minRaise);
+            console.log("  maxRaise:", data.funding[i].maxRaise);
+            console.log("  raised:", data.funding[i].raised);
         }
 
         console.log("daoMetaDataLocation", data.metaDataLocation);

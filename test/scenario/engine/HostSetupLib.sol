@@ -5,9 +5,11 @@ pragma solidity ^0.8.28;
 import {MockERC20} from "@solady/../test/utils/mocks/MockERC20.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
+import {SeedToken} from "../../../src/tokenomics/SeedToken.sol";
+import {TgeToken} from "../../../src/tokenomics/TgeToken.sol";
 
 /// @dev Set of host-setup-related functions ready to be used in integration tests
-library HostSetupUsesCaseLib {
+library HostSetupLib {
     /// @notice todo Use real asset instead mocked
     function getExchangeAssets(
         uint /*chainId*/
@@ -55,5 +57,10 @@ library HostSetupUsesCaseLib {
             minCliff: 15 days,
             minInceptionDuration: 17 days // todo
         });
+    }
+
+    function setTokenImplementations(EngineLib.Core memory core) internal {
+        core.host.setContractImplementation(uint(IHost.ContractKinds.SEED_TOKEN_1), address(new SeedToken()));
+        core.host.setContractImplementation(uint(IHost.ContractKinds.TGE_TOKEN_2), address(new TgeToken()));
     }
 }

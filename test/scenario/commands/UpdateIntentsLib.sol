@@ -5,7 +5,6 @@ pragma solidity ^0.8.28;
 import {EngineLib} from "../engine/EngineLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {Vm} from "forge-std/Test.sol";
-import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
 
 // import {console} from "forge-std/console.sol";
 

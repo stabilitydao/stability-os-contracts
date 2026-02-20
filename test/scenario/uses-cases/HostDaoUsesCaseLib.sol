@@ -2,16 +2,17 @@
 pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {UpdateIntentsLib} from "../commands/UpdateIntentsLib.sol";
+// import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
-import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
-import {ISegment4} from "../../../src/interfaces/ISegment4.sol";
 import {HostUtilsLib} from "../../utils/HostUtilsLib.sol";
+import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ISegment4} from "../../../src/interfaces/ISegment4.sol";
+import {UpdateIntentsLib} from "../commands/UpdateIntentsLib.sol";
 import {Vm} from "forge-std/Test.sol";
 
-/// @dev Set of createDAO-related functions ready to be used in integration tests
-library CreateDaoUsesCaseLib {
+/// @dev Set of DAO HOST related functions ready to be used in integration tests
+library HostDaoUsesCaseLib {
     string internal constant HOST_DAO_SYMBOL = "HOST";
     string internal constant HOST_DAO_NAME = "DAO Host";
 
@@ -104,6 +105,44 @@ library CreateDaoUsesCaseLib {
         require(context.core.host.hostDaoUid() == dao.uid, "HOST dao is created");
     }
 
+    /// @param funders Assume that all funders already have enough balance of exchange asset to fund the DAO
+    function hostDaoSeed(
+        Vm vm,
+        EngineLib.Context memory context,
+        IDAOData.DaoData memory dao,
+        EngineLib.Funder[] memory funders
+    ) internal {
+        // ---------------------------- Move to inception
+        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
+
+        // ---------------------------- Move to SEED
+        skip(vm, dao.funding[0].start - block.timestamp + 1);
+        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
+
+        // ---------------------------- Seeding
+        uint duration = dao.funding[0].end - dao.funding[0].start;
+        address exchangeAsset = context.core.host.getChainSettings().exchangeAsset;
+
+        for (uint i; i < funders.length; ++i) {
+            skip(vm, duration / (funders.length + 1)); // skip some time between fundings
+
+            vm.prank(funders[i].user);
+            IERC20(exchangeAsset).approve(address(context.core.host), funders[i].amount);
+
+            vm.prank(funders[i].user);
+            context.core.host.fund(HostDaoUsesCaseLib.HOST_DAO_SYMBOL, funders[i].amount);
+        }
+
+        // ---------------------------- Seeding ends, move to Development phase
+        skip(vm, dao.funding[0].end - block.timestamp + 1);
+        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
+
+    }
+
+    function bridgeHostToChain(Vm vm, EngineLib.Context memory context) internal {
+
+    }
+
     //region --------------------------------------- Default HOST DAO parameters
     function getHostDaoParameters() internal pure returns (IDAOData.DaoParameters memory params) {
         params = IDAOData.DaoParameters({
@@ -118,7 +157,13 @@ library CreateDaoUsesCaseLib {
     }
 
     function getHostDaoImages() internal pure returns (IDAOData.DaoImages memory images) {
-        images = IDAOData.DaoImages({seedToken: "", tgeToken: "", token: "/HOST.png", xToken: "", daoToken: ""});
+        images = IDAOData.DaoImages({
+            seedToken: "/HOSTseed.png", // todo use real value
+            tgeToken: "/HOSTtge.png", // todo use real value
+            token: "/HOST.png",
+            xToken: "",
+            daoToken: ""
+        });
     }
 
     function getHostActivity() internal pure returns (IDAOData.Activity[] memory activity) {
@@ -225,4 +270,8 @@ library CreateDaoUsesCaseLib {
     }
 
     //endregion --------------------------------------- Default HOST DAO parameters
+
+    function skip(Vm vm, uint256 time) internal {
+        vm.warp(vm.getBlockTimestamp() + time);
+    }
 }

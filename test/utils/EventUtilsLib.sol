@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IDAOData} from "../../src/interfaces/IDAOData.sol";
-import {ISegment4} from "../../src/interfaces/ISegment4.sol";
 import {Vm} from "forge-std/Test.sol";
 
 library EventUtilsLib {

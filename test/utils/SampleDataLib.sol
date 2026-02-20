@@ -6,6 +6,7 @@ import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {ISegment4} from "../../src/interfaces/ISegment4.sol";
+import {EngineLib} from "../scenario/engine/EngineLib.sol";
 
 library SampleDataLib {
     uint64 internal constant DEFAULT_MIN_INCEPTION_DURATION = 7 days;
@@ -264,5 +265,21 @@ library SampleDataLib {
         return IHost.HostChainSettings({
             exchangeAsset: address(usdc), hostBridge: address(hostBridge), timelock: 30 minutes, dataReader: dataReader
         });
+    }
+
+    function prepareFunders(address exchangeAsset, uint totalAmount, uint numFunders) internal returns (EngineLib.Funder[] memory funders) {
+        funders = new EngineLib.Funder[](numFunders);
+
+        uint amount = totalAmount;
+        for (uint i; i < numFunders; ++i) {
+            address funder = address(uint160(i + 1));
+            funders[i] = EngineLib.Funder({
+                user: funder,
+                amount: i == numFunders ? amount : amount / 3
+            });
+            amount -= funders[i].amount;
+
+            MockERC20(exchangeAsset).mint(funder, funders[i].amount);
+        }
     }
 }

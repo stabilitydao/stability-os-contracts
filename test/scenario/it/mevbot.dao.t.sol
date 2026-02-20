@@ -1,0 +1,142 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
+import {EngineLib} from "../engine/EngineLib.sol";
+import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
+import {HostSetupLib} from "../engine/HostSetupLib.sol";
+import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
+import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
+import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
+import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
+import {StdConfig} from "forge-std/StdConfig.sol";
+import {Test} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
+import {SampleDataLib} from "../../utils/SampleDataLib.sol";
+import {MevBotDaoUsesCaseLib} from "../uses-cases/MevBotDaoUsesCaseLib.sol";
+// import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
+
+/// @dev Uses cases for DAO "HOST"
+contract HostDaoUsesCasesTest is Test {
+    uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
+    uint internal constant CHAIN_ID = 1;
+
+    StdConfig internal config;
+    StdConfig internal configDeployed;
+
+    EngineLib.Core internal core;
+
+    /// @dev Backend validator to validate proposals and register voting results
+    address internal validator;
+    address internal multisig;
+
+    constructor() {
+        vm.selectFork(vm.createFork(vm.envString("ETHEREUM_RPC_URL"), FORK_BLOCK));
+
+        configDeployed = new StdConfig("./config.d.toml", false);
+        config = new StdConfig("./config.toml", false);
+
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        address deployer = IOwnable(address(proxyFactory)).owner();
+
+        vm.startPrank(deployer);
+        core = DeployUsesCaseLib.deployCore(_getBaseContext());
+        vm.stopPrank();
+
+        multisig = config.get(CHAIN_ID, "MULTISIG").toAddress();
+
+        vm.startPrank(multisig);
+        HostSetupLib.setupHostSettings(core);
+        HostSetupLib.setupHostChainSettings(CHAIN_ID, core);
+        HostSetupLib.setTokenImplementations(core);
+        RestrictHostUtils.setupValidator(core.authority, address(core.host), validator);
+        vm.stopPrank();
+    }
+
+    function testCreateMevBotDao() public {
+        EngineLib.Context memory context = _getContext();
+        deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
+
+        // ---------------------------------- Create host dao
+        HostDaoUsesCaseLib.createHostDao(vm, context);
+
+        // ---------------------------------- Create second dao
+        IDAOData.DaoData memory dao = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
+
+        // ---------------------------------- Check results
+        assertEq(dao.symbol, MevBotDaoUsesCaseLib.MEVBOT_DAO_SYMBOL, "DAO symbol is correct");
+
+        {
+            string[] memory socials = MevBotDaoUsesCaseLib.getMevBotSocials();
+            assertEq(dao.socials, socials, "socials are correct");
+        }
+
+        {
+            IDAOData.DaoParameters memory params = MevBotDaoUsesCaseLib.getMevBotDaoParameters();
+            assertEq(keccak256(abi.encode(dao.params)), keccak256(abi.encode(params)), "DAO parameters are correct");
+        }
+
+        {
+            IDAOData.DaoImages memory images = MevBotDaoUsesCaseLib.getMevBotDaoImages();
+            assertEq(keccak256(abi.encode(dao.images)), keccak256(abi.encode(images)), "images are correct");
+        }
+
+        {
+            IDAOData.Activity[] memory activity = MevBotDaoUsesCaseLib.getMevBotActivity();
+            assertEq(keccak256(abi.encode(dao.activity)), keccak256(abi.encode(activity)), "activity are correct");
+        }
+
+        {
+            IDAOData.Funding[] memory funding = MevBotDaoUsesCaseLib.getMevBotFunding();
+            assertEq(keccak256(abi.encode(dao.funding)), keccak256(abi.encode(funding)), "funding are correct");
+        }
+
+        {
+            (bytes32[] memory salts, uint16[] memory contractIndices) =
+                                MevBotDaoUsesCaseLib.getMevBotSalts(_getBaseContext());
+            assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
+            assertEq(
+                keccak256(abi.encode(dao.saltContractIndices)),
+                keccak256(abi.encode(contractIndices)),
+                "contractIndices are correct"
+            );
+        }
+
+        {
+            IDAOData.DaoChainSettings memory chainSettings = MevBotDaoUsesCaseLib.getMevBotChainSettings(multisig);
+            assertEq(
+                keccak256(abi.encode(dao.chainSettings)),
+                keccak256(abi.encode(chainSettings)),
+                "chainSettings are correct"
+            );
+        }
+
+        {
+            (IDAOData.UnitDataInput[] memory units, ) = MevBotDaoUsesCaseLib.getMevBotUnits();
+            assertEq(units.length, 1, "units length is correct 1");
+            assertEq(dao.unitIds.length, 1, "units length is correct 2");
+            assertEq(dao.units.length, 1, "units length is correct 3");
+
+            assertEq(dao.unitIds[0], units[0].unitId, "unit id is correct 1");
+            assertEq(dao.units[0].unitId, units[0].unitId, "unit id is correct 2");
+
+            assertEq(dao.units[0].developerUid, units[0].developerUid, "developer uid is correct 2");
+
+            assertEq(dao.units[0].chainIds.length, 1, "unit is registered on initial chain only");
+            assertEq(dao.units[0].chainIds[0], block.chainid, "initial chain");
+        }
+    }
+
+    //region --------------------------------------- Internal logic
+    function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
+        return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
+    }
+
+    function _getContext() internal view returns (EngineLib.Context memory) {
+        address user = address(this);
+        return
+                            EngineLib.Context({core: core, bc: _getBaseContext(), user: user, multisig: multisig, validator: validator});
+    }
+    //endregion --------------------------------------- Internal logic
+}

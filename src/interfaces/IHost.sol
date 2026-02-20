@@ -145,7 +145,7 @@ interface IHost {
         uint priceDao;
 
         /// @notice Percent of amount received in funding round that Host dao takes, decimals 1e4 // todo 1e4 or 1e5?
-        uint fundingFee; // todo reduce uint to uint32
+        uint fundingFee; // todo reduce uint to uint32 // todo use fee in code
 
         ///
         uint minPvPFee;

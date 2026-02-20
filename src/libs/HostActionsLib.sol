@@ -372,6 +372,8 @@ library HostActionsLib {
 
         bool success = seed.raised >= seed.minRaise;
 
+        // todo Take fee from successful seeding, see HostSettings.fundingFee
+
         return success ? IDAOData.LifecyclePhase.DEVELOPMENT_4 : IDAOData.LifecyclePhase.SEED_FAILED_3; // now refund can be called
     }
 

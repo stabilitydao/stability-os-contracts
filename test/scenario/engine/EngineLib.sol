@@ -52,4 +52,9 @@ library EngineLib {
         address multisig;
         address validator;
     }
+
+    struct Funder {
+        address user;
+        uint amount;
+    }
 }

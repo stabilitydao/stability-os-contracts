@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
-import {CreateDaoUsesCaseLib} from "../uses-cases/CreateDaoUsesCaseLib.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
+import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
+import {HostSetupLib} from "../engine/HostSetupLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {HostSetupUsesCaseLib} from "../uses-cases/HostSetupUsesCaseLib.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
+import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
+import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "HOST"
@@ -44,8 +46,9 @@ contract HostDaoUsesCasesTest is Test {
         multisig = config.get(CHAIN_ID, "MULTISIG").toAddress();
 
         vm.startPrank(multisig);
-        HostSetupUsesCaseLib.setupHostSettings(core);
-        HostSetupUsesCaseLib.setupHostChainSettings(CHAIN_ID, core);
+        HostSetupLib.setupHostSettings(core);
+        HostSetupLib.setupHostChainSettings(CHAIN_ID, core);
+        HostSetupLib.setTokenImplementations(core);
         RestrictHostUtils.setupValidator(core.authority, address(core.host), validator);
         vm.stopPrank();
     }
@@ -54,39 +57,39 @@ contract HostDaoUsesCasesTest is Test {
         EngineLib.Context memory context = _getContext();
         deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
 
-        IDAOData.DaoData memory dao = CreateDaoUsesCaseLib.createHostDao(vm, context);
+        IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);
 
         // ---------------------------------- Check results
-        assertEq(dao.symbol, CreateDaoUsesCaseLib.HOST_DAO_SYMBOL, "DAO symbol is correct");
+        assertEq(dao.symbol, HostDaoUsesCaseLib.HOST_DAO_SYMBOL, "DAO symbol is correct");
 
         {
-            string[] memory socials = CreateDaoUsesCaseLib.getHostSocials();
+            string[] memory socials = HostDaoUsesCaseLib.getHostSocials();
             assertEq(dao.socials, socials, "socials are correct");
         }
 
         {
-            IDAOData.DaoParameters memory params = CreateDaoUsesCaseLib.getHostDaoParameters();
+            IDAOData.DaoParameters memory params = HostDaoUsesCaseLib.getHostDaoParameters();
             assertEq(keccak256(abi.encode(dao.params)), keccak256(abi.encode(params)), "DAO parameters are correct");
         }
 
         {
-            IDAOData.DaoImages memory images = CreateDaoUsesCaseLib.getHostDaoImages();
+            IDAOData.DaoImages memory images = HostDaoUsesCaseLib.getHostDaoImages();
             assertEq(keccak256(abi.encode(dao.images)), keccak256(abi.encode(images)), "images are correct");
         }
 
         {
-            IDAOData.Activity[] memory activity = CreateDaoUsesCaseLib.getHostActivity();
+            IDAOData.Activity[] memory activity = HostDaoUsesCaseLib.getHostActivity();
             assertEq(keccak256(abi.encode(dao.activity)), keccak256(abi.encode(activity)), "activity are correct");
         }
 
         {
-            IDAOData.Funding[] memory funding = CreateDaoUsesCaseLib.getHostFunding();
+            IDAOData.Funding[] memory funding = HostDaoUsesCaseLib.getHostFunding();
             assertEq(keccak256(abi.encode(dao.funding)), keccak256(abi.encode(funding)), "funding are correct");
         }
 
         {
             (bytes32[] memory salts, uint16[] memory contractIndices) =
-                CreateDaoUsesCaseLib.getHostSalts(_getBaseContext());
+                HostDaoUsesCaseLib.getHostSalts(_getBaseContext());
             assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
             assertEq(
                 keccak256(abi.encode(dao.saltContractIndices)),
@@ -96,7 +99,7 @@ contract HostDaoUsesCasesTest is Test {
         }
 
         {
-            IDAOData.DaoChainSettings memory chainSettings = CreateDaoUsesCaseLib.getHostChainSettings(multisig);
+            IDAOData.DaoChainSettings memory chainSettings = HostDaoUsesCaseLib.getHostChainSettings(multisig);
             assertEq(
                 keccak256(abi.encode(dao.chainSettings)),
                 keccak256(abi.encode(chainSettings)),
@@ -105,8 +108,7 @@ contract HostDaoUsesCasesTest is Test {
         }
 
         {
-            (IDAOData.UnitDataInput[] memory units, IDAOData.UnitEmitData[] memory emitData) =
-                CreateDaoUsesCaseLib.getHostUnits();
+            (IDAOData.UnitDataInput[] memory units, ) = HostDaoUsesCaseLib.getHostUnits();
             assertEq(units.length, 1, "units length is correct 1");
             assertEq(dao.unitIds.length, 1, "units length is correct 2");
             assertEq(dao.units.length, 1, "units length is correct 3");
@@ -119,6 +121,52 @@ contract HostDaoUsesCasesTest is Test {
             assertEq(dao.units[0].chainIds.length, 1, "unit is registered on initial chain only");
             assertEq(dao.units[0].chainIds[0], block.chainid, "initial chain");
         }
+
+        // todo check amount earned by DAO HOST
+    }
+
+    function testHostDaoSeeding_Success() public {
+        address exchangeAsset = core.host.getChainSettings().exchangeAsset;
+
+        // ---------------------------- create host dao
+        EngineLib.Context memory context = _getContext();
+        deal(exchangeAsset, address(this), 1000e18);
+
+        IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);
+
+        EngineLib.Funder[] memory funders = SampleDataLib.prepareFunders(
+            exchangeAsset,
+            (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2,
+            5
+        );
+
+        HostDaoUsesCaseLib.hostDaoSeed(vm, context, dao, funders);
+
+        // ---------------------------- check results
+        IDAOData.DaoData memory daoAfter = core.dataReader.getDAO(dao.symbol);
+        // PrintUtilsLib.printDaoData(daoAfter);
+
+        assertEq(daoAfter.phase == IDAOData.LifecyclePhase.DEVELOPMENT_4, true, "development phase is ended");
+
+        {   // ---------------------- raised amount = total amount funded by funders
+            uint totalFunded;
+            for (uint i; i < funders.length; ++i) {
+                totalFunded += funders[i].amount;
+            }
+            assertEq(daoAfter.funding[0].raised, totalFunded, "raised amount is correct");
+
+        }
+
+        {   // ---------------------- seed token has expected amount on balance
+            uint feeAmount = 0; // todo
+            assertEq(
+                IERC20(exchangeAsset).balanceOf(daoAfter.deployments.seedToken),
+                daoAfter.funding[0].raised - feeAmount,
+                "funds are on balance of seed token, fee is taken by DAO HOST"
+            );
+        }
+
+        // todo check amount (fee) earned by DAO HOST
     }
 
     //region --------------------------------------- Internal logic
