@@ -4,13 +4,13 @@ pragma solidity ^0.8.28;
 // import {AccessManager} from "@openzeppelin/contracts/access/manager/AccessManager.sol";
 import {IAccessManaged} from "@openzeppelin/contracts/access/manager/IAccessManaged.sol";
 import {Vm} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {Authority} from "../../src/Authority.sol";
 import {DataReader} from "../../src/DataReader.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
+import {HostEncodingLib} from "../../src/libs/HostEncodingLib.sol";
 import {Host} from "../../src/Host.sol";
-import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockHostBridge} from "../mocks/MockHostBridge.sol";
 import {ProxyFactory} from "../../src/ProxyFactory.sol";
 import {SampleDataLib} from "./SampleDataLib.sol";
@@ -24,6 +24,7 @@ import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {EventUtilsLib} from "./EventUtilsLib.sol";
 
 library HostUtilsLib {
     uint64 internal constant ADMIN_ROLE = AccessRolesLib.HOST_ADMIN;
@@ -33,7 +34,6 @@ library HostUtilsLib {
     uint64 internal constant DEFAULT_SEED_DURATION = 90 days;
     uint internal constant DEFAULT_SEED_MIN_RAISE = 10_000e18;
     uint internal constant DEFAULT_SEED_MAX_RAISE = 100_000e18;
-    uint64 internal constant DEFAULT_MIN_INCEPTION_DURATION = 7 days;
 
     function deployHost(
         Vm vm,
@@ -223,7 +223,10 @@ library HostUtilsLib {
     function createApesDao(Vm vm, IHost os_) internal returns (IDAOData.DaoData memory) {
         IDAOData.Funding[] memory funding = new IDAOData.Funding[](1);
         funding[0] = generateSeedFunding(
-            DEFAULT_MIN_INCEPTION_DURATION, DEFAULT_SEED_DURATION, DEFAULT_SEED_MIN_RAISE, DEFAULT_SEED_MAX_RAISE
+            SampleDataLib.DEFAULT_MIN_INCEPTION_DURATION,
+            DEFAULT_SEED_DURATION,
+            DEFAULT_SEED_MIN_RAISE,
+            DEFAULT_SEED_MAX_RAISE
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
@@ -269,48 +272,17 @@ library HostUtilsLib {
 
     //region ----------------------------- Settings
     function setHostSettings(Vm vm, IHost host_, address multisig) internal {
-        // Prepare and set OS settings using the IHost.OsSettings struct
-        vm.prank(multisig);
-        host_.setSettings(
-            IHost.HostSettings({
-                priceDao: 1000,
-                fundingFee: 50,
-                minNameLength: 1,
-                maxNameLength: 20,
-                minSymbolLength: 1,
-                maxSymbolLength: 7,
-                minVePeriod: 14,
-                maxVePeriod: 365 * 4,
-                minPvPFee: 10,
-                maxPvPFee: 100,
-                minFunding: 10,
-                minFundingDuration: 1 days,
-                maxFundingDuration: 180 days,
-                minFundingRaise: 0.1e18,
-                maxFundingRaise: 1_000_000e18,
-                minVestingNameLen: 3,
-                maxVestingNameLen: 30,
-                minCliff: 7 days,
-                minInceptionDuration: DEFAULT_MIN_INCEPTION_DURATION,
-                minVestingDuration: 1 days,
-                maxVestingDuration: 365 * 4 days
-            })
-        );
+        vm.startPrank(multisig);
+        host_.setSettings(SampleDataLib.getHostSettings());
+        vm.stopPrank();
     }
 
     function setChainSettings(Vm vm, IHost host_, address multisig, address dataReader) internal {
-        MockERC20 usdc = new MockERC20();
-        usdc.init("USD Coin", "USDC", 6);
-
         MockHostBridge bridge = new MockHostBridge();
 
-        // Prepare and set OS chain settings using the IHost.OsChainSettings struct
-        vm.prank(multisig);
-        host_.setChainSettings(
-            IHost.HostChainSettings({
-                exchangeAsset: address(usdc), hostBridge: address(bridge), timelock: 30 minutes, dataReader: dataReader
-            })
-        );
+        vm.startPrank(multisig);
+        host_.setChainSettings(SampleDataLib.getHostChainSettings(address(bridge), dataReader));
+        vm.stopPrank();
     }
 
     //endregion ----------------------------- Settings
@@ -469,84 +441,6 @@ library HostUtilsLib {
 
     //endregion ----------------------------- Funding, DaoParams, Vesting
 
-    //region ----------------------------- Print
-    function printDaoData(IDAOData.DaoData memory data) internal pure {
-        console.log("DAO Symbol:", data.symbol);
-        console.log("DAO uid:", data.uid);
-        console.log("DAO Name:", data.name);
-        console.log("Deployer:", data.deployer);
-        console.log("Phase:", uint8(data.phase));
-        console.log("Initial chain", data.initialChain);
-
-        console.log("Deployments:");
-        console.log("  Seed Token:", data.deployments.seedToken);
-        console.log("  TGE Token:", data.deployments.tgeToken);
-        console.log("  Token:", data.deployments.token);
-        console.log("  xToken:", data.deployments.xToken);
-        console.log("  Staking:", data.deployments.staking);
-        console.log("  DAO Token:", data.deployments.daoToken);
-        console.log("  Revenue Router:", data.deployments.revenueRouter);
-        console.log("  Recovery:", data.deployments.recovery);
-        console.log("  Token Bridge:", data.deployments.tokenBridge);
-        console.log("  xToken Bridge:", data.deployments.xTokenBridge);
-        console.log("  DAO Token Bridge:", data.deployments.daoTokenBridge);
-        for (uint i = 0; i < data.deployments.vesting.length; i++) {
-            console.log(i, data.deployments.vesting[i]);
-        }
-
-        console.log("Chain settings:");
-        console.log("  bbRate:", data.chainSettings.bbRate);
-
-        console.log("DAO Params:");
-        console.log("  vePeriod:", data.params.vePeriod);
-        console.log("  pvpFee:", data.params.pvpFee);
-        console.log("  minPower:", data.params.minPower);
-        console.log("  ttBribe:", data.params.ttBribe);
-        console.log("  recoveryShare:", data.params.recoveryShare);
-        console.log("  proposalThreshold:", data.params.proposalThreshold);
-
-        console.log("Socials:");
-        for (uint i = 0; i < data.socials.length; i++) {
-            console.log(" ", i, data.socials[i]);
-        }
-
-        console.log("Activity:");
-        for (uint i = 0; i < data.activity.length; i++) {
-            console.log(" ", i, uint(data.activity[i]));
-        }
-
-        console.log("Images:");
-        console.log("  Seed Token:", data.images.seedToken);
-        console.log("  TGE Token:", data.images.tgeToken);
-        console.log("  Token:", data.images.token);
-        console.log("  xToken:", data.images.xToken);
-        console.log("  DAO Token:", data.images.daoToken);
-
-        console.log("Units (unit.unitId, unitId):");
-        for (uint i = 0; i < data.units.length; i++) {
-            console.log(" ", i, data.units[i].unitId, data.unitIds[i]);
-        }
-
-        console.log("Funding: type, raised");
-        for (uint i = 0; i < data.funding.length; i++) {
-            console.log(" ", i, uint8(data.funding[i].fundingType), data.funding[i].raised);
-        }
-
-        console.log("daoMetaDataLocation", data.metaDataLocation);
-
-        console.log("GovernanceSettings:");
-        console.log("  proposalThreshold:", data.governanceSettings.proposalThreshold);
-        console.log("  ttBribe:", data.governanceSettings.ttBribe);
-    }
-
-    function printTasks(IHost.Task[] memory tasks) internal pure {
-        for (uint i; i < tasks.length; i++) {
-            console.log(tasks[i].name);
-        }
-    }
-
-    //endregion ----------------------------- Print
-
     //region ----------------------------- Utils
     function getFundingIndex(
         IDAOData.DaoData memory data,
@@ -567,19 +461,6 @@ library HostUtilsLib {
         return proposalIds[0];
     }
 
-    function extractProposalPayload(Vm.Log[] memory logs) internal pure returns (bytes memory payload) {
-        bytes32 sig = keccak256("Proposal(uint256,uint8,bytes32,bytes32,bytes)");
-
-        for (uint i; i < logs.length; ++i) {
-            if (logs[i].topics[0] == sig) {
-                (,,,, payload) = abi.decode(logs[i].data, (uint, uint8, bytes32, bytes32, bytes));
-                break;
-            }
-        }
-
-        return payload;
-    }
-
     function updateSocialsWithValidation(
         Vm vm,
         address multisig,
@@ -589,9 +470,9 @@ library HostUtilsLib {
         string[] memory socials
     ) internal returns (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) {
         vm.recordLogs();
-        inputPayload = codec_.encode(socials);
+        inputPayload = codec_.encode(socials, HostEncodingLib.API_VERSION);
         host_.updateDAO(symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
-        payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
         proposalId = HostUtilsLib.getLastProposalId(host_, symbol);
 
         vm.prank(multisig);

@@ -21,7 +21,7 @@ contract HostCodec is IHostCodec, Hosted {
 
     /// @inheritdoc IHostCodec
     function PAYLOAD_API_VERSION() external pure returns (uint16) {
-        return HostEncodingLib.PAYLOAD_API_VERSION;
+        return HostEncodingLib.API_VERSION;
     }
 
     /// @inheritdoc IHostCodec
@@ -35,8 +35,8 @@ contract HostCodec is IHostCodec, Hosted {
     }
 
     /// @inheritdoc IHostCodec
-    function encode(string[] memory socials) external pure returns (bytes memory) {
-        return HostEncodingLib.encodeSocials(socials);
+    function encode(string[] memory socials, uint16 version) external pure returns (bytes memory) {
+        return HostEncodingLib.encodeSocials(socials, version);
     }
 
     /// @inheritdoc IHostCodec

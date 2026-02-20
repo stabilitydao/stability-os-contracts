@@ -12,6 +12,7 @@ import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {HostSetupUsesCaseLib} from "../uses-cases/HostSetupUsesCaseLib.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {Test} from "forge-std/Test.sol";
+// import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 contract CreateDaoUsesCasesTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
@@ -85,23 +86,37 @@ contract CreateDaoUsesCasesTest is Test {
         {
             (bytes32[] memory salts, uint16[] memory contractIndices) =
                 CreateDaoUsesCaseLib.getHostSalts(_getBaseContext());
-            // todo
-            //            assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
-            //            assertEq(keccak256(abi.encode(dao.saltContractIndices)), keccak256(abi.encode(contractIndices)), "contractIndices are correct");
+            assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
+            assertEq(
+                keccak256(abi.encode(dao.saltContractIndices)),
+                keccak256(abi.encode(contractIndices)),
+                "contractIndices are correct"
+            );
         }
 
         {
             IDAOData.DaoChainSettings memory chainSettings = CreateDaoUsesCaseLib.getHostChainSettings(multisig);
-            // todo
-            //            assertEq(keccak256(abi.encode(dao.chainSettings)), keccak256(abi.encode(chainSettings)), "chainSettings are correct");
+            assertEq(
+                keccak256(abi.encode(dao.chainSettings)),
+                keccak256(abi.encode(chainSettings)),
+                "chainSettings are correct"
+            );
         }
 
         {
-            (IDAOData.UnitDataInput[] memory units,) = CreateDaoUsesCaseLib.getHostUnits();
-            // todo
-            //            assertEq(keccak256(abi.encode(dao.unitIds)), keccak256(abi.encode(units)), "units are correct");
+            (IDAOData.UnitDataInput[] memory units, IDAOData.UnitEmitData[] memory emitData) =
+                CreateDaoUsesCaseLib.getHostUnits();
+            assertEq(units.length, 1, "units length is correct 1");
+            assertEq(dao.unitIds.length, 1, "units length is correct 2");
+            assertEq(dao.units.length, 1, "units length is correct 3");
 
-            // todo check emitted data
+            assertEq(dao.unitIds[0], units[0].unitId, "unit id is correct 1");
+            assertEq(dao.units[0].unitId, units[0].unitId, "unit id is correct 2");
+
+            assertEq(dao.units[0].developerUid, units[0].developerUid, "developer uid is correct 2");
+
+            assertEq(dao.units[0].chainIds.length, 1, "unit is registered on initial chain only");
+            assertEq(dao.units[0].chainIds[0], block.chainid, "initial chain");
         }
     }
 

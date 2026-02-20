@@ -4,7 +4,6 @@ pragma solidity ^0.8.28;
 // import {console} from "forge-std/console.sol";
 import {HostBridge} from "../../../src/HostBridge.sol";
 import {AccessRolesLib} from "../../../src/libs/AccessRolesLib.sol";
-import {AuthorityAccessUtils} from "../access/AuthorityAccessUtils.sol";
 import {Authority} from "../../../src/Authority.sol";
 import {Host} from "../../../src/Host.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";

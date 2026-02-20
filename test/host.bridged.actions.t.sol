@@ -22,6 +22,7 @@ import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
 import {EngineLib} from "./scenario/engine/EngineLib.sol";
 import {LayerZeroUtils} from "./scenario/engine/LayerZeroUtils.sol";
+import {EventUtilsLib} from "./utils/EventUtilsLib.sol";
 
 contract HostBridgedActionsTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -446,7 +447,7 @@ contract HostBridgedActionsTest is Test {
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bytes32 payloadHash;
-        (proposalPayload, payloadHash) = BridgeTestLib.extractProposalPayload(logs);
+        (proposalPayload, payloadHash) = EventUtilsLib.extractProposalPayloadAndHash(logs);
         assertEq(payloadHash, EfficientHashLib.hash(proposalPayload), "payload hash");
     }
 
@@ -496,7 +497,7 @@ contract HostBridgedActionsTest is Test {
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bytes32 payloadHash;
-        (proposalPayload, payloadHash) = BridgeTestLib.extractProposalPayload(logs);
+        (proposalPayload, payloadHash) = EventUtilsLib.extractProposalPayloadAndHash(logs);
         assertEq(payloadHash, EfficientHashLib.hash(proposalPayload), "payload hash");
     }
 
@@ -520,7 +521,7 @@ contract HostBridgedActionsTest is Test {
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bytes32 payloadHash;
-        (proposalPayload, payloadHash) = BridgeTestLib.extractProposalPayload(logs);
+        (proposalPayload, payloadHash) = EventUtilsLib.extractProposalPayloadAndHash(logs);
         assertEq(payloadHash, EfficientHashLib.hash(proposalPayload), "payload hash");
     }
 
@@ -548,7 +549,7 @@ contract HostBridgedActionsTest is Test {
 
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bytes32 payloadHash;
-        (proposalPayload, payloadHash) = BridgeTestLib.extractProposalPayload(logs);
+        (proposalPayload, payloadHash) = EventUtilsLib.extractProposalPayloadAndHash(logs);
         assertEq(payloadHash, EfficientHashLib.hash(proposalPayload), "payload hash");
     }
 

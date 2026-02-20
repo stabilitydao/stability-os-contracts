@@ -2,18 +2,19 @@
 pragma solidity ^0.8.28;
 
 //import {console} from "forge-std/console.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
-import {Vm, Test} from "forge-std/Test.sol";
-import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
-import {IHost} from "../../../src/interfaces/IHost.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
-import {IHosted} from "../../../src/interfaces/IHosted.sol";
-import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
-import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
-import {EngineLib} from "../engine/EngineLib.sol";
+import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
+import {EngineLib} from "../engine/EngineLib.sol";
+import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
+import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {IHosted} from "../../../src/interfaces/IHosted.sol";
+import {IHost} from "../../../src/interfaces/IHost.sol";
+import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
+import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
+import {StdConfig} from "forge-std/StdConfig.sol";
+import {Test} from "forge-std/Test.sol";
 
 contract DeployUsesCasesTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
@@ -91,7 +92,8 @@ contract DeployUsesCasesTest is Test {
 
         /// ---------------------------------- Check results
         require(
-            _extractDeployedProxy(vm.getRecordedLogs()) == authority.HOST(), "Host was deployed on predicted address"
+            EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs()) == authority.HOST(),
+            "Host was deployed on predicted address"
         );
 
         assertEq(authority.HOST(), address(deployedHost), "Host deployed in proper address");
@@ -120,7 +122,7 @@ contract DeployUsesCasesTest is Test {
 
         /// ---------------------------------- Check results
         require(
-            _extractDeployedProxy(vm.getRecordedLogs())
+            EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
                 == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
             "Host bridge was deployed on predicted address"
         );
@@ -147,7 +149,7 @@ contract DeployUsesCasesTest is Test {
 
         /// ---------------------------------- Check results
         require(
-            _extractDeployedProxy(vm.getRecordedLogs())
+            EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
                 == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_CODEC").toBytes32()),
             "Host codec was deployed on predicted address"
         );
@@ -174,7 +176,7 @@ contract DeployUsesCasesTest is Test {
 
         /// ---------------------------------- Check results
         require(
-            _extractDeployedProxy(vm.getRecordedLogs())
+            EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
                 == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_DATA_READER").toBytes32()),
             "Data reader was deployed on predicted address"
         );
@@ -189,23 +191,5 @@ contract DeployUsesCasesTest is Test {
         return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
     }
 
-    function _extractDeployedProxy(Vm.Log[] memory entries) internal pure returns (address deployedProxy) {
-        // Only support ProxyCreated(address) event: proxy is indexed (topics[1])
-        bytes32 sigCreated = keccak256("ProxyCreated(address)");
-
-        for (uint i = 0; i < entries.length; i++) {
-            if (entries[i].topics.length != 0 && entries[i].topics[0] == sigCreated) {
-                // ProxyCreated has indexed proxy => topics[1] contains the address
-                if (entries[i].topics.length > 1) {
-                    deployedProxy = address(uint160(uint(entries[i].topics[1])));
-                } else {
-                    // fallback: decode from data if not indexed for some reason
-                    deployedProxy = abi.decode(entries[i].data, (address));
-                }
-                break;
-            }
-        }
-        return deployedProxy;
-    }
     //endregion --------------------------------------- Internal logic
 }

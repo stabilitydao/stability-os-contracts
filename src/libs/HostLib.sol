@@ -177,7 +177,7 @@ library HostLib {
 
         /// @notice Salt configured for DAO contracts.
         /// @dev Key is generated as hash of (daoUid, ContractIndex)
-        /// @dev ContractIndex is specified by enum IDAODataAddons.ContractIndices
+        /// @dev ContractIndex is specified by enum IDAODataAddons.ContractIndices, HostLib.getKey
         mapping(bytes32 key => bytes32 salt) salt;
 
         /// @notice The mapping allows to check if the given salt is already used by some DAO on the given chain

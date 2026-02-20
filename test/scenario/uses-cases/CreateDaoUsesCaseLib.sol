@@ -7,8 +7,8 @@ import {UpdateIntentsLib} from "../commands/UpdateIntentsLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {ISegment4} from "../../../src/interfaces/ISegment4.sol";
-import {Vm} from "forge-std/Test.sol";
 import {HostUtilsLib} from "../../utils/HostUtilsLib.sol";
+import {Vm} from "forge-std/Test.sol";
 
 /// @dev Set of createDAO-related functions ready to be used in integration tests
 library CreateDaoUsesCaseLib {
@@ -46,13 +46,15 @@ library CreateDaoUsesCaseLib {
 
         // 3. --------------------------- Update socials, validator validates the proposal immediately
         {
-            (bytes32 proposalId, bytes memory payload) = UpdateIntentsLib.updateSocials(
+            bytes memory payload = UpdateIntentsLib.updateSocials(
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateSocials({
                     signer: context.user, symbol: HOST_DAO_SYMBOL, data: getHostSocials()
                 })
             );
+
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, HOST_DAO_SYMBOL);
 
             vm.prank(context.validator);
             context.core.host.validateProposal(proposalId, true, payload);

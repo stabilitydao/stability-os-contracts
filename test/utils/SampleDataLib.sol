@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {ISegment4} from "../../src/interfaces/ISegment4.sol";
-import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {MockERC20} from "../../lib/solady/test/utils/mocks/MockERC20.sol";
 import {IBridgedActions} from "../../src/interfaces/IBridgedActions.sol";
+import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
+import {ISegment4} from "../../src/interfaces/ISegment4.sol";
 
 library SampleDataLib {
+    uint64 internal constant DEFAULT_MIN_INCEPTION_DURATION = 7 days;
+
     function getUnitPoolSample() internal pure returns (IDAOData.UnitPool memory) {
         return ISegment4.UnitPool({
             repos: new string[](0),
@@ -223,5 +227,42 @@ library SampleDataLib {
         socials[1] = "discord:/aliens";
         socials[2] = "website:https://aliens.example";
         return socials;
+    }
+
+    function getHostSettings() internal pure returns (IHost.HostSettings memory) {
+        return IHost.HostSettings({
+            priceDao: 1000,
+            fundingFee: 50,
+            minNameLength: 1,
+            maxNameLength: 20,
+            minSymbolLength: 1,
+            maxSymbolLength: 7,
+            minVePeriod: 14,
+            maxVePeriod: 365 * 4,
+            minPvPFee: 10,
+            maxPvPFee: 100,
+            minFunding: 10,
+            minFundingDuration: 1 days,
+            maxFundingDuration: 180 days,
+            minFundingRaise: 0.1e18,
+            maxFundingRaise: 1_000_000e18,
+            minVestingNameLen: 3,
+            maxVestingNameLen: 30,
+            minCliff: 7 days,
+            minInceptionDuration: DEFAULT_MIN_INCEPTION_DURATION,
+            minVestingDuration: 1 days,
+            maxVestingDuration: 365 * 4 days
+        });
+    }
+
+    function getHostChainSettings(
+        address hostBridge,
+        address dataReader
+    ) internal returns (IHost.HostChainSettings memory) {
+        MockERC20 usdc = new MockERC20("USD Coin", "USDC", 6);
+
+        return IHost.HostChainSettings({
+            exchangeAsset: address(usdc), hostBridge: address(hostBridge), timelock: 30 minutes, dataReader: dataReader
+        });
     }
 }

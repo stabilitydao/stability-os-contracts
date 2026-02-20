@@ -2,10 +2,10 @@
 pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
-import "../../utils/HostUtilsLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {Vm} from "forge-std/Test.sol";
+import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
 
 // import {console} from "forge-std/console.sol";
 
@@ -78,8 +78,12 @@ library UpdateIntentsLib {
     //endregion --------------------------------------- Intents data types
 
     //region --------------------------------------- Update actions
-    function updateImages(Vm vm, EngineLib.Core memory core, IntentUpdateImages memory intent) internal {
-        bytes memory payload = core.hostCodec.encode(intent.images, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateImages(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateImages memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.images, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_IMAGES_0), payload, "");
@@ -89,55 +93,78 @@ library UpdateIntentsLib {
         Vm vm,
         EngineLib.Core memory core,
         IntentUpdateSocials memory intent
-    ) internal returns (bytes32 proposalId, bytes memory payload) {
-        payload = core.hostCodec.encode(intent.data);
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), payload, "");
-
-        proposalId = HostUtilsLib.getLastProposalId(core.host, intent.symbol);
     }
 
-    function updateNaming(Vm vm, EngineLib.Core memory core, IntentUpdateNaming memory intent) internal {
+    function updateNaming(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateNaming memory intent
+    ) internal returns (bytes memory payload) {
         IDAOData.DaoNames memory data = IDAOData.DaoNames({name: intent.newName, symbol: intent.newSymbol});
-        bytes memory payload = core.hostCodec.encode(data, core.hostCodec.PAYLOAD_API_VERSION());
+        payload = core.hostCodec.encode(data, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_NAMING_2), payload, "");
     }
 
-    function updateUnits(Vm vm, EngineLib.Core memory core, IntentUpdateUnits memory intent) internal {
-        bytes memory payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateUnits(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateUnits memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
         bytes memory payloadEmit = core.hostCodec.encode(intent.emitData, core.hostCodec.PAYLOAD_API_VERSION());
+
+        vm.recordLogs();
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_UNITS_3), payload, payloadEmit);
     }
 
-    function updateFunding(Vm vm, EngineLib.Core memory core, IntentUpdateFunding memory intent) internal {
-        bytes memory payload = core.hostCodec.encode(intent.funding, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateFunding(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateFunding memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.funding, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_FUNDING_4), payload, "");
     }
 
-    function updateVesting(Vm vm, EngineLib.Core memory core, IntentUpdateVesting memory intent) internal {
-        bytes memory payload = core.hostCodec.encode(intent.vesting, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateVesting(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateVesting memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.vesting, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_VESTING_5), payload, "");
     }
 
-    function updateDaoParameters(Vm vm, EngineLib.Core memory core, IntentUpdateDaoParameters memory intent) internal {
-        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateDaoParameters(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateDaoParameters memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_DAO_PARAMETERS_6), payload, "");
     }
 
-    function updateSalts(Vm vm, EngineLib.Core memory core, IntentUpdateSalts memory intent) internal {
-        bytes memory payload =
-            core.hostCodec.encode(intent.contractIndices, intent.salts, core.hostCodec.PAYLOAD_API_VERSION());
+    function updateSalts(
+        Vm vm,
+        EngineLib.Core memory core,
+        IntentUpdateSalts memory intent
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.contractIndices, intent.salts, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), payload, "");
@@ -147,8 +174,8 @@ library UpdateIntentsLib {
         Vm vm,
         EngineLib.Core memory core,
         IntentUpdateDaoChainSettings memory intent
-    ) internal {
-        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
@@ -158,8 +185,8 @@ library UpdateIntentsLib {
         Vm vm,
         EngineLib.Core memory core,
         IntentUpdateGovernanceSettings memory intent
-    ) internal {
-        bytes memory payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
+    ) internal returns (bytes memory payload) {
+        payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
 
         vm.prank(intent.signer);
         core.host.updateDAO(intent.symbol, uint16(IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10), payload, "");

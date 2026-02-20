@@ -8,7 +8,6 @@ import {ISegment4} from "../interfaces/ISegment4.sol";
 
 /// @notice Library for encoding and decoding proposal payloads
 /// There are several uses cases for encoding/decoding:
-/// Tokenomic uses some structs.
 /// The structs are stored as payload and emitted in events.
 /// After voting these payloads can be passed to update functions.
 /// New fields can be added to the structs in future versions at any moment.
@@ -16,18 +15,24 @@ import {ISegment4} from "../interfaces/ISegment4.sol";
 library HostEncodingLib {
     //region ----------------------- Versions of the structs
 
+    uint16 public constant API_VERSION_1 = 1;
+    uint16 public constant API_VERSION_2 = 2;
+
     /// @notice Version of payload encoding API. Each payload contain version that were used to encode it.
     /// Payloads are emitted and can be used at the moment when current version of API is updated.
     /// Decode functions must support all previous versions of the structs.
-    uint16 public constant PAYLOAD_API_VERSION = 1;
+    /// History change:
+    /// 2: Add multisig to DaoChainSettings - to test version changing
+    /// 1: initial version
+    uint16 public constant API_VERSION = API_VERSION_2;
 
     //endregion ----------------------- Versions of the structs
 
-    //region ----------------------- Decode / Encode update-actions structs with versions
+    //region ----------------------- Decode / Encode proposal payloads. Support all app-version up to current
 
     /// @notice Encode DaoImages struct of the given version. Version is supported explicitly to simplify testing
     function encodeDaoImages(IDAOData.DaoImages memory data, uint16 version) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data.seedToken, data.tgeToken, data.token, data.xToken, data.daoToken);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -36,10 +41,27 @@ library HostEncodingLib {
 
     function decodeDaoImages(bytes memory payload) internal pure returns (IDAOData.DaoImages memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, dest.seedToken, dest.tgeToken, dest.token, dest.xToken, dest.daoToken) =
                 abi.decode(payload, (uint16, string, string, string, string, string));
             return dest;
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function encodeSocials(string[] memory data, uint16 version) internal pure returns (bytes memory) {
+        if (version <= API_VERSION_2) {
+            return abi.encode(version, data);
+        } else {
+            revert IHost.UnsupportedStructVersion();
+        }
+    }
+
+    function decodeSocials(bytes memory payload) internal pure returns (string[] memory socials) {
+        (uint16 version) = abi.decode(payload, (uint16));
+        if (version <= API_VERSION_2) {
+            (, socials) = abi.decode(payload, (uint16, string[]));
         } else {
             revert IHost.UnsupportedStructVersion();
         }
@@ -50,7 +72,7 @@ library HostEncodingLib {
         IDAOData.UnitDataInput[] memory data,
         uint16 version
     ) internal pure returns (bytes memory payload) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -59,7 +81,7 @@ library HostEncodingLib {
 
     function decodeUnits(bytes memory payload) internal pure returns (IDAOData.UnitDataInput[] memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             // if new version of UnitInfo will be created it's necessary to do following:
             // 1) create a copy of old structure UnitInfoV1
             // 2) replace IDAOData.UnitInfo by UnitInfoV1 below
@@ -75,7 +97,7 @@ library HostEncodingLib {
         IDAOData.UnitEmitData[] memory emitData,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             uint len = emitData.length;
             bytes[] memory items = new bytes[](len);
             for (uint i; i < len; ++i) {
@@ -105,7 +127,7 @@ library HostEncodingLib {
     function decodeUnitsEmitData(bytes memory payload) internal pure returns (IDAOData.UnitEmitData[] memory emitData) {
         {
             (uint16 version) = abi.decode(payload, (uint16));
-            require(version == 1, IHost.UnsupportedStructVersion());
+            require(version <= API_VERSION_2, IHost.UnsupportedStructVersion());
         }
 
         (, bytes[] memory item) = abi.decode(payload, (uint16, bytes[]));
@@ -139,7 +161,7 @@ library HostEncodingLib {
 
     /// @notice Encode Funding struct of the given version. Version is supported explicitly to simplify testing
     function encodeFunding(IDAOData.Funding memory data, uint16 version) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(
                 version, data.fundingType, data.start, data.end, data.minRaise, data.maxRaise, data.raised, data.claim
             );
@@ -150,7 +172,7 @@ library HostEncodingLib {
 
     function decodeFunding(bytes memory payload) internal pure returns (IDAOData.Funding memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, dest.fundingType, dest.start, dest.end, dest.minRaise, dest.maxRaise, dest.raised, dest.claim) =
                 abi.decode(payload, (uint16, IDAOData.FundingType, uint64, uint64, uint, uint, uint, uint64));
             return dest;
@@ -161,7 +183,7 @@ library HostEncodingLib {
 
     /// @notice Encode array of Vesting of the given version. Version is supported explicitly to simplify testing
     function encodeVesting(IDAOData.Vesting[] memory data, uint16 version) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -171,7 +193,7 @@ library HostEncodingLib {
     function decodeVesting(bytes memory payload) internal pure returns (IDAOData.Vesting[] memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             // if new version of Vesting will be created it's necessary to do following:
             // 1) create a copy of old structure VestingV1
             // 2) replace IDAOData.Vesting by VestingV1 below
@@ -188,7 +210,7 @@ library HostEncodingLib {
         IDAOData.DaoParameters memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(
                 version,
                 data.vePeriod,
@@ -207,7 +229,7 @@ library HostEncodingLib {
     function decodeDaoParameters(bytes memory payload) internal pure returns (IDAOData.DaoParameters memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (
                 ,
                 dest.vePeriod,
@@ -229,8 +251,10 @@ library HostEncodingLib {
         IDAOData.DaoChainSettings memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version == API_VERSION_1) {
             return abi.encode(version, data.bbRate);
+        } else if (version == API_VERSION_2) {
+            return abi.encode(version, data.bbRate, data.multisig);
         } else {
             revert IHost.UnsupportedStructVersion();
         }
@@ -243,8 +267,11 @@ library HostEncodingLib {
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version == API_VERSION_1) {
             (, dest.bbRate) = abi.decode(payload, (uint16, uint8));
+            return dest;
+        } else if (version == API_VERSION_2) {
+            (, dest.bbRate, dest.multisig) = abi.decode(payload, (uint16, uint8, address));
             return dest;
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -252,7 +279,7 @@ library HostEncodingLib {
     }
 
     function encodeDaoNames(IDAOData.DaoNames memory data, uint16 version) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data.name, data.symbol);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -262,7 +289,7 @@ library HostEncodingLib {
     function decodeDaoNames(bytes memory payload) internal pure returns (IDAOData.DaoNames memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, dest.name, dest.symbol) = abi.decode(payload, (uint16, string, string));
             return dest;
         } else {
@@ -275,7 +302,7 @@ library HostEncodingLib {
         bytes32[] memory salt,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, contractIndices, salt);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -289,7 +316,7 @@ library HostEncodingLib {
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, contractIndices, salt) = abi.decode(payload, (uint16, uint16[], bytes32[]));
             return (contractIndices, salt);
         } else {
@@ -303,7 +330,7 @@ library HostEncodingLib {
         bytes[] memory actionPayloads,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, bridgedAction_, dstEids, actionPayloads);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -317,7 +344,7 @@ library HostEncodingLib {
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, actionKind, dstEids, actionPayloads) = abi.decode(payload, (uint16, uint16, uint32[], bytes[]));
             return (actionKind, dstEids, actionPayloads);
         } else {
@@ -330,7 +357,7 @@ library HostEncodingLib {
         IDAOData.GovernanceSettings memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data.proposalThreshold, data.ttBribe);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -344,7 +371,7 @@ library HostEncodingLib {
     {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, dest.proposalThreshold, dest.ttBribe) = abi.decode(payload, (uint16, uint32, uint32));
             return dest;
         } else {
@@ -352,16 +379,16 @@ library HostEncodingLib {
         }
     }
 
-    //endregion ----------------------- Decode / Encode update-actions structs with versions
+    //endregion ----------------------- Decode / Encode proposal payloads. Support all app-version up to current
 
-    //region ----------------------- Decode / Encode bridged-actions structs with versions
+    //region ----------------------- Decode / Encode bridged-actions payloads. Support all app-version up to current
 
     /// @notice Encode BridgeDaoParams struct of the given version. Version is supported explicitly to simplify testing
     function encodeBridgeDaoParams(
         IBridgedActions.BridgeDaoParams memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             bytes memory daoParameters = encodeDaoParameters(data.daoParameters, version);
             bytes memory chainSettings = encodeDaoChainSettings(data.chainSettings, version);
             bytes memory encodedData =
@@ -378,7 +405,7 @@ library HostEncodingLib {
         returns (IBridgedActions.BridgeDaoParams memory data)
     {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, bytes memory encodedData, bytes memory daoParameters, bytes memory chainSettings) =
                 abi.decode(payload, (uint16, bytes, bytes, bytes));
 
@@ -397,7 +424,7 @@ library HostEncodingLib {
         IBridgedActions.BridgedUnits memory data,
         uint16 version
     ) internal pure returns (bytes memory) {
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             return abi.encode(version, data.unitIds);
         } else {
             revert IHost.UnsupportedStructVersion();
@@ -406,28 +433,17 @@ library HostEncodingLib {
 
     function decodeBridgedUnits(bytes memory payload) internal pure returns (IBridgedActions.BridgedUnits memory data) {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version <= API_VERSION_2) {
             (, data.unitIds) = abi.decode(payload, (uint16, string[]));
             return data;
         } else {
             revert IHost.UnsupportedStructVersion();
         }
     }
-    //endregion ----------------------- Decode / Encode bridged-actions structs with versions
 
-    //region ----------------------- Decode / Encode data without versions
+    //endregion ----------------------- Decode / Encode bridged-actions payloads. Support all app-version up to current
 
-    function decodeSocials(bytes memory payload) internal pure returns (string[] memory) {
-        return abi.decode(payload, (string[]));
-    }
-
-    function encodeSocials(string[] memory data) internal pure returns (bytes memory) {
-        return abi.encode(data);
-    }
-
-    //endregion ----------------------- Decode / Encode data without versions
-
-    //region ----------------------- DaoDataInput for addLiveDao
+    //region ----------------------- DaoDataInput for addLiveDao. No version
     function encodeDaoDataInput(IDAOData.DaoDataInput memory dao) internal pure returns (bytes memory dest) {
         dest = abi.encode(dao.symbol, dao.name, uint8(dao.phase), dao.deployments);
         dest = abi.encode(dest, dao.chainSettings, dao.unitIds, dao.params);
@@ -528,11 +544,11 @@ library HostEncodingLib {
         return data;
     }
 
-    //endregion ----------------------- DaoDataInput for addLiveDao
+    //endregion ----------------------- DaoDataInput for addLiveDao. No version
 
-    //region ----------------------- Decode / Encode data for data reader
+    //region ----------------------- Decode / Encode data for data reader. Current api-version only
     function encodeDAOData(IDAOData.DaoData memory data, uint16 version) internal pure returns (bytes memory dest) {
-        if (version == 1) {
+        if (version == API_VERSION) {
             // --- enum[] -> uint8[] ---
             uint len = data.activity.length;
             uint8[] memory activityRaw = new uint8[](len);
@@ -559,7 +575,7 @@ library HostEncodingLib {
     function decodeDAOData(bytes memory payload) internal pure returns (IDAOData.DaoData memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
 
-        if (version == 1) {
+        if (version == API_VERSION) {
             (, bytes[6] memory b) = abi.decode(payload, (uint16, bytes[6]));
 
             {
@@ -602,7 +618,7 @@ library HostEncodingLib {
     }
 
     function encodeProposal(IDAOData.Proposal memory data, uint16 version) internal pure returns (bytes memory dest) {
-        if (version == 1) {
+        if (version == API_VERSION) {
             bytes memory b1 =
                 abi.encode(data.action, data.validationRequired, data.votingRequired, data.validationStatus, data.id);
             bytes memory b2 = abi.encode(data.symbol, data.created, data.status, data.payloadHash);
@@ -614,7 +630,7 @@ library HostEncodingLib {
 
     function decodeProposal(bytes memory payload) internal pure returns (IDAOData.Proposal memory dest) {
         (uint16 version) = abi.decode(payload, (uint16));
-        if (version == 1) {
+        if (version == API_VERSION) {
             (, bytes memory b1, bytes memory b2) = abi.decode(payload, (uint16, bytes, bytes));
             {
                 uint8 action;
@@ -637,6 +653,6 @@ library HostEncodingLib {
         }
     }
 
-    //endregion ----------------------- Decode / Encode data for data reader
+    //endregion ----------------------- Decode / Encode data for data reader. Current api-version only
 }
 

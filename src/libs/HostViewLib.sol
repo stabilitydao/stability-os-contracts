@@ -80,7 +80,7 @@ library HostViewLib {
             dest.units[i].chainIds = unit.chainIds.values();
         }
 
-        { // ------------------- tokenomics
+        { // ------------------- funding, vesting
             dest.initialChain = segment3.initialChain;
 
             dest.funding = new IDAOData.Funding[](segment3.funding.length);
@@ -93,6 +93,33 @@ library HostViewLib {
             for (uint i; i < dest.vesting.length; i++) {
                 dest.vesting[i] = $.vesting[HostLib.getIndexKey(dest.uid, i)];
                 dest.vestingContracts[i] = address(0); // todo
+            }
+        }
+
+        { // ------------------- Salts
+            uint countContracts = uint(IDAOData.ContractIndices.COUNT_CONTRACT_INDICES);
+            dest.saltContractIndices = new uint16[](countContracts);
+            dest.salts = new bytes32[](countContracts);
+            uint n;
+            for (uint i; i < countContracts; ++i) {
+                bytes32 key = HostLib.getKey(dest.uid, uint(i));
+                bytes32 saltValue = $.salt[key];
+                if (saltValue != bytes32(0)) {
+                    dest.saltContractIndices[n] = uint16(i);
+                    dest.salts[n] = saltValue;
+                    n++;
+                }
+            }
+            // trim arrays
+            if (n < dest.salts.length) {
+                uint16[] memory tempIndices = new uint16[](n);
+                bytes32[] memory tempSalts = new bytes32[](n);
+                for (uint i; i < n; ++i) {
+                    tempIndices[i] = dest.saltContractIndices[i];
+                    tempSalts[i] = dest.salts[i];
+                }
+                dest.saltContractIndices = tempIndices;
+                dest.salts = tempSalts;
             }
         }
 

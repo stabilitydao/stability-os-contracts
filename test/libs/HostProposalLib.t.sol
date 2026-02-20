@@ -449,7 +449,7 @@ contract HostProposalLibTest is Test {
     function _getSampleProposalPayload() internal pure returns (bytes memory) {
         IDAOData.DaoImages memory data = SampleDataLib.getDaoImages();
 
-        return HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        return HostEncodingLib.encodeDaoImages(data, HostEncodingLib.API_VERSION);
     }
 
     function _setupSeedTokenMinter(address minter, address seedToken) internal {

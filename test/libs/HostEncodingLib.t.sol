@@ -169,7 +169,7 @@ contract HostEncodingLibTest is Test {
         IDAOData.DaoChainSettings memory a;
         a.bbRate = 101;
 
-        bytes memory encA = this._encodeDaoChainSettingsWrapper(a, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeDaoChainSettingsWrapper(a, HostEncodingLib.API_VERSION);
 
         IDAOData.DaoChainSettings memory decA = this._decodeDaoChainSettingsWrapper(encA);
 
@@ -223,7 +223,7 @@ contract HostEncodingLibTest is Test {
         salt[0] = "0x111";
         salt[1] = "0x222";
 
-        bytes memory encA = this._encodeSalt(contractIndices, salt, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeSalt(contractIndices, salt, HostEncodingLib.API_VERSION);
 
         (uint16[] memory retContractIndices, bytes32[] memory retSalt) = this._decodeSalt(encA);
 
@@ -251,12 +251,12 @@ contract HostEncodingLibTest is Test {
             a.proposalThreshold = 50;
             IDAOData.DaoNames memory b = IDAOData.DaoNames({symbol: "NA", name: "NameA"});
 
-            payloads[0] = this._encodeDaoNamesWrapper(b, HostEncodingLib.PAYLOAD_API_VERSION); //some payload
-            payloads[1] = this._encodeDaoParametersWrapper(a, HostEncodingLib.PAYLOAD_API_VERSION); // some other payload
+            payloads[0] = this._encodeDaoNamesWrapper(b, HostEncodingLib.API_VERSION); //some payload
+            payloads[1] = this._encodeDaoParametersWrapper(a, HostEncodingLib.API_VERSION); // some other payload
         }
 
         bytes memory encA = this._encodeBridgedAction(
-            uint16(IHost.BridgedActions.BRIDGE_DAO_1), dstEids, payloads, HostEncodingLib.PAYLOAD_API_VERSION
+            uint16(IHost.BridgedActions.BRIDGE_DAO_1), dstEids, payloads, HostEncodingLib.API_VERSION
         );
 
         (uint16 actionKind, uint32[] memory eids, bytes[] memory actionPayloads) = this._decodeBridgedAction(encA);
@@ -291,7 +291,7 @@ contract HostEncodingLibTest is Test {
         a.salts[0] = "0x111";
         a.salts[1] = "0x222";
 
-        bytes memory encA = this._encodeBridgeDaoParams(a, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeBridgeDaoParams(a, HostEncodingLib.API_VERSION);
 
         IBridgedActions.BridgeDaoParams memory b = this._decodeBridgeDaoParams(encA);
 
@@ -318,7 +318,7 @@ contract HostEncodingLibTest is Test {
         data.unitIds[0] = "unit1";
         data.unitIds[1] = "unit2";
 
-        bytes memory encA = this._encodeBridgedUnits(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeBridgedUnits(data, HostEncodingLib.API_VERSION);
 
         IBridgedActions.BridgedUnits memory restored = this._decodeBridgedUnits(encA);
 
@@ -329,7 +329,7 @@ contract HostEncodingLibTest is Test {
         IBridgedActions.BridgedUnits memory data;
         data.unitIds = new string[](0);
 
-        bytes memory encA = this._encodeBridgedUnits(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeBridgedUnits(data, HostEncodingLib.API_VERSION);
 
         IBridgedActions.BridgedUnits memory restored = this._decodeBridgedUnits(encA);
 
@@ -369,7 +369,7 @@ contract HostEncodingLibTest is Test {
                 payloadHash: "0x61214220"
             });
 
-            bytes memory encA = this._encodeProposal(data, HostEncodingLib.PAYLOAD_API_VERSION);
+            bytes memory encA = this._encodeProposal(data, HostEncodingLib.API_VERSION);
             IDAOData.Proposal memory restored = this._decodeProposal(encA);
 
             assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "proposal");
@@ -388,7 +388,7 @@ contract HostEncodingLibTest is Test {
                 payloadHash: ""
             });
 
-            bytes memory encA = this._encodeProposal(data, HostEncodingLib.PAYLOAD_API_VERSION);
+            bytes memory encA = this._encodeProposal(data, HostEncodingLib.API_VERSION);
             IDAOData.Proposal memory restored = this._decodeProposal(encA);
 
             assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "proposal");
@@ -532,7 +532,7 @@ contract HostEncodingLibTest is Test {
         data.vestingContracts[0] = makeAddr("vestingContract1");
         data.vestingContracts[1] = makeAddr("vestingContract2");
 
-        bytes memory encA = this._encodeDAOData(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory encA = this._encodeDAOData(data, HostEncodingLib.API_VERSION);
         IDAOData.DaoData memory restored = this._decodeDAOData(encA);
 
         assertEq(keccak256(abi.encode(restored)), keccak256(abi.encode(data)), "dao data");

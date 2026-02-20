@@ -927,7 +927,7 @@ contract HostUpdateLibTest is Test {
         $.segment2[117].symbol = "ABC";
 
         IDAOData.DaoImages memory data = SampleDataLib.getDaoImages();
-        bytes memory payload = HostEncodingLib.encodeDaoImages(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoImages(data, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoImagesUpdated("ABC", data);
@@ -950,7 +950,7 @@ contract HostUpdateLibTest is Test {
 
         string[] memory socials = SampleDataLib.getSocialsThree();
 
-        bytes memory payload = HostEncodingLib.encodeSocials(socials);
+        bytes memory payload = HostEncodingLib.encodeSocials(socials, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoSocialsUpdated("ABC", socials);
@@ -976,7 +976,7 @@ contract HostUpdateLibTest is Test {
         data.maxRaise = 100e18;
         data.fundingType = IDAOData.FundingType.TGE_1;
 
-        bytes memory payload = HostEncodingLib.encodeFunding(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeFunding(data, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoFundingUpdated(117, data);
@@ -1015,7 +1015,7 @@ contract HostUpdateLibTest is Test {
         vesting[1].start = uint64(block.timestamp + 2 days);
         vesting[1].end = uint64(block.timestamp + 60 days);
 
-        bytes memory payload = HostEncodingLib.encodeVesting(vesting, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeVesting(vesting, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoVestingUpdated(117, vesting);
@@ -1052,7 +1052,7 @@ contract HostUpdateLibTest is Test {
         data.name = "New DAO Name";
         data.symbol = "XYZ";
 
-        bytes memory payload = HostEncodingLib.encodeDaoNames(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoNames(data, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoNamingUpdated(117, data);
@@ -1078,7 +1078,7 @@ contract HostUpdateLibTest is Test {
         data.pvpFee = 500;
         data.vePeriod = 30;
 
-        bytes memory payload = HostEncodingLib.encodeDaoParameters(data, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoParameters(data, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoParametersUpdated(117, data);
@@ -1102,7 +1102,7 @@ contract HostUpdateLibTest is Test {
         salt[0] = bytes32(uint(0x123));
         salt[1] = bytes32(uint(0x456));
 
-        bytes memory payload = HostEncodingLib.encodeSalt(contractIndices, salt, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeSalt(contractIndices, salt, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.SaltUpdated(117, contractIndices, salt);
@@ -1124,7 +1124,7 @@ contract HostUpdateLibTest is Test {
         IDAOData.DaoChainSettings memory settings;
         settings.bbRate = 100;
 
-        bytes memory payload = HostEncodingLib.encodeDaoChainSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoChainSettings(settings, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.DaoChainSettingsUpdated(117, settings);
@@ -1146,7 +1146,7 @@ contract HostUpdateLibTest is Test {
         IDAOData.GovernanceSettings memory settings =
             IDAOData.GovernanceSettings({proposalThreshold: 90_000, ttBribe: 85_501});
 
-        bytes memory payload = HostEncodingLib.encodeGovernanceSettings(settings, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeGovernanceSettings(settings, HostEncodingLib.API_VERSION);
 
         vm.expectEmit(false, false, false, true);
         emit IHost.GovernanceSettingsUpdated(117, settings);

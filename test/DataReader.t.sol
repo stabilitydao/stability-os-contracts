@@ -16,6 +16,7 @@ import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
+import {EventUtilsLib} from "./utils/EventUtilsLib.sol";
 
 contract DataReaderTest is Test {
     string internal constant DAO_SYMBOL = "ALIENS";
@@ -165,7 +166,7 @@ contract DataReaderTest is Test {
             vm.recordLogs();
             host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), input, "");
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -206,7 +207,7 @@ contract DataReaderTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -241,7 +242,7 @@ contract DataReaderTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);

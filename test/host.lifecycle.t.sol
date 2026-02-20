@@ -17,6 +17,7 @@ import {MockHostBridge} from "./mocks/MockHostBridge.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
+import {EventUtilsLib} from "./utils/EventUtilsLib.sol";
 
 contract HostLifeCycleTest is Test {
     address internal immutable MULTISIG;
@@ -313,7 +314,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -354,7 +355,7 @@ contract HostLifeCycleTest is Test {
                 codec_.encode(metas, codec_.PAYLOAD_API_VERSION())
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -385,7 +386,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);
@@ -408,7 +409,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);
@@ -893,7 +894,7 @@ contract HostLifeCycleTest is Test {
                 codec_.encode(daoParameters, codec_.PAYLOAD_API_VERSION()),
                 ""
             );
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -1062,7 +1063,7 @@ contract HostLifeCycleTest is Test {
             vm.recordLogs();
             host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SALT_7), input, "");
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -1135,7 +1136,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -1164,7 +1165,7 @@ contract HostLifeCycleTest is Test {
             vm.recordLogs();
             host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_UNITS_3), input, metadata);
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
@@ -1194,7 +1195,7 @@ contract HostLifeCycleTest is Test {
                 ""
             );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
             vm.prank(MULTISIG);

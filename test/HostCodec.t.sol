@@ -302,7 +302,7 @@ contract HostCodecTest is Test {
     function testEncodeSocials() public view {
         string[] memory socials = SampleDataLib.getSocialsThree();
 
-        bytes memory encA = hostCodec.encode(socials);
+        bytes memory encA = hostCodec.encode(socials, hostCodec.PAYLOAD_API_VERSION());
 
         string[] memory decA = hostCodec.decodeSocials(encA);
 

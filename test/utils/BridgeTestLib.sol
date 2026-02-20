@@ -485,21 +485,6 @@ library BridgeTestLib {
         IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), 100_000);
     }
 
-    function extractProposalPayload(Vm
-                .Log[] memory logs) internal pure returns (bytes memory payload, bytes32 payloadHash) {
-        // extract event Proposal(uint daoUid, IDAOData.DAOAction action, bytes32 proposalId, bytes32 payloadHash, bytes payload);
-        bytes32 sig = keccak256("Proposal(uint256,uint8,bytes32,bytes32,bytes)");
-
-        for (uint i; i < logs.length; ++i) {
-            if (logs[i].topics[0] == sig) {
-                (,,, payloadHash, payload) = abi.decode(logs[i].data, (uint, uint8, bytes32, bytes32, bytes));
-                break;
-            }
-        }
-
-        return (payload, payloadHash);
-    }
-
     /// @notice Empty function to exclude this test from coverage
     function test() public {}
 }

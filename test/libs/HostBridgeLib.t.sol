@@ -48,7 +48,7 @@ contract HostBridgeLibTest is Test {
         bytes32 proposalId = "0x11111";
         IBridgedActions.BridgeDaoParams memory p = SampleDataLib.getBridgeDaoParams();
 
-        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
         bytes32 payloadHash = HostBridgeLib._getHashProposalAction(proposalId, payload);
 
         $.bridgedActionHashes[payloadHash].daoUid = daoUid;
@@ -76,7 +76,7 @@ contract HostBridgeLibTest is Test {
         bytes32 proposalId = "0x11111";
         IBridgedActions.BridgeDaoParams memory p = SampleDataLib.getBridgeDaoParams();
 
-        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
         bytes32 payloadHash = HostBridgeLib._getHashProposalAction(proposalId, payload);
 
         $.bridgedActionHashes[payloadHash].daoUid = daoUid;
@@ -97,7 +97,7 @@ contract HostBridgeLibTest is Test {
         bytes32 proposalId = "0x11111";
         IBridgedActions.BridgeDaoParams memory p = SampleDataLib.getBridgeDaoParams();
 
-        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
         bytes32 payloadHash = HostBridgeLib._getHashProposalAction("0x22222", payload);
 
         $.bridgedActionHashes[payloadHash].daoUid = daoUid;
@@ -116,7 +116,7 @@ contract HostBridgeLibTest is Test {
         bytes32 proposalId = "0x11111";
         IBridgedActions.BridgeDaoParams memory p = SampleDataLib.getBridgeDaoParams();
 
-        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
         bytes32 payloadHash = HostBridgeLib._getHashProposalAction(proposalId, payload);
 
         $.bridgedActionHashes[payloadHash].daoUid = daoUid;
@@ -125,7 +125,7 @@ contract HostBridgeLibTest is Test {
         );
 
         p.name = "p is changed!";
-        bytes memory wrongPayload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory wrongPayload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
 
         vm.expectRevert(IHost.UnknownBridgedActionHash.selector);
         this.applyBridgedActionPublic(proposalId, wrongPayload);
@@ -246,7 +246,7 @@ contract HostBridgeLibTest is Test {
         uint daoUid = 97;
         IBridgedActions.BridgeDaoParams memory p = SampleDataLib.getBridgeDaoParams();
 
-        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgeDaoParams(p, HostEncodingLib.API_VERSION);
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.BRIDGE_DAO_1, payload);
 
         // ---------------------- Verify storage state
@@ -262,7 +262,7 @@ contract HostBridgeLibTest is Test {
         units[1] = "UnitB";
 
         IBridgedActions.BridgedUnits memory p = IBridgedActions.BridgedUnits({unitIds: units});
-        bytes memory payload = HostEncodingLib.encodeBridgedUnits(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeBridgedUnits(p, HostEncodingLib.API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.SET_BRIDGED_UNITS_2, payload);
 
@@ -275,7 +275,7 @@ contract HostBridgeLibTest is Test {
     function test_applyBridgedAction_DaoParameters_Success() public {
         uint daoUid = 97;
         IDAOData.DaoParameters memory p = SampleDataLib.getDaoParameters();
-        bytes memory payload = HostEncodingLib.encodeDaoParameters(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoParameters(p, HostEncodingLib.API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.SET_DAO_PARAMS_4, payload);
 
@@ -287,7 +287,7 @@ contract HostBridgeLibTest is Test {
     function test_applyBridgedAction_Salts_Success() public {
         uint daoUid = 97;
         (uint16[] memory indices, bytes32[] memory salts) = SampleDataLib.getSalts();
-        bytes memory payload = HostEncodingLib.encodeSalt(indices, salts, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeSalt(indices, salts, HostEncodingLib.API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.SET_SALTS_5, payload);
 
@@ -300,7 +300,7 @@ contract HostBridgeLibTest is Test {
     function test_applyBridgedAction_ChainSettings_Success() public {
         uint daoUid = 97;
         IDAOData.DaoChainSettings memory p = SampleDataLib.getDaoChainSettings();
-        bytes memory payload = HostEncodingLib.encodeDaoChainSettings(p, HostEncodingLib.PAYLOAD_API_VERSION);
+        bytes memory payload = HostEncodingLib.encodeDaoChainSettings(p, HostEncodingLib.API_VERSION);
 
         this.applyBridgedActionPublic(daoUid, IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6, payload);
 

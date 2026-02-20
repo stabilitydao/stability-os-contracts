@@ -5,7 +5,6 @@ import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {AccessRolesLib} from "../../../src/libs/AccessRolesLib.sol";
 import {AuthorityAccessUtils} from "../access/AuthorityAccessUtils.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
-import {IHost} from "../../../src/interfaces/IHost.sol";
 
 /// @dev Routines to set up restricted access to HostBridge functions
 library RestrictHostBridgeUtils {

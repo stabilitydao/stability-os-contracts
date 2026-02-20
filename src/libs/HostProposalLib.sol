@@ -188,9 +188,8 @@ library HostProposalLib {
 
         HostBridgeLib.verify(_d.daoUid, bridgedAction_, dstEids, actionPayloads);
 
-        bytes memory payload = HostEncodingLib.encodeBridgedAction(
-            bridgedAction_, dstEids, actionPayloads, HostEncodingLib.PAYLOAD_API_VERSION
-        );
+        bytes memory payload =
+            HostEncodingLib.encodeBridgedAction(bridgedAction_, dstEids, actionPayloads, HostEncodingLib.API_VERSION);
         ActionParams memory p = _getBridgedActionParams(IDAOData.DAOAction.UPDATE_BRIDGED_DAO_9, bridgedAction_);
         _proposeAction(_d.daoUid, payload, p);
     }

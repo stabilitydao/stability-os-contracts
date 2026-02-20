@@ -12,7 +12,7 @@ interface IHostCodec {
 
     function decodeImages(bytes memory encoded) external pure returns (IDAOData.DaoImages memory images);
 
-    function encode(string[] memory socials) external pure returns (bytes memory);
+    function encode(string[] memory socials, uint16 version) external pure returns (bytes memory);
 
     function decodeSocials(bytes memory encoded) external pure returns (string[] memory socials);
 

@@ -20,6 +20,7 @@ import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
 import {AuthorityAccessUtils} from "./scenario/access/AuthorityAccessUtils.sol";
 import {HostSetupUtils} from "./scenario/access/HostSetupUtils.sol";
+import {EventUtilsLib} from "./utils/EventUtilsLib.sol";
 
 contract HostTest is Test {
     uint public constant FORK_BLOCK = 58135155; // Dec-17-2025 05:45:24 AM +UTC
@@ -569,9 +570,14 @@ contract HostTest is Test {
             socials[3] = "4";
 
             vm.recordLogs();
-            host.updateDAO(dao.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
+            host.updateDAO(
+                dao.symbol,
+                uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1),
+                codec.encode(socials, codec.PAYLOAD_API_VERSION()),
+                ""
+            );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
             IDAOData.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
@@ -605,9 +611,14 @@ contract HostTest is Test {
             string[] memory socials = new string[](2);
             socials[0] = "1111";
             socials[1] = ""; // (!) empty
-            host.updateDAO(dao.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
+            host.updateDAO(
+                dao.symbol,
+                uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1),
+                codec.encode(socials, codec.PAYLOAD_API_VERSION()),
+                ""
+            );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
             IDAOData.Proposal memory p = IDataReader(host.getChainSettings().dataReader).proposal(proposalId);
             assertTrue(p.validationRequired, "validation required for socials update");
@@ -634,9 +645,14 @@ contract HostTest is Test {
         string[] memory socials = SampleDataLib.getSocialsThree();
 
         vm.recordLogs();
-        host.updateDAO(dao.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
+        host.updateDAO(
+            dao.symbol,
+            uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1),
+            codec.encode(socials, codec.PAYLOAD_API_VERSION()),
+            ""
+        );
 
-        bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
         bytes32 proposalId = HostUtilsLib.getLastProposalId(host, DAO_SYMBOL);
 
         {
@@ -705,9 +721,14 @@ contract HostTest is Test {
         string[] memory socials = SampleDataLib.getSocialsThree();
 
         vm.recordLogs();
-        host.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), codec.encode(socials), "");
+        host.updateDAO(
+            daoData.symbol,
+            uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1),
+            codec.encode(socials, codec.PAYLOAD_API_VERSION()),
+            ""
+        );
 
-        bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+        bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
         bytes32 proposalId = HostUtilsLib.getLastProposalId(host, daoData.symbol);
 
         // ------------------------------ Check proposal status before validation and voting
@@ -1347,9 +1368,14 @@ contract HostTest is Test {
             string[] memory socials = SampleDataLib.getSocialsThree();
 
             vm.recordLogs();
-            host_.updateDAO(daoData.symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), codec_.encode(socials), "");
+            host_.updateDAO(
+                daoData.symbol,
+                uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1),
+                codec_.encode(socials, codec_.PAYLOAD_API_VERSION()),
+                ""
+            );
 
-            bytes memory payload = HostUtilsLib.extractProposalPayload(vm.getRecordedLogs());
+            bytes memory payload = EventUtilsLib.extractProposalPayload(vm.getRecordedLogs());
             bytes32 proposalId = HostUtilsLib.getLastProposalId(host_, daoData.symbol);
 
             vm.prank(MULTISIG);
