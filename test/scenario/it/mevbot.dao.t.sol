@@ -1,50 +1,54 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../engine/ContextLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
 import {HostSetupLib} from "../engine/HostSetupLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
+import {MevBotDaoUsesCaseLib} from "../uses-cases/MevBotDaoUsesCaseLib.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
+import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {SampleDataLib} from "../../utils/SampleDataLib.sol";
-import {MevBotDaoUsesCaseLib} from "../uses-cases/MevBotDaoUsesCaseLib.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "HOST"
-contract HostDaoUsesCasesTest is Test {
+contract MevBotUsesCaseTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
     uint internal constant CHAIN_ID = 1;
 
-    StdConfig internal config;
-    StdConfig internal configDeployed;
+    EngineLib.BaseContext internal bc;
 
-    EngineLib.Core internal core;
+    EngineLib.ChainConfig internal core;
+
+    uint internal forkId;
 
     /// @dev Backend validator to validate proposals and register voting results
     address internal validator;
     address internal multisig;
 
     constructor() {
-        vm.selectFork(vm.createFork(vm.envString("ETHEREUM_RPC_URL"), FORK_BLOCK));
+        forkId = vm.createFork(vm.envString("ETHEREUM_RPC_URL"), FORK_BLOCK);
+        vm.selectFork(forkId);
 
-        configDeployed = new StdConfig("./config.d.toml", false);
-        config = new StdConfig("./config.toml", false);
+        validator = makeAddr("validator");
 
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        bc = ContextLib.getBaseContext(CHAIN_ID, forkId);
+
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
 
         vm.startPrank(deployer);
-        core = DeployUsesCaseLib.deployCore(_getBaseContext());
+        core = DeployUsesCaseLib.deployCore(bc, validator);
         vm.stopPrank();
 
-        multisig = config.get(CHAIN_ID, "MULTISIG").toAddress();
+        multisig = bc.config.get(CHAIN_ID, "MULTISIG").toAddress();
 
         vm.startPrank(multisig);
         HostSetupLib.setupHostSettings(core);
@@ -55,7 +59,7 @@ contract HostDaoUsesCasesTest is Test {
     }
 
     function testCreateMevBotDao() public {
-        EngineLib.Context memory context = _getContext();
+        EngineLib.Context memory context = ContextLib.getContext(core);
         deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
 
         // ---------------------------------- Create host dao
@@ -93,8 +97,7 @@ contract HostDaoUsesCasesTest is Test {
         }
 
         {
-            (bytes32[] memory salts, uint16[] memory contractIndices) =
-                                MevBotDaoUsesCaseLib.getMevBotSalts(_getBaseContext());
+            (bytes32[] memory salts, uint16[] memory contractIndices) = MevBotDaoUsesCaseLib.getMevBotSalts(bc);
             assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
             assertEq(
                 keccak256(abi.encode(dao.saltContractIndices)),
@@ -128,15 +131,4 @@ contract HostDaoUsesCasesTest is Test {
         }
     }
 
-    //region --------------------------------------- Internal logic
-    function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
-        return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
-    }
-
-    function _getContext() internal view returns (EngineLib.Context memory) {
-        address user = address(this);
-        return
-                            EngineLib.Context({core: core, bc: _getBaseContext(), user: user, multisig: multisig, validator: validator});
-    }
-    //endregion --------------------------------------- Internal logic
 }

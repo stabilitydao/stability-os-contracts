@@ -5,7 +5,9 @@ import {console, Vm} from "forge-std/Test.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
+import {IDataReader} from "../../src/interfaces/IDataReader.sol";
 import {IHostBridge} from "../../src/interfaces/IHostBridge.sol";
+import {IHostCodec} from "../../src/interfaces/IHostCodec.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {AvalancheConstantsLib} from "../../chains/AvalancheConstantsLib.sol";
 import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
@@ -49,7 +51,7 @@ library BridgeTestLib {
 
         address multisig = SonicConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority authority, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -58,10 +60,10 @@ library BridgeTestLib {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            authority.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
-            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+            authority.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             {
                 address hostBridgeImpl = address(new HostBridge(endpoint));
@@ -76,17 +78,20 @@ library BridgeTestLib {
 
         return EngineLib.ChainConfig({
             fork: forkId,
+            chainId: 146,
             multisig: multisig,
             delegator: delegator,
-            authority: address(accessManager),
+            authority: authority,
+            host: IHost(authority.HOST()),
             hostBridge: hostBridge,
-            dataReader: dataReader,
-            hostCodec: address(host.deployProxy("0x1888888", address(new HostCodec()), "")),
+            dataReader: IDataReader(dataReader),
+            hostCodec: IHostCodec(host.deployProxy("0x1888888", address(new HostCodec()), "")),
             endpointId: SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: endpoint,
             sendLib: SonicConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: SonicConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
-            executor: SonicConstantsLib.LAYER_ZERO_V2_EXECUTOR
+            executor: SonicConstantsLib.LAYER_ZERO_V2_EXECUTOR,
+            hostValidator: address(0)
         });
     }
 
@@ -98,7 +103,7 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = AvalancheConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority authority, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -107,10 +112,10 @@ library BridgeTestLib {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            authority.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
-            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+            authority.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             {
                 address hostBridgeImpl = address(new HostBridge(endpoint));
@@ -124,17 +129,20 @@ library BridgeTestLib {
 
         return EngineLib.ChainConfig({
             fork: forkId,
+            chainId: 43114,
             multisig: multisig,
             delegator: delegator,
-            authority: address(accessManager),
+            authority: authority,
+            host: IHost(authority.HOST()),
             hostBridge: hostBridge,
-            dataReader: dataReader,
-            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
+            dataReader: IDataReader(dataReader),
+            hostCodec: IHostCodec(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: AvalancheConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: AvalancheConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: AvalancheConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
-            executor: AvalancheConstantsLib.LAYER_ZERO_V2_EXECUTOR
+            executor: AvalancheConstantsLib.LAYER_ZERO_V2_EXECUTOR,
+            hostValidator: address(0)
         });
     }
 
@@ -142,7 +150,7 @@ library BridgeTestLib {
         vm.selectFork(forkId);
         address multisig = PlasmaConstantsLib.MULTISIG;
         IHost.HostInitPayload memory emptyHostPayload;
-        (IAuthority accessManager, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
+        (IAuthority authority, IHost host) = HostUtilsLib.deployHost(vm, multisig, emptyHostPayload);
 
         address endpoint = PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT;
         address hostBridge;
@@ -151,10 +159,10 @@ library BridgeTestLib {
             bytes4[] memory selectors = new bytes4[](1);
             selectors[0] = IHost.deployProxy.selector;
             vm.prank(multisig);
-            accessManager.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
+            authority.setTargetFunctionRole(address(host), selectors, AccessRolesLib.PROXY_DEPLOYER);
 
             vm.prank(multisig);
-            accessManager.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
+            authority.grantRole(AccessRolesLib.PROXY_DEPLOYER, address(this), 0);
 
             {
                 address hostBridgeImpl = address(new HostBridge(endpoint));
@@ -168,17 +176,20 @@ library BridgeTestLib {
 
         return EngineLib.ChainConfig({
             fork: forkId,
+            chainId: 9745,
             multisig: multisig,
             delegator: delegator,
-            authority: address(accessManager),
+            authority: authority,
+            host: IHost(authority.HOST()),
             hostBridge: hostBridge,
-            dataReader: dataReader,
-            hostCodec: address(host.deployProxy("0x1850878", address(new HostCodec()), "")),
+            dataReader: IDataReader(dataReader),
+            hostCodec: IHostCodec(host.deployProxy("0x1850878", address(new HostCodec()), "")),
             endpointId: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT_ID,
             endpoint: PlasmaConstantsLib.LAYER_ZERO_V2_ENDPOINT,
             sendLib: PlasmaConstantsLib.LAYER_ZERO_V2_SEND_ULN_302,
             receiveLib: PlasmaConstantsLib.LAYER_ZERO_V2_RECEIVE_ULN_302,
-            executor: PlasmaConstantsLib.LAYER_ZERO_V2_EXECUTOR
+            executor: PlasmaConstantsLib.LAYER_ZERO_V2_EXECUTOR,
+            hostValidator: address(0)
         });
     }
 
@@ -437,7 +448,7 @@ library BridgeTestLib {
                 exchangeAsset: config.exchangeAsset,
                 hostBridge: chain.hostBridge,
                 timelock: 30 minutes,
-                dataReader: chain.dataReader
+                dataReader: address(chain.dataReader)
             })
         );
 

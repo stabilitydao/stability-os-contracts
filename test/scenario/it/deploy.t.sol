@@ -2,9 +2,10 @@
 pragma solidity ^0.8.28;
 
 //import {console} from "forge-std/console.sol";
-import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
+import {ContextLib} from "../engine/ContextLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
+import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
@@ -16,27 +17,26 @@ import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 
-contract DeployUsesCasesTest is Test {
+contract DeployUsesCaseTest is Test {
     uint internal constant FORK_BLOCK = 24481863; // Feb-18-2026 06:15:47 AM +UTC
     uint internal constant CHAIN_ID = 1;
 
-    StdConfig internal config;
-    StdConfig internal configDeployed;
+    EngineLib.BaseContext internal bc;
 
     constructor() {
-        vm.selectFork(vm.createFork(vm.envString("ETHEREUM_RPC_URL"), FORK_BLOCK));
+        uint forkId = vm.createFork(vm.envString("ETHEREUM_RPC_URL"), FORK_BLOCK);
+        vm.selectFork(forkId);
 
-        configDeployed = new StdConfig("./config.d.toml", false);
-        config = new StdConfig("./config.toml", false);
+        bc = ContextLib.getBaseContext(CHAIN_ID, forkId);
     }
 
     //region --------------------------------------- Deploy tests
     function testDeployCore() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
 
         vm.startPrank(deployer);
-        EngineLib.Core memory core = DeployUsesCaseLib.deployCore(_getBaseContext());
+        EngineLib.ChainConfig memory core = DeployUsesCaseLib.deployCore(bc, makeAddr("validator"));
         vm.stopPrank();
 
         // ---------------------------------- Check results
@@ -58,11 +58,11 @@ contract DeployUsesCasesTest is Test {
     }
 
     function testDeployAuthority() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
 
         vm.startPrank(deployer);
-        IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
         vm.stopPrank();
 
         // ---------------------------------- Check results
@@ -70,23 +70,23 @@ contract DeployUsesCasesTest is Test {
         assertTrue(isMember, "Initial admin is correct");
         assertEq(executionDelay, 0, "no delay");
 
-        bytes32 saltHost = config.get(CHAIN_ID, "SALT_HOST").toBytes32();
+        bytes32 saltHost = bc.config.get(CHAIN_ID, "SALT_HOST").toBytes32();
         assertEq(authority.HOST(), proxyFactory.predictAddress(saltHost), "Host is correct");
         assertEq(authority.PROXY_FACTORY(), address(proxyFactory), "Proxy factory is correct");
     }
 
     function testDeployHost() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
 
         vm.startPrank(deployer);
 
         /// @dev Assume here that Authority is not deployed yet
-        IAuthority authority = DeployUsesCaseLib.deployAuthority(_getBaseContext());
+        IAuthority authority = DeployUsesCaseLib.deployAuthority(bc);
 
         /// @dev Deploy host
         vm.recordLogs();
-        IHost deployedHost = DeployUsesCaseLib.deployFirstHost(_getBaseContext(), address(authority));
+        IHost deployedHost = DeployUsesCaseLib.deployFirstHost(bc, address(authority));
 
         vm.stopPrank();
 
@@ -101,10 +101,8 @@ contract DeployUsesCasesTest is Test {
     }
 
     function testDeployHostBridge() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
-
-        EngineLib.BaseContext memory bc = _getBaseContext();
 
         vm.startPrank(deployer);
 
@@ -123,7 +121,7 @@ contract DeployUsesCasesTest is Test {
         /// ---------------------------------- Check results
         require(
             EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
-                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
+                == proxyFactory.predictAddress(bc.config.get(CHAIN_ID, "SALT_HOST_BRIDGE").toBytes32()),
             "Host bridge was deployed on predicted address"
         );
 
@@ -131,10 +129,8 @@ contract DeployUsesCasesTest is Test {
     }
 
     function testDeployHostCodec() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
-
-        EngineLib.BaseContext memory bc = _getBaseContext();
 
         vm.startPrank(deployer);
 
@@ -150,7 +146,7 @@ contract DeployUsesCasesTest is Test {
         /// ---------------------------------- Check results
         require(
             EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
-                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_HOST_CODEC").toBytes32()),
+                == proxyFactory.predictAddress(bc.config.get(CHAIN_ID, "SALT_HOST_CODEC").toBytes32()),
             "Host codec was deployed on predicted address"
         );
 
@@ -158,10 +154,8 @@ contract DeployUsesCasesTest is Test {
     }
 
     function testDeployDataReader() public {
-        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(CHAIN_ID, "PROXY_FACTORY").toAddress());
         address deployer = IOwnable(address(proxyFactory)).owner();
-
-        EngineLib.BaseContext memory bc = _getBaseContext();
 
         vm.startPrank(deployer);
 
@@ -177,7 +171,7 @@ contract DeployUsesCasesTest is Test {
         /// ---------------------------------- Check results
         require(
             EventUtilsLib.extractDeployedProxy(vm.getRecordedLogs())
-                == proxyFactory.predictAddress(config.get(CHAIN_ID, "SALT_DATA_READER").toBytes32()),
+                == proxyFactory.predictAddress(bc.config.get(CHAIN_ID, "SALT_DATA_READER").toBytes32()),
             "Data reader was deployed on predicted address"
         );
 
@@ -185,11 +179,4 @@ contract DeployUsesCasesTest is Test {
     }
 
     //endregion --------------------------------------- Deploy tests
-
-    //region --------------------------------------- Internal logic
-    function _getBaseContext() internal view returns (EngineLib.BaseContext memory) {
-        return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: CHAIN_ID});
-    }
-
-    //endregion --------------------------------------- Internal logic
 }

@@ -18,12 +18,12 @@ library HostSetupLib {
         return address(asset);
     }
 
-    function setupHostSettings(EngineLib.Core memory core) internal {
+    function setupHostSettings(EngineLib.ChainConfig memory core) internal {
         IHost.HostSettings memory settings = getDefaultHostSettings();
         core.host.setSettings(settings);
     }
 
-    function setupHostChainSettings(uint chainId, EngineLib.Core memory core) internal {
+    function setupHostChainSettings(uint chainId, EngineLib.ChainConfig memory core) internal {
         IHost.HostChainSettings memory settings;
         settings.dataReader = address(core.dataReader);
         settings.exchangeAsset = getExchangeAssets(chainId);
@@ -59,7 +59,7 @@ library HostSetupLib {
         });
     }
 
-    function setTokenImplementations(EngineLib.Core memory core) internal {
+    function setTokenImplementations(EngineLib.ChainConfig memory core) internal {
         core.host.setContractImplementation(uint(IHost.ContractKinds.SEED_TOKEN_1), address(new SeedToken()));
         core.host.setContractImplementation(uint(IHost.ContractKinds.TGE_TOKEN_2), address(new TgeToken()));
     }

@@ -12,20 +12,24 @@ import {StdConfig} from "forge-std/StdConfig.sol";
 library EngineLib {
     struct ChainConfig {
         uint fork;
+        uint chainId;
 
         address multisig;
         address delegator;
 
-        address authority;
+        IAuthority authority;
+        IHost host;
         address hostBridge;
-        address hostCodec;
-        address dataReader;
+        IHostCodec hostCodec;
+        IDataReader dataReader;
 
         uint32 endpointId;
         address endpoint;
         address sendLib;
         address receiveLib;
         address executor;
+
+        address hostValidator;
     }
 
     /// @dev Basis context - for deploy tests (host system is not yet deployed)
@@ -35,18 +39,12 @@ library EngineLib {
 
         /// @dev Chain for which config and configDeployed should be used. vm.chainId is 31337 in tests...
         uint chainId;
+
+        uint forkId;
     }
 
-    struct Core {
-        IAuthority authority;
-        IHost host;
-        IHostBridge hostBridge;
-        IHostCodec hostCodec;
-        IDataReader dataReader;
-    }
-
-    struct Context {
-        Core core;
+    struct Context {    // todo remove, replace by ChainConfig
+        ChainConfig core;
         BaseContext bc;
         address user;
         address multisig;
@@ -57,4 +55,5 @@ library EngineLib {
         address user;
         uint amount;
     }
+
 }

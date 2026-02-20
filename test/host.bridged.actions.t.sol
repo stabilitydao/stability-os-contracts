@@ -46,8 +46,8 @@ contract HostBridgedActionsTest is Test {
 
         // ----------------------------- set up sonic
         vm.selectFork(sonic.fork);
-        IHost hostSonic = IHost(IAuthority(sonic.authority).HOST());
-        HostUtilsLib.setupHostInstance(vm, SonicConstantsLib.MULTISIG, IAuthority(sonic.authority), hostSonic);
+        IHost hostSonic = IHost(sonic.authority.HOST());
+        HostUtilsLib.setupHostInstance(vm, SonicConstantsLib.MULTISIG, sonic.authority, hostSonic);
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostSonic, sonic, avalanche);
 
         // ----------------------------- set up avalanche
@@ -106,7 +106,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ add units to dao
-        _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
+        _addUnitsToDao(hostSonic, sonic.hostCodec, dao.symbol);
         dao = IDataReader(hostSonic.getChainSettings().dataReader).getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
@@ -118,7 +118,7 @@ contract HostBridgedActionsTest is Test {
             daoParams.unitIds = new string[](0); // (!) no units
 
             bytes[] memory actionPayloads = new bytes[](1);
-            IHostCodec codec = IHostCodec(sonic.hostCodec);
+            IHostCodec codec = sonic.hostCodec;
             actionPayloads[0] = codec.encode(daoParams, codec.PAYLOAD_API_VERSION());
 
             vm.expectRevert(IHost.UnitsRequired.selector);
@@ -135,7 +135,7 @@ contract HostBridgedActionsTest is Test {
             daoParams.symbol = "WRONG"; // (!) wrong symbol
 
             bytes[] memory actionPayloads = new bytes[](1);
-            IHostCodec codec = IHostCodec(sonic.hostCodec);
+            IHostCodec codec = sonic.hostCodec;
             actionPayloads[0] = codec.encode(daoParams, codec.PAYLOAD_API_VERSION());
 
             vm.expectRevert(IHost.IncorrectInputData.selector);
@@ -152,7 +152,7 @@ contract HostBridgedActionsTest is Test {
             daoParams.name = "WRONG"; // (!) wrong symbol
 
             bytes[] memory actionPayloads = new bytes[](1);
-            IHostCodec codec = IHostCodec(sonic.hostCodec);
+            IHostCodec codec = sonic.hostCodec;
             actionPayloads[0] = codec.encode(daoParams, codec.PAYLOAD_API_VERSION());
 
             vm.expectRevert(IHost.IncorrectInputData.selector);
@@ -309,7 +309,7 @@ contract HostBridgedActionsTest is Test {
         IHost hostSonic = _getHostSonic();
 
         // ------------------------ add units to dao
-        _addUnitsToDao(hostSonic, IHostCodec(sonic.hostCodec), dao.symbol);
+        _addUnitsToDao(hostSonic, sonic.hostCodec, dao.symbol);
         dao = IDataReader(hostSonic.getChainSettings().dataReader).getDAO(dao.symbol);
 
         // ------------------------ bridge dao from Sonic to Avalanche
@@ -329,7 +329,7 @@ contract HostBridgedActionsTest is Test {
     }
 
     function _getHostSonic() internal view returns (IHost) {
-        return IHost(IAuthority(sonic.authority).HOST());
+        return IHost(sonic.authority.HOST());
     }
 
     function _getHostAvalanche() internal view returns (IHost) {
@@ -439,7 +439,7 @@ contract HostBridgedActionsTest is Test {
         (dstEids, daoParams) = _prepareDataToBridgeDao(dao);
 
         bytes[] memory actionPayloads = new bytes[](1);
-        IHostCodec codec = IHostCodec(sonic.hostCodec);
+        IHostCodec codec = sonic.hostCodec;
         actionPayloads[0] = codec.encode(daoParams, codec.PAYLOAD_API_VERSION());
 
         vm.recordLogs();
@@ -489,7 +489,7 @@ contract HostBridgedActionsTest is Test {
         daoParams = HostUtilsLib.generateDaoParams(333, 222);
 
         bytes[] memory actionPayloads = new bytes[](1);
-        IHostCodec codec = IHostCodec(sonic.hostCodec);
+        IHostCodec codec = sonic.hostCodec;
         actionPayloads[0] = codec.encode(daoParams, codec.PAYLOAD_API_VERSION());
 
         vm.recordLogs();
@@ -511,7 +511,7 @@ contract HostBridgedActionsTest is Test {
         chainSettings = IDAOData.DaoChainSettings({bbRate: 17, multisig: address(0)});
 
         bytes[] memory actionPayloads = new bytes[](1);
-        IHostCodec codec = IHostCodec(sonic.hostCodec);
+        IHostCodec codec = sonic.hostCodec;
         actionPayloads[0] = codec.encode(chainSettings, codec.PAYLOAD_API_VERSION());
 
         vm.recordLogs();
@@ -541,7 +541,7 @@ contract HostBridgedActionsTest is Test {
         salt[1] = "0x24614082";
 
         bytes[] memory actionPayloads = new bytes[](1);
-        IHostCodec codec = IHostCodec(sonic.hostCodec);
+        IHostCodec codec = sonic.hostCodec;
         actionPayloads[0] = codec.encode(contractIndices, salt, codec.PAYLOAD_API_VERSION());
 
         vm.recordLogs();

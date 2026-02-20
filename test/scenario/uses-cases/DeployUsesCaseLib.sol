@@ -2,30 +2,43 @@
 pragma solidity ^0.8.28;
 
 // import {console} from "forge-std/console.sol";
-import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
-import {IHost} from "../../../src/interfaces/IHost.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {DeployIntentsLib} from "../commands/DeployIntentsLib.sol";
-import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
-import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
+import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
+import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
+import {IHost} from "../../../src/interfaces/IHost.sol";
+import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
+import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 
 /// @dev Set of deploy-related functions ready to be used in integration tests
 library DeployUsesCaseLib {
     /// @dev Deploy core contracts: authority, host, host bridge, host codec and data reader.
     /// @dev Assume that proxy factory is already deployed and the caller is proxy factory owner.
-    function deployCore(EngineLib.BaseContext memory bc) internal returns (EngineLib.Core memory) {
+    function deployCore(EngineLib.BaseContext memory bc, address validator) internal returns (EngineLib.ChainConfig memory) {
         IAuthority authority = deployAuthority(bc);
         IHost host = deployFirstHost(bc, address(authority));
 
-        return EngineLib.Core({
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(bc.chainId, "PROXY_FACTORY").toAddress());
+        address deployer = IOwnable(address(proxyFactory)).owner();
+
+        return EngineLib.ChainConfig({
+            fork: bc.forkId,
+            chainId: bc.chainId,
+            multisig: bc.config.get(bc.chainId, "MULTISIG").toAddress(),
+            delegator: deployer,
             authority: authority,
             host: host,
-            hostBridge: deployHostBridge(bc, address(host)),
+            hostBridge: address(deployHostBridge(bc, address(host))),
+            dataReader: deployDataReader(bc, address(authority)),
             hostCodec: deployHostCodec(bc, address(authority)),
-            dataReader: deployDataReader(bc, address(authority))
+            endpointId: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT_ID").toUint32(),
+            endpoint: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT").toAddress(),
+            sendLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_SEND_ULN_302").toAddress(),
+            receiveLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_RECEIVE_ULN_302").toAddress(),
+            executor: bc.config.get(bc.chainId, "LAYER_ZERO_V2_EXECUTOR").toAddress(),
+            hostValidator: validator
         });
     }
 
@@ -100,4 +113,5 @@ library DeployUsesCaseLib {
         /// @dev 2. Deploy host codec
         return DeployIntentsLib.deployDataReader(intent);
     }
+
 }

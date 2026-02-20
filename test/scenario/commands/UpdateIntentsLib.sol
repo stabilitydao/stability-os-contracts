@@ -79,7 +79,7 @@ library UpdateIntentsLib {
     //region --------------------------------------- Update actions
     function updateImages(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateImages memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.images, core.hostCodec.PAYLOAD_API_VERSION());
@@ -90,7 +90,7 @@ library UpdateIntentsLib {
 
     function updateSocials(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateSocials memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
@@ -101,7 +101,7 @@ library UpdateIntentsLib {
 
     function updateNaming(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateNaming memory intent
     ) internal returns (bytes memory payload) {
         IDAOData.DaoNames memory data = IDAOData.DaoNames({name: intent.newName, symbol: intent.newSymbol});
@@ -113,7 +113,7 @@ library UpdateIntentsLib {
 
     function updateUnits(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateUnits memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.data, core.hostCodec.PAYLOAD_API_VERSION());
@@ -127,7 +127,7 @@ library UpdateIntentsLib {
 
     function updateFunding(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateFunding memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.funding, core.hostCodec.PAYLOAD_API_VERSION());
@@ -138,7 +138,7 @@ library UpdateIntentsLib {
 
     function updateVesting(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateVesting memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.vesting, core.hostCodec.PAYLOAD_API_VERSION());
@@ -149,7 +149,7 @@ library UpdateIntentsLib {
 
     function updateDaoParameters(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateDaoParameters memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
@@ -160,7 +160,7 @@ library UpdateIntentsLib {
 
     function updateSalts(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateSalts memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.contractIndices, intent.salts, core.hostCodec.PAYLOAD_API_VERSION());
@@ -171,7 +171,7 @@ library UpdateIntentsLib {
 
     function updateDaoChainSettings(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateDaoChainSettings memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());
@@ -182,7 +182,7 @@ library UpdateIntentsLib {
 
     function updateGovernanceSettings(
         Vm vm,
-        EngineLib.Core memory core,
+        EngineLib.ChainConfig memory core,
         IntentUpdateGovernanceSettings memory intent
     ) internal returns (bytes memory payload) {
         payload = core.hostCodec.encode(intent.params, core.hostCodec.PAYLOAD_API_VERSION());

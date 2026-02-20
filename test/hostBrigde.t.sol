@@ -62,20 +62,20 @@ contract HostBridgeTest is Test {
 
         // ----------------------------- set up sonic
         vm.selectFork(sonic.fork);
-        IHost hostSonic = IHost(IAuthority(sonic.authority).HOST());
-        HostUtilsLib.setupHostInstance(vm, SonicConstantsLib.MULTISIG, IAuthority(sonic.authority), hostSonic);
+        IHost hostSonic = IHost(sonic.authority.HOST());
+        HostUtilsLib.setupHostInstance(vm, SonicConstantsLib.MULTISIG, sonic.authority, hostSonic);
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostSonic, sonic, plasma, avalanche);
 
         // ----------------------------- set up avalanche
         vm.selectFork(avalanche.fork);
-        IHost hostAvax = IHost(IAuthority(avalanche.authority).HOST());
-        HostUtilsLib.setupHostInstance(vm, AvalancheConstantsLib.MULTISIG, IAuthority(avalanche.authority), hostAvax);
+        IHost hostAvax = IHost(avalanche.authority.HOST());
+        HostUtilsLib.setupHostInstance(vm, AvalancheConstantsLib.MULTISIG, avalanche.authority, hostAvax);
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostAvax, avalanche, sonic, plasma);
 
         // ----------------------------- set up plasma
         vm.selectFork(plasma.fork);
-        IHost hostPlasma = IHost(IAuthority(plasma.authority).HOST());
-        HostUtilsLib.setupHostInstance(vm, PlasmaConstantsLib.MULTISIG, IAuthority(plasma.authority), hostPlasma);
+        IHost hostPlasma = IHost(plasma.authority.HOST());
+        HostUtilsLib.setupHostInstance(vm, PlasmaConstantsLib.MULTISIG, plasma.authority, hostPlasma);
         BridgeTestLib.setupHostBridgeAndHostFactory(vm, hostPlasma, plasma, sonic, avalanche);
 
         // ----------------------------- create DAO on Sonic
