@@ -52,5 +52,4 @@ library EngineLib {
         address user;
         uint amount;
     }
-
 }

@@ -103,12 +103,7 @@ contract DeployProxyFactory is Script {
             IHost.HostInitPayload memory init = IHost.HostInitPayload({
                 usedSymbols: new string[](0),
                 hostVersion: "2026.00.00",
-                daoHost: IHost.DaoHostInitParams({
-                    uid: 0,
-                    symbol: "",
-                    name: "",
-                    unitIds: new string[](0)
-                })
+                daoHost: IHost.DaoHostInitParams({uid: 0, symbol: "", name: "", unitIds: new string[](0)})
             });
             address logic = address(new Host());
 

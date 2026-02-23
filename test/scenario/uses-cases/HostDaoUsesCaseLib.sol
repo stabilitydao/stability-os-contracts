@@ -105,15 +105,15 @@ library HostDaoUsesCaseLib {
         require(context.core.host.hostDaoUid() == dao.uid, "HOST dao is created");
     }
 
-//    /// @dev Register HOST DAO on bridged chain
-//    function bridgeHostToChain(Vm vm, EngineLib.Context memory ctxFrom, EngineLib.Context memory ctxTo) internal {
-//        vm.selectFork(ctxFrom.core.fork);
-//        uint hostDaoUid = ctxFrom.core.host.hostDaoUid();
-//
-//        vm.selectFork(ctxTo.core.fork);
-//
-//
-//    }
+    //    /// @dev Register HOST DAO on bridged chain
+    //    function bridgeHostToChain(Vm vm, EngineLib.Context memory ctxFrom, EngineLib.Context memory ctxTo) internal {
+    //        vm.selectFork(ctxFrom.core.fork);
+    //        uint hostDaoUid = ctxFrom.core.host.hostDaoUid();
+    //
+    //        vm.selectFork(ctxTo.core.fork);
+    //
+    //
+    //    }
 
     //region --------------------------------------- Default HOST DAO parameters
     function getHostDaoParameters() internal pure returns (IDAOData.DaoParameters memory params) {
@@ -242,5 +242,4 @@ library HostDaoUsesCaseLib {
     }
 
     //endregion --------------------------------------- Default HOST DAO parameters
-
 }

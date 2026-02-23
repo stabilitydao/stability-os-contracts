@@ -17,12 +17,7 @@ library ContextLib {
         StdConfig configDeployed = new StdConfig("./config.d.toml", false);
         StdConfig config = new StdConfig("./config.toml", false);
 
-        return EngineLib.BaseContext({
-            configDeployed: configDeployed,
-            config: config,
-            chainId: chainId,
-            forkId: forkId
-        });
+        return EngineLib.BaseContext({configDeployed: configDeployed, config: config, chainId: chainId, forkId: forkId});
     }
 
     /// @dev Create core for initial chain
@@ -69,18 +64,13 @@ library ContextLib {
     }
 
     function getContext(EngineLib.ChainConfig memory chain, address user) internal returns (EngineLib.Context memory) {
-        return EngineLib.Context({
-            core: chain,
-            bc: getBaseContext(chain.chainId, chain.fork),
-            user: user
-        });
+        return EngineLib.Context({core: chain, bc: getBaseContext(chain.chainId, chain.fork), user: user});
     }
 
     function getDeployer(StdConfig configDeployed, uint chainId) internal view returns (address) {
         IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(chainId, "PROXY_FACTORY").toAddress());
         return IOwnable(address(proxyFactory)).owner();
     }
-
 
     function _setupCore(Vm vm, EngineLib.ChainConfig memory core) internal {
         vm.startPrank(core.multisig);

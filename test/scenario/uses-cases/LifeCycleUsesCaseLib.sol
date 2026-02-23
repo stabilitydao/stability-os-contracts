@@ -47,5 +47,4 @@ library LifeCycleUsesCaseLib {
         CommonUtilsLib.skip(vm, dao.funding[0].end - block.timestamp + 1);
         context.core.host.changePhase(dao.symbol);
     }
-
 }

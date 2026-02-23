@@ -500,21 +500,25 @@ library BridgeTestLib {
     }
     //endregion ------------------------------------- setupHostBridgeAndHostFactory
 
-    function processCrossChainMessages(Vm vm, Vm.Log[] memory logs, EngineLib.ChainConfig memory from, EngineLib.ChainConfig memory to) internal {
+    function processCrossChainMessages(
+        Vm vm,
+        Vm.Log[] memory logs,
+        EngineLib.ChainConfig memory from,
+        EngineLib.ChainConfig memory to
+    ) internal {
         vm.selectFork(to.fork);
         (bytes memory message,) = LayerZeroUtils.extractSendMessage(logs);
         Origin memory origin =
-                        Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
+            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
 
         vm.prank(to.endpoint);
         IOAppReceiver(to.hostBridge)
-        .lzReceive(
-            origin,
-            bytes32(0), // guid: actual value doesn't matter
-            message,
-            address(0), // executor
-            "" // extraData
-        );
+            .lzReceive(
+                origin,
+                bytes32(0), // guid: actual value doesn't matter
+                message,
+                address(0), // executor
+                "" // extraData
+            );
     }
-
 }

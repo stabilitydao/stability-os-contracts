@@ -267,16 +267,17 @@ library SampleDataLib {
         });
     }
 
-    function prepareFunders(address exchangeAsset, uint totalAmount, uint numFunders) internal returns (EngineLib.Funder[] memory funders) {
+    function prepareFunders(
+        address exchangeAsset,
+        uint totalAmount,
+        uint numFunders
+    ) internal returns (EngineLib.Funder[] memory funders) {
         funders = new EngineLib.Funder[](numFunders);
 
         uint amount = totalAmount;
         for (uint i; i < numFunders; ++i) {
             address funder = address(uint160(i + 1));
-            funders[i] = EngineLib.Funder({
-                user: funder,
-                amount: i == numFunders ? amount : amount / 3
-            });
+            funders[i] = EngineLib.Funder({user: funder, amount: i == numFunders ? amount : amount / 3});
             amount -= funders[i].amount;
 
             MockERC20(exchangeAsset).mint(funder, funders[i].amount);

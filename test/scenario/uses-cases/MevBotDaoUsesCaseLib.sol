@@ -32,7 +32,13 @@ library MevBotDaoUsesCaseLib {
             /// @dev create host dao
             vm.startPrank(context.user);
             context.core.host
-            .createDAO(MEVBOT_DAO_NAME, MEVBOT_DAO_SYMBOL, getMevBotActivity(), getMevBotDaoParameters(), getMevBotFunding());
+                .createDAO(
+                    MEVBOT_DAO_NAME,
+                    MEVBOT_DAO_SYMBOL,
+                    getMevBotActivity(),
+                    getMevBotDaoParameters(),
+                    getMevBotFunding()
+                );
             vm.stopPrank();
         }
 
@@ -81,7 +87,7 @@ library MevBotDaoUsesCaseLib {
                 signer: context.user,
                 symbol: MEVBOT_DAO_SYMBOL,
                 params: getMevBotChainSettings(
-            // todo DAO multisig is equal to Host multisig in this case
+                    // todo DAO multisig is equal to Host multisig in this case
                     context.core.multisig
                 )
             })
@@ -102,7 +108,6 @@ library MevBotDaoUsesCaseLib {
 
         dao = context.core.dataReader.getDAO(MEVBOT_DAO_SYMBOL);
     }
-
 
     //region --------------------------------------- Default MEVBOT parameters
     function getMevBotDaoParameters() internal pure returns (IDAOData.DaoParameters memory params) {
@@ -145,11 +150,9 @@ library MevBotDaoUsesCaseLib {
         });
     }
 
-    function getMevBotSalts(EngineLib.BaseContext memory /* bc */)
-    internal
-    pure
-    returns (bytes32[] memory salts, uint16[] memory contractIndices)
-    {
+    function getMevBotSalts(
+        EngineLib.BaseContext memory /* bc */
+    ) internal pure returns (bytes32[] memory salts, uint16[] memory contractIndices) {
         salts = new bytes32[](2);
         contractIndices = new uint16[](2);
         salts[0] = bytes32(abi.encodePacked("MEVBOT:Ethereum:SeeToken"));
@@ -159,9 +162,9 @@ library MevBotDaoUsesCaseLib {
     }
 
     function getMevBotChainSettings(address multisig)
-    internal
-    pure
-    returns (IDAOData.DaoChainSettings memory chainSettings)
+        internal
+        pure
+        returns (IDAOData.DaoChainSettings memory chainSettings)
     {
         chainSettings = IDAOData.DaoChainSettings({bbRate: 50, multisig: multisig});
     }
@@ -173,9 +176,9 @@ library MevBotDaoUsesCaseLib {
     }
 
     function getMevBotUnits()
-    internal
-    pure
-    returns (IDAOData.UnitDataInput[] memory data, IDAOData.UnitEmitData[] memory emitData)
+        internal
+        pure
+        returns (IDAOData.UnitDataInput[] memory data, IDAOData.UnitEmitData[] memory emitData)
     {
         data = new IDAOData.UnitDataInput[](1);
         data[0] = IDAOData.UnitDataInput({unitId: "mevbot:ethereum", developerUid: ""});
@@ -195,9 +198,7 @@ library MevBotDaoUsesCaseLib {
             pool: ISegment4.UnitPool({
                 repos: repos,
                 label: ISegment4.GithubLabel({
-                    name: "MEVBOT:Ethereum",
-                    description: "Building MEVBOT for Ethereum chain",
-                    color: "#4cbaff"
+                    name: "MEVBOT:Ethereum", description: "Building MEVBOT for Ethereum chain", color: "#4cbaff"
                 }),
                 contractorSymbol: ""
             }),

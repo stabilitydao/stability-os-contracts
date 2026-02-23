@@ -15,6 +15,7 @@ import {BridgedActionsUsesCaseLib} from "../uses-cases/BridgedActionsUsesCaseLib
 import {BridgeSetupLib} from "../engine/BridgeSetupLib.sol";
 import {LayerZeroUtils} from "../engine/LayerZeroUtils.sol";
 import {console} from "forge-std/console.sol";
+
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "MEV" on two chains: Ethereum mainnet and Sonic (via bridge)
@@ -54,10 +55,10 @@ contract MevDaoBridgedUsesCaseTest is Test {
         address ethDvn = ctxEth.bc.config.get(eth.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
         address sonicDvn = ctxEth.bc.config.get(sonic.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
 
-//        vm.selectFork(eth.fork);
-//        console.log("hostBridge eth", eth.host.getChainSettings().hostBridge);
-//        vm.selectFork(sonic.fork);
-//        console.log("hostBridge sonic", sonic.host.getChainSettings().hostBridge);
+        //        vm.selectFork(eth.fork);
+        //        console.log("hostBridge eth", eth.host.getChainSettings().hostBridge);
+        //        vm.selectFork(sonic.fork);
+        //        console.log("hostBridge sonic", sonic.host.getChainSettings().hostBridge);
 
         /// @dev Set up layer zero bridges between Ethereum and Sonic
         BridgeSetupLib.setUpOAppsSingleDVN(vm, eth, sonic, ethDvn, sonicDvn);
@@ -186,13 +187,12 @@ contract MevDaoBridgedUsesCaseTest is Test {
 
         {
             vm.selectFork(eth.fork);
-            IDAOData.DaoChainSettings memory params = IDAOData.DaoChainSettings({
-                bbRate: 90,
-                multisig: makeAddr("new multisig")
-            });
+            IDAOData.DaoChainSettings memory params =
+                IDAOData.DaoChainSettings({bbRate: 90, multisig: makeAddr("new multisig")});
 
             /// @dev Create MEV dao on Sonic via bridge
-            IDAOData.DaoData memory bridgedDao = BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, user, daoEth.symbol, eth, sonic, params);
+            IDAOData.DaoData memory bridgedDao =
+                BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, user, daoEth.symbol, eth, sonic, params);
 
             assertEq(bridgedDao.chainSettings.bbRate, 90, "bbRate is updated");
             assertEq(bridgedDao.chainSettings.multisig, makeAddr("new multisig"), "multisig is updated");
@@ -200,16 +200,16 @@ contract MevDaoBridgedUsesCaseTest is Test {
     }
 
     //region --------------------------------- Internal functions
-    function _createCoreOnSonic(IDAOData.DaoData memory daoEth, uint forkSonic) internal returns (EngineLib.ChainConfig memory) {
+    function _createCoreOnSonic(
+        IDAOData.DaoData memory daoEth,
+        uint forkSonic
+    ) internal returns (EngineLib.ChainConfig memory) {
         // @dev Prepare init
         IHost.HostInitPayload memory init = IHost.HostInitPayload({
             usedSymbols: new string[](0),
             hostVersion: "2026.02.23.1",
             daoHost: IHost.DaoHostInitParams({
-                uid: eth.host.hostDaoUid(),
-                symbol: daoEth.symbol,
-                name: daoEth.name,
-                unitIds: daoEth.unitIds
+                uid: eth.host.hostDaoUid(), symbol: daoEth.symbol, name: daoEth.name, unitIds: daoEth.unitIds
             })
         });
 

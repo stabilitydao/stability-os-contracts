@@ -84,10 +84,7 @@ contract HostActionsLibTest is Test {
             usedSymbols: new string[](2),
             hostVersion: "v1",
             daoHost: IHost.DaoHostInitParams({
-                uid: 46327,
-                symbol: "DAO HOST SYMBOL",
-                name: "dao host name",
-                unitIds: new string[](1)
+                uid: 46327, symbol: "DAO HOST SYMBOL", name: "dao host name", unitIds: new string[](1)
             })
         });
         init.daoHost.unitIds[0] = "unit A";

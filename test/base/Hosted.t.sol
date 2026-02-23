@@ -31,12 +31,7 @@ contract HostedTest is Test {
         emptyHostPayload = IHost.HostInitPayload({
             usedSymbols: new string[](0),
             hostVersion: "1.0.0",
-            daoHost: IHost.DaoHostInitParams({
-                uid: 0,
-                symbol: "",
-                name: "",
-                unitIds: new string[](0)
-            })
+            daoHost: IHost.DaoHostInitParams({uid: 0, symbol: "", name: "", unitIds: new string[](0)})
         });
         {
             string[] memory usedSymbols = new string[](1);
@@ -45,13 +40,7 @@ contract HostedTest is Test {
             notEmptyHostPayload = IHost.HostInitPayload({
                 usedSymbols: usedSymbols,
                 hostVersion: "1.0.0",
-                daoHost: IHost.DaoHostInitParams({
-                    uid: 1,
-                    symbol: "A",
-                    name: "",
-                    unitIds: new string[](0)
-                })
-
+                daoHost: IHost.DaoHostInitParams({uid: 1, symbol: "A", name: "", unitIds: new string[](0)})
             });
         }
 

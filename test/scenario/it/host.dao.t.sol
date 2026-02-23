@@ -14,6 +14,7 @@ import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
 import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
+
 //import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
@@ -28,7 +29,7 @@ contract HostDaoUsesCasesTest is Test {
 
     uint internal forkId;
 
-/// @dev Backend validator to validate proposals and register voting results
+    /// @dev Backend validator to validate proposals and register voting results
     address internal multisig;
 
     constructor() {
@@ -108,7 +109,7 @@ contract HostDaoUsesCasesTest is Test {
         }
 
         {
-            (IDAOData.UnitDataInput[] memory units, ) = HostDaoUsesCaseLib.getHostUnits();
+            (IDAOData.UnitDataInput[] memory units,) = HostDaoUsesCaseLib.getHostUnits();
             assertEq(units.length, 1, "units length is correct 1");
             assertEq(dao.unitIds.length, 1, "units length is correct 2");
             assertEq(dao.units.length, 1, "units length is correct 3");
@@ -134,11 +135,8 @@ contract HostDaoUsesCasesTest is Test {
 
         IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);
 
-        EngineLib.Funder[] memory funders = SampleDataLib.prepareFunders(
-            exchangeAsset,
-            (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2,
-            5
-        );
+        EngineLib.Funder[] memory funders =
+            SampleDataLib.prepareFunders(exchangeAsset, (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2, 5);
 
         LifeCycleUsesCaseLib.passSeedPhase(vm, context, dao, funders);
 
@@ -148,16 +146,15 @@ contract HostDaoUsesCasesTest is Test {
 
         assertEq(daoAfter.phase == IDAOData.LifecyclePhase.DEVELOPMENT_4, true, "development phase is ended");
 
-        {   // ---------------------- raised amount = total amount funded by funders
+        { // ---------------------- raised amount = total amount funded by funders
             uint totalFunded;
             for (uint i; i < funders.length; ++i) {
                 totalFunded += funders[i].amount;
             }
             assertEq(daoAfter.funding[0].raised, totalFunded, "raised amount is correct");
-
         }
 
-        {   // ---------------------- seed token has expected amount on balance
+        { // ---------------------- seed token has expected amount on balance
             uint feeAmount = 0; // todo
             assertEq(
                 IERC20(exchangeAsset).balanceOf(daoAfter.deployments.seedToken),

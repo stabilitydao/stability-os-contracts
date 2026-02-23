@@ -27,7 +27,8 @@ library BridgedActionsUsesCaseLib {
         bytes memory actionPayload = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
 
         /// @dev Payload for proposal (actions for all target chains)
-        bytes memory proposalPayload = _createBridgedAction(vm, user, symbol, IHost.BridgedActions.BRIDGE_DAO_1, src, target, actionPayload);
+        bytes memory proposalPayload =
+            _createBridgedAction(vm, user, symbol, IHost.BridgedActions.BRIDGE_DAO_1, src, target, actionPayload);
 
         /// @dev Proposal is validated and voted successfully on chain 1
         bytes32 proposalId = _validateVerifyProposal(vm, symbol, src, target, proposalPayload);
@@ -48,7 +49,9 @@ library BridgedActionsUsesCaseLib {
         bytes memory actionPayload = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
 
         /// @dev Payload for proposal (actions for all target chains)
-        bytes memory proposalPayload = _createBridgedAction(vm, user, symbol, IHost.BridgedActions.SET_BRIDGED_UNITS_2, src, target, actionPayload);
+        bytes memory proposalPayload = _createBridgedAction(
+            vm, user, symbol, IHost.BridgedActions.SET_BRIDGED_UNITS_2, src, target, actionPayload
+        );
 
         /// @dev Proposal is validated and voted successfully on chain 1
         bytes32 proposalId = _validateVerifyProposal(vm, symbol, src, target, proposalPayload);
@@ -69,7 +72,8 @@ library BridgedActionsUsesCaseLib {
         bytes memory actionPayload = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
 
         /// @dev Payload for proposal (actions for all target chains)
-        bytes memory proposalPayload = _createBridgedAction(vm, user, symbol, IHost.BridgedActions.SET_DAO_PARAMS_4, src, target, actionPayload);
+        bytes memory proposalPayload =
+            _createBridgedAction(vm, user, symbol, IHost.BridgedActions.SET_DAO_PARAMS_4, src, target, actionPayload);
 
         /// @dev Proposal is validated and voted successfully on chain 1
         bytes32 proposalId = _validateVerifyProposal(vm, symbol, src, target, proposalPayload);
@@ -91,7 +95,8 @@ library BridgedActionsUsesCaseLib {
         bytes memory actionPayload = src.hostCodec.encode(contractIndices, salt, src.hostCodec.PAYLOAD_API_VERSION());
 
         /// @dev Payload for proposal (actions for all target chains)
-        bytes memory proposalPayload = _createBridgedAction(vm, user, symbol, IHost.BridgedActions.SET_SALTS_5, src, target, actionPayload);
+        bytes memory proposalPayload =
+            _createBridgedAction(vm, user, symbol, IHost.BridgedActions.SET_SALTS_5, src, target, actionPayload);
 
         /// @dev Proposal is validated and voted successfully on chain 1
         bytes32 proposalId = _validateVerifyProposal(vm, symbol, src, target, proposalPayload);
@@ -112,7 +117,9 @@ library BridgedActionsUsesCaseLib {
         bytes memory actionPayload = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
 
         /// @dev Payload for proposal (actions for all target chains)
-        bytes memory proposalPayload = _createBridgedAction(vm, user, symbol, IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6, src, target, actionPayload);
+        bytes memory proposalPayload = _createBridgedAction(
+            vm, user, symbol, IHost.BridgedActions.UPDATE_CHAIN_SETTINGS_6, src, target, actionPayload
+        );
 
         /// @dev Proposal is validated and voted successfully on chain 1
         bytes32 proposalId = _validateVerifyProposal(vm, symbol, src, target, proposalPayload);
@@ -149,7 +156,7 @@ library BridgedActionsUsesCaseLib {
 
         // ---------------------- Receive emitted proposal payload
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        (proposalPayload, ) = EventUtilsLib.extractProposalPayloadAndHash(logs);
+        (proposalPayload,) = EventUtilsLib.extractProposalPayloadAndHash(logs);
     }
 
     function _validateVerifyProposal(

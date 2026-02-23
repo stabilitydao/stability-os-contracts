@@ -9,6 +9,7 @@ import {IHost} from "../../../src/interfaces/IHost.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
+
 // import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
@@ -72,10 +73,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
             usedSymbols: new string[](0),
             hostVersion: "2026.02.23.1",
             daoHost: IHost.DaoHostInitParams({
-                uid: eth.host.hostDaoUid(),
-                symbol: daoEth.symbol,
-                name: daoEth.name,
-                unitIds: daoEth.unitIds
+                uid: eth.host.hostDaoUid(), symbol: daoEth.symbol, name: daoEth.name, unitIds: daoEth.unitIds
             })
         });
 
