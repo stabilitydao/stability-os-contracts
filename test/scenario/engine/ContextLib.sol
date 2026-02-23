@@ -35,8 +35,7 @@ library ContextLib {
         vm.selectFork(fork);
 
         EngineLib.BaseContext memory bc = getBaseContext(chainId, fork);
-        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(chainId, "PROXY_FACTORY").toAddress());
-        address deployer = IOwnable(address(proxyFactory)).owner();
+        address deployer = getDeployer(bc.configDeployed, chainId);
 
         vm.startPrank(deployer);
         EngineLib.ChainConfig memory core = DeployUsesCaseLib.deployCore(bc, validator);
@@ -58,8 +57,7 @@ library ContextLib {
         vm.selectFork(fork);
 
         EngineLib.BaseContext memory bc = getBaseContext(chainId, fork);
-        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(chainId, "PROXY_FACTORY").toAddress());
-        address deployer = IOwnable(address(proxyFactory)).owner();
+        address deployer = getDeployer(bc.configDeployed, chainId);
 
         vm.startPrank(deployer);
         EngineLib.ChainConfig memory core = DeployUsesCaseLib.deployCore(bc, validator, init);
@@ -70,13 +68,17 @@ library ContextLib {
         return core;
     }
 
-    function getContext(EngineLib.ChainConfig memory chain) internal returns (EngineLib.Context memory) {
-        address user = address(this);
+    function getContext(EngineLib.ChainConfig memory chain, address user) internal returns (EngineLib.Context memory) {
         return EngineLib.Context({
             core: chain,
             bc: getBaseContext(chain.chainId, chain.fork),
             user: user
         });
+    }
+
+    function getDeployer(StdConfig configDeployed, uint chainId) internal view returns (address) {
+        IProxyFactory proxyFactory = IProxyFactory(configDeployed.get(chainId, "PROXY_FACTORY").toAddress());
+        return IOwnable(address(proxyFactory)).owner();
     }
 
 

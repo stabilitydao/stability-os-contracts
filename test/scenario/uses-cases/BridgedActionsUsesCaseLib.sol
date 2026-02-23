@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {Vm} from "forge-std/Test.sol";
 import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
@@ -14,27 +15,34 @@ import {BridgeTestLib} from "../../utils/BridgeTestLib.sol";
 library BridgedActionsUsesCaseLib {
     function bridgeDao(
         Vm vm,
-        string memory user,
+        address user,
         string memory symbol,
         EngineLib.ChainConfig memory src,
         EngineLib.ChainConfig memory target,
         IBridgedActions.BridgeDaoParams memory data
     ) internal {
 
+        /// @dev Payload for target action
+        bytes memory actionPayload;
+
+        /// @dev Payload for proposal (actions for all target chains)
         bytes memory proposalPayload;
 
         // ----------------- 1. User registers BRIDGE_DAO_1 action on chain 1
         {
+            actionPayload = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
+
             uint32[] memory dstEids = new uint32[](1);
-            dstEids[0] = uint32(target.chainId);
+            dstEids[0] = uint32(target.endpointId);
 
             bytes[] memory actionPayloads = new bytes[](1);
-            actionPayloads[0] = src.hostCodec.encode(data, src.hostCodec.PAYLOAD_API_VERSION());
+            actionPayloads[0] = actionPayload;
 
             vm.selectFork(src.fork);
 
             // ---------------------- Create proposal to bridge dao on chain 2
             vm.recordLogs();
+            vm.prank(user);
             src.host.createBridgedAction(
                 symbol,
                 uint16(IHost.BridgedActions.BRIDGE_DAO_1),
@@ -48,10 +56,14 @@ library BridgedActionsUsesCaseLib {
         }
 
         // ----------------- 2. Proposal is validated and voted successfully on chain 1
+
         bytes32 proposalId;
         {
             proposalId = HostUtilsLib.getLastProposalId(src.host, symbol);
             IDAOData.Proposal memory proposal = IDataReader(src.host.getChainSettings().dataReader).proposal(proposalId);
+
+            console.log("proposalId");
+            console.logBytes32(proposalId);
 
             if (proposal.validationRequired) {
                 uint fee = src.host.quoteProposalAction(proposalId, proposalPayload, IHost.ValidationMethod.VALIDATION_1);
@@ -75,7 +87,8 @@ library BridgedActionsUsesCaseLib {
         // ----------------- 2. User applies registered action on chain 2
         vm.selectFork(target.fork);
 
-        target.host.applyBridgedAction(proposalId, proposalPayload);
+        vm.prank(user);
+        target.host.applyBridgedAction(proposalId, actionPayload);
     }
 
 }

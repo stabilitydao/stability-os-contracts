@@ -59,7 +59,7 @@ contract MevBotUsesCaseTest is Test {
     }
 
     function testCreateMevBotDao() public {
-        EngineLib.Context memory context = ContextLib.getContext(core);
+        EngineLib.Context memory context = ContextLib.getContext(core, address(this));
         deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
 
         // ---------------------------------- Create host dao
@@ -134,7 +134,7 @@ contract MevBotUsesCaseTest is Test {
     function testMevDaoSeeding_Success() public {
         address exchangeAsset = core.host.getChainSettings().exchangeAsset;
 
-        EngineLib.Context memory context = ContextLib.getContext(core);
+        EngineLib.Context memory context = ContextLib.getContext(core, address(this));
         deal(exchangeAsset, address(this), 1000e18);
 
         // ---------------------------------- Create host dao

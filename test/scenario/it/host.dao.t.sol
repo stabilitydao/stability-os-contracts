@@ -55,7 +55,7 @@ contract HostDaoUsesCasesTest is Test {
     }
 
     function testCreateHostDao() public {
-        EngineLib.Context memory context = ContextLib.getContext(core);
+        EngineLib.Context memory context = ContextLib.getContext(core, address(this));
         deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
 
         IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);
@@ -129,7 +129,7 @@ contract HostDaoUsesCasesTest is Test {
         address exchangeAsset = core.host.getChainSettings().exchangeAsset;
 
         // ---------------------------- create host dao
-        EngineLib.Context memory context = ContextLib.getContext(core);
+        EngineLib.Context memory context = ContextLib.getContext(core, address(this));
         deal(exchangeAsset, address(this), 1000e18);
 
         IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);

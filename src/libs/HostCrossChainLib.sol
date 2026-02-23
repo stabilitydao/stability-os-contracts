@@ -41,7 +41,9 @@ library HostCrossChainLib {
             emit IHost.OnRenameDaoSymbol(oldSymbol, newSymbol, srcEid, guid_);
         } else if (messageKind == uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2)) {
             (uint16 actionKind, uint daoUid, bytes32 actionHash) = unpackMessageBridgedActionHash(message_);
-            console.log("actionKind, daoUid, actionHash", actionKind, daoUid, uint(actionHash));
+            console.log("actionKind, daoUid, actionHash", actionKind, daoUid);
+            console.log("actionHash");
+            console.logBytes32(actionHash);
 
             $.bridgedActionHashes[actionHash] = HostLib.BridgedActionLocal({
                 daoUid: daoUid,
@@ -85,6 +87,8 @@ library HostCrossChainLib {
         uint daoUid,
         bytes32 actionHash
     ) internal pure returns (bytes memory message) {
+        console.log("packMessageBridgedActionHash");
+        console.logBytes32(actionHash);
         return abi.encode(uint16(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), actionKind, daoUid, actionHash);
     }
 
@@ -94,6 +98,8 @@ library HostCrossChainLib {
         returns (uint16 actionKind, uint daoUid, bytes32 actionHash)
     {
         (, actionKind, daoUid, actionHash) = abi.decode(message, (uint16, uint16, uint, bytes32));
+        console.log("unpackMessageBridgedActionHash");
+        console.logBytes32(actionHash);
     }
 
     //endregion ----------------------------------------- Pack/Unpack cross-chain messages

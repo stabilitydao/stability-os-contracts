@@ -41,7 +41,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
         deal(eth.host.getChainSettings().exchangeAsset, address(this), 1000e18);
 
         // @dev create HOST DAO
-        HOST_DAO_SYMBOL = HostDaoUsesCaseLib.createHostDao(vm, ContextLib.getContext(eth)).symbol;
+        HOST_DAO_SYMBOL = HostDaoUsesCaseLib.createHostDao(vm, ContextLib.getContext(eth, address(this))).symbol;
     }
 
     function testCreateHostDao() public {
@@ -64,6 +64,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
         assertEq(daoEth.unitIds, daoSonic.unitIds, "HOST DAO unitIds should be the same across chains");
     }
 
+    //region --------------------------------- Internal functions
     function _createCoreOnSonic(IDAOData.DaoData memory daoEth) internal returns (EngineLib.ChainConfig memory sonic) {
         // @dev Prepare init
         IHost.HostInitPayload memory init = IHost.HostInitPayload({
@@ -80,4 +81,5 @@ contract HostDaoBridgedUsesCaseTest is Test {
         // @dev create host on Sonic
         return ContextLib.createCore(vm, 146, forkSonic, validator, init);
     }
+    //endregion --------------------------------- Internal functions
 }

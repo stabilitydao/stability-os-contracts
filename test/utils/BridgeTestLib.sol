@@ -245,7 +245,7 @@ library BridgeTestLib {
         vm.stopPrank();
 
         // ------------------- set peers
-        LayerZeroUtils.setOsBridgePeers(vm, sonic, avalanche);
+        LayerZeroUtils.setHostBridgePeers(vm, sonic, avalanche);
     }
 
     function setUpSonicPlasma(Vm vm, EngineLib.ChainConfig memory sonic, EngineLib.ChainConfig memory plasma) internal {
@@ -290,7 +290,7 @@ library BridgeTestLib {
         vm.stopPrank();
 
         // ------------------- set peers
-        LayerZeroUtils.setOsBridgePeers(vm, sonic, plasma);
+        LayerZeroUtils.setHostBridgePeers(vm, sonic, plasma);
     }
 
     function setUpAvalanchePlasma(
@@ -336,7 +336,7 @@ library BridgeTestLib {
         vm.stopPrank();
 
         // ------------------- set peers
-        LayerZeroUtils.setOsBridgePeers(vm, avalanche, plasma);
+        LayerZeroUtils.setHostBridgePeers(vm, avalanche, plasma);
     }
 
     function setUpAvalancheSonic(
@@ -382,7 +382,7 @@ library BridgeTestLib {
         vm.stopPrank();
 
         // ------------------- set peers
-        LayerZeroUtils.setOsBridgePeers(vm, avalanche, sonic);
+        LayerZeroUtils.setHostBridgePeers(vm, avalanche, sonic);
     }
 
     //endregion ------------------------------------- Setup bridges

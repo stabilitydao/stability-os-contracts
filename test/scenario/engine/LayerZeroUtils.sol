@@ -39,7 +39,7 @@ library LayerZeroUtils {
         }
     }
 
-    function setOsBridgePeers(Vm vm, EngineLib.ChainConfig memory src, EngineLib.ChainConfig memory dst) internal {
+    function setHostBridgePeers(Vm vm, EngineLib.ChainConfig memory src, EngineLib.ChainConfig memory dst) internal {
         // ------------------- Sonic: set up peer connection
         vm.selectFork(src.fork);
 

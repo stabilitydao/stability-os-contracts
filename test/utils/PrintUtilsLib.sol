@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IHost} from "../../src/interfaces/IHost.sol";
+import "../scenario/engine/EngineLib.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
+import {IHost} from "../../src/interfaces/IHost.sol";
 import {console} from "forge-std/console.sol";
 
 library PrintUtilsLib {
@@ -112,5 +113,23 @@ library PrintUtilsLib {
         for (uint i; i < tasks.length; i++) {
             console.log(tasks[i].name);
         }
+    }
+
+    function printChainConfig(EngineLib.ChainConfig memory chain) internal pure {
+        console.log("Chain id:", chain.chainId);
+        console.log("Fork:", chain.fork);
+        console.log("Multisig:", chain.multisig);
+        console.log("Delegator:", chain.delegator);
+        console.log("Authority:", address(chain.authority));
+        console.log("Host:", address(chain.host));
+        console.log("Host Bridge:", chain.hostBridge);
+        console.log("Host Codec:", address(chain.hostCodec));
+        console.log("Data Reader:", address(chain.dataReader));
+        console.log("Endpoint Id:", chain.endpointId);
+        console.log("Endpoint:", chain.endpoint);
+        console.log("Send Lib:", chain.sendLib);
+        console.log("Receive Lib:", chain.receiveLib);
+        console.log("Executor:", chain.executor);
+        console.log("hostValidator:", chain.hostValidator);
     }
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
 import {HostCrossChainLib} from "./HostCrossChainLib.sol";
 import {HostConfigLib} from "./HostConfigLib.sol";
@@ -54,6 +55,8 @@ library HostBridgeLib {
         HostLib.HostStorage storage $ = HostLib.getHostStorage();
 
         bytes32 payloadHash = _getHashProposalAction(proposalId, actionPayload);
+        console.log("applyBridgedAction");
+        console.logBytes32(payloadHash);
         HostLib.BridgedActionLocal storage action = $.bridgedActionHashes[payloadHash];
         HostLib.BridgedActionHeader memory header = HostLib.unpackBridgedActionHeader(action.bridgedActionHeader);
         uint daoUid = action.daoUid;
