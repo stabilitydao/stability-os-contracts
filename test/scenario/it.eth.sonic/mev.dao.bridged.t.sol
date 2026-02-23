@@ -68,23 +68,9 @@ contract MevDaoBridgedUsesCaseTest is Test {
         deal(validator, 1000e18);
         vm.selectFork(sonic.fork);
         deal(validator, 1000e18);
-
     }
 
-    function testCreateHostDao() public {
-//        PrintUtilsLib.printChainConfig(eth);
-//        PrintUtilsLib.printChainConfig(sonic);
-
-//        {
-//            vm.selectFork(eth.fork);
-//            EngineLib.Context memory ctxEth = ContextLib.getContext(eth, address(this));
-//
-//            address ethDvn = ctxEth.bc.config.get(eth.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
-//            address sonicDvn = ctxEth.bc.config.get(sonic.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
-//            BridgeSetupLib.setUpOAppsSingleDVN(vm, eth, sonic, ethDvn, sonicDvn);
-//            LayerZeroUtils.setHostBridgePeers(vm, eth, sonic);
-//        }
-
+    function testCreateBridgedMevDao() public {
         address user = makeAddr("user");
 
         vm.selectFork(eth.fork);
@@ -92,21 +78,125 @@ contract MevDaoBridgedUsesCaseTest is Test {
         deal(eth.host.getChainSettings().exchangeAsset, user, 1000e18);
 
         /// @dev Create MEV dao on ETH
-        IDAOData.DaoData memory dao = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
+        IDAOData.DaoData memory daoEth = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
 
+        /// @dev Init params to create MEV dao on Sonic
         IBridgedActions.BridgeDaoParams memory params = IBridgedActions.BridgeDaoParams({
-            symbol: dao.symbol,
-            name: dao.name,
-            unitIds: dao.unitIds,
+            symbol: daoEth.symbol,
+            name: daoEth.name,
+            unitIds: daoEth.unitIds,
             chainSettings: IDAOData.DaoChainSettings({
-                bbRate: dao.chainSettings.bbRate,
+                bbRate: daoEth.chainSettings.bbRate,
                 multisig: sonic.multisig // Sonic multisig is different from ETH multisig
             }),
-            daoParameters: dao.params,
+            daoParameters: daoEth.params,
             saltContractIndices: new uint16[](0), // no salts
             salts: new bytes32[](0)
         });
-        BridgedActionsUsesCaseLib.bridgeDao(vm, user, dao.symbol, eth, sonic, params);
+
+        /// @dev Create MEV dao on Sonic via bridge
+        BridgedActionsUsesCaseLib.bridgeDao(vm, user, daoEth.symbol, eth, sonic, params);
+
+        //---------------------------------- Check results
+        vm.selectFork(sonic.fork);
+        IDAOData.DaoData memory daoSonic = sonic.dataReader.getDAO(daoEth.symbol);
+
+        assertTrue(sonic.host.isDaoSymbolInUse(daoEth.symbol), "MEV DAO symbol should be in use on Sonic");
+        assertNotEq(sonic.host.hostDaoUid(), daoEth.uid, "mev dao on sonic is not host dao");
+
+        assertEq(daoEth.uid, daoSonic.uid, "MEV DAO UID should be the same across chains");
+        assertEq(daoEth.symbol, daoSonic.symbol, "MEV DAO symbol should be the same across chains");
+
+        assertEq(daoEth.unitIds, daoSonic.unitIds, "MEV DAO unitIds should be the same across chains");
+        assertEq(daoSonic.deployer, address(0), "deployer is not initialized on bridged chain");
+    }
+
+    function testBridgeDaoParameters() public {
+        address user = makeAddr("user");
+
+        vm.selectFork(eth.fork);
+        EngineLib.Context memory context = ContextLib.getContext(eth, user);
+        deal(eth.host.getChainSettings().exchangeAsset, user, 1000e18);
+
+        /// @dev Create MEV dao on ETH
+        IDAOData.DaoData memory daoEth = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
+
+        {
+            /// @dev Init params to create MEV dao on Sonic
+            IBridgedActions.BridgeDaoParams memory params = IBridgedActions.BridgeDaoParams({
+                symbol: daoEth.symbol,
+                name: daoEth.name,
+                unitIds: daoEth.unitIds,
+                chainSettings: IDAOData.DaoChainSettings({
+                    bbRate: daoEth.chainSettings.bbRate,
+                    multisig: sonic.multisig // Sonic multisig is different from ETH multisig
+                }),
+                daoParameters: daoEth.params,
+                saltContractIndices: new uint16[](0), // no salts
+                salts: new bytes32[](0)
+            });
+
+            /// @dev Create MEV dao on Sonic via bridge
+            BridgedActionsUsesCaseLib.bridgeDao(vm, user, daoEth.symbol, eth, sonic, params);
+        }
+
+        {
+            IDAOData.DaoParameters memory params = IDAOData.DaoParameters({
+                vePeriod: 365 * 2,
+                pvpFee: 100e5 * 2,
+                minPower: 1,
+                ttBribe: 2,
+                recoveryShare: 3,
+                proposalThreshold: 4,
+                totalSupply: 15_000_000e18
+            });
+        }
+
+        // todo probably we should use stored values?
+    }
+
+    function testBridgeDaoChainSettings() public {
+        address user = makeAddr("user");
+
+        vm.selectFork(eth.fork);
+        EngineLib.Context memory context = ContextLib.getContext(eth, user);
+        deal(eth.host.getChainSettings().exchangeAsset, user, 1000e18);
+
+        /// @dev Create MEV dao on ETH
+        IDAOData.DaoData memory daoEth = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
+
+        {
+            /// @dev Init params to create MEV dao on Sonic
+            IBridgedActions.BridgeDaoParams memory params = IBridgedActions.BridgeDaoParams({
+                symbol: daoEth.symbol,
+                name: daoEth.name,
+                unitIds: daoEth.unitIds,
+                chainSettings: IDAOData.DaoChainSettings({
+                    bbRate: 10,
+                    multisig: sonic.multisig // Sonic multisig is different from ETH multisig
+                }),
+                daoParameters: daoEth.params,
+                saltContractIndices: new uint16[](0), // no salts
+                salts: new bytes32[](0)
+            });
+
+            /// @dev Create MEV dao on Sonic via bridge
+            BridgedActionsUsesCaseLib.bridgeDao(vm, user, daoEth.symbol, eth, sonic, params);
+        }
+
+        {
+            vm.selectFork(eth.fork);
+            IDAOData.DaoChainSettings memory params = IDAOData.DaoChainSettings({
+                bbRate: 90,
+                multisig: makeAddr("new multisig")
+            });
+
+            /// @dev Create MEV dao on Sonic via bridge
+            IDAOData.DaoData memory bridgedDao = BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, user, daoEth.symbol, eth, sonic, params);
+
+            assertEq(bridgedDao.chainSettings.bbRate, 90, "bbRate is updated");
+            assertEq(bridgedDao.chainSettings.multisig, makeAddr("new multisig"), "multisig is updated");
+        }
     }
 
     //region --------------------------------- Internal functions

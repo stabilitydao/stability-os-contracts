@@ -44,7 +44,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
         HOST_DAO_SYMBOL = HostDaoUsesCaseLib.createHostDao(vm, ContextLib.getContext(eth, address(this))).symbol;
     }
 
-    function testCreateHostDao() public {
+    function testCreateBridgedHostDao() public {
         vm.selectFork(eth.fork);
         IDAOData.DaoData memory daoEth = eth.dataReader.getDAO(HOST_DAO_SYMBOL);
 
@@ -62,6 +62,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
         assertEq(daoEth.symbol, daoSonic.symbol, "HOST DAO symbol should be the same across chains");
 
         assertEq(daoEth.unitIds, daoSonic.unitIds, "HOST DAO unitIds should be the same across chains");
+        assertEq(daoSonic.deployer, address(0), "deployer is not initialized on bridged chain");
     }
 
     //region --------------------------------- Internal functions
