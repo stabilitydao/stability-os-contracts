@@ -57,7 +57,7 @@ library MevBotDaoUsesCaseLib {
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, MEVBOT_DAO_SYMBOL);
 
-            vm.prank(context.validator);
+            vm.prank(context.core.hostValidator);
             context.core.host.validateProposal(proposalId, true, payload);
         }
 
@@ -82,7 +82,7 @@ library MevBotDaoUsesCaseLib {
                 symbol: MEVBOT_DAO_SYMBOL,
                 params: getMevBotChainSettings(
             // todo DAO multisig is equal to Host multisig in this case
-                    context.multisig
+                    context.core.multisig
                 )
             })
         );

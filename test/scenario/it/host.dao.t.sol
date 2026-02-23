@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../engine/ContextLib.sol";
+import {ContextLib} from "../engine/ContextLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
@@ -15,6 +15,7 @@ import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "HOST"
@@ -140,7 +141,7 @@ contract HostDaoUsesCasesTest is Test {
             5
         );
 
-        HostDaoUsesCaseLib.hostDaoSeed(vm, context, dao, funders);
+        LifeCycleUsesCaseLib.passSeedPhase(vm, context, dao, funders);
 
         // ---------------------------- check results
         IDAOData.DaoData memory daoAfter = core.dataReader.getDAO(dao.symbol);

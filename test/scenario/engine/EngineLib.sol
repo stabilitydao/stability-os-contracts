@@ -43,12 +43,10 @@ library EngineLib {
         uint forkId;
     }
 
-    struct Context {    // todo remove, replace by ChainConfig
+    struct Context {
         ChainConfig core;
         BaseContext bc;
         address user;
-        address multisig;
-        address validator;
     }
 
     struct Funder {

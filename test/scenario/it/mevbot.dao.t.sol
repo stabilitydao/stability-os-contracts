@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../engine/ContextLib.sol";
+import {ContextLib} from "../engine/ContextLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
@@ -16,6 +16,7 @@ import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "HOST"
@@ -131,4 +132,50 @@ contract MevBotUsesCaseTest is Test {
         }
     }
 
+    function testMevDaoSeeding_Success() public {
+        address exchangeAsset = core.host.getChainSettings().exchangeAsset;
+
+        EngineLib.Context memory context = ContextLib.getContext(core);
+        deal(exchangeAsset, address(this), 1000e18);
+
+        // ---------------------------------- Create host dao
+        HostDaoUsesCaseLib.createHostDao(vm, context);
+
+        // ---------------------------------- Create second dao
+        IDAOData.DaoData memory dao = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
+
+        EngineLib.Funder[] memory funders = SampleDataLib.prepareFunders(
+            exchangeAsset,
+            (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2,
+            5
+        );
+
+        LifeCycleUsesCaseLib.passSeedPhase(vm, context, dao, funders);
+
+        // ---------------------------- check results
+        IDAOData.DaoData memory daoAfter = core.dataReader.getDAO(dao.symbol);
+        // PrintUtilsLib.printDaoData(daoAfter);
+
+        assertEq(daoAfter.phase == IDAOData.LifecyclePhase.DEVELOPMENT_4, true, "development phase is ended");
+
+        {   // ---------------------- raised amount = total amount funded by funders
+            uint totalFunded;
+            for (uint i; i < funders.length; ++i) {
+                totalFunded += funders[i].amount;
+            }
+            assertEq(daoAfter.funding[0].raised, totalFunded, "raised amount is correct");
+
+        }
+
+        {   // ---------------------- seed token has expected amount on balance
+            uint feeAmount = 0; // todo
+            assertEq(
+                IERC20(exchangeAsset).balanceOf(daoAfter.deployments.seedToken),
+                daoAfter.funding[0].raised - feeAmount,
+                "funds are on balance of seed token, fee is taken by DAO HOST"
+            );
+        }
+
+        // todo check amount (fee) earned by DAO HOST
+    }
 }

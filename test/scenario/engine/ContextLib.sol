@@ -60,9 +60,7 @@ library ContextLib {
         return EngineLib.Context({
             core: chain,
             bc: getBaseContext(chain.chainId, chain.fork),
-            user: user,
-            multisig: chain.multisig,
-            validator: chain.hostValidator
+            user: user
         });
     }
 

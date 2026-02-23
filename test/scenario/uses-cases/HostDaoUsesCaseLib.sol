@@ -57,7 +57,7 @@ library HostDaoUsesCaseLib {
 
             bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, HOST_DAO_SYMBOL);
 
-            vm.prank(context.validator);
+            vm.prank(context.core.hostValidator);
             context.core.host.validateProposal(proposalId, true, payload);
         }
 
@@ -82,7 +82,7 @@ library HostDaoUsesCaseLib {
                 symbol: HOST_DAO_SYMBOL,
                 params: getHostChainSettings(
                     // DAO multisig is equal to Host multisig in this case
-                    context.multisig
+                    context.core.multisig
                 )
             })
         );
@@ -103,40 +103,6 @@ library HostDaoUsesCaseLib {
         dao = context.core.dataReader.getDAO(HOST_DAO_SYMBOL);
 
         require(context.core.host.hostDaoUid() == dao.uid, "HOST dao is created");
-    }
-
-    /// @param funders Assume that all funders already have enough balance of exchange asset to fund the DAO
-    function hostDaoSeed(
-        Vm vm,
-        EngineLib.Context memory context,
-        IDAOData.DaoData memory dao,
-        EngineLib.Funder[] memory funders
-    ) internal {
-        // ---------------------------- Move to inception
-        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
-
-        // ---------------------------- Move to SEED
-        skip(vm, dao.funding[0].start - block.timestamp + 1);
-        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
-
-        // ---------------------------- Seeding
-        uint duration = dao.funding[0].end - dao.funding[0].start;
-        address exchangeAsset = context.core.host.getChainSettings().exchangeAsset;
-
-        for (uint i; i < funders.length; ++i) {
-            skip(vm, duration / (funders.length + 1)); // skip some time between fundings
-
-            vm.prank(funders[i].user);
-            IERC20(exchangeAsset).approve(address(context.core.host), funders[i].amount);
-
-            vm.prank(funders[i].user);
-            context.core.host.fund(HostDaoUsesCaseLib.HOST_DAO_SYMBOL, funders[i].amount);
-        }
-
-        // ---------------------------- Seeding ends, move to Development phase
-        skip(vm, dao.funding[0].end - block.timestamp + 1);
-        context.core.host.changePhase(HostDaoUsesCaseLib.HOST_DAO_SYMBOL);
-
     }
 
     function bridgeHostToChain(Vm vm, EngineLib.Context memory context) internal {
@@ -271,7 +237,4 @@ library HostDaoUsesCaseLib {
 
     //endregion --------------------------------------- Default HOST DAO parameters
 
-    function skip(Vm vm, uint256 time) internal {
-        vm.warp(vm.getBlockTimestamp() + time);
-    }
 }
