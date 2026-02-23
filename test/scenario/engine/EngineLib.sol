@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
 import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";

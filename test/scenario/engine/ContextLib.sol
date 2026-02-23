@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {Vm} from "forge-std/Test.sol";
 import {HostSetupLib} from "./HostSetupLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {EngineLib} from "./EngineLib.sol";
-import {IAuthority} from "../../../src/interfaces/IAuthority.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
-import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
-import {IHostBridge} from "../../../src/interfaces/IHostBridge.sol";
-import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {IHostCodec} from "../../../src/interfaces/IHostCodec.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
+import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 
 library ContextLib {
@@ -29,6 +25,7 @@ library ContextLib {
         });
     }
 
+    /// @dev Create core for initial chain
     function createCore(
         Vm vm,
         uint chainId,
@@ -45,12 +42,30 @@ library ContextLib {
         EngineLib.ChainConfig memory core = DeployUsesCaseLib.deployCore(bc, validator);
         vm.stopPrank();
 
-        vm.startPrank(core.multisig);
-        HostSetupLib.setupHostSettings(core);
-        HostSetupLib.setupHostChainSettings(chainId, core);
-        HostSetupLib.setTokenImplementations(core);
-        RestrictHostUtils.setupValidator(core.authority, address(core.host), validator);
+        _setupCore(vm, core);
+
+        return core;
+    }
+
+    /// @dev Create core fot NOT-initial chain
+    function createCore(
+        Vm vm,
+        uint chainId,
+        uint fork,
+        address validator,
+        IHost.HostInitPayload memory init
+    ) internal returns (EngineLib.ChainConfig memory) {
+        vm.selectFork(fork);
+
+        EngineLib.BaseContext memory bc = getBaseContext(chainId, fork);
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(chainId, "PROXY_FACTORY").toAddress());
+        address deployer = IOwnable(address(proxyFactory)).owner();
+
+        vm.startPrank(deployer);
+        EngineLib.ChainConfig memory core = DeployUsesCaseLib.deployCore(bc, validator, init);
         vm.stopPrank();
+
+        _setupCore(vm, core);
 
         return core;
     }
@@ -64,4 +79,13 @@ library ContextLib {
         });
     }
 
+
+    function _setupCore(Vm vm, EngineLib.ChainConfig memory core) internal {
+        vm.startPrank(core.multisig);
+        HostSetupLib.setupHostSettings(core);
+        HostSetupLib.setupHostChainSettings(core.chainId, core);
+        HostSetupLib.setTokenImplementations(core);
+        RestrictHostUtils.setupValidator(core.authority, address(core.host), core.hostValidator);
+        vm.stopPrank();
+    }
 }

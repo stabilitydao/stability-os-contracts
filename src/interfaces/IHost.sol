@@ -133,7 +133,7 @@ interface IHost {
     event ProxyDeployed(address proxy, address implementation, bytes payload);
     event ContractDeployed(address proxy, uint kind, bytes payload);
 
-    event HostInitialized(string daoHostSymbol, uint daoHostUid, string hostVersion, string[] usedSymbols);
+    event HostInitialized(string hostVersion, string[] usedSymbols, IHost.DaoHostInitParams daoHost);
     event GovernanceSettingsUpdated(uint daoUid, IDAOData.GovernanceSettings settings);
 
     //endregion ---------------------------------------- Events
@@ -222,19 +222,29 @@ interface IHost {
         string name;
     }
 
+    /// @notice Parameters of the HOST DAO to initialize Host with the same HOST DAO data on bridged chains.
+    struct DaoHostInitParams {
+        /// @notice UID of host DAO.
+        uint uid;
+        /// @notice Symbol of host DAO.
+        string symbol;
+        /// @notice Name of host DAO.
+        string name;
+        /// @notice List of bridged units of host DAO
+        string[] unitIds;
+    }
+
     /// @notice Payload for Host initialization
     struct HostInitPayload {
         /// @notice DAO symbols registered on other chains
         string[] usedSymbols;
 
-        /// @notice Symbol of host DAO. Empty if this is a first DAO on the first host
-        string daoHostSymbol;
-
-        /// @notice UID of host DAO. Zero if this is a first DAO on the first host
-        uint daoHostUid;
-
         /// @notice Initial version of host platform
         string hostVersion;
+
+        /// @dev HOST DAO params. It should be empty on initial chain (Ethereum)
+        /// @dev and filled on other chains to initialize Host with the same HOST DAO data.
+        DaoHostInitParams daoHost;
     }
 
     /// @notice Kinds of cross-chain messages
@@ -492,7 +502,7 @@ interface IHost {
     /// @param valid True if proposal is approved, false if the proposal is rejected
     /// @param payload Data of the proposal. It's hash should be equal to the one stored in the proposal.
     /// Can be 0 if the proposal requires voting or is rejected.
-    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external;
+    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external payable;
 
     /// @notice Announce upgrade of host proxies implementations
     /// @custom:restricted Restricted through access manager (only governance or multisig)

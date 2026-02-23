@@ -3,9 +3,7 @@ pragma solidity ^0.8.28;
 
 import {console} from "forge-std/console.sol";
 import {EfficientHashLib} from "@solady/utils/EfficientHashLib.sol";
-import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {Vm, Test} from "forge-std/Test.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
@@ -21,7 +19,6 @@ import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {SampleDataLib} from "./utils/SampleDataLib.sol";
 import {HostEncodingLib} from "../src/libs/HostEncodingLib.sol";
 import {EngineLib} from "./scenario/engine/EngineLib.sol";
-import {LayerZeroUtils} from "./scenario/engine/LayerZeroUtils.sol";
 import {EventUtilsLib} from "./utils/EventUtilsLib.sol";
 
 contract HostBridgedActionsTest is Test {
@@ -346,7 +343,7 @@ contract HostBridgedActionsTest is Test {
 
         // ------------------------- process cross chain events: Sonic -> Avalanche, Plasma
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        _processCrossChainMessages(logs, sonic, avalanche);
+        BridgeTestLib.processCrossChainMessages(vm, logs, sonic, avalanche);
 
         return dao;
     }
@@ -384,7 +381,7 @@ contract HostBridgedActionsTest is Test {
             vm.prank(sonic.multisig);
             host.receiveVotingResults{value: fee}(proposalId, true, proposalPayload);
 
-            _processCrossChainMessages(vm.getRecordedLogs(), sonic, avalanche);
+            BridgeTestLib.processCrossChainMessages(vm, vm.getRecordedLogs(), sonic, avalanche);
         }
     }
 
@@ -556,26 +553,6 @@ contract HostBridgedActionsTest is Test {
     //endregion  ----------------------------------------- Proposals logic
 
     //region ----------------------------------------- Internal utils
-    function _processCrossChainMessages(
-        Vm.Log[] memory logs,
-        EngineLib.ChainConfig memory from,
-        EngineLib.ChainConfig memory to
-    ) internal {
-        vm.selectFork(to.fork);
-        (bytes memory message,) = LayerZeroUtils.extractSendMessage(logs);
-        Origin memory origin =
-            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
-
-        vm.prank(to.endpoint);
-        IOAppReceiver(to.hostBridge)
-            .lzReceive(
-                origin,
-                bytes32(0), // guid: actual value doesn't matter
-                message,
-                address(0), // executor
-                "" // extraData
-            );
-    }
 
     /// @notice user should pay for DAO-creation
     function _dealAndApprove(IHost os_) internal {
@@ -588,14 +565,5 @@ contract HostBridgedActionsTest is Test {
     function _keepConsole() internal pure {
         console.log("keep console in imports");
     }
-
-    function _getUnitPoolSample() internal pure returns (IDAOData.UnitPool memory) {
-        return ISegment4.UnitPool({
-            repos: new string[](0),
-            label: ISegment4.GithubLabel({name: "protocolA", description: "Unit 0 Protocol A tasks", color: "0000FF"}),
-            contractorSymbol: "PA"
-        });
-    }
-
     //endregion ----------------------------------------- Internal utils
 }

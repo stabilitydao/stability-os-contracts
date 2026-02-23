@@ -2,6 +2,8 @@
 pragma solidity ^0.8.23;
 
 import {console, Vm} from "forge-std/Test.sol";
+import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
+import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
@@ -406,12 +408,13 @@ library BridgeTestLib {
 
     //endregion ------------------------------------- Delegator
 
+    //region ------------------------------------- setupHostBridgeAndHostFactory
     function setupHostBridgeAndHostFactory(
         Vm vm,
         IHost host,
         EngineLib.ChainConfig memory chain,
         EngineLib.ChainConfig memory otherChain
-    ) public {
+    ) internal {
         uint32[] memory endpoints = new uint32[](1);
         endpoints[0] = otherChain.endpointId;
         _setupHostBridgeAndHostFactory(vm, host, chain, endpoints);
@@ -423,7 +426,7 @@ library BridgeTestLib {
         EngineLib.ChainConfig memory chain,
         EngineLib.ChainConfig memory otherChain1,
         EngineLib.ChainConfig memory otherChain2
-    ) public {
+    ) internal {
         uint32[] memory endpoints = new uint32[](2);
         endpoints[0] = otherChain1.endpointId;
         endpoints[1] = otherChain2.endpointId;
@@ -435,7 +438,7 @@ library BridgeTestLib {
         IHost host,
         EngineLib.ChainConfig memory chain,
         uint32[] memory endpoints
-    ) public {
+    ) internal {
         // -------------------- put some ether on OS contract to send cross-chain messages
         vm.deal(address(host), INITIAL_OS_ETHER_BALANCE);
 
@@ -495,7 +498,23 @@ library BridgeTestLib {
         vm.prank(chain.multisig);
         IHostBridge(chain.hostBridge).setGasLimit(uint(IHost.CrossChainMessages.DAO_BRIDGED_ACTION_HASH_2), 100_000);
     }
+    //endregion ------------------------------------- setupHostBridgeAndHostFactory
 
-    /// @notice Empty function to exclude this test from coverage
-    function test() public {}
+    function processCrossChainMessages(Vm vm, Vm.Log[] memory logs, EngineLib.ChainConfig memory from, EngineLib.ChainConfig memory to) internal {
+        vm.selectFork(to.fork);
+        (bytes memory message,) = LayerZeroUtils.extractSendMessage(logs);
+        Origin memory origin =
+                        Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
+
+        vm.prank(to.endpoint);
+        IOAppReceiver(to.hostBridge)
+        .lzReceive(
+            origin,
+            bytes32(0), // guid: actual value doesn't matter
+            message,
+            address(0), // executor
+            "" // extraData
+        );
+    }
+
 }

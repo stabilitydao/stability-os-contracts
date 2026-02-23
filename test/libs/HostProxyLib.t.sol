@@ -164,7 +164,14 @@ contract HostProxyLibTest is Test {
         usedSymbols[1] = "BBB";
 
         IHost.HostInitPayload memory init = IHost.HostInitPayload({
-            usedSymbols: usedSymbols, daoHostSymbol: "CCC", daoHostUid: 12345, hostVersion: "1.0.0"
+            usedSymbols: usedSymbols,
+            hostVersion: "1.0.0",
+            daoHost: IHost.DaoHostInitParams({
+                uid: 12345,
+                symbol: "CCC",
+                name: "",
+                unitIds: new string[](0)
+            })
         });
 
         vm.expectRevert();

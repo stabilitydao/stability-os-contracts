@@ -12,10 +12,9 @@ import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {SampleDataLib} from "../../utils/SampleDataLib.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
-import {console} from "forge-std/console.sol";
 import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
+//import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
 /// @dev Uses cases for DAO "HOST"

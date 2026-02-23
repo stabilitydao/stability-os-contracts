@@ -34,22 +34,26 @@ library HostActionsLib {
         uint len = initPayload.usedSymbols.length;
         if (len != 0) {
             uint daoUidStub = HostLib.getDaoUidStub();
-            for (uint i = 0; i < len; i++) {
+            for (uint i; i < len; i++) {
                 string memory symbol = initPayload.usedSymbols[i];
                 $.daoUids[symbol] = daoUidStub;
             }
         }
 
         // ------------------------- Set up host DAO if any
-        if (initPayload.daoHostUid != 0) {
-            $.daoUids[initPayload.daoHostSymbol] = initPayload.daoHostUid;
-            $.hostDaoUid = initPayload.daoHostUid;
+        if (initPayload.daoHost.uid != 0) {
+            $.daoUids[initPayload.daoHost.symbol] = initPayload.daoHost.uid;
+            $.hostDaoUid = initPayload.daoHost.uid;
+            $.segment2[initPayload.daoHost.uid] = HostLib.DaoDataSegment2({
+                name: initPayload.daoHost.name,
+                symbol: initPayload.daoHost.symbol,
+                phase: IDAOData.LifecyclePhase.DRAFT_0,
+                unitIds: initPayload.daoHost.unitIds
+            });
         }
 
         HostProxyLib.initialize(initPayload.hostVersion);
-        emit IHost.HostInitialized(
-            initPayload.daoHostSymbol, initPayload.daoHostUid, initPayload.hostVersion, initPayload.usedSymbols
-        );
+        emit IHost.HostInitialized(initPayload.hostVersion, initPayload.usedSymbols, initPayload.daoHost);
     }
 
     //endregion -------------------------------------- Initialization

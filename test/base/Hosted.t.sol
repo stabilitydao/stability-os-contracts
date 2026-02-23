@@ -29,14 +29,29 @@ contract HostedTest is Test {
 
     constructor() {
         emptyHostPayload = IHost.HostInitPayload({
-            usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "1.0.0"
+            usedSymbols: new string[](0),
+            hostVersion: "1.0.0",
+            daoHost: IHost.DaoHostInitParams({
+                uid: 0,
+                symbol: "",
+                name: "",
+                unitIds: new string[](0)
+            })
         });
         {
             string[] memory usedSymbols = new string[](1);
             usedSymbols[0] = "B";
 
             notEmptyHostPayload = IHost.HostInitPayload({
-                usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1, hostVersion: "1.0.0"
+                usedSymbols: usedSymbols,
+                hostVersion: "1.0.0",
+                daoHost: IHost.DaoHostInitParams({
+                    uid: 1,
+                    symbol: "A",
+                    name: "",
+                    unitIds: new string[](0)
+                })
+
             });
         }
 

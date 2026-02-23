@@ -213,7 +213,7 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
     }
 
     /// @inheritdoc IHost
-    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external restricted {
+    function validateProposal(bytes32 proposalId, bool valid, bytes memory payload) external payable restricted {
         HostProposalLib.validateProposal(proposalId, valid, payload);
     }
 

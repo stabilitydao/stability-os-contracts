@@ -6,16 +6,12 @@ import {Vm, Test} from "forge-std/Test.sol";
 import {HostUtilsLib} from "./utils/HostUtilsLib.sol";
 import {BridgeTestLib} from "../test/utils/BridgeTestLib.sol";
 import {IHost} from "../src/interfaces/IHost.sol";
-import {IAuthority} from "../src/interfaces/IAuthority.sol";
 import {IDAOData} from "../src/interfaces/IDAOData.sol";
 import {SonicConstantsLib} from "../chains/SonicConstantsLib.sol";
 import {PlasmaConstantsLib} from "../chains/PlasmaConstantsLib.sol";
 import {AvalancheConstantsLib} from "../chains/AvalancheConstantsLib.sol";
-import {Origin} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
-import {IOAppReceiver} from "@layerzerolabs/oapp-evm/contracts/oapp/interfaces/IOAppReceiver.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {EngineLib} from "./scenario/engine/EngineLib.sol";
-import {LayerZeroUtils} from "./scenario/engine/LayerZeroUtils.sol";
 
 contract HostBridgeTest is Test {
     uint private constant SONIC_FORK_BLOCK = 52228979; // Oct-28-2025 01:14:21 PM +UTC
@@ -85,8 +81,8 @@ contract HostBridgeTest is Test {
 
         { // ------------------------- process cross chain events: Sonic -> Avalanche, Plasma
             Vm.Log[] memory logs = vm.getRecordedLogs();
-            _processCrossChainMessages(logs, sonic, avalanche);
-            _processCrossChainMessages(logs, sonic, plasma);
+            BridgeTestLib.processCrossChainMessages(vm, logs, sonic, avalanche);
+            BridgeTestLib.processCrossChainMessages(vm, logs, sonic, plasma);
         }
 
         // ----------------------------- create DAO on Avalanche
@@ -96,8 +92,8 @@ contract HostBridgeTest is Test {
 
         { // ------------------------- process cross chain events: Avalanche -> Sonic, Plasma
             Vm.Log[] memory logs = vm.getRecordedLogs();
-            _processCrossChainMessages(logs, avalanche, sonic);
-            _processCrossChainMessages(logs, avalanche, plasma);
+            BridgeTestLib.processCrossChainMessages(vm, logs, avalanche, sonic);
+            BridgeTestLib.processCrossChainMessages(vm, logs, avalanche, plasma);
         }
 
         // ----------------------------- create DAO on Plasma
@@ -107,8 +103,8 @@ contract HostBridgeTest is Test {
 
         { // ------------------------- process cross chain events: Plasma -> Sonic, Avalanche
             Vm.Log[] memory logs = vm.getRecordedLogs();
-            _processCrossChainMessages(logs, plasma, sonic);
-            _processCrossChainMessages(logs, plasma, avalanche);
+            BridgeTestLib.processCrossChainMessages(vm, logs, plasma, sonic);
+            BridgeTestLib.processCrossChainMessages(vm, logs, plasma, avalanche);
         }
 
         // ----------------------------- Check results of cross-chain message exchange
@@ -130,27 +126,6 @@ contract HostBridgeTest is Test {
 
     function testEndpoints() public {
         // todo
-    }
-
-    function _processCrossChainMessages(
-        Vm.Log[] memory logs,
-        EngineLib.ChainConfig memory from,
-        EngineLib.ChainConfig memory to
-    ) internal {
-        vm.selectFork(to.fork);
-        (bytes memory message,) = LayerZeroUtils.extractSendMessage(logs);
-        Origin memory origin =
-            Origin({srcEid: from.endpointId, sender: bytes32(uint(uint160(address(from.hostBridge)))), nonce: 1});
-
-        vm.prank(to.endpoint);
-        IOAppReceiver(to.hostBridge)
-            .lzReceive(
-                origin,
-                bytes32(0), // guid: actual value doesn't matter
-                message,
-                address(0), // executor
-                "" // extraData
-            );
     }
 
     /// @notice user should pay for DAO-creation

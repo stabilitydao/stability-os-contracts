@@ -14,7 +14,6 @@ import {IHosted} from "../../../src/interfaces/IHosted.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract DeployUsesCaseTest is Test {

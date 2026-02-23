@@ -14,32 +14,22 @@ import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
 
 /// @dev Set of deploy-related functions ready to be used in integration tests
 library DeployUsesCaseLib {
-    /// @dev Deploy core contracts: authority, host, host bridge, host codec and data reader.
+    /// @dev Deploy core contracts on initial chain: authority, host, host bridge, host codec and data reader.
     /// @dev Assume that proxy factory is already deployed and the caller is proxy factory owner.
     function deployCore(EngineLib.BaseContext memory bc, address validator) internal returns (EngineLib.ChainConfig memory) {
         IAuthority authority = deployAuthority(bc);
         IHost host = deployFirstHost(bc, address(authority));
 
-        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(bc.chainId, "PROXY_FACTORY").toAddress());
-        address deployer = IOwnable(address(proxyFactory)).owner();
+        return _deployCore(authority, host, bc, validator);
+    }
 
-        return EngineLib.ChainConfig({
-            fork: bc.forkId,
-            chainId: bc.chainId,
-            multisig: bc.config.get(bc.chainId, "MULTISIG").toAddress(),
-            delegator: deployer,
-            authority: authority,
-            host: host,
-            hostBridge: address(deployHostBridge(bc, address(host))),
-            dataReader: deployDataReader(bc, address(authority)),
-            hostCodec: deployHostCodec(bc, address(authority)),
-            endpointId: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT_ID").toUint32(),
-            endpoint: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT").toAddress(),
-            sendLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_SEND_ULN_302").toAddress(),
-            receiveLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_RECEIVE_ULN_302").toAddress(),
-            executor: bc.config.get(bc.chainId, "LAYER_ZERO_V2_EXECUTOR").toAddress(),
-            hostValidator: validator
-        });
+    /// @dev Deploy core contracts on not-initial chains: authority, host, host bridge, host codec and data reader.
+    /// @dev Assume that proxy factory is already deployed and the caller is proxy factory owner.
+    function deployCore(EngineLib.BaseContext memory bc, address validator, IHost.HostInitPayload memory init) internal returns (EngineLib.ChainConfig memory) {
+        IAuthority authority = deployAuthority(bc);
+        IHost host = deployHost(bc, address(authority), init);
+
+        return _deployCore(authority, host, bc, validator);
     }
 
     /// @dev Deploy authority. Assume that proxy factory is already deployed.
@@ -61,7 +51,14 @@ library DeployUsesCaseLib {
             bc,
             authority,
             IHost.HostInitPayload({
-                usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "2026.00.00"
+                usedSymbols: new string[](0),
+                hostVersion: "2026.00.00",
+                daoHost: IHost.DaoHostInitParams({
+                    uid: 0,
+                    symbol: "",
+                    name: "",
+                    unitIds: new string[](0)
+                })
             })
         );
     }
@@ -114,4 +111,26 @@ library DeployUsesCaseLib {
         return DeployIntentsLib.deployDataReader(intent);
     }
 
+    function _deployCore(IAuthority authority, IHost host, EngineLib.BaseContext memory bc, address validator) internal returns (EngineLib.ChainConfig memory) {
+        IProxyFactory proxyFactory = IProxyFactory(bc.configDeployed.get(bc.chainId, "PROXY_FACTORY").toAddress());
+        address deployer = IOwnable(address(proxyFactory)).owner();
+
+        return EngineLib.ChainConfig({
+            fork: bc.forkId,
+            chainId: bc.chainId,
+            multisig: bc.config.get(bc.chainId, "MULTISIG").toAddress(),
+            delegator: deployer,
+            authority: authority,
+            host: host,
+            hostBridge: address(deployHostBridge(bc, address(host))),
+            dataReader: deployDataReader(bc, address(authority)),
+            hostCodec: deployHostCodec(bc, address(authority)),
+            endpointId: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT_ID").toUint32(),
+            endpoint: bc.config.get(bc.chainId, "LAYER_ZERO_V2_ENDPOINT").toAddress(),
+            sendLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_SEND_ULN_302").toAddress(),
+            receiveLib: bc.config.get(bc.chainId, "LAYER_ZERO_V2_RECEIVE_ULN_302").toAddress(),
+            executor: bc.config.get(bc.chainId, "LAYER_ZERO_V2_EXECUTOR").toAddress(),
+            hostValidator: validator
+        });
+    }
 }

@@ -22,7 +22,16 @@ contract AuthorityTest is Test {
         usedSymbols[0] = "B";
 
         IHost.HostInitPayload memory hostPayload =
-            IHost.HostInitPayload({usedSymbols: usedSymbols, daoHostSymbol: "A", daoHostUid: 1, hostVersion: "1.0.0"});
+            IHost.HostInitPayload({
+                usedSymbols: usedSymbols,
+                hostVersion: "1.0.0",
+                daoHost: IHost.DaoHostInitParams({
+                    uid: 1,
+                    symbol: "A",
+                    name: "B",
+                    unitIds: new string[](0)
+                })
+            });
 
         // ------------------- deploy proxy factory
         vm.prank(MULTISIG);
@@ -89,7 +98,14 @@ contract AuthorityTest is Test {
 
     function testDeployAuthorityGasEstimation() public {
         IHost.HostInitPayload memory hostPayload = IHost.HostInitPayload({
-            usedSymbols: new string[](0), daoHostSymbol: "", daoHostUid: 0, hostVersion: "1.0.0"
+            usedSymbols: new string[](0),
+            hostVersion: "1.0.0",
+            daoHost: IHost.DaoHostInitParams({
+                uid: 0,
+                symbol: "",
+                name: "",
+                unitIds: new string[](0)
+            })
         });
 
         // ------------------- deploy proxy factory

@@ -58,6 +58,63 @@ contract HostActionsLibTest is Test {
         vm.stopPrank();
     }
 
+    //region ------------------------------------------ Unit tests
+    function testInitHost_InitialChain_HostDaoIsNotInitialized() public {
+        IHost.HostInitPayload memory init;
+        init.usedSymbols = new string[](2);
+        init.usedSymbols[0] = "a";
+        init.usedSymbols[1] = "b";
+        init.hostVersion = "v1";
+
+        HostActionsLib.initHost(init);
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        assertNotEq($.daoUids["a"], 0, "symbol a is registered");
+        assertNotEq($.daoUids["b"], 0, "symbol a is registered");
+        assertEq($.daoUids["c"], 0, "symbol a is NOT registered");
+
+        assertEq($.hostDaoUid, 0, "HOST DAO is not initialized");
+
+        HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
+        assertEq($proxy.platformVersion, "v1", "host version is correct");
+    }
+
+    function testInitHost_BridgedChain_HostDaoIsInitialized() public {
+        IHost.HostInitPayload memory init = IHost.HostInitPayload({
+            usedSymbols: new string[](2),
+            hostVersion: "v1",
+            daoHost: IHost.DaoHostInitParams({
+                uid: 46327,
+                symbol: "DAO HOST SYMBOL",
+                name: "dao host name",
+                unitIds: new string[](1)
+            })
+        });
+        init.daoHost.unitIds[0] = "unit A";
+        init.usedSymbols[0] = "a";
+        init.usedSymbols[1] = "b";
+        init.hostVersion = "v1";
+
+        HostActionsLib.initHost(init);
+
+        HostLib.HostStorage storage $ = HostLib.getHostStorage();
+        assertNotEq($.daoUids["a"], 0, "symbol a is registered");
+        assertNotEq($.daoUids["b"], 0, "symbol a is registered");
+        assertEq($.daoUids["c"], 0, "symbol a is NOT registered");
+
+        assertEq($.hostDaoUid, 46327, "HOST DAO is initialized");
+        assertEq($.daoUids["DAO HOST SYMBOL"], 46327, "HOST DAO symbol is registered");
+        assertEq($.segment2[46327].symbol, "DAO HOST SYMBOL", "HOST DAO symbol is set");
+        assertEq($.segment2[46327].name, "dao host name", "HOST DAO name is set");
+        assertEq($.segment2[46327].unitIds.length, 1, "HOST DAO unitIds are set");
+        assertEq($.segment2[46327].unitIds[0], "unit A", "unit A");
+
+        HostProxyLib.HostProxyStorage storage $proxy = HostProxyLib.getHostProxyStorage();
+        assertEq($proxy.platformVersion, "v1", "host version is correct");
+    }
+
+    //endregion ------------------------------------------ Unit tests
+
     //region ---------------------------- ChangePhase
     function testChangePhase_UnknownUid_Revert() public {
         // HostLib.HostStorage storage $ = HostLib.getHostStorage();
@@ -351,12 +408,6 @@ contract HostActionsLibTest is Test {
 
     //endregion ---------------------------- ChangePhase
 
-    //region ------------------------------------------ Test utils
-
-    //endregion ------------------------------------------ Test utils
-
-    //region ---------------------------- External access to library functions
-    // solidity
     //region ---------------------------- External access to library functions
     function changePhase(string calldata symbol, address authority_) public {
         HostActionsLib.changePhase(symbol, authority_);
