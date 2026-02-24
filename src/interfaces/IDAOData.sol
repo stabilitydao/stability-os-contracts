@@ -133,15 +133,18 @@ interface IDAOData is ISegment4 {
         uint minPower;
 
         /// @notice Bribe share for Tokenomics Transactions (vested funds spending), percent. Decimals 1e5, i.e. 20_000 = 20%
+        // todo: remove
         uint32 ttBribe;
 
         /// @notice Share of total DAO revenue going to accidents compensations, percent. Decimals 1e5, i.e. 20_000 = 20%
         uint32 recoveryShare;
 
         /// @notice Minimal total voting power (self and delegated) need to create a proposal, percent. Decimals 1e5, i.e. 20_000 = 20%
+        // todo: remove
         uint proposalThreshold;
 
         /// @notice Total supply of the DAO token. This value cannot be changed after start of TGE
+        // todo: move to Segment 3
         uint totalSupply;
         // Attention: Don't forget to increment OsEncodingLib.DAO_PARAMETERS_STRUCT_VERSION if you add new fields here
     }

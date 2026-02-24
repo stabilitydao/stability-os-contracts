@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {UpdateDaoUsesCasesLib} from "../uses-cases/UpdateDaoUsesCasesLib.sol";
 import {ContextLib} from "../engine/ContextLib.sol";
 import {DeployUsesCaseLib} from "../uses-cases/DeployUsesCaseLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
@@ -10,10 +11,10 @@ import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IOwnable} from "../../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../../src/interfaces/IProxyFactory.sol";
+import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
 import {RestrictHostUtils} from "../access/RestrictHostUtils.sol";
 import {SampleDataLib} from "../../utils/SampleDataLib.sol";
 import {Test} from "forge-std/Test.sol";
-import {LifeCycleUsesCaseLib} from "../uses-cases/LifeCycleUsesCaseLib.sol";
 
 //import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
@@ -55,6 +56,7 @@ contract HostDaoUsesCasesTest is Test {
         vm.stopPrank();
     }
 
+    //region ---------------------------- Tests
     function testCreateHostDao() public {
         EngineLib.Context memory context = ContextLib.getContext(core, address(this));
         deal(core.host.getChainSettings().exchangeAsset, address(this), 1000e18);
@@ -138,7 +140,7 @@ contract HostDaoUsesCasesTest is Test {
         EngineLib.Funder[] memory funders =
             SampleDataLib.prepareFunders(exchangeAsset, (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2, 5);
 
-        LifeCycleUsesCaseLib.passSeedPhase(vm, context, dao, funders);
+        LifeCycleUsesCaseLib.moveToDevelopmentPhaseFromDraft(vm, context, dao, funders);
 
         // ---------------------------- check results
         IDAOData.DaoData memory daoAfter = core.dataReader.getDAO(dao.symbol);
@@ -165,4 +167,86 @@ contract HostDaoUsesCasesTest is Test {
 
         // todo check amount (fee) earned by DAO HOST
     }
+
+    //endregion ---------------------------- Tests
+
+    //region ---------------------------- Test update on each phase
+    /// @dev List of all supported phases
+    function fixturePhases() public pure returns (IDAOData.LifecyclePhase[] memory) {
+        IDAOData.LifecyclePhase[] memory phases = new IDAOData.LifecyclePhase[](3);
+        phases[0] = IDAOData.LifecyclePhase.INCEPTION_1;
+        phases[1] = IDAOData.LifecyclePhase.SEED_2;
+        phases[2] = IDAOData.LifecyclePhase.DEVELOPMENT_4;
+
+        return phases;
+    }
+
+    function tableHostUpdateImages_Success(IDAOData.LifecyclePhase phases) public {
+        (EngineLib.Context memory context, IDAOData.DaoData memory dao) = _prepareDaoInGivenPhase(phases);
+
+        IDAOData.DaoImages memory newImages = SampleDataLib.getDaoImages();
+        IDAOData.DaoImages memory updatedImages = UpdateDaoUsesCasesLib.updateImages(
+            vm,
+            address(this),
+            context.core,
+            _getTargetStub(),
+            dao.symbol,
+            newImages
+        ).images;
+
+        assertEq(keccak256(abi.encode(updatedImages)), keccak256(abi.encode(newImages)), "images are updated correctly");
+    }
+
+    function tableHostUpdateSocials_Success(IDAOData.LifecyclePhase phases) public {
+        (EngineLib.Context memory context, IDAOData.DaoData memory dao) = _prepareDaoInGivenPhase(phases);
+
+        string[] memory newSocials = SampleDataLib.getSocialsThree();
+        string[] memory socials = UpdateDaoUsesCasesLib.updateSocials(
+            vm,
+            address(this),
+            context.core,
+            _getTargetStub(),
+            dao.symbol,
+            newSocials
+        ).socials;
+
+        assertEq(keccak256(abi.encode(socials)), keccak256(abi.encode(newSocials)), "socials are updated correctly");
+    }
+
+    //endregion ---------------------------- Test update on each phase
+
+    //region ---------------------------- Internal utils
+    function _prepareDaoInGivenPhase(IDAOData.LifecyclePhase phases) internal returns (
+        EngineLib.Context memory,
+        IDAOData.DaoData memory
+    ){
+        address exchangeAsset = core.host.getChainSettings().exchangeAsset;
+
+        // ---------------------------- create host dao
+        EngineLib.Context memory context = ContextLib.getContext(core, address(this));
+        deal(exchangeAsset, address(this), 1000e18);
+
+        IDAOData.DaoData memory dao = HostDaoUsesCaseLib.createHostDao(vm, context);
+
+        EngineLib.Funder[] memory funders =
+                            SampleDataLib.prepareFunders(exchangeAsset, (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2, 5);
+
+        // ---------------------------- Move to selected phase
+        if (phases == IDAOData.LifecyclePhase.INCEPTION_1) {
+            LifeCycleUsesCaseLib.moveToInceptionPhaseFromDraft(context, dao);
+        } else if (phases == IDAOData.LifecyclePhase.SEED_2) {
+            LifeCycleUsesCaseLib.moveToSeedPhaseFromDraft(vm, context, dao, funders);
+        } else if (phases == IDAOData.LifecyclePhase.DEVELOPMENT_4) {
+            LifeCycleUsesCaseLib.moveToDevelopmentPhaseFromDraft(vm, context, dao, funders);
+        }
+
+        return (context, core.dataReader.getDAO(dao.symbol));
+    }
+
+    /// @dev If we don't expect any cross-chain messages we can use stub of ChainConfig with zero chainId
+    function _getTargetStub() internal pure returns (EngineLib.ChainConfig memory dest) {
+        return dest;
+    }
+
+    //endregion ---------------------------- Internal utils
 }

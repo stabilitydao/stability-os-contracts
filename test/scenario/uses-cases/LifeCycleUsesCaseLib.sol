@@ -14,16 +14,24 @@ library LifeCycleUsesCaseLib {
     string internal constant HOST_DAO_SYMBOL = "HOST";
     string internal constant HOST_DAO_NAME = "DAO Host";
 
-    /// @dev Pass SEED phase of a DAO lifecycle starting from DRAFT phase.
+    /// @dev Move to INCEPTION phase of a DAO lifecycle starting from DRAFT phase.
+    function moveToInceptionPhaseFromDraft(
+        EngineLib.Context memory context,
+        IDAOData.DaoData memory dao
+    ) internal {
+        context.core.host.changePhase(dao.symbol);
+    }
+
+    /// @dev Move to SEED phase of a DAO lifecycle starting from DRAFT phase.
     /// @param funders Assume that all funders already have enough balance of exchange asset to fund the DAO
-    function passSeedPhase(
+    function moveToSeedPhaseFromDraft(
         Vm vm,
         EngineLib.Context memory context,
         IDAOData.DaoData memory dao,
         EngineLib.Funder[] memory funders
     ) internal {
         // ---------------------------- Move to inception
-        context.core.host.changePhase(dao.symbol);
+        moveToInceptionPhaseFromDraft(context, dao);
 
         // ---------------------------- Move to SEED
         CommonUtilsLib.skip(vm, dao.funding[0].start - block.timestamp + 1);
@@ -42,9 +50,21 @@ library LifeCycleUsesCaseLib {
             vm.prank(funders[i].user);
             context.core.host.fund(dao.symbol, funders[i].amount);
         }
+    }
+
+    /// @dev Move to DEVELOPMENT phase of a DAO lifecycle starting from DRAFT phase.
+    /// @param funders Assume that all funders already have enough balance of exchange asset to fund the DAO
+    function moveToDevelopmentPhaseFromDraft(
+        Vm vm,
+        EngineLib.Context memory context,
+        IDAOData.DaoData memory dao,
+        EngineLib.Funder[] memory funders
+    ) internal {
+        moveToSeedPhaseFromDraft(vm, context, dao, funders);
 
         // ---------------------------- Seeding ends, move to Development phase
         CommonUtilsLib.skip(vm, dao.funding[0].end - block.timestamp + 1);
         context.core.host.changePhase(dao.symbol);
+
     }
 }

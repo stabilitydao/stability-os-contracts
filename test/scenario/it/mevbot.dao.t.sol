@@ -147,7 +147,7 @@ contract MevBotUsesCaseTest is Test {
         EngineLib.Funder[] memory funders =
             SampleDataLib.prepareFunders(exchangeAsset, (dao.funding[0].minRaise + dao.funding[0].maxRaise) / 2, 5);
 
-        LifeCycleUsesCaseLib.passSeedPhase(vm, context, dao, funders);
+        LifeCycleUsesCaseLib.moveToDevelopmentPhaseFromDraft(vm, context, dao, funders);
 
         // ---------------------------- check results
         IDAOData.DaoData memory daoAfter = core.dataReader.getDAO(dao.symbol);
