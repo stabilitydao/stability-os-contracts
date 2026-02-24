@@ -55,11 +55,6 @@ contract MevDaoBridgedUsesCaseTest is Test {
         address ethDvn = ctxEth.bc.config.get(eth.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
         address sonicDvn = ctxEth.bc.config.get(sonic.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
 
-        //        vm.selectFork(eth.fork);
-        //        console.log("hostBridge eth", eth.host.getChainSettings().hostBridge);
-        //        vm.selectFork(sonic.fork);
-        //        console.log("hostBridge sonic", sonic.host.getChainSettings().hostBridge);
-
         /// @dev Set up layer zero bridges between Ethereum and Sonic
         BridgeSetupLib.setUpOAppsSingleDVN(vm, eth, sonic, ethDvn, sonicDvn);
         LayerZeroUtils.setHostBridgePeers(vm, eth, sonic);
@@ -187,12 +182,12 @@ contract MevDaoBridgedUsesCaseTest is Test {
 
         {
             vm.selectFork(eth.fork);
-            IDAOData.DaoChainSettings memory params =
+            IDAOData.DaoChainSettings memory paramsSonic =
                 IDAOData.DaoChainSettings({bbRate: 90, multisig: makeAddr("new multisig")});
 
-            /// @dev Create MEV dao on Sonic via bridge
+            /// @dev Update DAO chain settings on bridged chain via bridge
             IDAOData.DaoData memory bridgedDao =
-                BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, user, daoEth.symbol, eth, sonic, params);
+                BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, user, daoEth.symbol, eth, sonic, paramsSonic);
 
             assertEq(bridgedDao.chainSettings.bbRate, 90, "bbRate is updated");
             assertEq(bridgedDao.chainSettings.multisig, makeAddr("new multisig"), "multisig is updated");

@@ -229,7 +229,7 @@ library HostProposalLib {
         dest.daoUid = HostLib.getDaoUid($, symbol);
         dest.phase = $.segment2[dest.daoUid].phase;
         require(dest.daoUid != 0, IHost.IncorrectDao());
-        dest.instant = dest.phase == IDAOData.LifecyclePhase.DRAFT_0;
+        dest.instant = dest.phase == IDAOData.LifecyclePhase.DRAFT_0; // todo Inception?
         if (dest.instant) {
             require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(symbol));
         }

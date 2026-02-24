@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {BridgeSetupLib} from "../engine/BridgeSetupLib.sol";
+import {BridgedActionsUsesCaseLib} from "../uses-cases/BridgedActionsUsesCaseLib.sol";
 import {ContextLib} from "../engine/ContextLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
+import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
-import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
+import {LayerZeroUtils} from "../engine/LayerZeroUtils.sol";
 
 // import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
@@ -43,6 +46,12 @@ contract HostDaoBridgedUsesCaseTest is Test {
 
         // @dev create HOST DAO
         HOST_DAO_SYMBOL = HostDaoUsesCaseLib.createHostDao(vm, ContextLib.getContext(eth, address(this))).symbol;
+
+        /// @dev Fund validator on both chains to be able to validate proposals and register voting results
+        vm.selectFork(eth.fork);
+        deal(validator, 1000e18);
+        vm.selectFork(forkSonic);
+        deal(validator, 1000e18);
     }
 
     function testCreateBridgedHostDao() public {
@@ -64,6 +73,39 @@ contract HostDaoBridgedUsesCaseTest is Test {
 
         assertEq(daoEth.unitIds, daoSonic.unitIds, "HOST DAO unitIds should be the same across chains");
         assertEq(daoSonic.deployer, address(0), "deployer is not initialized on bridged chain");
+    }
+
+    function testBridgeDaoChainSettings() public {
+        vm.selectFork(eth.fork);
+        IDAOData.DaoData memory daoEth = eth.dataReader.getDAO(HOST_DAO_SYMBOL);
+
+        /// @dev Create DAO HOST on Sonic via host initialization
+        EngineLib.ChainConfig memory sonic = _createCoreOnSonic(daoEth);
+
+        /// @dev DAO chain settings for Sonic
+        IDAOData.DaoChainSettings memory paramsSonic =
+                            IDAOData.DaoChainSettings({bbRate: 90, multisig: makeAddr("new multisig")});
+
+        {
+            EngineLib.Context memory ctxEth = ContextLib.getContext(eth, address(this));
+
+            address ethDvn = ctxEth.bc.config.get(eth.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
+            address sonicDvn = ctxEth.bc.config.get(sonic.chainId, "LAYER_ZERO_V2_DVN_LAYER_ZERO_LABS_PUSH").toAddress();
+
+            /// @dev Set up layer zero bridges between Ethereum and Sonic
+            BridgeSetupLib.setUpOAppsSingleDVN(vm, eth, sonic, ethDvn, sonicDvn);
+            LayerZeroUtils.setHostBridgePeers(vm, eth, sonic);
+        }
+
+        vm.selectFork(eth.fork);
+
+        /// @dev Update DAO chain settings on bridged chain via bridge
+        IDAOData.DaoData memory bridgedDao =
+                            BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, address(this), daoEth.symbol, eth, sonic, paramsSonic);
+
+        // ----------------------------------- Check results
+        assertEq(bridgedDao.chainSettings.bbRate, 90, "bbRate is updated");
+        assertEq(bridgedDao.chainSettings.multisig, makeAddr("new multisig"), "multisig is updated");
     }
 
     //region --------------------------------- Internal functions
