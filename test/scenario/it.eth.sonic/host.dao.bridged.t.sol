@@ -8,7 +8,6 @@ import {EngineLib} from "../engine/EngineLib.sol";
 import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
-import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
 import {LayerZeroUtils} from "../engine/LayerZeroUtils.sol";
@@ -84,7 +83,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
 
         /// @dev DAO chain settings for Sonic
         IDAOData.DaoChainSettings memory paramsSonic =
-                            IDAOData.DaoChainSettings({bbRate: 90, multisig: makeAddr("new multisig")});
+            IDAOData.DaoChainSettings({bbRate: 90, multisig: makeAddr("new multisig")});
 
         {
             EngineLib.Context memory ctxEth = ContextLib.getContext(eth, address(this));
@@ -101,7 +100,7 @@ contract HostDaoBridgedUsesCaseTest is Test {
 
         /// @dev Update DAO chain settings on bridged chain via bridge
         IDAOData.DaoData memory bridgedDao =
-                            BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, address(this), daoEth.symbol, eth, sonic, paramsSonic);
+            BridgedActionsUsesCaseLib.bridgeDaoChainSettings(vm, address(this), daoEth.symbol, eth, sonic, paramsSonic);
 
         // ----------------------------------- Check results
         assertEq(bridgedDao.chainSettings.bbRate, 90, "bbRate is updated");

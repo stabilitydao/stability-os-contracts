@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {HostActionsLib} from "./libs/HostActionsLib.sol";
+import {HostRestrictedActionsLib} from "./libs/HostRestrictedActionsLib.sol";
 import {HostCrossChainLib} from "./libs/HostCrossChainLib.sol";
 import {HostFundingLib} from "./libs/HostFundingLib.sol";
 import {HostProposalLib} from "./libs/HostProposalLib.sol";
@@ -238,7 +239,7 @@ contract Host is IHost, Hosted, ReentrancyGuardUpgradeable {
 
     /// @inheritdoc IHost
     function updateByAdmin(IHost.AdminUpdateActions actionIndex, bytes memory payload) external restricted {
-        HostActionsLib.updateByAdmin(actionIndex, payload);
+        HostRestrictedActionsLib.updateByAdmin(actionIndex, payload);
     }
 
     /// @inheritdoc IHost

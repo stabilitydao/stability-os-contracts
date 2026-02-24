@@ -7,14 +7,13 @@ import {HostDaoUsesCaseLib} from "../uses-cases/HostDaoUsesCaseLib.sol";
 import {IDAOData} from "../../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../../src/interfaces/IHost.sol";
 import {IBridgedActions} from "../../../src/interfaces/IBridgedActions.sol";
-import {StdConfig} from "forge-std/StdConfig.sol";
 import {Test} from "forge-std/Test.sol";
-import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 import {MevBotDaoUsesCaseLib} from "../uses-cases/MevBotDaoUsesCaseLib.sol";
 import {BridgedActionsUsesCaseLib} from "../uses-cases/BridgedActionsUsesCaseLib.sol";
 import {BridgeSetupLib} from "../engine/BridgeSetupLib.sol";
 import {LayerZeroUtils} from "../engine/LayerZeroUtils.sol";
-import {console} from "forge-std/console.sol";
+
+// import {console} from "forge-std/console.sol";
 
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 
@@ -136,17 +135,17 @@ contract MevDaoBridgedUsesCaseTest is Test {
             BridgedActionsUsesCaseLib.bridgeDao(vm, user, daoEth.symbol, eth, sonic, params);
         }
 
-        {
-            IDAOData.DaoParameters memory params = IDAOData.DaoParameters({
-                vePeriod: 365 * 2,
-                pvpFee: 100e5 * 2,
-                minPower: 1,
-                ttBribe: 2,
-                recoveryShare: 3,
-                proposalThreshold: 4,
-                totalSupply: 15_000_000e18
-            });
-        }
+        //        {
+        //            IDAOData.DaoParameters memory params = IDAOData.DaoParameters({
+        //                vePeriod: 365 * 2,
+        //                pvpFee: 100e5 * 2,
+        //                minPower: 1,
+        //                ttBribe: 2,
+        //                recoveryShare: 3,
+        //                proposalThreshold: 4,
+        //                totalSupply: 15_000_000e18
+        //            });
+        //        }
 
         // todo probably we should use stored values?
     }

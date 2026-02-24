@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {IHostBridge} from "./interfaces/IHostBridge.sol";
 import {IHost} from "./interfaces/IHost.sol";
 import {

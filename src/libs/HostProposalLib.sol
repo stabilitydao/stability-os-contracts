@@ -168,6 +168,8 @@ library HostProposalLib {
             _updateSalts(init, payload);
         } else if (action == uint16(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8)) {
             _updateDaoChainSettings(init, payload);
+        } else if (action == uint16(IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10)) {
+            _updateGovernanceSettings(init, payload);
         } else {
             revert IHost.NotImplemented();
         }
@@ -219,6 +221,8 @@ library HostProposalLib {
             HostUpdateLib.updateDaoChainSettings(daoUid, payload);
         } else if (action == IDAOData.DAOAction.UPDATE_BRIDGED_DAO_9) {
             HostBridgeLib.sendBridgedAction(daoUid, payload, proposalId);
+        } else if (action == IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10) {
+            HostUpdateLib.updateGovernanceSettings(daoUid, payload);
         } else {
             revert IHost.NotImplemented();
         }
@@ -364,6 +368,20 @@ library HostProposalLib {
             HostUpdateLib.updateDaoChainSettings(d_.daoUid, settings);
         } else {
             ActionParams memory p = _getActionParams(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8, d_.instant, false);
+            _proposeAction(d_.daoUid, payload, p);
+        }
+    }
+
+    /// @notice Update/create proposal to update governance settings on current chain
+    function _updateGovernanceSettings(LocalInitData memory d_, bytes memory payload) internal {
+        /// @dev Ensure that provided payload is in correct format
+        IDAOData.GovernanceSettings memory settings = HostEncodingLib.decodeGovernanceSettings(payload);
+
+        if (d_.instant) {
+            HostUpdateLib.updateGovernanceSettings(d_.daoUid, settings);
+        } else {
+            ActionParams memory p =
+                _getActionParams(IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10, d_.instant, false);
             _proposeAction(d_.daoUid, payload, p);
         }
     }

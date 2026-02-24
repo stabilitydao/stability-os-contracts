@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {console} from "forge-std/console.sol";
+// import {console} from "forge-std/console.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {Vm} from "forge-std/Test.sol";
 import {EventUtilsLib} from "../../utils/EventUtilsLib.sol";
@@ -12,6 +12,7 @@ import {IHost} from "../../../src/interfaces/IHost.sol";
 import {IDataReader} from "../../../src/interfaces/IDataReader.sol";
 import {BridgeTestLib} from "../../utils/BridgeTestLib.sol";
 
+/// @dev Uses cases for updating bridged DAOs via createBridgedAction and applyBridgedAction
 library BridgedActionsUsesCaseLib {
     //region ---------------------------------- Uses cases
     /// @dev Use case of bridging a not-host DAO from chain 1 to chain 2 using BRIDGE_DAO_1 action
@@ -168,8 +169,6 @@ library BridgedActionsUsesCaseLib {
     ) internal returns (bytes32 proposalId) {
         proposalId = HostUtilsLib.getLastProposalId(src.host, symbol);
         IDAOData.Proposal memory proposal = IDataReader(src.host.getChainSettings().dataReader).proposal(proposalId);
-
-        console.logBytes32(proposalId);
 
         if (proposal.validationRequired) {
             uint fee = src.host.quoteProposalAction(proposalId, proposalPayload, IHost.ValidationMethod.VALIDATION_1);

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "../scenario/engine/EngineLib.sol";
+import {EngineLib} from "../scenario/engine/EngineLib.sol";
 import {IDAOData} from "../../src/interfaces/IDAOData.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
 import {console} from "forge-std/console.sol";

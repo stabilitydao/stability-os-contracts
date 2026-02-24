@@ -85,7 +85,7 @@ contract HostProposalLibTest is Test {
             IHost.BridgedActions.DEPLOYMENTS_8
         ];
 
-        IDAOData.DAOAction[10] memory actions = [
+        IDAOData.DAOAction[11] memory actions = [
             IDAOData.DAOAction.UPDATE_IMAGES_0,
             IDAOData.DAOAction.UPDATE_SOCIALS_1,
             IDAOData.DAOAction.UPDATE_NAMING_2,
@@ -95,7 +95,8 @@ contract HostProposalLibTest is Test {
             IDAOData.DAOAction.UPDATE_DAO_PARAMETERS_6,
             IDAOData.DAOAction.UPDATE_SALT_7,
             IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8,
-            IDAOData.DAOAction.UPDATE_BRIDGED_DAO_9
+            IDAOData.DAOAction.UPDATE_BRIDGED_DAO_9,
+            IDAOData.DAOAction.UPDATE_GOVERNANCE_SETTINGS_10
         ];
         for (uint i; i < actions.length; i++) {
             for (uint j; j < bridgedActions.length; j++) {
