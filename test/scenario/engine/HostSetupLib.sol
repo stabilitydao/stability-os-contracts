@@ -35,7 +35,7 @@ library HostSetupLib {
 
     function getDefaultHostSettings() internal pure returns (IHost.HostSettings memory settings) {
         settings = IHost.HostSettings({
-            priceDao: 1000e8,
+            priceDao: 1000e6,
             fundingFee: 1000e8,
             minNameLength: 1,
             maxNameLength: 20,
@@ -53,7 +53,7 @@ library HostSetupLib {
             minVestingNameLen: 1,
             maxVestingNameLen: 20,
             minVestingDuration: 10 days,
-            maxVestingDuration: 365 * 4 days,
+            maxVestingDuration: 365 * 10 days,
             minCliff: 15 days,
             minInceptionDuration: 17 days // todo
         });

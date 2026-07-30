@@ -20,7 +20,7 @@ import {Variable, LibVariable} from "forge-std/LibVariable.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
 
 /// @notice Deploy ProxyFactory
-contract DeployProxyFactory is Script {
+contract DeployAuthorityAndHost is Script {
     using LibVariable for Variable;
 
     uint internal constant SONIC_CHAIN_ID = 146;
@@ -35,6 +35,9 @@ contract DeployProxyFactory is Script {
     bytes32 internal constant SALT_DATA_READER_MAINNET =
         0x5c837a9ab7fc64bc2c65553a3ceafdc6ae3f78c1944602e8da989d9ec1fc28b3;
     address internal constant TARGET_DATA_READER_MAINNET = 0xddDDdDDDDd9cA61A2CA1D4997AAA79422AC7a3e9;
+    bytes32 internal constant SALT_HOST_CODEC_MAINNET =
+    0xd7db8ce6c8deb84a2c8439f4c98894520320ab91e284f1c0fb6ca61c95d3c98f;
+    address internal constant TARGET_HOST_CODEC_MAINNET = 0xcCcCccCcCcacbe27f2bbE1886dd47f11EA2ECFE7;
 
     // Sonic
     bytes32 internal constant SALT_HOST_SONIC = 0x4fc6b5a468ed22ab3db705a64a0460587f5b2762d84261420525d1cef7602453;
@@ -45,6 +48,8 @@ contract DeployProxyFactory is Script {
     bytes32 internal constant SALT_DATA_READER_SONIC =
         0x0f732550eaf8c6937183b31fcaadb149cd56877936795795ec2414db03ca2e81;
     address internal constant TARGET_DATA_READER_SONIC = 0xdDDDddDdDDd9526CCf8F8f000e9FeCcf0dA67465;
+    bytes32 internal constant SALT_HOST_CODEC_SONIC = 0xd727657a601dcdf7c637e4e07760c8a60348a78f9bc149bf8058b2513e94fd79;
+    address internal constant TARGET_HOST_CODEC_SONIC = 0xCCCCcCCccc8508E9863480db2C6b6AF1C3d0233d;
 
     // Plasma
     bytes32 internal constant SALT_HOST_PLASMA = 0x3bc30268b17f189af4aded81112d055ca79bc0c3ce8979937e7a124be054cd22;
@@ -55,21 +60,23 @@ contract DeployProxyFactory is Script {
     bytes32 internal constant SALT_DATA_READER_PLASMA =
         0x4dc664561a5e6defd6277f4ba1e44fbaf2988192c8c120cf6f4ef2927f4dcca9;
     address internal constant TARGET_DATA_READER_PLASMA = 0xDDDdDDdDdD17376E74842dD397D61deA22ECFA35;
+    bytes32 internal constant SALT_HOST_CODEC_PLASMA = 0xf287f9e0f6e9da07ca4b62e22b4d895e597312ad0e316786d886fa585c632010;
+    address internal constant TARGET_HOST_CODEC_PLASMA = 0xCcCCcCCCCc13E40A4df0134d91995CF6B7d49d1D;
 
     function run() external {
         // ---------------------- Read initial data
         uint deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address[3] memory hostBridgeReader = block.chainid == SONIC_CHAIN_ID
-            ? [TARGET_HOST_SONIC, TARGET_HOST_BRIDGE_SONIC, TARGET_DATA_READER_SONIC]
+        address[4] memory hostBridgeReader = block.chainid == SONIC_CHAIN_ID
+            ? [TARGET_HOST_SONIC, TARGET_HOST_BRIDGE_SONIC, TARGET_DATA_READER_SONIC, TARGET_HOST_CODEC_SONIC]
             : block.chainid == PLASMA_CHAIN_ID
-                ? [TARGET_HOST_PLASMA, TARGET_HOST_BRIDGE_PLASMA, TARGET_DATA_READER_PLASMA]
-                : [TARGET_HOST_MAINNET, TARGET_HOST_BRIDGE_MAINNET, TARGET_DATA_READER_MAINNET];
-        bytes32[3] memory salts = block.chainid == SONIC_CHAIN_ID
-            ? [SALT_HOST_SONIC, SALT_HOST_BRIDGE_SONIC, SALT_DATA_READER_SONIC]
+                ? [TARGET_HOST_PLASMA, TARGET_HOST_BRIDGE_PLASMA, TARGET_DATA_READER_PLASMA, TARGET_HOST_CODEC_PLASMA]
+                : [TARGET_HOST_MAINNET, TARGET_HOST_BRIDGE_MAINNET, TARGET_DATA_READER_MAINNET, TARGET_HOST_CODEC_MAINNET];
+        bytes32[4] memory salts = block.chainid == SONIC_CHAIN_ID
+            ? [SALT_HOST_SONIC, SALT_HOST_BRIDGE_SONIC, SALT_DATA_READER_SONIC, SALT_HOST_CODEC_SONIC]
             : block.chainid == PLASMA_CHAIN_ID
-                ? [SALT_HOST_PLASMA, SALT_HOST_BRIDGE_PLASMA, SALT_DATA_READER_PLASMA]
-                : [SALT_HOST_MAINNET, SALT_HOST_BRIDGE_MAINNET, SALT_DATA_READER_MAINNET];
+                ? [SALT_HOST_PLASMA, SALT_HOST_BRIDGE_PLASMA, SALT_DATA_READER_PLASMA, SALT_HOST_CODEC_PLASMA]
+                : [SALT_HOST_MAINNET, SALT_HOST_BRIDGE_MAINNET, SALT_DATA_READER_MAINNET, SALT_HOST_CODEC_MAINNET];
         address endpoint = block.chainid == SONIC_CHAIN_ID
             ? SonicConstantsLib.LAYER_ZERO_V2_ENDPOINT
             : block.chainid == PLASMA_CHAIN_ID
@@ -100,10 +107,12 @@ contract DeployProxyFactory is Script {
 
         /// @dev Deploy host
         {
+            string[] memory unitIds = new string[](1);
+            unitIds[0] = "core";
             IHost.HostInitPayload memory init = IHost.HostInitPayload({
                 usedSymbols: new string[](0),
                 hostVersion: "2026.00.00",
-                daoHost: IHost.DaoHostInitParams({uid: 0, symbol: "", name: "", unitIds: new string[](0)})
+                daoHost: IHost.DaoHostInitParams({uid: 0, symbol: "HOST", name: "DAO Host", unitIds: unitIds})
             });
             address logic = address(new Host());
 
@@ -154,9 +163,8 @@ contract DeployProxyFactory is Script {
         /// @dev Deploy HostCodec
         {
             address logic = address(new HostCodec());
-            //            address proxy =
-            IHost(hostBridgeReader[0]).deployProxy("0x12345", logic, ""); // todo real salt
-            // todo require(proxy == hostBridgeReader[2], "DataReader address mismatch");
+            address proxy = IHost(hostBridgeReader[0]).deployProxy(salts[3], logic, "");
+            require(proxy == hostBridgeReader[3], "DataReader address mismatch");
         }
 
         // ---------------------- Write results
