@@ -52,7 +52,7 @@ contract HostTest is Test {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
         {
@@ -181,7 +181,7 @@ contract HostTest is Test {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
 
@@ -1184,7 +1184,7 @@ contract HostTest is Test {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = HostUtilsLib.generateDaoParams(365, 100);
 

@@ -197,7 +197,7 @@ library HostUtilsLib {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = generateDaoParams(365, 100);
         host.createDAO(daoName, symbol, activity, params, funding);
@@ -212,8 +212,8 @@ library HostUtilsLib {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
-        activity[0] = IDAOData.Activity.BUILDER_3;
-        activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.SAAS_2;
+        activity[1] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = generateDaoParams(365, 100);
 
@@ -230,7 +230,7 @@ library HostUtilsLib {
         );
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
 
         IDAOData.DaoParameters memory params = generateDaoParams(30, 90);
 
@@ -243,7 +243,7 @@ library HostUtilsLib {
         funding[1] = generateTGEFunding();
 
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.MEV_SEARCHER_2;
+        activity[0] = IDAOData.Activity.MEV_1;
 
         IDAOData.DaoParameters memory params = generateDaoParams(14, 99);
 
@@ -364,8 +364,8 @@ library HostUtilsLib {
 
         // ---------------- activity
         data.activity = new IDAOData.Activity[](2);
-        data.activity[0] = IDAOData.Activity.SAAS_OPERATOR_1;
-        data.activity[1] = IDAOData.Activity.BUILDER_3;
+        data.activity[0] = IDAOData.Activity.SAAS_2;
+        data.activity[1] = IDAOData.Activity.DEFI_0;
 
         // ---------------- images
         data.images = SampleDataLib.getDaoImages();

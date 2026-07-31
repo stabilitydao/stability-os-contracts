@@ -165,8 +165,8 @@ contract HostUpdateLibTest is Test {
 
         { // builder + one more activity
             IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
-            activity[0] = IDAOData.Activity.BUILDER_3;
-            activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+            activity[0] = IDAOData.Activity.SAAS_2;
+            activity[1] = IDAOData.Activity.DEFI_0;
             this.validateActivityPublic(activity);
         }
     }
@@ -180,13 +180,11 @@ contract HostUpdateLibTest is Test {
 
         // activity repeat
         for (uint i = 0; i < uint(IDAOData.Activity.COUNT_ACTIVITY); i++) {
-            if (i != uint(IDAOData.Activity.BUILDER_3)) {
-                IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
-                activity[0] = IDAOData.Activity(i);
-                activity[1] = IDAOData.Activity(i);
-                vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
-                this.validateActivityPublic(activity);
-            }
+            IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
+            activity[0] = IDAOData.Activity(i);
+            activity[1] = IDAOData.Activity(i);
+            vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
+            this.validateActivityPublic(activity);
         }
 
         // no need to test incorrect enum values - solidity decoder doesn't allow that
@@ -313,8 +311,8 @@ contract HostUpdateLibTest is Test {
 
     function testValidateActivity_DuplicateActivity_Throws() public {
         IDAOData.Activity[] memory activity = new IDAOData.Activity[](2);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
-        activity[1] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
+        activity[1] = IDAOData.Activity.DEFI_0;
 
         vm.expectRevert(abi.encodeWithSelector(IHost.InvalidActivityCombination.selector));
         this.validateActivityPublic(activity);

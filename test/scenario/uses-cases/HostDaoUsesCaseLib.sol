@@ -140,7 +140,7 @@ library HostDaoUsesCaseLib {
 
     function getHostActivity() internal pure returns (IDAOData.Activity[] memory activity) {
         activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
+        activity[0] = IDAOData.Activity.DEFI_0;
     }
 
     function getHostFunding() internal pure returns (IDAOData.Funding[] memory funding) {

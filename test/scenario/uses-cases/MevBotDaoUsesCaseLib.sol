@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import {console} from "forge-std/console.sol";
+import {console} from "forge-std/console.sol";
 // import {PrintUtilsLib} from "../../utils/PrintUtilsLib.sol";
 import {EngineLib} from "../engine/EngineLib.sol";
 import {HostUtilsLib} from "../../utils/HostUtilsLib.sol";
@@ -13,8 +13,11 @@ import {Vm} from "forge-std/Test.sol";
 
 /// @dev Set of DAO "not HOST" related functions ready to be used in integration tests
 library MevBotDaoUsesCaseLib {
-    string internal constant MEVBOT_DAO_SYMBOL = "MEVBOT";
-    string internal constant MEVBOT_DAO_NAME = "MEV Bot";
+    string internal constant MEVBOT_DAO_SYMBOL = "MEVBOTS";
+    string internal constant MEVBOT_DAO_NAME = "MEV Machines";
+    bytes32 internal constant MEVBOTS_SALT_SEED_TOKEN = 0xce4effbbe3dba0a28d68fe6584e88165ba2a39782cf737cb4864a5b02be9f6ed;
+    bytes32 internal constant MEVBOTS_SALT_TGE_TOKEN = 0x7ae69a9d46cb4ab73f53a2302cbb063d917a85b525e72fda632cdee74e3214a8;
+    bytes32 internal constant MEVBOTS_SALT_TOKEN = 0x8fc8bb7c859462873fd4de28df77eb5c0b992ed92e363a52e5e3bbecb6521644;
 
     /// @dev Create DAO "host" - first DAO in the host
     /// @dev User should have enough assets (see PriceDAO} on balance
@@ -124,9 +127,9 @@ library MevBotDaoUsesCaseLib {
 
     function getMevBotDaoImages() internal pure returns (IDAOData.DaoImages memory images) {
         images = IDAOData.DaoImages({
-            seedToken: "/MEVBOTseed.png", // todo use real value
-            tgeToken: "/MEVBOTtge.png", // todo use real value
-            token: "/MEVBOT.png",
+            seedToken: "/seedMEVBOTS.png",
+            tgeToken: "", // todo use real value
+            token: "/mevbots.png",
             xToken: "",
             daoToken: ""
         });
@@ -134,7 +137,7 @@ library MevBotDaoUsesCaseLib {
 
     function getMevBotActivity() internal pure returns (IDAOData.Activity[] memory activity) {
         activity = new IDAOData.Activity[](1);
-        activity[0] = IDAOData.Activity.MEV_SEARCHER_2;
+        activity[0] = IDAOData.Activity.MEV_1;
     }
 
     function getMevBotFunding() internal pure returns (IDAOData.Funding[] memory funding) {
@@ -153,12 +156,15 @@ library MevBotDaoUsesCaseLib {
     function getMevBotSalts(
         EngineLib.BaseContext memory /* bc */
     ) internal pure returns (bytes32[] memory salts, uint16[] memory contractIndices) {
-        salts = new bytes32[](2);
-        contractIndices = new uint16[](2);
-        salts[0] = bytes32(abi.encodePacked("MEVBOT:Ethereum:SeeToken"));
-        salts[1] = bytes32(abi.encodePacked("MEVBOT:Ethereum:TgeToken"));
-        contractIndices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1); // todo use real value
-        contractIndices[1] = uint16(IDAOData.ContractIndices.TGE_TOKEN_2); // todo use real value
+        salts = new bytes32[](3);
+        contractIndices = new uint16[](3);
+
+        salts[0] = MEVBOTS_SALT_SEED_TOKEN;
+        salts[1] = MEVBOTS_SALT_TGE_TOKEN;
+        salts[2] = MEVBOTS_SALT_TOKEN;
+        contractIndices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1);
+        contractIndices[1] = uint16(IDAOData.ContractIndices.TGE_TOKEN_2);
+        contractIndices[2] = uint16(IDAOData.ContractIndices.TOKEN_3);
     }
 
     function getMevBotChainSettings(address multisig)
@@ -171,8 +177,8 @@ library MevBotDaoUsesCaseLib {
 
     function getMevBotSocials() internal pure returns (string[] memory socials) {
         socials = new string[](2);
-        socials[0] = "todo"; // todo use real value
-        socials[1] = "todo"; // todo use real value
+        socials[0] = "https://t.me/mevmachines";
+        socials[1] = "https://github.com/mevmachines";
     }
 
     function getMevBotUnits()
@@ -181,24 +187,24 @@ library MevBotDaoUsesCaseLib {
         returns (IDAOData.UnitDataInput[] memory data, IDAOData.UnitEmitData[] memory emitData)
     {
         data = new IDAOData.UnitDataInput[](1);
-        data[0] = IDAOData.UnitDataInput({unitId: "mevbot:ethereum", developerUid: ""});
+        data[0] = IDAOData.UnitDataInput({unitId: "mevminer", developerUid: ""});
 
         string[] memory repos = new string[](1);
-        repos[0] = "stabilitydao/mevbot";
+        repos[0] = "mevmachines/mevminer";
 
         emitData = new IDAOData.UnitEmitData[](1);
         emitData[0] = ISegment4.UnitEmitData({
-            name: "EthereumBot",
+            name: "mevminer",
             description: "Ethereum MEV Searcher machine",
-            status: ISegment4.UnitStatus.BUILDING_PROTOTYPE_1,
-            revenueShare: 100,
+            status: ISegment4.UnitStatus.PROTOTYPE_2,
+            revenueShare: 50,
             unitType: ISegment4.UnitType.MEV_SEARCHER_2,
-            emoji: "emoji", // todo use real value
+            emoji: ":robot:",
             ui: new ISegment4.UnitUiLink[](0),
             pool: ISegment4.UnitPool({
                 repos: repos,
                 label: ISegment4.GithubLabel({
-                    name: "MEVBOT:Ethereum", description: "Building MEVBOT for Ethereum chain", color: "#4cbaff"
+                    name: "track:by:host", description: "Issue for tracking by Host Agent", color: "#ae4cff"
                 }),
                 contractorSymbol: ""
             }),

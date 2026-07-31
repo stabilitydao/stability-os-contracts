@@ -491,10 +491,9 @@ contract HostEncodingLibTest is Test {
         data.socials[1] = "discord";
         data.socials[2] = "github";
 
-        data.activity[0] = IDAOData.Activity.DEFI_PROTOCOL_OPERATOR_0;
-        data.activity[1] = IDAOData.Activity.SAAS_OPERATOR_1;
-        data.activity[2] = IDAOData.Activity.MEV_SEARCHER_2;
-        data.activity[3] = IDAOData.Activity.BUILDER_3;
+        data.activity[0] = IDAOData.Activity.DEFI_0;
+        data.activity[1] = IDAOData.Activity.SAAS_2;
+        data.activity[2] = IDAOData.Activity.MEV_1;
 
         data.funding[0] = IDAOData.Funding({
             fundingType: IDAOData.FundingType.SEED_0,

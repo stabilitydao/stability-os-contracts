@@ -62,16 +62,13 @@ interface IDAOData is ISegment4 {
     /// @notice Organization activities supported by OS.
     enum Activity {
         /// @notice Owner of Decentralized Finance protocols
-        DEFI_PROTOCOL_OPERATOR_0,
-
-        /// @notice Owner of Software as a Service business
-        SAAS_OPERATOR_1,
+        DEFI_0,
 
         /// @notice Searching of Maximum Extractable Value opportunities and submitting it to block builders.
-        MEV_SEARCHER_2,
+        MEV_1,
 
-        /// @notice BUILDER is a team of engineers managed by DAOs.
-        BUILDER_3,
+        /// @notice Owner of Software as a Service business
+        SAAS_2,
 
         /// @dev Total count of activities, must be the last enum value
         COUNT_ACTIVITY
