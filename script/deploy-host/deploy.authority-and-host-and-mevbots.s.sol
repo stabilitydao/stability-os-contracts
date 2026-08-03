@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+//import {console} from "forge-std/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IAccessManager} from "@openzeppelin/contracts/access/manager/IAccessManager.sol";
 import {AccessRolesLib} from "../../src/libs/AccessRolesLib.sol";
@@ -12,20 +13,25 @@ import {SeedToken} from "../../src/tokenomics/SeedToken.sol";
 import {IHosted} from "../../src/interfaces/IHosted.sol";
 import {IDataReader} from "../../src/interfaces/IDataReader.sol";
 import {IHost} from "../../src/interfaces/IHost.sol";
-import {IDAOData} from "../../src/interfaces/IHostCodec.sol";
+import {IHostCodec, IDAOData} from "../../src/interfaces/IHostCodec.sol";
 import {IOwnable} from "../../src/interfaces/IOwnable.sol";
 import {IProxyFactory} from "../../src/interfaces/IProxyFactory.sol";
 import {IAuthority} from "../../src/interfaces/IAuthority.sol";
+import {ISeedToken} from "../../src/interfaces/ISeedToken.sol";
+import {IRefundableToken} from "../../src/interfaces/IRefundableToken.sol";
+import {IMintedERC20} from "../../src/interfaces/IMintedERC20.sol";
+import {IUUPSUpgradable} from "../../src/interfaces/IUUPSUpgradable.sol";
 import {PlasmaConstantsLib} from "../../chains/PlasmaConstantsLib.sol";
 import {Script} from "forge-std/Script.sol";
 import {SonicConstantsLib} from "../../chains/SonicConstantsLib.sol";
 import {StdConfig} from "forge-std/StdConfig.sol";
 import {Variable, LibVariable} from "forge-std/LibVariable.sol";
 import {HostCodec} from "../../src/HostCodec.sol";
+import {MevBotDaoUsesCaseLib} from "../../test/scenario/uses-cases/MevBotDaoUsesCaseLib.sol";
 import {HostSetupLib} from "../../test/scenario/engine/HostSetupLib.sol";
 
 /// @notice Deploy ProxyFactory
-contract DeployAuthorityAndHost is Script {
+contract DeployAuthorityAndHostAndMevbots is Script {
     using LibVariable for Variable;
 
     uint internal constant SONIC_CHAIN_ID = 146;
@@ -199,6 +205,89 @@ contract DeployAuthorityAndHost is Script {
         configDeployed.set("HOST", address(hostBridgeReader[0]));
         configDeployed.set("HOST_BRIDGE", address(hostBridgeReader[1]));
         configDeployed.set("DATA_READER", address(hostBridgeReader[2]));
+
+        vm.startBroadcast(deployerPrivateKey);
+        _createAndSetupMevbotsDAO(
+            IHost(TARGET_HOST_MAINNET),
+            IHostCodec(hostBridgeReader[3]),
+            IDataReader(hostBridgeReader[2]),
+            address(authority)
+        );
+        vm.stopBroadcast();
+    }
+
+    function _createAndSetupMevbotsDAO(IHost host, IHostCodec codec, IDataReader reader, address authority) internal {
+        uint16 apiVersion = codec.PAYLOAD_API_VERSION();
+
+        // 0. approve
+        IERC20(USDC).approve(address(host), 200e6);
+
+        // 1. create DAO
+        host
+        .createDAO(
+            MevBotDaoUsesCaseLib.MEVBOTS_DAO_NAME,
+            MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL,
+            MevBotDaoUsesCaseLib.getMevBotActivity(),
+            MevBotDaoUsesCaseLib.getMevBotDaoParameters(),
+            MevBotDaoUsesCaseLib.getMevBotFunding()
+        );
+
+        // 2. images
+        bytes memory payload = codec.encode(MevBotDaoUsesCaseLib.getMevBotDaoImages(), apiVersion);
+        host.updateDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, uint16(IDAOData.DAOAction.UPDATE_IMAGES_0), payload, "");
+
+        // 3. socials
+        payload = codec.encode(MevBotDaoUsesCaseLib.getMevBotSocials(), apiVersion);
+        host.updateDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), payload, "");
+
+        // 4. salts
+        (bytes32[] memory salts, uint16[] memory contractIndices) = MevBotDaoUsesCaseLib.getMevBotSalts();
+        payload = codec.encode(contractIndices, salts, apiVersion);
+        host.updateDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, uint16(IDAOData.DAOAction.UPDATE_SALT_7), payload, "");
+
+        // 5. chain settings
+        // TODO multisig
+        IDAOData.DaoChainSettings memory chainSettings = IDAOData.DaoChainSettings({bbRate: 50, multisig: address(0)});
+        payload = codec.encode(chainSettings, apiVersion);
+        host.updateDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, uint16(IDAOData.DAOAction.UPDATE_DAO_CHAIN_SETTINGS_8), payload, "");
+
+        // 6. Update units
+        (IDAOData.UnitDataInput[] memory data, IDAOData.UnitEmitData[] memory emitData) = MevBotDaoUsesCaseLib.getMevBotUnits();
+        payload = codec.encode(data, apiVersion);
+        bytes memory payloadEmit = codec.encode(emitData, apiVersion);
+        host.updateDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, uint16(IDAOData.DAOAction.UPDATE_UNITS_3), payload, payloadEmit);
+
+        host.changePhase(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL);
+        host.changePhase(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL);
+
+        // get seed token address
+        IDAOData.DaoData memory dao = reader.getDAO(MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL);
+        //console.log('seed token deployed', dao.deployments.seedToken);
+
+        // setup access manager
+        _setupSeedToken(dao.deployments.seedToken, authority);
+        _setupUpgradable(dao.deployments.seedToken, authority);
+
+        // try fund
+        host.fund("MEVBOTS", 100e6);
+    }
+
+    /// @dev set up HOST as operator for all restricted functions
+    function _setupSeedToken(address seedToken, address authority_) internal {
+        bytes4[] memory selectors = new bytes4[](3);
+        selectors[0] = bytes4(IMintedERC20.mint.selector);
+        selectors[1] = bytes4(IRefundableToken.refund.selector);
+        selectors[2] = bytes4(ISeedToken.transferTo.selector);
+
+        IAuthority(authority_).setTargetFunctionRole(seedToken, selectors, AccessRolesLib.HOST_TOKEN_MINTER);
+    }
+
+    /// @dev set up HOST as operator for all restricted functions
+    function _setupUpgradable(address target_, address authority_) internal {
+        bytes4[] memory selectors = new bytes4[](1);
+        selectors[0] = bytes4(IUUPSUpgradable.upgradeToAndCall.selector);
+
+        IAuthority(authority_).setTargetFunctionRole(target_, selectors, AccessRolesLib.CONTRACTS_UPGRADER);
     }
 
 }

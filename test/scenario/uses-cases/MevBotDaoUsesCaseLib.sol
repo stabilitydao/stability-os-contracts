@@ -13,11 +13,13 @@ import {Vm} from "forge-std/Test.sol";
 
 /// @dev Set of DAO "not HOST" related functions ready to be used in integration tests
 library MevBotDaoUsesCaseLib {
-    string internal constant MEVBOT_DAO_SYMBOL = "MEVBOTS";
-    string internal constant MEVBOT_DAO_NAME = "MEV Machines";
+    string internal constant MEVBOTS_DAO_SYMBOL = "MEVBOTS";
+    string internal constant MEVBOTS_DAO_NAME = "MEV Machines";
     bytes32 internal constant MEVBOTS_SALT_SEED_TOKEN = 0xce4effbbe3dba0a28d68fe6584e88165ba2a39782cf737cb4864a5b02be9f6ed;
-    bytes32 internal constant MEVBOTS_SALT_TGE_TOKEN = 0x7ae69a9d46cb4ab73f53a2302cbb063d917a85b525e72fda632cdee74e3214a8;
+    bytes32 internal constant MEVBOTS_SALT_TGE_TOKEN = 0xc8a9d2a62d142f596413fc1a84af18b3cd3cfd0fb7f1f304a20c335f04eb94e8;
     bytes32 internal constant MEVBOTS_SALT_TOKEN = 0x8fc8bb7c859462873fd4de28df77eb5c0b992ed92e363a52e5e3bbecb6521644;
+    bytes32 internal constant MEVBOTS_SALT_X_TOKEN = 0x80f98a15e0b5b0ae7fdca5b6c2dc2313cc5b0ed83bfddc08fb9fa81c19a3297e;
+    bytes32 internal constant MEVBOTS_SALT_DAO_TOKEN = 0x41431bb0020c6598ee776b162ba7a777d2998acb844aa1d64b26a21fc36fa26f;
 
     /// @dev Create DAO "host" - first DAO in the host
     /// @dev User should have enough assets (see PriceDAO} on balance
@@ -36,8 +38,8 @@ library MevBotDaoUsesCaseLib {
             vm.startPrank(context.user);
             context.core.host
                 .createDAO(
-                    MEVBOT_DAO_NAME,
-                    MEVBOT_DAO_SYMBOL,
+                    MEVBOTS_DAO_NAME,
+                    MEVBOTS_DAO_SYMBOL,
                     getMevBotActivity(),
                     getMevBotDaoParameters(),
                     getMevBotFunding()
@@ -50,7 +52,7 @@ library MevBotDaoUsesCaseLib {
             vm,
             context.core,
             UpdateIntentsLib.IntentUpdateImages({
-                signer: context.user, symbol: MEVBOT_DAO_SYMBOL, images: getMevBotDaoImages()
+                signer: context.user, symbol: MEVBOTS_DAO_SYMBOL, images: getMevBotDaoImages()
             })
         );
 
@@ -60,11 +62,11 @@ library MevBotDaoUsesCaseLib {
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateSocials({
-                    signer: context.user, symbol: MEVBOT_DAO_SYMBOL, data: getMevBotSocials()
+                    signer: context.user, symbol: MEVBOTS_DAO_SYMBOL, data: getMevBotSocials()
                 })
             );
 
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, MEVBOT_DAO_SYMBOL);
+            bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, MEVBOTS_DAO_SYMBOL);
 
             vm.prank(context.core.hostValidator);
             context.core.host.validateProposal(proposalId, true, payload);
@@ -72,12 +74,12 @@ library MevBotDaoUsesCaseLib {
 
         // 4. --------------------------- Update salts
         {
-            (bytes32[] memory salts, uint16[] memory contractIndices) = getMevBotSalts(context.bc);
+            (bytes32[] memory salts, uint16[] memory contractIndices) = getMevBotSalts();
             UpdateIntentsLib.updateSalts(
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateSalts({
-                    signer: context.user, symbol: MEVBOT_DAO_SYMBOL, salts: salts, contractIndices: contractIndices
+                    signer: context.user, symbol: MEVBOTS_DAO_SYMBOL, salts: salts, contractIndices: contractIndices
                 })
             );
         }
@@ -88,7 +90,7 @@ library MevBotDaoUsesCaseLib {
             context.core,
             UpdateIntentsLib.IntentUpdateDaoChainSettings({
                 signer: context.user,
-                symbol: MEVBOT_DAO_SYMBOL,
+                symbol: MEVBOTS_DAO_SYMBOL,
                 params: getMevBotChainSettings(
                     // todo DAO multisig is equal to Host multisig in this case
                     context.core.multisig
@@ -104,18 +106,18 @@ library MevBotDaoUsesCaseLib {
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateUnits({
-                    signer: context.user, symbol: MEVBOT_DAO_SYMBOL, data: data, emitData: emitData
+                    signer: context.user, symbol: MEVBOTS_DAO_SYMBOL, data: data, emitData: emitData
                 })
             );
         }
 
-        dao = context.core.dataReader.getDAO(MEVBOT_DAO_SYMBOL);
+        dao = context.core.dataReader.getDAO(MEVBOTS_DAO_SYMBOL);
     }
 
     //region --------------------------------------- Default MEVBOT parameters
     function getMevBotDaoParameters() internal pure returns (IDAOData.DaoParameters memory params) {
         params = IDAOData.DaoParameters({
-            vePeriod: 120,
+            vePeriod: 360,
             pvpFee: 100e5,
             minPower: 0,
             ttBribe: 0,
@@ -128,10 +130,10 @@ library MevBotDaoUsesCaseLib {
     function getMevBotDaoImages() internal pure returns (IDAOData.DaoImages memory images) {
         images = IDAOData.DaoImages({
             seedToken: "/seedMEVBOTS.png",
-            tgeToken: "", // todo use real value
+            tgeToken: "/tgeMEVBOTS.png",
             token: "/mevbots.png",
-            xToken: "",
-            daoToken: ""
+            xToken: "/xMEVBOTS.png",
+            daoToken: "/daoMEVBOTS.png"
         });
     }
 
@@ -141,30 +143,41 @@ library MevBotDaoUsesCaseLib {
     }
 
     function getMevBotFunding() internal pure returns (IDAOData.Funding[] memory funding) {
-        funding = new IDAOData.Funding[](1);
+        funding = new IDAOData.Funding[](2);
         funding[0] = IDAOData.Funding({
             fundingType: IDAOData.FundingType.SEED_0,
-            start: 1777593600, // Friday, 1 May 2026
-            end: 1782864000, // Wednesday, 1 July 2026
+            start: 1785769200 - 1800, // 3 aug 2026 15:00
+            end: 1809097200, // 30 apr 2027
             claim: 0,
-            minRaise: 50000e8,
-            maxRaise: 250000e8,
+            minRaise: 10_000e8,
+            maxRaise: 10_000_000e8,
+            raised: 0
+        });
+        funding[1] = IDAOData.Funding({
+            fundingType: IDAOData.FundingType.TGE_1,
+            start: 1827619200, // 1 dec 2027
+            end: 1828223999, // 7 dec 2027
+            claim: 0,
+            minRaise: 1_000_000e8,
+            maxRaise: 1_500_000e8,
             raised: 0
         });
     }
 
-    function getMevBotSalts(
-        EngineLib.BaseContext memory /* bc */
-    ) internal pure returns (bytes32[] memory salts, uint16[] memory contractIndices) {
-        salts = new bytes32[](3);
-        contractIndices = new uint16[](3);
+    function getMevBotSalts() internal pure returns (bytes32[] memory salts, uint16[] memory contractIndices) {
+        salts = new bytes32[](5);
+        contractIndices = new uint16[](5);
 
         salts[0] = MEVBOTS_SALT_SEED_TOKEN;
         salts[1] = MEVBOTS_SALT_TGE_TOKEN;
         salts[2] = MEVBOTS_SALT_TOKEN;
+        salts[3] = MEVBOTS_SALT_X_TOKEN;
+        salts[4] = MEVBOTS_SALT_DAO_TOKEN;
         contractIndices[0] = uint16(IDAOData.ContractIndices.SEED_TOKEN_1);
         contractIndices[1] = uint16(IDAOData.ContractIndices.TGE_TOKEN_2);
         contractIndices[2] = uint16(IDAOData.ContractIndices.TOKEN_3);
+        contractIndices[3] = uint16(IDAOData.ContractIndices.X_TOKEN_4);
+        contractIndices[4] = uint16(IDAOData.ContractIndices.DAO_TOKEN_5);
     }
 
     function getMevBotChainSettings(address multisig)
@@ -195,7 +208,7 @@ library MevBotDaoUsesCaseLib {
         emitData = new IDAOData.UnitEmitData[](1);
         emitData[0] = ISegment4.UnitEmitData({
             name: "mevminer",
-            description: "Ethereum MEV Searcher machine",
+            description: "Ethereum MEV Searcher",
             status: ISegment4.UnitStatus.PROTOTYPE_2,
             revenueShare: 50,
             unitType: ISegment4.UnitType.MEV_SEARCHER_2,

@@ -70,7 +70,7 @@ contract MevBotUsesCaseTest is Test {
         IDAOData.DaoData memory dao = MevBotDaoUsesCaseLib.createMevBotDao(vm, context);
 
         // ---------------------------------- Check results
-        assertEq(dao.symbol, MevBotDaoUsesCaseLib.MEVBOT_DAO_SYMBOL, "DAO symbol is correct");
+        assertEq(dao.symbol, MevBotDaoUsesCaseLib.MEVBOTS_DAO_SYMBOL, "DAO symbol is correct");
 
         {
             string[] memory socials = MevBotDaoUsesCaseLib.getMevBotSocials();
@@ -98,7 +98,7 @@ contract MevBotUsesCaseTest is Test {
         }
 
         {
-            (bytes32[] memory salts, uint16[] memory contractIndices) = MevBotDaoUsesCaseLib.getMevBotSalts(bc);
+            (bytes32[] memory salts, uint16[] memory contractIndices) = MevBotDaoUsesCaseLib.getMevBotSalts();
             assertEq(keccak256(abi.encode(dao.salts)), keccak256(abi.encode(salts)), "salts are correct");
             assertEq(
                 keccak256(abi.encode(dao.saltContractIndices)),
