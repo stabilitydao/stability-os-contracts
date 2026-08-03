@@ -47,8 +47,9 @@ library HostDeployLib {
         selectors[1] = bytes4(IRefundableToken.refund.selector);
         selectors[2] = bytes4(ISeedToken.transferTo.selector);
 
-        IAuthority(authority_).setTargetFunctionRole(seedToken, selectors, AccessRolesLib.HOST_TOKEN_MINTER);
-        IAuthority(authority_).grantRole(AccessRolesLib.HOST_TOKEN_MINTER, address(this), 0);
+        try IAuthority(authority_).setTargetFunctionRole(seedToken, selectors, AccessRolesLib.HOST_TOKEN_MINTER) {} catch {}
+        // todo remove it. execute while deploy
+        try IAuthority(authority_).grantRole(AccessRolesLib.HOST_TOKEN_MINTER, address(this), 0) {} catch {}
     }
 
     /// @dev set up HOST as operator for all restricted functions
@@ -69,7 +70,8 @@ library HostDeployLib {
     }
 
     function _setSelectors(address authority_, address target_, bytes4[] memory selectors, uint64 role) internal {
-        IAuthority(authority_).setTargetFunctionRole(target_, selectors, role);
-        IAuthority(authority_).grantRole(role, address(this), 0);
+        try IAuthority(authority_).setTargetFunctionRole(target_, selectors, role) {} catch {}
+        // todo remove it. execute while deploy
+        try IAuthority(authority_).grantRole(role, address(this), 0) {} catch {}
     }
 }

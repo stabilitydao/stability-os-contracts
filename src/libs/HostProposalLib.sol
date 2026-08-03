@@ -233,7 +233,7 @@ library HostProposalLib {
         dest.daoUid = HostLib.getDaoUid($, symbol);
         dest.phase = $.segment2[dest.daoUid].phase;
         require(dest.daoUid != 0, IHost.IncorrectDao());
-        dest.instant = dest.phase == IDAOData.LifecyclePhase.DRAFT_0; // todo Inception?
+        dest.instant = dest.phase == IDAOData.LifecyclePhase.DRAFT_0 || dest.phase == IDAOData.LifecyclePhase.INCEPTION_1;
         if (dest.instant) {
             require($.segment3[dest.daoUid].deployer == msg.sender, IHost.YouAreNotOwnerOf(symbol));
         }
@@ -268,10 +268,14 @@ library HostProposalLib {
     /// Instant update forbidden. Validation of the provided links is required before updating socials.
     function _updateSocials(LocalInitData memory d_, bytes memory payload) internal {
         /// @dev Ensure that provided payload is in correct format
-        HostEncodingLib.decodeSocials(payload);
+        string[] memory socials = HostEncodingLib.decodeSocials(payload);
 
-        ActionParams memory p = _getActionParams(IDAOData.DAOAction.UPDATE_SOCIALS_1, d_.instant, true);
-        _proposeAction(d_.daoUid, payload, p);
+        if (d_.instant) {
+            HostUpdateLib.updateSocials(d_.daoUid, socials);
+        } else {
+            ActionParams memory p = _getActionParams(IDAOData.DAOAction.UPDATE_SOCIALS_1, d_.instant, true);
+            _proposeAction(d_.daoUid, payload, p);
+        }
     }
 
     /// @notice Update/create proposal to update tokenomics units of the DAO

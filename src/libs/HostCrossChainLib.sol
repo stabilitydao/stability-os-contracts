@@ -108,7 +108,9 @@ library HostCrossChainLib {
     /// @notice Send cross-chain notification about new DAO symbol registration.
     function sendMessageToAllChains(IHost.CrossChainMessages messageKind, bytes memory message) internal {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
-        _sendCrossChainMessageToAllChains(messageKind, message, bridge);
+        if (bridge != address(0)) {
+            _sendCrossChainMessageToAllChains(messageKind, message, bridge);
+        }
     }
 
     /// @notice Send cross-chain notification about new DAO symbol registration.
@@ -122,6 +124,9 @@ library HostCrossChainLib {
         bytes memory message
     ) external view returns (uint) {
         address bridge = HostConfigLib.getHostChainSettings().hostBridge;
+        if (bridge == address(0)) {
+            return 0;
+        }
         return IHostBridge(bridge).quoteSendMessageToAllChains(uint(messageKind), message);
     }
 
@@ -142,7 +147,7 @@ library HostCrossChainLib {
         bytes memory payload,
         address bridge_
     ) internal {
-        uint totalFee = IHostBridge(bridge_).quoteSendMessageToAllChains(uint(messageKind), payload);
+        uint totalFee = bridge_ == address(0) ? 0 : IHostBridge(bridge_).quoteSendMessageToAllChains(uint(messageKind), payload);
         require(msg.value >= totalFee, IHost.NotEnoughNativeProvided(totalFee));
         IHostBridge(bridge_).sendMessageToAllChains{value: totalFee}(uint(messageKind), payload);
     }

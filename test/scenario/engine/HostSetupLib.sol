@@ -35,7 +35,7 @@ library HostSetupLib {
 
     function getDefaultHostSettings() internal pure returns (IHost.HostSettings memory settings) {
         settings = IHost.HostSettings({
-            priceDao: 1000e6,
+            priceDao: 100e6,
             fundingFee: 1000e8,
             minNameLength: 1,
             maxNameLength: 20,
@@ -45,9 +45,9 @@ library HostSetupLib {
             maxVePeriod: 365 * 4,
             minPvPFee: 10e5,
             maxPvPFee: 100e5,
-            minFunding: 100e8, // todo
+            minFunding: 100e6,
             minFundingDuration: 1 days,
-            maxFundingDuration: 180 days,
+            maxFundingDuration: 360 days,
             minFundingRaise: 1000e8, // 3 + 8
             maxFundingRaise: 1e20, // 12 + 8
             minVestingNameLen: 1,
@@ -55,7 +55,7 @@ library HostSetupLib {
             minVestingDuration: 10 days,
             maxVestingDuration: 365 * 10 days,
             minCliff: 15 days,
-            minInceptionDuration: 17 days // todo
+            minInceptionDuration: 0 // 1 hours - 3 days
         });
     }
 

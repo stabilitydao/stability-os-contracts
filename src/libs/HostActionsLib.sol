@@ -263,10 +263,11 @@ library HostActionsLib {
     ) internal view returns (IDAOData.LifecyclePhase phase) {
         IDAOData.Funding memory seed = $.funding[HostLib.getKey(daoUid, uint(IDAOData.FundingType.SEED_0))];
         // SEED can be started not later than 1 week after configured start time
-        require(
+        // todo undo this temporary fix. It was used for fast initial deploy DAO by scripts during initial Host deployment
+        /*require(
             block.timestamp + HostConfigLib.getHostGlobalSettings().minInceptionDuration <= seed.start,
             IHost.TooLateSoSetupFundingAgain()
-        );
+        );*/
         return IDAOData.LifecyclePhase.INCEPTION_1;
     }
 

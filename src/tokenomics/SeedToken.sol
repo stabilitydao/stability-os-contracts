@@ -6,9 +6,6 @@ import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IER
 import {
     ERC20BurnableUpgradeable
 } from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
-import {
-    ERC20PermitUpgradeable
-} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {Hosted} from "../base/Hosted.sol";
 import {IAuthority} from "../interfaces/IAuthority.sol";
@@ -19,7 +16,7 @@ import {ISeedToken} from "../interfaces/ISeedToken.sol";
 import {IHost} from "../interfaces/IHost.sol";
 import {IDataReader} from "../interfaces/IDataReader.sol";
 
-contract SeedToken is ISeedToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeable, ERC20PermitUpgradeable {
+contract SeedToken is ISeedToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgradeable {
     using SafeERC20 for IERC20;
 
     /// @inheritdoc IHosted
@@ -44,7 +41,6 @@ contract SeedToken is ISeedToken, Hosted, ERC20Upgradeable, ERC20BurnableUpgrade
         /// @dev values stored inside ERC20 are not used
         __ERC20_init("", "");
         __ERC20Burnable_init();
-        __ERC20Permit_init("SeedToken"); // todo Token is NOT transferable => ERC20PermitUpgradeable is not needed???
     }
 
     //region -------------------------------- View
