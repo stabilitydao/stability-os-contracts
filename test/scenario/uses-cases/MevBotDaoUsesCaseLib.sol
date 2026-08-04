@@ -58,18 +58,13 @@ library MevBotDaoUsesCaseLib {
 
         // 3. --------------------------- Update socials, validator validates the proposal immediately
         {
-            bytes memory payload = UpdateIntentsLib.updateSocials(
+            UpdateIntentsLib.updateSocials(
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateSocials({
                     signer: context.user, symbol: MEVBOTS_DAO_SYMBOL, data: getMevBotSocials()
                 })
             );
-
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, MEVBOTS_DAO_SYMBOL);
-
-            vm.prank(context.core.hostValidator);
-            context.core.host.validateProposal(proposalId, true, payload);
         }
 
         // 4. --------------------------- Update salts

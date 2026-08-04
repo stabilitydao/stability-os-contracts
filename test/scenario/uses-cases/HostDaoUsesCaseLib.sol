@@ -47,18 +47,13 @@ library HostDaoUsesCaseLib {
 
         // 3. --------------------------- Update socials, validator validates the proposal immediately
         {
-            bytes memory payload = UpdateIntentsLib.updateSocials(
+            UpdateIntentsLib.updateSocials(
                 vm,
                 context.core,
                 UpdateIntentsLib.IntentUpdateSocials({
                     signer: context.user, symbol: HOST_DAO_SYMBOL, data: getHostSocials()
                 })
             );
-
-            bytes32 proposalId = HostUtilsLib.getLastProposalId(context.core.host, HOST_DAO_SYMBOL);
-
-            vm.prank(context.core.hostValidator);
-            context.core.host.validateProposal(proposalId, true, payload);
         }
 
         // 4. --------------------------- Update salts

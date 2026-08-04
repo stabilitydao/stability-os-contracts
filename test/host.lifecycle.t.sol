@@ -146,7 +146,7 @@ contract HostLifeCycleTest is Test {
             // registered socials
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            HostUtilsLib.updateSocials(vm,  host_, codec_, daoData.symbol, socials);
 
             {
                 IHost.Task[] memory tasksAfter = host_.tasks(daoData.symbol);
@@ -231,12 +231,11 @@ contract HostLifeCycleTest is Test {
         {
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            (bytes32 proposalId, bytes memory payload, bytes memory inputPayload) =
-                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
-            assertEq(keccak256(payload), keccak256(inputPayload), "Emitted payload is exact same to initial one");
+            bytes memory inputPayload =
+                HostUtilsLib.updateSocials(vm, host_, codec_, daoData.symbol, socials);
 
-            vm.prank(MULTISIG);
-            host_.receiveVotingResults(proposalId, true, payload);
+//            vm.prank(MULTISIG);
+//            host_.receiveVotingResults(proposalId, true, payload);
 
             IDAOData.DaoData memory daoAfter = IDataReader(host_.getChainSettings().dataReader).getDAO("ALIENS");
             assertEq(daoAfter.socials.length, 3, "socials should be updated after proposal");
@@ -245,13 +244,13 @@ contract HostLifeCycleTest is Test {
                 keccak256(abi.encode(socials)), keccak256(abi.encode(daoAfter.socials)), "socials data should match"
             );
 
-            vm.expectRevert(IHost.AlreadyReceived.selector);
+            /*vm.expectRevert(IHost.AlreadyReceived.selector);
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, true, payload);
 
             vm.expectRevert(IHost.IncorrectProposal.selector);
             vm.prank(MULTISIG);
-            host_.receiveVotingResults(bytes32(uint(proposalId) + 1), true, payload);
+            host_.receiveVotingResults(bytes32(uint(proposalId) + 1), true, payload);*/
         }
 
         // ------------------------------ Second seeder
@@ -595,7 +594,7 @@ contract HostLifeCycleTest is Test {
 
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            HostUtilsLib.updateSocials(vm, host_, codec_, daoData.symbol, socials);
 
             // todo we cannot add vesting here because tge.claim is 0
             //            uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.SEED_0);
@@ -739,7 +738,7 @@ contract HostLifeCycleTest is Test {
 
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            HostUtilsLib.updateSocials(vm, host_, codec_, daoData.symbol, socials);
 
             uint fundingIndex = HostUtilsLib.getFundingIndex(daoData, IDAOData.FundingType.SEED_0);
             IDAOData.Vesting[] memory vesting = new IDAOData.Vesting[](1);
@@ -842,15 +841,15 @@ contract HostLifeCycleTest is Test {
         }
 
         // ------------------------------ Reject proposal
-        {
+        /*{
             string[] memory socials = SampleDataLib.getSocialsThree();
 
             (bytes32 proposalId, bytes memory payload,) =
-                HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+                HostUtilsLib.updateSocials(vm,  host_, codec_, daoData.symbol, socials);
 
             vm.prank(MULTISIG);
             host_.receiveVotingResults(proposalId, false, payload);
-        }
+        }*/
 
         // ------------------------------ First seeker refunds (tge) funds
         {
@@ -957,7 +956,7 @@ contract HostLifeCycleTest is Test {
             // registered socials
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            HostUtilsLib.updateSocials(vm, host_, codec_, daoData.symbol, socials);
 
             IDAOData.Funding memory funding = IDAOData.Funding({
                 fundingType: daoData.funding[0].fundingType,

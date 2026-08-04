@@ -461,6 +461,18 @@ library HostUtilsLib {
         return proposalIds[0];
     }
 
+    function updateSocials(
+        Vm vm,
+        IHost host_,
+        IHostCodec codec_,
+        string memory symbol,
+        string[] memory socials
+    ) internal returns (bytes memory inputPayload) {
+        vm.recordLogs();
+        inputPayload = codec_.encode(socials, HostEncodingLib.API_VERSION);
+        host_.updateDAO(symbol, uint16(IDAOData.DAOAction.UPDATE_SOCIALS_1), inputPayload, "");
+    }
+
     function updateSocialsWithValidation(
         Vm vm,
         address multisig,

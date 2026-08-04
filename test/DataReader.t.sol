@@ -81,7 +81,7 @@ contract DataReaderTest is Test {
             // registered socials
             string[] memory socials = SampleDataLib.getSocialsThree();
 
-            HostUtilsLib.updateSocialsWithValidation(vm, MULTISIG, host_, codec_, daoData.symbol, socials);
+            HostUtilsLib.updateSocials(vm, host_, codec_, daoData.symbol, socials);
 
             IDAOData.Funding memory funding = IDAOData.Funding({
                 fundingType: daoData.funding[0].fundingType,
